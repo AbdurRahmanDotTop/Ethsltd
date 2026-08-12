@@ -2,6 +2,22 @@
 
 This document outlines the step-by-step process for deploying the ETHSLTD Next.js web application to Cloudflare Pages, connecting a custom domain, and establishing a Continuous Development (CI/CD) workflow.
 
+## Architecture Strategy: Pages vs Workers
+Kyuki ye ek **real crypto trading web app** banne wala hai jisme high traffic, fast API responses, aur real-time data chahiye hoga, iska architecture kuch is tarah hona chahiye:
+
+1. **The Frontend & REST API (Deploy on Cloudflare Pages):** 
+   - Next.js ki poori frontend UI aur standard API routes ko **Cloudflare Pages** par hi deploy karna sabse best hai. 
+   - Cloudflare Pages inherently aapke Next.js Server-Side code ko background mein **Cloudflare Workers** mein convert kar deta hai (via `@cloudflare/next-on-pages`). Iska matlab aapko Pages ki fast static hosting aur Workers ki edge-computing power dono ek sath milte hain.
+
+2. **The Real-Time Trading Engine (Deploy as standalone Cloudflare Workers):**
+   - Jab aap live trading shuru karenge, toh order book aur chart data ko milliseconds mein update karne ke liye **WebSockets** ki zarurat padegi.
+   - Us real-time WebSocket connection aur Order Matching Engine ko aap ek alag standalone **Cloudflare Worker (ya Durable Objects)** bana kar deploy karenge, jo aapke Pages frontend se connect hoga.
+
+**Nishkarsh (Conclusion):** 
+Abhi ke liye, aur aage chal kar bhi, ye poora Next.js project **Cloudflare Pages** par hi publish hoga. Backend Microservices baad mein alag Workers ke roop mein banengi.
+
+---
+
 ## Part 1: Automated Continuous Deployment (CI/CD) Setup
 
 The most robust way to deploy to Cloudflare Pages is by connecting your GitHub repository. This gives you automatic deployments on every push.
@@ -80,3 +96,19 @@ If you ever need to add API keys or database connections:
 ### Summary of Workflow
 `Write Code locally` -> `Push to Branch` -> `Test on Preview URL` -> `Merge to Main` -> `Live on Custom Domain`. 
 This guarantees a zero-downtime, professional deployment pipeline!
+
+---
+
+## Part 4: Local Testing & Troubleshooting (Optional)
+
+If you want to test how the site will run on Cloudflare's Edge environment *before* pushing to GitHub, you can use the Cloudflare CLI (`wrangler`).
+
+### Local Preview
+1. Install Wrangler globally: `npm install -g wrangler`
+2. Build the project for Cloudflare: `npx @cloudflare/next-on-pages@1` (Run this inside the `apps/web` folder).
+3. Run the local preview: `npx wrangler pages dev .vercel/output/static`
+
+### Common Troubleshooting
+- **Build Fails with Node Version Error**: Cloudflare Pages defaults to an older Node.js version. Go to your Pages project -> Settings -> Environment Variables. Add a variable named `NODE_VERSION` and set its value to `20` or `22`.
+- **404 Errors on Refresh**: If you ever switch to a purely static export (`output: 'export'` in next.config.js), ensure you don't use server-side features unless you are using `@cloudflare/next-on-pages`. The current setup uses `@cloudflare/next-on-pages` which handles Next.js App Router seamlessly.
+- **Custom Domain Pending**: DNS propagation can take anywhere from 5 minutes to 24 hours depending on your registrar. If it's stuck on "Pending" for more than a day, double-check that you added the exact CNAME record Cloudflare provided.

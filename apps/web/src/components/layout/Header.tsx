@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Menu, Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -10,6 +11,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [announcementVisible, setAnnouncementVisible] = useState(true)
+  const pathname = usePathname()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,12 +51,12 @@ export function Header() {
             </Link>
             
             <nav className="hidden lg:flex items-center gap-6">
-              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Markets</Link>
-              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Trade</Link>
-              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">P2P</Link>
-              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Assets</Link>
-              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Learn</Link>
-              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">More ▾</Link>
+              <Link href="/markets" className={`text-sm font-medium transition-colors ${pathname === '/markets' ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground'}`}>Markets</Link>
+              <Link href="/trade" className={`text-sm font-medium transition-colors ${pathname.startsWith('/trade') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Trade</Link>
+              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors pb-1">P2P</Link>
+              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors pb-1">Assets</Link>
+              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors pb-1">Learn</Link>
+              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors pb-1">More ▾</Link>
             </nav>
           </div>
 
@@ -86,8 +88,8 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full h-screen bg-background border-t border-border p-4">
           <nav className="flex flex-col gap-4">
-            <Link href="#" className="text-lg font-medium text-foreground py-2 border-b border-border">Markets</Link>
-            <Link href="#" className="text-lg font-medium text-foreground py-2 border-b border-border">Trade</Link>
+            <Link href="/markets" className={`text-lg font-medium py-2 border-b border-border ${pathname === '/markets' ? 'text-brand-foreground font-semibold' : 'text-foreground'}`}>Markets</Link>
+            <Link href="/trade" className={`text-lg font-medium py-2 border-b border-border ${pathname.startsWith('/trade') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`}>Trade</Link>
             <Link href="#" className="text-lg font-medium text-foreground py-2 border-b border-border">P2P</Link>
             <Link href="#" className="text-lg font-medium text-foreground py-2 border-b border-border">Assets</Link>
             <Link href="#" className="text-lg font-medium text-foreground py-2 border-b border-border">Learn</Link>

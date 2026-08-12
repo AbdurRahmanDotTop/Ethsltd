@@ -1,0 +1,229 @@
+"use client"
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { Button } from "@/components/ui/button"
+import { Market } from "@/lib/market-data/types"
+import { tradingProvider } from "@/lib/trading/mock-provider"
+import { useTradingUIStore } from "@/stores/trading-ui-store"
+import { usePaperAccountStore } from "@/stores/paper-account-store"
+import { parseMarketSymbol } from "@/lib/trading/calculations"
+import { OrderSide, OrderType } from "@/lib/trading/types"
+import { cn } from "@/lib/utils"
+
+// Schema dynamically updated based on order type
+const getOrderSchema = (type: OrderType) => z.object({
+  price: type === 'limit' 
+    ? z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valid price required") 
+    : z.string().optional(),
+  quantity: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valid quantity required"),
+});
+
+export function OrderEntry({ market }: { market: Market }) {
+  const { selectedSide, setSide, selectedOrderType, setOrderType, orderFormPrice, orderFormQuantity, setOrderFormPrice, setOrderFormQuantity } = useTradingUIStore()
+  const { balances } = usePaperAccountStore()
+  const { base, quote } = parseMarketSymbol(market.symbol)
+  
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null)
+
+  const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm({
+    resolver: zodResolver(getOrderSchema(selectedOrderType)),
+    defaultValues: { price: orderFormPrice, quantity: orderFormQuantity }
+  })
+
+  // Sync external state changes (like clicking orderbook) to local form
+  useEffect(() => {
+    if (orderFormPrice) setValue("price", orderFormPrice)
+  }, [orderFormPrice, setValue])
+
+  useEffect(() => {
+    if (orderFormQuantity) setValue("quantity", orderFormQuantity)
+  }, [orderFormQuantity, setValue])
+
+  const formPrice = watch("price")
+  const formQuantity = watch("quantity")
+
+  // Sync internal form changes out to external state
+  useEffect(() => {
+    if (formPrice !== orderFormPrice) setOrderFormPrice(formPrice || "")
+  }, [formPrice, setOrderFormPrice, orderFormPrice])
+
+  useEffect(() => {
+    if (formQuantity !== orderFormQuantity) setOrderFormQuantity(formQuantity || "")
+  }, [formQuantity, setOrderFormQuantity, orderFormQuantity])
+
+  const parsedPrice = parseFloat(formPrice || "0")
+  const parsedQty = parseFloat(formQuantity || "0")
+  const currentPrice = selectedOrderType === 'limit' ? parsedPrice : market.price
+  const total = currentPrice * parsedQty
+  const fee = total * 0.001 // 0.1% fee
+  
+  const quoteBalance = balances.find(b => b.asset === quote)?.available || 0
+  const baseBalance = balances.find(b => b.asset === base)?.available || 0
+
+  const handlePercentageClick = (pct: number) => {
+    if (selectedSide === 'buy') {
+      const targetQuote = quoteBalance * pct;
+      const qty = targetQuote / currentPrice;
+      if (qty > 0 && currentPrice > 0) {
+        setValue("quantity", qty.toFixed(6));
+        trigger("quantity");
+      }
+    } else {
+      const targetBase = baseBalance * pct;
+      if (targetBase > 0) {
+        setValue("quantity", targetBase.toFixed(6));
+        trigger("quantity");
+      }
+    }
+  }
+
+  const onSubmit = async (data: any) => {
+    setIsSubmitting(true)
+    setMessage(null)
+    
+    try {
+      await tradingProvider.placeOrder({
+        market: market.id,
+        side: selectedSide,
+        type: selectedOrderType,
+        price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
+        quantity: parseFloat(data.quantity)
+      })
+      
+      setMessage({ type: 'success', text: 'Order placed successfully' })
+      setValue("quantity", "") // Reset quantity on success
+      setTimeout(() => setMessage(null), 3000)
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Failed to place order' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-background rounded-lg border border-border p-4">
+      {/* Buy/Sell Tabs */}
+      <div className="flex bg-muted rounded-md p-1 mb-4 relative z-0">
+        <div 
+          className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded bg-background shadow transition-transform duration-200 z-0" 
+          style={{ transform: selectedSide === 'sell' ? 'translateX(100%)' : 'translateX(0)' }} 
+        />
+        <button 
+          className={cn("flex-1 py-1.5 text-sm font-semibold z-10 transition-colors", selectedSide === 'buy' ? 'text-success' : 'text-muted-foreground')}
+          onClick={() => setSide('buy')}
+        >
+          Buy
+        </button>
+        <button 
+          className={cn("flex-1 py-1.5 text-sm font-semibold z-10 transition-colors", selectedSide === 'sell' ? 'text-danger' : 'text-muted-foreground')}
+          onClick={() => setSide('sell')}
+        >
+          Sell
+        </button>
+      </div>
+
+      {/* Order Type */}
+      <div className="flex gap-4 mb-4 border-b border-border text-sm">
+        <button 
+          className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'limit' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
+          onClick={() => setOrderType('limit')}
+        >
+          Limit
+        </button>
+        <button 
+          className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'market' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
+          onClick={() => setOrderType('market')}
+        >
+          Market
+        </button>
+      </div>
+
+      <div className="flex justify-between items-center mb-4 text-xs">
+        <span className="text-muted-foreground">Available</span>
+        <span className="font-mono font-medium">
+          {selectedSide === 'buy' ? `${quoteBalance.toLocaleString()} ${quote}` : `${baseBalance.toLocaleString()} ${base}`}
+        </span>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        
+        {/* Price Input */}
+        <div className="relative">
+          <label className="text-xs text-muted-foreground mb-1 block">Price ({quote})</label>
+          <div className="relative flex items-center">
+            <input 
+              {...register("price")}
+              type="text" 
+              inputMode="decimal"
+              placeholder={selectedOrderType === 'market' ? "Market Price" : "0.00"}
+              disabled={selectedOrderType === 'market'}
+              className="w-full bg-muted border border-border rounded h-10 px-3 font-mono text-sm focus:outline-none focus:border-brand-foreground disabled:opacity-50"
+            />
+          </div>
+          {errors.price && <span className="text-xs text-danger mt-1 absolute -bottom-5 left-0">{errors.price.message?.toString()}</span>}
+        </div>
+
+        {/* Quantity Input */}
+        <div className="relative mt-2">
+          <label className="text-xs text-muted-foreground mb-1 block">Amount ({base})</label>
+          <div className="relative flex items-center">
+            <input 
+              {...register("quantity")}
+              type="text" 
+              inputMode="decimal"
+              placeholder="0.00"
+              className="w-full bg-muted border border-border rounded h-10 px-3 font-mono text-sm focus:outline-none focus:border-brand-foreground"
+            />
+          </div>
+          {errors.quantity && <span className="text-xs text-danger mt-1 absolute -bottom-5 left-0">{errors.quantity.message?.toString()}</span>}
+        </div>
+
+        {/* Percentages */}
+        <div className="flex gap-2 mt-3">
+          {[0.25, 0.50, 0.75, 1].map(pct => (
+            <button 
+              key={pct}
+              type="button"
+              className="flex-1 bg-muted hover:bg-muted/80 text-muted-foreground text-xs py-1 rounded transition-colors"
+              onClick={() => handlePercentageClick(pct)}
+            >
+              {pct * 100}%
+            </button>
+          ))}
+        </div>
+
+        {/* Summary */}
+        <div className="mt-4 pt-4 border-t border-border space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground text-xs">Est. Total</span>
+            <span className="font-mono">{total > 0 ? total.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "0.00"} {quote}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground text-xs">Est. Fee</span>
+            <span className="font-mono">{fee > 0 ? fee.toLocaleString(undefined, { maximumFractionDigits: 4 }) : "0.00"} {quote}</span>
+          </div>
+        </div>
+
+        {/* Messages */}
+        {message && (
+          <div className={cn("text-xs p-2 rounded text-center", message.type === 'error' ? "bg-danger/10 text-danger" : "bg-success/10 text-success")}>
+            {message.text}
+          </div>
+        )}
+
+        {/* Submit */}
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className={cn("w-full mt-2 font-bold", selectedSide === 'buy' ? "bg-success hover:bg-success/90 text-white" : "bg-danger hover:bg-danger/90 text-white")}
+        >
+          {isSubmitting ? "Placing..." : `${selectedSide === 'buy' ? 'Buy' : 'Sell'} ${base}`}
+        </Button>
+
+      </form>
+    </div>
+  )
+}
