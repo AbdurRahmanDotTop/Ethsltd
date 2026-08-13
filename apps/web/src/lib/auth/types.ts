@@ -17,6 +17,7 @@ export interface AuthUser {
   status: UserStatus;
   createdAt: string;
   avatarUrl?: string;
+  role?: string;
 }
 
 export interface UserSession {

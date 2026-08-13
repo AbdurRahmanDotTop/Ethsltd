@@ -23,7 +23,9 @@ export class MockAuthProvider {
         displayName: "Trader",
         emailVerified: true,
         status: "ACTIVE",
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        avatarUrl: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
+        role: "SUPER_ADMIN",
       },
       token: "mock_jwt_token_123",
     };

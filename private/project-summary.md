@@ -12,7 +12,7 @@ The platform is built on a modern, high-performance, and type-safe architecture:
 - **State Management:** Zustand (for global, transient, and persisted state)
 - **Forms & Validation:** React Hook Form + Zod
 - **UI Components:** Radix UI (Headless primitives) + Lucide React (Icons)
-- **Charting:** Lightweight Charts (v5 API by TradingView)
+- **Charting:** Lightweight Charts (v5 API by TradingView) & custom SVGs for sparklines and allocation graphs
 - **Deployment & Hosting:** Cloudflare Pages / Workers (Target Environment)
 - **Data Mocking Strategy:** Sophisticated async "Mock Providers" simulating real backend latency and logic (ready to be swapped 1-to-1 with live REST/WebSocket APIs in the future).
 
@@ -26,6 +26,7 @@ The following Product Requirement Documents have been fully executed and impleme
 4. `ETHSLTD_TRADE_PAGE_PRD.md`
 5. `ETHSLTD-PRD-04-Authentication-Account-Security.md`
 6. `ETHSLTD-P2P-Marketplace-PRD-USD.md`
+7. `ETHSLTD-WALLET-PORTFOLIO-DEPOSIT-WITHDRAWAL-PRD-USD.md`
 
 ---
 
@@ -83,6 +84,17 @@ A complete, interactive simulation of a peer-to-peer fiat-to-crypto trading floo
 - **Simulated P2P Chat:** Real-time chat component within the workspace that pushes automated system messages on state changes and simulates merchant replies.
 - **Order History (`/p2p/orders`):** Tracking dashboard for all active and historical simulated P2P trades.
 - **Seamless Integration:** Sticky UI banners, global header integration, and specialized mobile responsive behaviors designed for perfect data readability on small screens.
+
+### F. Wallet & Portfolio (`/wallet`)
+A robust financial dashboard tracking simulated asset balances, transfers, and total USD value.
+- **State Bridge:** `wallet-store.ts` orchestrates simulated transaction logging while mutating the shared `paper-account-store.ts` balances, meaning deposits/withdrawals instantly reflect globally (e.g., in the trading terminal).
+- **Mock Wallet Provider:** Dynamically fetches balances and combines them with live `market-data` prices to calculate Portfolio Total USD Value, 24h P&L, and Allocation Percentages.
+- **Wallet Dashboard (`/wallet`):** 
+  - **Summary Widget:** Clear, large typography displaying total value and available/locked funds.
+  - **Portfolio Allocation:** A custom-built SVG donut chart mapping out asset distribution percentages.
+  - **Asset Table:** Comprehensive view of all individual crypto balances and their USD equivalents, featuring a "Hide Zero Balances" toggle.
+- **Financial Flows (`/wallet/deposit` & `/wallet/withdraw`):** Interactive simulated forms (with zod validation) allowing users to "Deposit" up to $100k or "Withdraw" available funds, complete with mock network delays, estimated fees, and address validation.
+- **Transaction Ledger (`/wallet/history`):** Complete chronological table of ledger events (DEPOSIT, WITHDRAWAL, TRADE, P2P), supporting category filtering and **CSV Data Export** functionality.
 
 ---
 *Status: All requested Product Requirement Documents have been implemented in full. The platform is robust, responsive, theme-switchable, version-controlled, and architecturally prepared for a live production backend connection.*
