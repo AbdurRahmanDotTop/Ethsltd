@@ -4,7 +4,7 @@ import { useP2PStore } from "@/stores/p2p-store";
 import Link from "next/link";
 
 export function P2PHero() {
-  const { setQuery } = useP2PStore();
+  const { query, setQuery } = useP2PStore();
 
   return (
     <div className="bg-background border-b border-border">
@@ -21,10 +21,18 @@ export function P2PHero() {
             Find competitive offers, choose your preferred payment method, and complete your P2P transaction through a simple guided experience.
           </p>
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" onClick={() => setQuery({ side: "buy" })}>
+            <Button 
+              size="lg" 
+              variant={query.side === "buy" ? "default" : "outline"}
+              onClick={() => setQuery({ side: "buy" })}
+            >
               Buy Crypto
             </Button>
-            <Button variant="outline" size="lg" onClick={() => setQuery({ side: "sell" })}>
+            <Button 
+              size="lg" 
+              variant={query.side === "sell" ? "default" : "outline"}
+              onClick={() => setQuery({ side: "sell" })}
+            >
               Sell Crypto
             </Button>
             <Button variant="ghost" size="lg" asChild className="gap-2 text-muted-foreground hover:text-foreground">
