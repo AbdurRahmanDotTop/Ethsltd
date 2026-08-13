@@ -10,22 +10,22 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
-  const { status } = useAuthStore();
+  const { status, hasHydrated } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
+    if (hasHydrated && status === "unauthenticated") {
+      router.push("/login?redirect=/account");
     }
-  }, [status, router]);
+  }, [status, hasHydrated, router]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  if (status !== "authenticated") {
+  if (!hasHydrated || status !== "authenticated") {
     return (
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />

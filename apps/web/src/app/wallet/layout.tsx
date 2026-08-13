@@ -8,16 +8,16 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
 export default function WalletLayout({ children }: { children: React.ReactNode }) {
-  const { status } = useAuthStore();
+  const { status, hasHydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (hasHydrated && status === "unauthenticated") {
       router.push("/login?redirect=/wallet");
     }
-  }, [status, router]);
+  }, [status, hasHydrated, router]);
 
-  if (status === "loading" || status === "unauthenticated") {
+  if (!hasHydrated || status === "loading" || status === "unauthenticated") {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-[500px]">
         <Loader2 className="w-8 h-8 animate-spin text-brand-500 mb-4" />
