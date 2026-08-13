@@ -163,3 +163,41 @@ NEXT_PUBLIC_API_URL=https://api.ethsltd.com
 *   **Domains**: `ethsltd.com`, `api.ethsltd.com`, `ws.ethsltd.com`.
 
 By standardizing on **Workers + OpenNext**, ETHSLTD guarantees maximum control over monorepo dependencies, superior Server-Side Rendering performance, and a hyper-scalable architecture ready for high-frequency trading loads.
+
+---
+
+## 7. Next Steps: Roadmap to Full Production
+
+Now that the Frontend UI and Deployment Architecture are solidly defined, here is the detailed, step-by-step roadmap to migrate from the "Mocked" state to a fully functional production application.
+
+### Step 1: Initialize the Hono Backend Worker
+The Next.js frontend is currently using Zustand stores with `setTimeout` to simulate data. We must replace this with a real backend.
+1. **Create the Backend App**: Inside the monorepo, scaffold a new Cloudflare Worker running Hono (e.g., `apps/api`).
+2. **Define Routes**: Create RESTful endpoints for `/auth`, `/wallet`, `/orders`, and `/p2p`.
+3. **Connect API Client**: Update the `@ethsltd/api-client` package to use Axios/Fetch to call `https://api.ethsltd.com` instead of returning mock data.
+
+### Step 2: Implement the D1 Database (SQL)
+The platform needs persistent storage for users, balances, and orders.
+1. **Initialize Drizzle ORM**: Set up Drizzle inside `apps/api`.
+2. **Define Schemas**: Map out tables for `users` (with KYC status), `wallets` (balances per asset), `orders` (Spot), and `p2p_ads`.
+3. **Bind D1 to Worker**: Add the D1 binding in the Hono worker's `wrangler.toml`.
+4. **Write Migrations**: Generate and execute the initial SQL schema migrations (`drizzle-kit generate` & `wrangler d1 migrations apply`).
+
+### Step 3: Implement Real Authentication (JWT + Cookies)
+We must replace the insecure, client-side-only `MockAuthProvider`.
+1. **Backend Auth**: Build the login/register logic in Hono using `bcrypt`/`Argon2` for password hashing.
+2. **JWT Generation**: Issue a secure JWT upon successful login.
+3. **HttpOnly Cookies**: Send the JWT back to Next.js in a secure, `HttpOnly`, `SameSite=Lax` cookie.
+4. **Next.js Middleware**: Update `middleware.ts` in `apps/web` to read the cookie and protect routes (like `/wallet` and `/admin`) natively at the edge.
+
+### Step 4: Build the Real-Time Orderbook (Durable Objects)
+For a trading terminal, REST APIs are too slow for order book updates.
+1. **Create a Durable Object**: Define a `TradingRoom` DO in Cloudflare to manage state for a specific market (e.g., `BTC-USDT`).
+2. **WebSocket Integration**: Establish a WebSocket connection from the Next.js `apps/web` client to the Durable Object.
+3. **Matching Engine**: Implement the logic inside the DO to match Bids and Asks in memory, broadcasting the updated order book and trade history instantly to all connected clients.
+
+### Step 5: Implement Secure Escrow for P2P
+The P2P marketplace requires transactional guarantees.
+1. **Locking Mechanism**: When a buyer initiates a P2P trade, use D1 transactions to instantly move the seller's crypto from `available_balance` to `locked_balance`.
+2. **State Machine**: Implement the strict state flow: `PENDING` -> `PAID` -> `RELEASED` / `DISPUTED`.
+3. **Admin Mediation UI**: Connect the `/admin/p2p/disputes` dashboard to real backend endpoints allowing admins to forcibly unlock or transfer the escrowed funds.
