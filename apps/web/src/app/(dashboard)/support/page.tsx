@@ -150,6 +150,7 @@ export default function SupportPage() {
             ))}
           </div>
         </div>
+      </div>
       </main>
       <Footer />
     </div>
