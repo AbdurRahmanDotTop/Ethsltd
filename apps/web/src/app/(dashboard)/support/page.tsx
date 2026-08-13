@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Search, MessageSquare, Ticket, FileText, ChevronRight, HelpCircle, Shield, Wallet, ArrowRightLeft } from "lucide-react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 const categories = [
   { id: "account", name: "Account & Security", icon: Shield, desc: "2FA, passwords, KYC, and account recovery." },
@@ -41,7 +43,9 @@ const popularArticles = [
 
 export default function SupportPage() {
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8 md:py-12">
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8 md:py-12">
       <div className="text-center max-w-2xl mx-auto mb-12">
         <h1 className="text-4xl font-bold tracking-tight mb-4">Support Center</h1>
         <p className="text-lg text-muted-foreground mb-8">
@@ -146,7 +150,8 @@ export default function SupportPage() {
             ))}
           </div>
         </div>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 }
