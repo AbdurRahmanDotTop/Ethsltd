@@ -280,7 +280,85 @@ The Admin Console (`/admin`) is a protected route suite restricted to users with
 
 ---
 
-## 25. Maintenance & Future Development
+## 25. Comprehensive Route & Link Architecture (A-Z Mapping)
+
+This section maps out **every single URL address** in the Next.js application, explaining exactly what each page does, which components it uses, and what logic occurs there. 
+
+### 1. Public Core Routes (Authentication & Marketing)
+*   **`/` (Home)**: The landing page. Features hero banners, live ticker previews, platform highlights, and CTAs to register.
+*   **`/login`**: User authentication form. Connects to `auth-store.ts` to set global session state upon success.
+*   **`/register`**: New user sign-up form. Validates email/password complexity using `zod`.
+*   **`/forgot-password`**: Password recovery initiation flow.
+*   **`/reset-password`**: Final step of recovery where users enter their new password (usually accessed via email link).
+*   **`/verify-email`**: Screen displaying verification status.
+*   **`/fees`**: Static informative page detailing Spot trading, P2P, and withdrawal fees.
+
+### 2. Trading & Financial Routes (The Core Engine)
+*   **`/markets`**: The global market overview. Displays dynamic tables of top gainers, losers, and 24h volume. Clicking an asset routes the user to the trade terminal.
+*   **`/trade`**: A redirect route that automatically forwards users to the default trading pair (e.g., `/trade/BTC-USDT`).
+*   **`/trade/[symbol]`**: The **Advanced Spot Trading Terminal**. This is the most complex page. It contains:
+    *   **Lightweight Charts**: Renders candlestick data.
+    *   **Orderbook Component**: Displays live bids and asks.
+    *   **Order Entry Form**: Connects to `order-store.ts` allowing users to simulate Market or Limit Buy/Sell orders using virtual USD.
+*   **`/p2p`**: The Peer-to-Peer Marketplace. Displays active Buy/Sell advertisements from other users. Includes filters for Fiat currency, Asset, and Payment methods.
+*   **`/p2p/orders`**: Lists all of the current user's past and active P2P trades.
+*   **`/p2p/order/[id]`**: The **P2P Escrow & Chat Workspace**. This is where a buyer and seller communicate, share payment proofs, and trigger the release of crypto from escrow. Connects heavily to `p2p-store.ts`.
+
+### 3. User Dashboard & Wallet Management (Protected)
+*These routes are wrapped in a layout that checks `useAuthStore`. If unauthenticated, the user is redirected to `/login`.*
+*   **`/wallet`**: The master wallet overview. Calculates total portfolio value in USD by multiplying asset balances by real-time prices.
+*   **`/wallet/deposit`**: UI form for users to simulate depositing Crypto or Fiat into their account.
+*   **`/wallet/withdraw`**: UI form to simulate withdrawing funds. Includes address validation and checks for sufficient unlocked balances.
+*   **`/wallet/history`**: A comprehensive table listing all past deposits, withdrawals, and spot trades.
+*   **`/account`**: The root dashboard for managing the user profile.
+*   **`/account/profile`**: Displays personal information and current KYC (Know Your Customer) verification tier.
+*   **`/account/security`**: Security dashboard to enable Two-Factor Authentication (2FA), change passwords, and view recent login history.
+*   **`/account/api-keys`**: Interface for developers to generate and revoke API keys for algorithmic trading.
+*   **`/account/preferences`**: UI settings (Dark/Light mode, language, default currency).
+*   **`/account/notifications`**: Opt-in/out toggles for email, SMS, and push alerts.
+*   **`/account/sessions`**: Displays active login sessions with options to log out of specific devices.
+
+### 4. Support & Education Hub
+*   **`/support`**: The main Help Center. Contains interactive FAQs and links to specific support categories.
+*   **`/support/tickets`**: A dashboard of all support tickets submitted by the user.
+*   **`/support/tickets/new`**: A form to open a new support request.
+*   **`/support/tickets/[id]`**: A dynamic chat interface where users can converse back-and-forth with ETHSLTD support agents.
+*   **`/learn`**: The main educational portal for crypto newcomers.
+*   **`/learn/crypto-basics`**: Guides explaining blockchain, wallets, and digital assets.
+*   **`/learn/trading`**: Tutorials on spot trading, limit orders, and reading charts.
+*   **`/learn/paper-trading`**: Explains how to use the platform's simulated funds safely.
+*   **`/learn/security`**: Best practices for protecting passwords and private keys.
+*   **`/learn/market-insights`**: Placeholder for crypto news and daily analysis.
+
+### 5. Developer Portal
+*   **`/developers`**: Landing page for the ETHSLTD API.
+*   **`/developers/docs`**: Documentation on REST endpoints, WebSockets, and authentication for API trading.
+*   **`/developers/playground`**: An interactive UI for testing API endpoints directly in the browser.
+
+### 6. Admin Console (Protected - `ROLE === 'ADMIN'`)
+*These routes are strictly guarded. Normal users attempting to access them will be redirected to a 404 or `/login`.*
+*   **`/admin`**: The master analytics dashboard. Shows global user counts, revenue, and active trade volume.
+*   **`/admin/users`**: A data table of all registered users with actions to suspend accounts or reset passwords.
+*   **`/admin/users/[id]`**: A deep-dive view into a specific user's wallet balances, trade history, and KYC documents.
+*   **`/admin/deposits` & `/admin/withdrawals`**: Queues where Admins manually review and approve/reject simulated fiat and crypto transfers.
+*   **`/admin/orders` & `/admin/trades`**: A global, unfiltered view of the entire platform's order book and trade history.
+*   **`/admin/p2p/disputes`**: A mediation dashboard for resolving conflicts between P2P buyers and sellers (e.g., when a buyer claims they paid, but the seller refuses to release funds).
+*   **`/admin/support`**: The agent inbox for reading and replying to user tickets.
+*   **`/admin/support/tickets/[id]`**: The Admin-side of the ticket chat interface.
+*   **`/admin/kyc`**: A queue for reviewing user identity documents and upgrading their account tiers.
+*   **`/admin/api`**: Analytics on global API key usage and rate limit metrics.
+
+### 7. Legal & Compliance Routes
+*These are static pages rendering markdown or simple HTML for legal compliance.*
+*   **`/legal/privacy`**: Privacy Policy.
+*   **`/legal/terms`**: Terms of Service.
+*   **`/legal/cookies`**: Cookie Policy.
+*   **`/legal/security`**: Platform security disclosures and bug bounty info.
+*   **`/legal/risk-disclosure`**: Financial risk warnings regarding crypto volatility.
+
+---
+
+## 26. Maintenance & Future Development
 
 * **Technical Debt:** The entire data layer is currently mocked. The immediate next phase of development requires replacing `MockAuthProvider` and `MockMarketProvider` with real `fetch()` calls to the Hono backend.
 * **Scalability:** The Cloudflare D1/Worker architecture is highly scalable and will automatically distribute globally to the edge.
@@ -288,7 +366,7 @@ The Admin Console (`/admin`) is a protected route suite restricted to users with
 
 ---
 
-## 26. Complete Feature Inventory
+## 27. Complete Feature Inventory
 
 * **Account Management:** Registration, Login, Security Profile.
 * **Admin Console:** User, Order, Transfer, and Dispute management.
@@ -303,7 +381,7 @@ The Admin Console (`/admin`) is a protected route suite restricted to users with
 
 ---
 
-## 27. Business Rules
+## 28. Business Rules
 
 * **Order Matching:** A Limit Buy order can only be filled if the market price drops to or below the limit price.
 * **P2P Escrow:** Crypto is locked in the seller's wallet the moment a P2P order is accepted. It cannot be withdrawn or traded on the spot market until the P2P order is canceled or disputed.
@@ -311,7 +389,7 @@ The Admin Console (`/admin`) is a protected route suite restricted to users with
 
 ---
 
-## 28. Roles & Permissions Matrix
+## 29. Roles & Permissions Matrix
 
 | Feature | GUEST | USER (Authenticated) | ADMIN |
 | :--- | :---: | :---: | :---: |
@@ -325,7 +403,7 @@ The Admin Console (`/admin`) is a protected route suite restricted to users with
 
 ---
 
-## 29. Status & Workflow Reference
+## 30. Status & Workflow Reference
 
 * **Order Statuses:**
   * `OPEN`: Order is on the book, waiting for price matching.
@@ -339,7 +417,7 @@ The Admin Console (`/admin`) is a protected route suite restricted to users with
 
 ---
 
-## 30. Glossary
+## 31. Glossary
 
 * **Maker:** A trader who places an order that goes on the order book, *making* market liquidity.
 * **Taker:** A trader who places an order that immediately executes against the order book, *taking* liquidity.
@@ -348,7 +426,7 @@ The Admin Console (`/admin`) is a protected route suite restricted to users with
 
 ---
 
-## 31. Known Issues & Technical Debt
+## 32. Known Issues & Technical Debt
 
 * **Fully Simulated Data:** The application currently runs flawlessly but entirely on client-side state and mock providers.
 * **Hardcoded Charting:** The TradingView/Candlestick chart currently renders static visual components rather than mapping real OHLC arrays.
@@ -356,7 +434,7 @@ The Admin Console (`/admin`) is a protected route suite restricted to users with
 
 ---
 
-## 32. Final Project Reference
+## 33. Final Project Reference
 
 * **Critical Files:** 
   * `apps/web/src/app/layout.tsx` (Global layout, fonts, SEO, Tawk.to)
