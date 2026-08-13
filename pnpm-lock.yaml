@@ -7,7 +7,14 @@ settings:
 importers:
 
   .:
+    dependencies:
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@5.20260813.1)(@libsql/client@0.17.4)
     devDependencies:
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       prettier:
         specifier: ^3.0.0
         version: 3.9.6

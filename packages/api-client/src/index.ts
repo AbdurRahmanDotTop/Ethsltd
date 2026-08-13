@@ -100,28 +100,34 @@ export class EthsltdClient {
   }
 
   async updateProfile(data: any) {
-    // Placeholder until endpoint exists
-    return { success: true, data };
+    return this.request<any>('/api/v1/auth/profile/update', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async changePassword(data: any) {
-    // Placeholder until endpoint exists
+    // We haven't implemented this route yet, keeping as placeholder
     return { success: true };
   }
 
   async getSessions() {
-    // Placeholder until endpoint exists
-    return { success: true, data: [] as any[] };
+    return this.request<any[]>('/api/v1/auth/sessions', {
+      method: 'GET'
+    });
   }
 
   async revokeSession(sessionId: string) {
-    // Placeholder until endpoint exists
-    return { success: true };
+    return this.request<any>('/api/v1/auth/sessions/revoke', {
+      method: 'POST',
+      body: JSON.stringify({ sessionId })
+    });
   }
 
   async revokeAllSessions() {
-    // Placeholder until endpoint exists
-    return { success: true };
+    return this.request<any>('/api/v1/auth/sessions/revoke-all', {
+      method: 'POST'
+    });
   }
 
   async getWallets(userId: string) {

@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { sign } from 'hono/jwt';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { users, sessions } from 'database';
+import { jwtMiddleware } from '../middleware/jwt';
 
 export const authRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -26,20 +27,33 @@ authRoutes.post('/register', async (c) => {
 
   const hashedPassword = await hashPassword(body.password);
   const userId = crypto.randomUUID();
+  const sessionId = crypto.randomUUID();
+  const now = new Date();
 
   await db.insert(users).values({
     id: userId,
     email: body.email,
     passwordHash: hashedPassword,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: now,
+    updatedAt: now,
     role: 'USER',
     status: 'ACTIVE'
   });
 
-  const token = await sign({ id: userId, email: body.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }, JWT_SECRET);
+  await db.insert(sessions).values({
+    id: sessionId,
+    userId: userId,
+    expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000), // 1 day
+    userAgent: c.req.header('user-agent') || 'Unknown',
+    ipAddress: c.req.header('x-real-ip') || c.req.header('x-forwarded-for') || 'Unknown',
+    createdAt: now,
+  });
 
-  return c.json({ success: true, token, data: { id: userId, email: body.email } });
+  const token = await sign({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }, JWT_SECRET);
+
+  const user = await db.select().from(users).where(eq(users.id, userId)).get();
+
+  return c.json({ success: true, token, data: { user } });
 });
 
 authRoutes.post('/login', async (c) => {
@@ -56,13 +70,95 @@ authRoutes.post('/login', async (c) => {
     return c.json({ success: false, error: 'Invalid credentials' }, 401);
   }
 
-  const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }, JWT_SECRET);
+  const sessionId = crypto.randomUUID();
+  const now = new Date();
 
-  return c.json({ success: true, token, data: { id: user.id, email: user.email, role: user.role } });
+  await db.insert(sessions).values({
+    id: sessionId,
+    userId: user.id,
+    expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000), // 1 day
+    userAgent: c.req.header('user-agent') || 'Unknown',
+    ipAddress: c.req.header('x-real-ip') || c.req.header('x-forwarded-for') || 'Unknown',
+    createdAt: now,
+  });
+
+  await db.update(users).set({ lastLoginAt: now }).where(eq(users.id, user.id));
+
+  const token = await sign({ id: user.id, email: user.email, sessionId, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }, JWT_SECRET);
+
+  return c.json({ success: true, token, data: { user } });
 });
 
-authRoutes.get('/me', async (c) => {
-  // In a real app, use jwt middleware. Here we extract for simplicity if needed.
-  // We'll mock the 'me' response for now or assume a middleware sets user
-  return c.json({ success: true, data: { id: "mock", email: "mock@example.com" } });
+authRoutes.get('/me', jwtMiddleware, async (c) => {
+  const user = c.get('user');
+  return c.json({ success: true, data: user });
+});
+
+authRoutes.post('/profile/update', jwtMiddleware, async (c) => {
+  const body = await c.req.json();
+  const user = c.get('user');
+  const db = c.get('db');
+  const now = new Date();
+
+  await db.update(users)
+    .set({
+      displayName: body.displayName,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      updatedAt: now,
+    })
+    .where(eq(users.id, user.id));
+
+  const updatedUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+  return c.json({ success: true, data: updatedUser });
+});
+
+authRoutes.get('/sessions', jwtMiddleware, async (c) => {
+  const user = c.get('user');
+  const db = c.get('db');
+  
+  const activeSessions = await db.select().from(sessions).where(eq(sessions.userId, user.id)).all();
+  
+  const jwtPayload = c.get('jwtPayload') as any;
+  const currentSessionId = jwtPayload?.sessionId;
+
+  const mappedSessions = activeSessions.map(s => ({
+    id: s.id,
+    device: s.userAgent?.includes('Mobile') ? 'Mobile' : 'Desktop',
+    browser: s.userAgent?.split(' ')[0] || 'Unknown Browser',
+    os: s.userAgent?.split(' ')[1] || 'Unknown OS',
+    lastActiveAt: s.createdAt,
+    isCurrentSession: s.id === currentSessionId
+  }));
+
+  return c.json({ success: true, data: mappedSessions });
+});
+
+authRoutes.post('/sessions/revoke', jwtMiddleware, async (c) => {
+  const body = await c.req.json();
+  const user = c.get('user');
+  const db = c.get('db');
+  
+  await db.delete(sessions).where(and(eq(sessions.id, body.sessionId), eq(sessions.userId, user.id)));
+  
+  return c.json({ success: true });
+});
+
+authRoutes.post('/sessions/revoke-all', jwtMiddleware, async (c) => {
+  const user = c.get('user');
+  const db = c.get('db');
+  const jwtPayload = c.get('jwtPayload') as any;
+  const currentSessionId = jwtPayload?.sessionId;
+
+  // Delete all except current
+  if (currentSessionId) {
+    const allSessions = await db.select().from(sessions).where(eq(sessions.userId, user.id)).all();
+    for (const s of allSessions) {
+      if (s.id !== currentSessionId) {
+        await db.delete(sessions).where(eq(sessions.id, s.id));
+      }
+    }
+  }
+  
+  return c.json({ success: true });
 });

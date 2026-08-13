@@ -4,6 +4,11 @@ export const users = sqliteTable('users', {
   id: text('id').primaryKey(), // Usually a CUID or UUID
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  displayName: text('display_name'),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  emailVerified: integer('email_verified', { mode: 'boolean' }).default(false),
+  avatarUrl: text('avatar_url'),
   status: text('status', { enum: ['ACTIVE', 'FROZEN', 'BANNED', 'PENDING_VERIFICATION'] }).notNull().default('ACTIVE'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
