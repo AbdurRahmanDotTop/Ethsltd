@@ -28,6 +28,7 @@ The following Product Requirement Documents have been fully executed and impleme
 6. `ETHSLTD-P2P-Marketplace-PRD-USD.md`
 7. `ETHSLTD-WALLET-PORTFOLIO-DEPOSIT-WITHDRAWAL-PRD-USD.md`
 8. `ETHSLTD-PRD-08-Real-Time-Market-Data-Backend-API-WebSocket-Integration-USD.md` (Admin & Operations Console)
+9. `ETHSLTD-PRD-08-Notifications-Communication-Support.md` (Notifications, Communication & Customer Support)
 
 ---
 
@@ -114,6 +115,19 @@ A comprehensive back-office suite designed for platform administrators to monito
   - **Trade History (`/admin/trades`)**: Complete chronological execution log showing Taker/Maker matching and total USD volume.
 - **Phase 5: P2P Operations**:
   - **Dispute Resolution (`/admin/p2p/disputes`)**: Specialized queue for locked P2P trades, displaying dispute reasons and allowing admins to simulate releasing escrow to the Buyer or Seller.
+
+### H. Notifications, Communication & Support Center
+A comprehensive, centralized communication and support layer to handle user alerts and ticketing.
+- **Data & State Architecture:** `notification-store.ts` and `support-store.ts` orchestrate data fetched from realistic asynchronous mock providers (`MockNotificationProvider`, `MockSupportProvider`).
+- **Global Header Integration:** Added a dynamic `NotificationBell` with unread badge and dropdown preview across the platform.
+- **User Notification Center (`/notifications`)**: Dedicated inbox with categorical tab filtering (Security, Trading, Wallet, P2P), unread status toggles, and deep-linking to respective features.
+- **Notification Preferences (`/account/preferences/notifications`)**: Granular controls for users to opt in/out of In-App, Email, and Push notifications per category (excluding critical Security alerts). Support for Quiet Hours configuration.
+- **Customer Support Center (`/support`)**: Help center homepage with integrated search, popular topics, Live Chat fallback (Tawk.to), and quick links to ticketing.
+- **Ticket Management (`/support/tickets`)**: Interactive queue of user support requests with dynamic status badges (OPEN, WAITING_FOR_USER, RESOLVED).
+- **Conversation Workspace (`/support/tickets/[id]`)**: Chat-like interface for users to communicate with support agents, complete with Markdown/Text formatting and simulated security warnings.
+- **Admin Support Controls (`/admin/support`)**: Administrative dashboard to manage all global tickets, featuring KPI metrics (Urgent, Waiting Internal).
+- **Admin Ticket Detail (`/admin/support/tickets/[id]`)**: Advanced view allowing staff to send "Internal Notes" (hidden from users) and manually transition ticket statuses.
+- **Admin Notification Broadcaster (`/admin/notifications`)**: Dashboard to review all system notifications dispatched globally.
 
 ---
 *Status: All requested Product Requirement Documents have been implemented in full. The platform is robust, responsive, theme-switchable, version-controlled, and architecturally prepared for a live production backend connection.*

@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/auth-store"
 import { MockAuthProvider } from "@/lib/auth/mock-provider"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { NotificationBell } from "@/components/notifications/NotificationBell"
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -78,7 +79,9 @@ export function Header() {
             <ThemeToggle />
             
             {status === "authenticated" && user ? (
-              <div className="relative ml-2">
+              <>
+                <NotificationBell />
+                <div className="relative ml-2">
                 <button 
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 hover:bg-muted/50 py-1.5 px-3 rounded-full transition-colors border border-transparent hover:border-border"
@@ -120,6 +123,7 @@ export function Header() {
                   </div>
                 )}
               </div>
+              </>
             ) : (
               <>
                 <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors ml-2">Log In</Link>
