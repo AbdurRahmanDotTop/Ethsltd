@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { BookOpen, TrendingUp, Shield, Lightbulb, PieChart } from "lucide-react"
+import { Header } from "@/components/layout/Header"
+import { Footer } from "@/components/layout/Footer"
 
 export default function LearnLayout({
   children,
@@ -16,7 +18,9 @@ export default function LearnLayout({
   ]
 
   return (
-    <div className="flex-1 flex flex-col min-h-[calc(100vh-64px)] bg-background">
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      <div className="flex-1 flex flex-col">
       <div className="border-b border-border bg-card/50">
         <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8">
           <h1 className="text-3xl font-display font-bold text-foreground">Learn & Educate</h1>
@@ -46,6 +50,7 @@ export default function LearnLayout({
           </div>
         </main>
       </div>
+      <Footer />
     </div>
   )
 }

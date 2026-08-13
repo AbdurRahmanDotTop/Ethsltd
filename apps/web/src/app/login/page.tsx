@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "ETHSLTD | Log In",
@@ -13,7 +15,9 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 py-12">
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 flex items-center justify-center p-4 py-12">
       <AuthCard
         title="Welcome back"
         subtitle="Log in to your ETHSLTD account."
@@ -23,6 +27,8 @@ export default function LoginPage() {
       >
         <LoginForm />
       </AuthCard>
+      </main>
+      <Footer />
     </div>
   );
 }

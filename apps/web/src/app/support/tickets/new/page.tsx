@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Paperclip, AlertCircle } from "lucide-react"
 import Link from "next/link"
+import { Header } from "@/components/layout/Header"
+import { Footer } from "@/components/layout/Footer"
 
 export default function NewTicketPage() {
   const router = useRouter()
@@ -27,7 +29,9 @@ export default function NewTicketPage() {
   }
 
   return (
-    <div className="max-w-[800px] mx-auto px-4 py-8">
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 max-w-[800px] w-full mx-auto px-4 py-8">
       <div className="mb-6">
         <Link href="/support" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 w-fit transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -126,6 +130,8 @@ export default function NewTicketPage() {
           </Button>
         </div>
       </form>
+      </main>
+      <Footer />
     </div>
   )
 }

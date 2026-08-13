@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "ETHSLTD | Forgot Password",
@@ -13,7 +15,9 @@ export const metadata: Metadata = {
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 py-12">
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 flex items-center justify-center p-4 py-12">
       <AuthCard
         title="Reset your password"
         subtitle="Enter the email associated with your ETHSLTD account and we'll send you a password reset link."
@@ -23,6 +27,8 @@ export default function ForgotPasswordPage() {
       >
         <ForgotPasswordForm />
       </AuthCard>
+      </main>
+      <Footer />
     </div>
   );
 }

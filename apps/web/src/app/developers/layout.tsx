@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Code, BookOpen, Terminal, Activity, ChevronRight, Menu } from "lucide-react";
 import { useState } from "react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 const navigation = [
   { name: "Overview", href: "/developers", icon: Code },
@@ -41,7 +43,9 @@ export default function DevelopersLayout({ children }: { children: React.ReactNo
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      <div className="flex-1 flex flex-col">
       {/* Mobile Toggle */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card">
         <span className="font-semibold text-lg">Developer Portal</span>
@@ -125,6 +129,8 @@ export default function DevelopersLayout({ children }: { children: React.ReactNo
           {children}
         </main>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 }

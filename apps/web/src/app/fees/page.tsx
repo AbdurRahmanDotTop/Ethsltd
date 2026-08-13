@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { Header } from "@/components/layout/Header"
+import { Footer } from "@/components/layout/Footer"
 
 export const metadata = {
   title: "Fees | ETHSLTD",
@@ -8,7 +10,9 @@ export const metadata = {
 
 export default function FeesPage() {
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-16">
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="max-w-[1280px] w-full mx-auto px-4 md:px-8 py-16 flex-1">
       <div className="text-center max-w-3xl mx-auto mb-16">
         <h1 className="text-4xl font-display font-bold text-foreground mb-4">Transparent Fee Structure</h1>
         <p className="text-lg text-muted-foreground">
@@ -92,6 +96,8 @@ export default function FeesPage() {
           <Link href="/trade">Start Trading Now</Link>
         </Button>
       </div>
+      </main>
+      <Footer />
     </div>
   )
 }
