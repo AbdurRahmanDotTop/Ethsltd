@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 const MOCK_MARKETS = [
   { asset: "BTC", name: "Bitcoin", price: "$104,284", change: "+2.41%", high: "$105,120", low: "$101,940", vol: "$2.4B", up: true },
@@ -58,7 +59,9 @@ export function MarketsTable() {
                   <td className="py-4 font-mono text-muted-foreground/90">{market.low}</td>
                   <td className="py-4 font-mono text-muted-foreground/90">{market.vol}</td>
                   <td className="py-4 text-right pr-4">
-                    <Button variant="outline" size="sm" className="border-border hover:bg-foreground/10">Trade</Button>
+                    <Button variant="outline" size="sm" className="border-border hover:bg-foreground/10" asChild>
+                      <Link href={`/trade?market=${market.asset}-USDT`}>Trade</Link>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -92,7 +95,9 @@ export function MarketsTable() {
                   <div className="text-xs text-muted-foreground">24h Volume</div>
                   <div className="font-mono text-sm text-muted-foreground/90">{market.vol}</div>
                 </div>
-                <Button variant="outline" size="sm" className="border-border">Trade</Button>
+                <Button variant="outline" size="sm" className="border-border" asChild>
+                  <Link href={`/trade?market=${market.asset}-USDT`}>Trade</Link>
+                </Button>
               </div>
             </div>
           ))}
