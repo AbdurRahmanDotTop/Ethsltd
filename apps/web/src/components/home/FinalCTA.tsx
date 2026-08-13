@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function FinalCTA() {
   return (
@@ -29,17 +30,17 @@ export function FinalCTA() {
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-            <Button size="lg" className="w-full sm:w-auto px-10 h-14 text-base">
-              Create Account
+            <Button size="lg" className="w-full sm:w-auto px-10 h-14 text-base" asChild>
+              <Link href="/register">Create Account</Link>
             </Button>
-            <Button variant="outline" size="lg" className="w-full sm:w-auto px-10 h-14 text-base border-border">
-              Explore Markets
+            <Button variant="outline" size="lg" className="w-full sm:w-auto px-10 h-14 text-base border-border" asChild>
+              <Link href="/markets">Explore Markets</Link>
             </Button>
           </div>
           
           <div className="mt-8">
-            <Button variant="ghost" className="text-[var(--brand-foreground)] hover:text-foreground">
-              Try Paper Trading &rarr;
+            <Button variant="ghost" className="text-[var(--brand-foreground)] hover:text-foreground" asChild>
+              <Link href="/learn/paper-trading">Try Paper Trading &rarr;</Link>
             </Button>
           </div>
         </div>

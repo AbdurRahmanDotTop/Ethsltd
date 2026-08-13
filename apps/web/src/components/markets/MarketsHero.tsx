@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function MarketsHero() {
   return (
@@ -14,8 +15,12 @@ export function MarketsHero() {
           Track prices, trends, volume, and performance across the ETHSLTD digital-asset markets.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-base">Start Trading</Button>
-          <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base">Try Paper Trading</Button>
+          <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-base" asChild>
+            <Link href="/trade">Start Trading</Link>
+          </Button>
+          <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base" asChild>
+            <Link href="/learn/paper-trading">Try Paper Trading</Link>
+          </Button>
         </div>
       </div>
     </section>
