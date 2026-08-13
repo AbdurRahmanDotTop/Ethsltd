@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button"
 
 export function P2PSection() {
   const p2pAds = [
-    { type: 'Buy', price: '₹91.20', payment: 'UPI', available: '₹50,000' },
-    { type: 'Sell', price: '₹90.85', payment: 'Bank Transfer', available: '₹75,000' },
+    { type: 'Buy', price: '$1.00', payment: 'Zelle', available: '$5,000' },
+    { type: 'Sell', price: '$0.99', payment: 'Bank Transfer', available: '$7,500' },
   ]
 
   return (

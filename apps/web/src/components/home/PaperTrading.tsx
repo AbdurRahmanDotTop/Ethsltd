@@ -17,7 +17,7 @@ export function PaperTrading() {
               <p className="text-muted-foreground text-sm mb-8">Virtual Balance</p>
               
               <div className="font-display text-4xl md:text-5xl font-bold text-foreground mb-8 tracking-tight">
-                ₹10,00,000
+                $10,000.00
               </div>
               
               <div className="space-y-4 mb-8">
@@ -28,7 +28,7 @@ export function PaperTrading() {
                   </div>
                   <div className="text-right">
                     <span className="block font-mono text-foreground">0.5</span>
-                    <span className="text-xs text-success">+₹24,500</span>
+                    <span className="text-xs text-success">+$245.00</span>
                   </div>
                 </div>
                 
@@ -39,14 +39,14 @@ export function PaperTrading() {
                   </div>
                   <div className="text-right">
                     <span className="block font-mono text-foreground">2.0</span>
-                    <span className="text-xs text-danger">-₹12,050</span>
+                    <span className="text-xs text-danger">-$120.50</span>
                   </div>
                 </div>
               </div>
               
               <div className="pt-6 border-t border-border flex justify-between items-center">
                 <span className="text-muted-foreground font-medium">P&L</span>
-                <span className="text-success font-display text-xl font-bold">+₹12,450</span>
+                <span className="text-success font-display text-xl font-bold">+$124.50</span>
               </div>
             </div>
           </div>

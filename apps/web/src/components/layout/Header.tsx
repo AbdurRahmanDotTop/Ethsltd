@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, Search, X } from "lucide-react"
+import { Menu, Search, X, User, ChevronDown, LogOut, LayoutDashboard, Shield, Settings, Bell } from "lucide-react"
+import { useAuthStore } from "@/stores/auth-store"
+import { MockAuthProvider } from "@/lib/auth/mock-provider"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
 
@@ -11,7 +13,15 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [announcementVisible, setAnnouncementVisible] = useState(true)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
   const pathname = usePathname()
+  const { user, status, logout } = useAuthStore()
+
+  const handleLogout = async () => {
+    await MockAuthProvider.logout()
+    logout()
+    setDropdownOpen(false)
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -65,8 +75,56 @@ export function Header() {
               <Search className="h-5 w-5" />
             </button>
             <ThemeToggle />
-            <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors ml-2">Log In</Link>
-            <Button variant="default">Sign Up</Button>
+            
+            {status === "authenticated" && user ? (
+              <div className="relative ml-2">
+                <button 
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 hover:bg-muted/50 py-1.5 px-3 rounded-full transition-colors border border-transparent hover:border-border"
+                >
+                  <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center overflow-hidden">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-4 h-4" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium">{user.displayName || user.email.split('@')[0]}</span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </button>
+                
+                {dropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-xl py-2 z-50">
+                    <div className="px-4 py-2 border-b border-border mb-2">
+                      <p className="text-sm font-medium truncate">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">Account ID: {user.id.substring(0,8)}...</p>
+                    </div>
+                    <Link href="/account" className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setDropdownOpen(false)}>
+                      <LayoutDashboard className="w-4 h-4" /> Account
+                    </Link>
+                    <Link href="/account/profile" className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setDropdownOpen(false)}>
+                      <User className="w-4 h-4" /> Profile
+                    </Link>
+                    <Link href="/account/security" className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setDropdownOpen(false)}>
+                      <Shield className="w-4 h-4" /> Security
+                    </Link>
+                    <Link href="/account/preferences" className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setDropdownOpen(false)}>
+                      <Settings className="w-4 h-4" /> Preferences
+                    </Link>
+                    <div className="border-t border-border mt-2 pt-2">
+                      <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-2 text-sm text-destructive hover:bg-destructive/10">
+                        <LogOut className="w-4 h-4" /> Log Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors ml-2">Log In</Link>
+                <Button variant="default" asChild><Link href="/register">Sign Up</Link></Button>
+              </>
+            )}
           </div>
 
           <div className="lg:hidden flex items-center gap-4">
@@ -94,8 +152,27 @@ export function Header() {
             <Link href="#" className="text-lg font-medium text-foreground py-2 border-b border-border">Assets</Link>
             <Link href="#" className="text-lg font-medium text-foreground py-2 border-b border-border">Learn</Link>
             <div className="flex flex-col gap-3 mt-4">
-              <Button variant="outline" className="w-full justify-center">Log In</Button>
-              <Button variant="default" className="w-full justify-center">Sign Up</Button>
+              {status === "authenticated" && user ? (
+                <>
+                  <div className="flex items-center gap-3 px-2 py-3 border-b border-border">
+                    <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.displayName || user.email.split('@')[0]}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  <Link href="/account" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>My Account</Link>
+                  <Link href="/account/security" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Security</Link>
+                  <Button variant="outline" className="w-full justify-center text-destructive border-destructive/20 hover:bg-destructive/10" onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>Log Out</Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" className="w-full justify-center" asChild><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Log In</Link></Button>
+                  <Button variant="default" className="w-full justify-center" asChild><Link href="/register" onClick={() => setMobileMenuOpen(false)}>Sign Up</Link></Button>
+                </>
+              )}
             </div>
           </nav>
         </div>
