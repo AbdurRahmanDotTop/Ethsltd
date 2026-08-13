@@ -105,13 +105,13 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                     </td>
 
                     {/* Limits Column */}
-                    <td className="px-6 py-5 space-y-1.5">
-                      <div className="flex justify-between items-center text-sm max-w-[200px]">
-                        <span className="text-muted-foreground">Available</span>
+                    <td className="px-6 py-5 space-y-1.5 whitespace-nowrap">
+                      <div className="flex items-center text-sm gap-4">
+                        <span className="text-muted-foreground w-16">Available</span>
                         <span className="font-mono text-foreground font-medium">{ad.availableAmount.toLocaleString()} {query.asset}</span>
                       </div>
-                      <div className="flex justify-between items-center text-sm max-w-[200px]">
-                        <span className="text-muted-foreground">Limit</span>
+                      <div className="flex items-center text-sm gap-4">
+                        <span className="text-muted-foreground w-16">Limit</span>
                         <span className="font-mono text-foreground">{fiatSymbol}{ad.minLimit.toLocaleString()} - {fiatSymbol}{ad.maxLimit.toLocaleString()}</span>
                       </div>
                     </td>
