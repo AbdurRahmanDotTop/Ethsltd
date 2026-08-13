@@ -36,8 +36,8 @@ export function MarketCard({ market }: { market: Market }) {
       <div className="flex items-center justify-between mt-4">
         <MarketSparkline data={market.sparkline} isPositive={isPositive} />
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="h-8" asChild>
-            <Link href={`/markets/${market.id}`}>View</Link>
+          <Button size="sm" variant="ghost" className="h-8" asChild>
+            <Link href={`/trade/${market.id}`}>View</Link>
           </Button>
           <Button size="sm" className="h-8" asChild>
             <Link href={`/trade/${market.id}`}>Trade</Link>

@@ -199,7 +199,7 @@ export function MarketExplorer() {
                         </td>
                         <td className="py-4 pr-4 text-right">
                           <Button size="sm" variant="ghost" className="mr-2 hidden md:inline-flex" asChild>
-                            <Link href={`/markets/${market.id}`}>View</Link>
+                            <Link href={`/trade/${market.id}`}>View</Link>
                           </Button>
                           <Button size="sm" asChild>
                             <Link href={`/trade/${market.id}`}>Trade</Link>
