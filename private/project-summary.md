@@ -20,15 +20,15 @@ The platform is built on a modern, high-performance, and type-safe architecture:
 
 ## 2. Implemented PRDs
 The following Product Requirement Documents have been fully executed and implemented into the application:
-1. `ETHSLTD_Crypto_Design_System_Typography_Colors_Technology.md`
-2. `ETHSLTD_CRYPTO_HOME_PAGE_PRD.md`
-3. `ETHSLTD_MARKETS_PAGE_PRD.md`
-4. `ETHSLTD_TRADE_PAGE_PRD.md`
-5. `ETHSLTD-PRD-04-Authentication-Account-Security.md`
-6. `ETHSLTD-P2P-Marketplace-PRD-USD.md`
-7. `ETHSLTD-WALLET-PORTFOLIO-DEPOSIT-WITHDRAWAL-PRD-USD.md`
-8. `ETHSLTD-PRD-08-Real-Time-Market-Data-Backend-API-WebSocket-Integration-USD.md` (Admin & Operations Console)
-9. `ETHSLTD-PRD-08-Notifications-Communication-Support.md` (Notifications, Communication & Customer Support)
+1. `ETHSLTD-PRD-01-Design-System.md`
+2. `ETHSLTD-PRD-02-Home-Page.md`
+3. `ETHSLTD-PRD-03-Markets-Page.md`
+4. `ETHSLTD-PRD-04-Trade-Page.md`
+5. `ETHSLTD-PRD-05-Authentication-Account-Security.md`
+6. `ETHSLTD-PRD-06-P2P-Marketplace.md`
+7. `ETHSLTD-PRD-07-Wallet-Portfolio.md`
+8. `ETHSLTD-PRD-08-Admin-Operations-Console.md`
+9. `ETHSLTD-PRD-09-Notifications-Communication-Support.md`
 
 ---
 
