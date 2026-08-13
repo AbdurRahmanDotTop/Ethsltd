@@ -15,7 +15,7 @@ interface P2PChatProps {
 export function P2PChat({ order, merchant }: P2PChatProps) {
   const { messages, addMessage } = useP2PStore();
   const [inputValue, setInputValue] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const orderMessages = messages.filter(m => m.orderId === order.id);
   const isChatActive = order.status !== "COMPLETED" && order.status !== "CANCELLED";
@@ -43,7 +43,9 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
   }, [order.id, orderMessages.length, addMessage]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [orderMessages.length]);
 
   const handleSend = (e: React.FormEvent) => {
@@ -88,7 +90,7 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[500px] min-h-[400px]">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[500px] min-h-[400px] scroll-smooth">
         {/* Safety Warning */}
         <div className="bg-yellow-50 dark:bg-yellow-900/10 text-yellow-800 dark:text-yellow-400 p-3 rounded-lg flex items-start gap-2 text-xs border border-yellow-200 dark:border-yellow-900/50">
           <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
@@ -122,7 +124,6 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
             </div>
           );
         })}
-        <div ref={messagesEndRef} />
       </div>
 
       <form onSubmit={handleSend} className="p-4 border-t border-border bg-muted/10 flex gap-2">
