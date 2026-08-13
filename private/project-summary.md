@@ -27,6 +27,7 @@ The following Product Requirement Documents have been fully executed and impleme
 5. `ETHSLTD-PRD-04-Authentication-Account-Security.md`
 6. `ETHSLTD-P2P-Marketplace-PRD-USD.md`
 7. `ETHSLTD-WALLET-PORTFOLIO-DEPOSIT-WITHDRAWAL-PRD-USD.md`
+8. `ETHSLTD-PRD-08-Real-Time-Market-Data-Backend-API-WebSocket-Integration-USD.md` (Admin & Operations Console)
 
 ---
 
@@ -95,6 +96,24 @@ A robust financial dashboard tracking simulated asset balances, transfers, and t
   - **Asset Table:** Comprehensive view of all individual crypto balances and their USD equivalents, featuring a "Hide Zero Balances" toggle.
 - **Financial Flows (`/wallet/deposit` & `/wallet/withdraw`):** Interactive simulated forms (with zod validation) allowing users to "Deposit" up to $100k or "Withdraw" available funds, complete with mock network delays, estimated fees, and address validation.
 - **Transaction Ledger (`/wallet/history`):** Complete chronological table of ledger events (DEPOSIT, WITHDRAWAL, TRADE, P2P), supporting category filtering and **CSV Data Export** functionality.
+### G. Admin & Operations Console (`/admin`)
+A comprehensive back-office suite designed for platform administrators to monitor, manage, and resolve platform activities.
+- **Architecture & Security:** Dedicated `/admin` route group wrapped in `AdminPermissionGuard` to enforce role-based access control (RBAC).
+- **Data Provider:** Powered by a robust `MockAdminProvider` generating thousands of deterministic mock records for users, orders, trades, and disputes.
+- **Reusable Components:** Features a highly reusable `AdminDataTable` with dynamic columns, sorting, pagination, and zero-state handling.
+- **Phase 1: Dashboard (`/admin`)**: High-level KPIs (Total Users, 24h Volume) and a real-time chronological System Audit Log tracking critical platform events.
+- **Phase 2: User & Identity Management**:
+  - **User Directory (`/admin/users`)**: Searchable, paginated table of all registered users with Risk Level and Balance indicators.
+  - **User Profile (`/admin/users/[id]`)**: Deep-dive inspector for individual accounts, featuring Account Freeze controls and financial aggregations.
+  - **KYC Queue (`/admin/kyc`)**: Interface for compliance officers to review and filter pending Identity verification applications.
+- **Phase 3: Financial Operations**:
+  - **Withdrawals (`/admin/withdrawals`)**: Review queue for outgoing funds, highlighting high-risk transactions with mock Approve/Reject controls.
+  - **Deposits Log (`/admin/deposits`)**: Immutable monitoring log for incoming funds with simulated blockchain TxHash linking.
+- **Phase 4: Market Activity**:
+  - **Active Orders (`/admin/orders`)**: Global order book view showing progress bars for partial fills and allowing admins to forcefully cancel orders.
+  - **Trade History (`/admin/trades`)**: Complete chronological execution log showing Taker/Maker matching and total USD volume.
+- **Phase 5: P2P Operations**:
+  - **Dispute Resolution (`/admin/p2p/disputes`)**: Specialized queue for locked P2P trades, displaying dispute reasons and allowing admins to simulate releasing escrow to the Buyer or Seller.
 
 ---
 *Status: All requested Product Requirement Documents have been implemented in full. The platform is robust, responsive, theme-switchable, version-controlled, and architecturally prepared for a live production backend connection.*
