@@ -22,11 +22,11 @@ export function Hero() {
         </p>
         
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base">
-            Start Trading
+          <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base" asChild>
+            <Link href="/trade">Start Trading</Link>
           </Button>
-          <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 px-8 text-base border-border hover:bg-foreground/5">
-            Try Paper Trading
+          <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 px-8 text-base border-border hover:bg-foreground/5" asChild>
+            <Link href="/learn/paper-trading">Try Paper Trading</Link>
           </Button>
         </div>
         
