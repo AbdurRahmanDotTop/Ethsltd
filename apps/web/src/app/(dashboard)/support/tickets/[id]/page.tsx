@@ -9,6 +9,8 @@ import {
 import { useSupportStore } from "@/stores/support-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 export default function TicketDetailPage() {
   const params = useParams();
@@ -61,19 +63,27 @@ export default function TicketDetailPage() {
 
   if (isLoading && !activeTicket) {
     return (
-      <div className="flex items-center justify-center min-h-[500px]">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex items-center justify-center min-h-[500px]">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </main>
+        <Footer />
       </div>
     );
   }
 
   if (!activeTicket) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">Ticket Not Found</h1>
-        <Button onClick={() => router.push("/support/tickets")} variant="outline">
-          Back to Tickets
-        </Button>
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-12 text-center">
+          <h1 className="text-2xl font-bold mb-4">Ticket Not Found</h1>
+          <Button onClick={() => router.push("/support/tickets")} variant="outline">
+            Back to Tickets
+          </Button>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -81,8 +91,10 @@ export default function TicketDetailPage() {
   const isClosed = activeTicket.status === "RESOLVED" || activeTicket.status === "CLOSED";
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12 flex flex-col h-[calc(100vh-64px)]">
-      {/* Header */}
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 md:px-8 py-8 md:py-12 flex flex-col">
+        {/* Header */}
       <div className="shrink-0 mb-6 flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
           <button 
@@ -187,7 +199,8 @@ export default function TicketDetailPage() {
             </form>
           )}
         </div>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 }

@@ -10,6 +10,8 @@ import { useSupportStore } from "@/stores/support-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { TicketCategory } from "@/lib/support/types";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 export default function SupportTicketsPage() {
   const { user } = useAuthStore();
@@ -63,7 +65,9 @@ export default function SupportTicketsPage() {
 
   if (isCreating) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-8 md:py-12">
         <button 
           onClick={() => setIsCreating(false)}
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
@@ -126,21 +130,22 @@ export default function SupportTicketsPage() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</>
-                ) : "Submit Request"}
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? "Creating..." : "Submit Ticket"}
               </Button>
             </div>
           </form>
         </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8 md:py-12">
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 md:px-8 py-8 md:py-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Support Tickets</h1>
@@ -202,6 +207,8 @@ export default function SupportTicketsPage() {
           </div>
         )}
       </div>
+      </main>
+      <Footer />
     </div>
   );
 }
