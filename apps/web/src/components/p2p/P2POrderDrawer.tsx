@@ -193,7 +193,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
                   <Input 
                     id="fiatAmount" 
                     type="number" 
-                    step="0.01" 
+                    step="any" 
                     placeholder={`Enter ${ad.fiat} amount`} 
                     {...register("fiatAmount", { valueAsNumber: true })}
                     className="pr-16"
@@ -211,7 +211,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
                   <Input 
                     id="cryptoAmount" 
                     type="number" 
-                    step="0.000001"
+                    step="any"
                     placeholder={`Enter ${ad.asset} amount`} 
                     {...register("cryptoAmount", { valueAsNumber: true })}
                     className="pr-16"
