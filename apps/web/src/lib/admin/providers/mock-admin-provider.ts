@@ -1,4 +1,4 @@
-import { AdminDashboardKPIs, AuditEvent, AdminUser, KycApplication } from "../types";
+import { AdminDashboardKPIs, AuditEvent, AdminUser, KycApplication, FinancialTransaction, AdminOrder, AdminTrade } from "../types";
 
 export interface AdminProvider {
   getDashboardKPIs(): Promise<AdminDashboardKPIs>;
@@ -6,6 +6,10 @@ export interface AdminProvider {
   getUsers(params?: { page?: number; limit?: number; status?: string; search?: string }): Promise<{ items: AdminUser[]; total: number }>;
   getUser(id: string): Promise<AdminUser | null>;
   getKycApplications(params?: { page?: number; limit?: number; status?: string }): Promise<{ items: KycApplication[]; total: number }>;
+  getWithdrawals(params?: { page?: number; limit?: number; status?: string }): Promise<{ items: FinancialTransaction[]; total: number }>;
+  getDeposits(params?: { page?: number; limit?: number; status?: string }): Promise<{ items: FinancialTransaction[]; total: number }>;
+  getOrders(params?: { page?: number; limit?: number; status?: string; market?: string }): Promise<{ items: AdminOrder[]; total: number }>;
+  getTrades(params?: { page?: number; limit?: number; market?: string }): Promise<{ items: AdminTrade[]; total: number }>;
 }
 
 export const MockAdminProvider: AdminProvider = {
@@ -178,6 +182,136 @@ export const MockAdminProvider: AdminProvider = {
     return {
       items: mockKyc.slice(start, start + limit),
       total: mockKyc.length
+    };
+  },
+
+  async getWithdrawals(params?: { page?: number; limit?: number; status?: string }): Promise<{ items: FinancialTransaction[]; total: number }> {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    
+    let mockTxs: FinancialTransaction[] = Array.from({ length: 45 }).map((_, i) => ({
+      id: `WD-500${i}`,
+      userId: `USR-10${i}`,
+      userName: `User 10${i}`,
+      type: "WITHDRAWAL",
+      asset: i % 3 === 0 ? "USDT" : i % 2 === 0 ? "BTC" : "ETH",
+      amount: i % 5 === 0 ? Math.random() * 50000 : Math.random() * 1000,
+      network: i % 3 === 0 ? "TRC20" : "ERC20",
+      address: `0x${Math.random().toString(16).substr(2, 40)}`,
+      status: i % 10 === 0 ? "REJECTED" : i % 4 === 0 ? "COMPLETED" : i % 3 === 0 ? "PROCESSING" : "PENDING",
+      riskScore: i % 15 === 0 ? "HIGH" : i % 5 === 0 ? "MEDIUM" : "LOW",
+      createdAt: new Date(Date.now() - Math.random() * 86400000 * 2).toISOString(),
+    }));
+
+    if (params?.status && params.status !== "ALL") {
+      mockTxs = mockTxs.filter(tx => tx.status === params.status);
+    }
+
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const start = (page - 1) * limit;
+
+    return {
+      items: mockTxs.slice(start, start + limit),
+      total: mockTxs.length
+    };
+  },
+
+  async getDeposits(params?: { page?: number; limit?: number; status?: string }): Promise<{ items: FinancialTransaction[]; total: number }> {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    
+    let mockTxs: FinancialTransaction[] = Array.from({ length: 60 }).map((_, i) => ({
+      id: `DEP-800${i}`,
+      userId: `USR-10${i}`,
+      userName: `User 10${i}`,
+      type: "DEPOSIT",
+      asset: i % 4 === 0 ? "USDT" : i % 3 === 0 ? "USDC" : "BTC",
+      amount: Math.random() * 5000,
+      network: "ERC20",
+      txHash: `0x${Math.random().toString(16).substr(2, 64)}`,
+      status: i % 15 === 0 ? "PENDING" : "COMPLETED",
+      riskScore: "LOW",
+      createdAt: new Date(Date.now() - Math.random() * 86400000 * 5).toISOString(),
+      completedAt: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+    }));
+
+    if (params?.status && params.status !== "ALL") {
+      mockTxs = mockTxs.filter(tx => tx.status === params.status);
+    }
+
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const start = (page - 1) * limit;
+
+    return {
+      items: mockTxs.slice(start, start + limit),
+      total: mockTxs.length
+    };
+  },
+
+  async getOrders(params?: { page?: number; limit?: number; status?: string; market?: string }): Promise<{ items: AdminOrder[]; total: number }> {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    
+    let mockOrders: AdminOrder[] = Array.from({ length: 75 }).map((_, i) => ({
+      id: `ORD-900${i}`,
+      userId: `USR-20${i}`,
+      userName: `Trader ${i}`,
+      market: i % 3 === 0 ? "ETH/USD" : i % 2 === 0 ? "SOL/USD" : "BTC/USD",
+      side: i % 2 === 0 ? "BUY" : "SELL",
+      type: i % 5 === 0 ? "MARKET" : "LIMIT",
+      price: i % 3 === 0 ? 3000 + Math.random() * 500 : 60000 + Math.random() * 5000,
+      amount: Math.random() * 2,
+      filled: i % 4 === 0 ? Math.random() * 2 : 0,
+      status: i % 8 === 0 ? "CANCELED" : i % 5 === 0 ? "FILLED" : i % 4 === 0 ? "PARTIAL" : "OPEN",
+      createdAt: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+    }));
+
+    if (params?.status && params.status !== "ALL") {
+      mockOrders = mockOrders.filter(o => o.status === params.status);
+    }
+    
+    if (params?.market && params.market !== "ALL") {
+      mockOrders = mockOrders.filter(o => o.market === params.market);
+    }
+
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const start = (page - 1) * limit;
+
+    return {
+      items: mockOrders.slice(start, start + limit),
+      total: mockOrders.length
+    };
+  },
+
+  async getTrades(params?: { page?: number; limit?: number; market?: string }): Promise<{ items: AdminTrade[]; total: number }> {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    
+    let mockTrades: AdminTrade[] = Array.from({ length: 100 }).map((_, i) => ({
+      id: `TRD-100${i}`,
+      market: i % 3 === 0 ? "ETH/USD" : i % 2 === 0 ? "SOL/USD" : "BTC/USD",
+      price: i % 3 === 0 ? 3000 + Math.random() * 500 : 60000 + Math.random() * 5000,
+      amount: Math.random() * 2,
+      total: 0, // calculated below
+      makerId: `USR-MAKER-${i}`,
+      takerId: `USR-TAKER-${i}`,
+      side: (i % 2 === 0 ? "BUY" : "SELL") as "BUY" | "SELL",
+      timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+    })).map(t => ({ ...t, total: t.price * t.amount }));
+
+    if (params?.market && params.market !== "ALL") {
+      mockTrades = mockTrades.filter(t => t.market === params.market);
+    }
+
+    // Sort by timestamp descending
+    mockTrades.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const start = (page - 1) * limit;
+
+    return {
+      items: mockTrades.slice(start, start + limit),
+      total: mockTrades.length
     };
   }
 };

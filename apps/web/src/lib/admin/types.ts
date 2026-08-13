@@ -39,6 +39,48 @@ export interface KycApplication {
   assignedAdmin?: string;
 }
 
+export interface FinancialTransaction {
+  id: string;
+  userId: string;
+  userName: string;
+  type: "DEPOSIT" | "WITHDRAWAL";
+  asset: string;
+  amount: number;
+  network?: string;
+  address?: string;
+  txHash?: string;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "REJECTED";
+  riskScore: "LOW" | "MEDIUM" | "HIGH";
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface AdminOrder {
+  id: string;
+  userId: string;
+  userName: string;
+  market: string; // e.g. "BTC/USD"
+  side: "BUY" | "SELL";
+  type: "LIMIT" | "MARKET" | "STOP_LIMIT";
+  price: number;
+  amount: number;
+  filled: number;
+  status: "OPEN" | "PARTIAL" | "FILLED" | "CANCELED";
+  createdAt: string;
+}
+
+export interface AdminTrade {
+  id: string;
+  market: string;
+  price: number;
+  amount: number;
+  total: number;
+  makerId: string;
+  takerId: string;
+  side: "BUY" | "SELL"; // Taker side
+  timestamp: string;
+}
+
 export interface AdminDashboardKPIs {
   totalUsers: number;
   activeUsers: number;
