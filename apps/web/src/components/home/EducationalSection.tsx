@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function EducationalSection() {
   const articles = [
-    { category: "Crypto Basics", title: "What is Crypto Trading?", desc: "Introductory explanation to digital assets." },
-    { category: "Trading", title: "How Spot Trading Works", desc: "Understand buy and sell orders." },
-    { category: "Trading", title: "What is Paper Trading?", desc: "Learn how to use simulated trading." },
-    { category: "Security", title: "Understanding Market Risk", desc: "An overview of volatility and risk management." },
+    { category: "Crypto Basics", title: "What is Crypto Trading?", desc: "Introductory explanation to digital assets.", slug: "/learn/crypto-basics" },
+    { category: "Trading", title: "How Spot Trading Works", desc: "Understand buy and sell orders.", slug: "/learn/trading" },
+    { category: "Trading", title: "What is Paper Trading?", desc: "Learn how to use simulated trading.", slug: "/learn/paper-trading" },
+    { category: "Security", title: "Understanding Market Risk", desc: "An overview of volatility and risk management.", slug: "/learn/security" },
   ]
 
   return (
@@ -20,12 +21,14 @@ export function EducationalSection() {
               Access guides and insights to understand the platform and digital asset markets.
             </p>
           </div>
-          <Button variant="outline" className="border-border">Explore Learning Center</Button>
+          <Button variant="outline" className="border-border" asChild>
+            <Link href="/learn">Explore Learning Center</Link>
+          </Button>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {articles.map((article, i) => (
-            <div key={i} className="bg-muted border border-border rounded-xl p-6 hover:bg-card transition-colors group cursor-pointer flex flex-col h-full">
+            <Link href={article.slug} key={i} className="bg-muted border border-border rounded-xl p-6 hover:bg-card transition-colors group cursor-pointer flex flex-col h-full block">
               <span className="text-xs font-medium text-[var(--brand-foreground)] uppercase tracking-wider mb-4">
                 {article.category}
               </span>
@@ -39,7 +42,7 @@ export function EducationalSection() {
                 <span>5 min read</span>
                 <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

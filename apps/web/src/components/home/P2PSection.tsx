@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function P2PSection() {
   const p2pAds = [
@@ -33,7 +34,9 @@ export function P2PSection() {
               ))}
             </ul>
             
-            <Button size="lg" className="px-8">Explore P2P</Button>
+            <Button size="lg" className="px-8" asChild>
+              <Link href="/p2p">Explore P2P</Link>
+            </Button>
           </div>
           
           <div className="space-y-4">
@@ -69,8 +72,10 @@ export function P2PSection() {
                   </div>
                 </div>
                 
-                <Button className="w-full" variant={ad.type === 'Buy' ? 'success' : 'destructive'}>
-                  {ad.type} USDT
+                <Button className="w-full" variant={ad.type === 'Buy' ? 'success' : 'destructive'} asChild>
+                  <Link href={`/p2p?type=${ad.type.toLowerCase()}`}>
+                    {ad.type} USDT
+                  </Link>
                 </Button>
               </div>
             ))}
