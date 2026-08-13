@@ -141,6 +141,9 @@ importers:
       '@ethsltd/types':
         specifier: workspace:^
         version: link:../../packages/types
+      database:
+        specifier: workspace:*
+        version: link:../../database
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@5.20260813.1)(@libsql/client@0.17.4)

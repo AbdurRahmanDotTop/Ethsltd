@@ -5,6 +5,6 @@ compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "ethsltd-db"
-database_id = "local-db"
+database_name = "ethsltd_db"
+database_id = "3e91dec1-5e94-434a-9697-7a9217592afe"
 migrations_dir = "../../database/migrations"

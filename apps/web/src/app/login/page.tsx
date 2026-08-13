@@ -3,6 +3,7 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "ETHSLTD | Log In",
@@ -25,7 +26,9 @@ export default function LoginPage() {
         footerActionText="Create one"
         footerActionLink="/register"
       >
-        <LoginForm />
+        <Suspense fallback={<div>Loading...</div>}>
+          <LoginForm />
+        </Suspense>
       </AuthCard>
       </main>
       <Footer />

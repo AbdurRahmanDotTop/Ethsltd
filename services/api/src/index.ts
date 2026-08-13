@@ -1,32 +1,32 @@
-import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-import { CreateApiKeyResponse } from '@ethsltd/types'
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { createDb, Bindings, Variables } from './db';
 
-type Bindings = {
-  DB: D1Database
-}
+// Import routes (we will create these next)
+import { authRoutes } from './routes/auth';
+import { walletRoutes } from './routes/wallets';
+import { tradingRoutes } from './routes/trading';
+import { p2pRoutes } from './routes/p2p';
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use('*', cors({
   origin: ['http://localhost:3000'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-}))
+}));
 
-app.get('/', (c) => c.json({ status: 'ok', service: 'Ethsltd API', version: '1.0' }))
+// Setup DB context middleware
+app.use('*', async (c, next) => {
+  c.set('db', createDb(c.env.DB));
+  await next();
+});
 
-app.get('/api/v1/auth/me', (c) => {
-  // Placeholder response matching expected interface
-  return c.json({
-    success: true,
-    data: {
-      id: "usr_123",
-      email: "demo@ethsltd.com",
-      status: "ACTIVE",
-      role: "USER"
-    },
-    requestId: "req_" + Date.now()
-  })
-})
+app.get('/', (c) => c.json({ status: 'ok', service: 'Ethsltd API', version: '1.0' }));
 
-export default app
+// Mount routes
+app.route('/api/v1/auth', authRoutes);
+app.route('/api/v1/wallets', walletRoutes);
+app.route('/api/v1/trading', tradingRoutes);
+app.route('/api/v1/p2p', p2pRoutes);
+
+export default app;
