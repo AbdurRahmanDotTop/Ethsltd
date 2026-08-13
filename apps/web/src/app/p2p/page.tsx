@@ -6,6 +6,23 @@ import { P2PHero } from "@/components/p2p/P2PHero";
 import { P2PControls } from "@/components/p2p/P2PControls";
 import { P2PTable } from "@/components/p2p/P2PTable";
 import { P2POrderDrawer } from "@/components/p2p/P2POrderDrawer";
+import { useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useP2PStore } from "@/stores/p2p-store";
+
+function QuerySync() {
+  const searchParams = useSearchParams();
+  const setQuery = useP2PStore(state => state.setQuery);
+
+  useEffect(() => {
+    const type = searchParams.get('type');
+    if (type === 'sell' || type === 'buy') {
+      setQuery({ side: type });
+    }
+  }, [searchParams, setQuery]);
+
+  return null;
+}
 
 export default function P2PPage() {
   const [selectedAd, setSelectedAd] = useState<P2PAdvertisement | null>(null);
@@ -23,6 +40,9 @@ export default function P2PPage() {
 
   return (
     <div className="bg-muted/30 pb-24">
+      <Suspense fallback={null}>
+        <QuerySync />
+      </Suspense>
       <P2PHero />
       
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 pb-24">
