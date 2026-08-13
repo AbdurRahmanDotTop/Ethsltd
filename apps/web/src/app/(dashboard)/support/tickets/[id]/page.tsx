@@ -199,6 +199,7 @@ export default function TicketDetailPage() {
             </form>
           )}
         </div>
+      </div>
       </main>
       <Footer />
     </div>
