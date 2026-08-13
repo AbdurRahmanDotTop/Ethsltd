@@ -29,6 +29,7 @@ The following Product Requirement Documents have been fully executed and impleme
 7. `ETHSLTD-PRD-07-Wallet-Portfolio.md`
 8. `ETHSLTD-PRD-08-Admin-Operations-Console.md`
 9. `ETHSLTD-PRD-09-Notifications-Communication-Support.md`
+10. `ETHSLTD-PRD-10-API-Developer-Platform.md`
 
 ---
 
@@ -129,7 +130,7 @@ A comprehensive, centralized communication and support layer to handle user aler
 - **Admin Ticket Detail (`/admin/support/tickets/[id]`)**: Advanced view allowing staff to send "Internal Notes" (hidden from users) and manually transition ticket statuses.
 - **Admin Notification Broadcaster (`/admin/notifications`)**: Dashboard to review all system notifications dispatched globally.
 
-### I. API & Developer Platform (PRD-09)
+### I. API & Developer Platform (PRD-10)
 The technical bridge allowing external systems, trading bots, and institutional integrators to interface securely with the platform.
 - **Developer Portal:** Centralized hub containing Quick Start guides, SDK information, and interactive API documentation (REST & WebSocket).
 - **Interactive Playground:** Allows developers to test endpoints (like `/api/v1/ticker`) directly from the browser with simulated mock responses.
