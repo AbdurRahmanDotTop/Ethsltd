@@ -99,34 +99,12 @@ export class EthsltdClient {
     return { success: true };
   }
 
-  async updateProfile(data: any) {
-    return this.request<any>('/api/v1/auth/profile/update', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
+
 
   async changePassword(data: any) {
-    // We haven't implemented this route yet, keeping as placeholder
-    return { success: true };
-  }
-
-  async getSessions() {
-    return this.request<any[]>('/api/v1/auth/sessions', {
-      method: 'GET'
-    });
-  }
-
-  async revokeSession(sessionId: string) {
-    return this.request<any>('/api/v1/auth/sessions/revoke', {
+    return this.request<any>('/api/v1/settings/change-password', {
       method: 'POST',
-      body: JSON.stringify({ sessionId })
-    });
-  }
-
-  async revokeAllSessions() {
-    return this.request<any>('/api/v1/auth/sessions/revoke-all', {
-      method: 'POST'
+      body: JSON.stringify(data),
     });
   }
 
@@ -273,6 +251,60 @@ export class EthsltdClient {
     return this.request<any>(`/api/v1/support/tickets/${ticketId}/messages`, {
       method: 'POST',
       body: JSON.stringify({ content }),
+    });
+  }
+
+  // ==========================
+  // SETTINGS (Profile, MFA, Sessions)
+  // ==========================
+
+  // Profile
+  async getProfile() {
+    return this.request<any>('/api/v1/settings/profile');
+  }
+
+  async updateProfile(data: { displayName?: string; firstName?: string; lastName?: string; avatarUrl?: string }) {
+    return this.request<any>('/api/v1/settings/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // MFA
+  async generateMfa() {
+    return this.request<{ secret: string; qrCodeUrl: string }>('/api/v1/settings/mfa/generate', {
+      method: 'POST',
+    });
+  }
+
+  async enableMfa(token: string) {
+    return this.request<any>('/api/v1/settings/mfa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  async disableMfa(token: string) {
+    return this.request<any>('/api/v1/settings/mfa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  // Sessions
+  async getSessions() {
+    return this.request<any[]>('/api/v1/settings/sessions');
+  }
+
+  async revokeSession(sessionId: string) {
+    return this.request<any>(`/api/v1/settings/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async revokeAllOtherSessions() {
+    return this.request<any>('/api/v1/settings/sessions/all-except-current', {
+      method: 'DELETE',
     });
   }
 }

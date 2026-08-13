@@ -14,10 +14,13 @@
     "@ethsltd/types": "workspace:^",
     "database": "workspace:*",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.13.1"
+    "hono": "^4.13.1",
+    "otplib": "^13.4.1",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260813.1",
+    "@types/qrcode": "^1.5.6",
     "typescript": "^5",
     "wrangler": "^4.122.0"
   }

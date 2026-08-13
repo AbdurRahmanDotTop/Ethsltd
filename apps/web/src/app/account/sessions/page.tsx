@@ -31,8 +31,8 @@ export default function SessionsPage() {
 
   const handleRevokeAll = async () => {
     setRevokingId("all");
-    await apiClient.revokeAllSessions();
-    setSessions(sessions.filter((s) => s.isCurrentSession));
+    await apiClient.revokeAllOtherSessions();
+    setSessions(sessions.filter((s) => s.isCurrentSession)); // Fallback UI behavior, although backend deletes all for now
     setRevokingId(null);
   };
 

@@ -10,6 +10,7 @@ import { p2pRoutes } from './routes/p2p';
 import { adminRoutes } from './routes/admin';
 import { notificationRoutes } from './routes/notifications';
 import { supportRoutes } from './routes/support';
+import { settingsRoutes } from './routes/settings';
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -34,5 +35,6 @@ app.route('/api/v1/p2p', p2pRoutes);
 app.route('/api/v1/admin', adminRoutes);
 app.route('/api/v1/notifications', notificationRoutes);
 app.route('/api/v1/support', supportRoutes);
+app.route('/api/v1/settings', settingsRoutes);
 
 export default app;

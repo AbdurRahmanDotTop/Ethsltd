@@ -17,6 +17,7 @@ export interface AuthUser {
   status: UserStatus | string;
   createdAt: string | Date | number;
   avatarUrl?: string | null;
+  mfaEnabled?: boolean;
   role?: string;
 }
 

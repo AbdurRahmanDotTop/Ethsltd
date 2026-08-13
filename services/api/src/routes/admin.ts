@@ -50,7 +50,7 @@ adminRoutes.get('/users', async (c) => {
     // Add where clauses based on status and search
     let conditions = [];
     if (status !== 'ALL') {
-      conditions.push(eq(users.status, status));
+      conditions.push(eq(users.status, status as any));
     }
     
     if (search) {
@@ -126,8 +126,10 @@ adminRoutes.patch('/users/:id/status', async (c) => {
   }
 
   try {
+    type UserStatus = "ACTIVE" | "FROZEN" | "BANNED" | "PENDING_VERIFICATION";
+    
     await db.update(users)
-      .set({ status: body.status, updatedAt: new Date() })
+      .set({ status: body.status as UserStatus, updatedAt: new Date() })
       .where(eq(users.id, userId));
       
     return c.json({ success: true });
