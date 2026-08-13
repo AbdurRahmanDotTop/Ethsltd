@@ -6,7 +6,8 @@ import {
   LayoutDashboard, Users, UserCheck, Activity, 
   ListOrdered, ArrowRightLeft, Wallet, ArrowDownToLine, 
   ArrowUpFromLine, Handshake, AlertTriangle, LifeBuoy, 
-  FileSignature, Bell, ShieldCheck, Settings, Server
+  FileSignature, Bell, ShieldCheck, Settings, Server,
+  KeyRound, Code
 } from "lucide-react";
 
 export function AdminSidebar() {
@@ -24,6 +25,12 @@ export function AdminSidebar() {
       items: [
         { name: "Users", href: "/admin/users", icon: Users },
         { name: "KYC", href: "/admin/kyc", icon: UserCheck }
+      ]
+    },
+    {
+      title: "Developer",
+      items: [
+        { name: "API Platform", href: "/admin/api", icon: Code }
       ]
     },
     {

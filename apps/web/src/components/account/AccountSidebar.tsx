@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, User, Shield, KeyRound, Bell, Settings } from "lucide-react";
+import { LayoutDashboard, User, Shield, KeyRound, Bell, Settings, Code, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -11,6 +11,8 @@ const navigation = [
   { name: "Security", href: "/account/security", icon: Shield },
   { name: "Sessions", href: "/account/sessions", icon: KeyRound },
   { name: "Notifications", href: "/account/preferences/notifications", icon: Bell },
+  { name: "API Keys", href: "/account/api-keys", icon: Code },
+  { name: "API Usage", href: "/account/api-usage", icon: Activity },
   { name: "Preferences", href: "/account/preferences", icon: Settings },
 ];
 

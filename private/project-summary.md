@@ -129,5 +129,13 @@ A comprehensive, centralized communication and support layer to handle user aler
 - **Admin Ticket Detail (`/admin/support/tickets/[id]`)**: Advanced view allowing staff to send "Internal Notes" (hidden from users) and manually transition ticket statuses.
 - **Admin Notification Broadcaster (`/admin/notifications`)**: Dashboard to review all system notifications dispatched globally.
 
+### I. API & Developer Platform (PRD-09)
+The technical bridge allowing external systems, trading bots, and institutional integrators to interface securely with the platform.
+- **Developer Portal:** Centralized hub containing Quick Start guides, SDK information, and interactive API documentation (REST & WebSocket).
+- **Interactive Playground:** Allows developers to test endpoints (like `/api/v1/ticker`) directly from the browser with simulated mock responses.
+- **API Key Management:** Users can generate `LIVE` or `TEST` keys, assign granular permissions (Read, Trade, Withdraw), configure IP restrictions, and securely view their secret only once.
+- **Usage Metrics:** A dashboard tracking API request volume, error rates, rate limit hits, and active WebSocket connections via interactive charts.
+- **Admin Oversight:** Global monitoring interface for administrators to track platform-wide API usage and manually revoke compromised keys.
+
 ---
 *Status: All requested Product Requirement Documents have been implemented in full. The platform is robust, responsive, theme-switchable, version-controlled, and architecturally prepared for a live production backend connection.*
