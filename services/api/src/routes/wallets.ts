@@ -1,58 +1,203 @@
 import { Hono } from 'hono';
-import { eq } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { wallets, ledgerAccounts, ledgerTransactions, ledgerEntries } from 'database';
+import { wallets, walletTransactions } from 'database';
+import { jwtMiddleware } from '../middleware/jwt';
 
 export const walletRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// A middleware should normally inject c.get('user'), for now we'll pass userId in body/query or mock
-walletRoutes.get('/', async (c) => {
+// Add JWT Middleware to all routes in this router
+walletRoutes.use('*', jwtMiddleware);
+
+// Helper function to get mock prices for simulation
+const getMockPrice = (symbol: string) => {
+  const prices: Record<string, number> = {
+    'BTC': 104250.00,
+    'ETH': 3500.00,
+    'USDT': 1.00,
+    'USDC': 1.00,
+    'SOL': 140.00,
+    'USD': 1.00,
+  };
+  return prices[symbol] || 0;
+};
+
+walletRoutes.get('/balances', async (c) => {
   const db = c.get('db');
-  const userId = c.req.query('userId') || 'mock-user-id'; // To be replaced with auth middleware
+  const user = c.get('user');
   
-  const userWallets = await db.select().from(wallets).where(eq(wallets.userId, userId));
-  return c.json({ success: true, data: userWallets });
+  const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
+  
+  // Format to AssetBalance structure
+  const formattedBalances = userWallets.map(w => {
+    const available = parseFloat(w.balance);
+    const locked = parseFloat(w.lockedBalance);
+    const total = available + locked;
+    const usdPrice = getMockPrice(w.assetSymbol);
+    
+    return {
+      assetId: w.assetSymbol.toLowerCase(),
+      symbol: w.assetSymbol,
+      available,
+      locked,
+      total,
+      usdPrice,
+      usdValue: total * usdPrice,
+      change24h: 0, // Mocked for now
+      change24hPercent: 0 // Mocked for now
+    };
+  });
+  
+  return c.json({ success: true, data: formattedBalances });
+});
+
+walletRoutes.get('/portfolio', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  
+  const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
+  
+  let totalValueUsd = 0;
+  let availableBalanceUsd = 0;
+  let lockedBalanceUsd = 0;
+  
+  const allocations = userWallets.map(w => {
+    const total = parseFloat(w.balance) + parseFloat(w.lockedBalance);
+    const usdValue = total * getMockPrice(w.assetSymbol);
+    
+    totalValueUsd += usdValue;
+    availableBalanceUsd += parseFloat(w.balance) * getMockPrice(w.assetSymbol);
+    lockedBalanceUsd += parseFloat(w.lockedBalance) * getMockPrice(w.assetSymbol);
+    
+    return {
+      asset: w.assetSymbol,
+      usdValue,
+      percentage: 0 // Will calculate below
+    };
+  });
+  
+  // Calculate percentages
+  const finalAllocations = allocations.map(a => ({
+    ...a,
+    percentage: totalValueUsd > 0 ? (a.usdValue / totalValueUsd) * 100 : 0
+  })).filter(a => a.percentage > 0).sort((a, b) => b.usdValue - a.usdValue);
+  
+  const summary = {
+    totalValueUsd,
+    change24hUsd: 0,
+    change24hPercent: 0,
+    availableBalanceUsd,
+    lockedBalanceUsd,
+  };
+  
+  return c.json({ success: true, data: { summary, allocations: finalAllocations } });
+});
+
+walletRoutes.get('/transactions', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  
+  const transactions = await db.select().from(walletTransactions)
+    .where(eq(walletTransactions.userId, user.id))
+    .orderBy(desc(walletTransactions.createdAt))
+    .all();
+    
+  const mappedTxs = transactions.map(tx => ({
+    id: tx.id,
+    type: tx.type,
+    asset: tx.assetSymbol,
+    amount: parseFloat(tx.amount),
+    fee: parseFloat(tx.fee),
+    status: tx.status,
+    destination: tx.destination,
+    network: tx.network,
+    reference: tx.reference,
+    createdAt: tx.createdAt.toISOString(),
+    updatedAt: tx.updatedAt.toISOString(),
+  }));
+    
+  return c.json({ success: true, data: mappedTxs });
 });
 
 walletRoutes.post('/deposit', async (c) => {
   const db = c.get('db');
+  const user = c.get('user');
   const body = await c.req.json();
-  const { userId, assetSymbol, amount } = body;
+  const { assetSymbol, amount, network, destination } = body;
 
-  const idempotencyKey = crypto.randomUUID();
-  const transactionId = crypto.randomUUID();
-
-  // Very simplified double entry ledger implementation for deposit
-  // In real life, D1 transactions should be used: await db.batch([...]) or db.transaction()
+  const transactionId = `TX-${Date.now()}`;
+  const now = new Date();
   
-  // Create transaction
-  await db.insert(ledgerTransactions).values({
-    id: transactionId,
-    idempotencyKey,
-    referenceType: 'DEPOSIT',
-    referenceId: `dep_${Date.now()}`,
-    status: 'COMMITTED',
-    createdAt: new Date(),
-  });
-
   // Check if wallet exists
-  let wallet = await db.select().from(wallets).where(eq(wallets.userId, userId)).get();
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol))).get();
+  
   if (!wallet) {
     const walletId = crypto.randomUUID();
     await db.insert(wallets).values({
       id: walletId,
-      userId,
+      userId: user.id,
       assetSymbol,
       balance: amount.toString(),
       lockedBalance: '0',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     });
   } else {
-    // We would need to parse BigInt/number and update. Simplified for now.
     const newBalance = (parseFloat(wallet.balance) + parseFloat(amount)).toString();
-    // update wallet ...
+    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
   }
+  
+  // Record transaction
+  await db.insert(walletTransactions).values({
+    id: transactionId,
+    userId: user.id,
+    type: 'DEPOSIT',
+    assetSymbol,
+    amount: amount.toString(),
+    status: 'COMPLETED', // Simulated paper trading completes instantly
+    network: network || 'Internal',
+    destination: destination,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  return c.json({ success: true, transactionId });
+});
+
+walletRoutes.post('/withdraw', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const body = await c.req.json();
+  const { assetSymbol, amount, destination, network } = body;
+  
+  const parsedAmount = parseFloat(amount);
+
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol))).get();
+  
+  if (!wallet || parseFloat(wallet.balance) < parsedAmount) {
+    return c.json({ success: false, error: 'Insufficient balance' }, 400);
+  }
+  
+  const now = new Date();
+  const transactionId = `TX-${Date.now()}`;
+  
+  // Deduct balance
+  const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
+  await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+  
+  // Record transaction
+  await db.insert(walletTransactions).values({
+    id: transactionId,
+    userId: user.id,
+    type: 'WITHDRAWAL',
+    assetSymbol,
+    amount: amount.toString(),
+    status: 'COMPLETED', // Simulated paper trading completes instantly
+    destination,
+    network: network || 'Internal',
+    createdAt: now,
+    updatedAt: now,
+  });
 
   return c.json({ success: true, transactionId });
 });

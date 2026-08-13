@@ -135,18 +135,29 @@ export class EthsltdClient {
   }
 
   async getWalletBalances() {
-    // Placeholder until endpoint exists
-    return { success: true, data: [] };
+    return this.request<any[]>('/api/v1/wallets/balances');
   }
 
   async getWalletPortfolio() {
-    // Placeholder until endpoint exists
-    return { success: true, data: { summary: null, allocations: [] } };
+    return this.request<any>('/api/v1/wallets/portfolio');
   }
 
   async getWalletTransactions(params?: any) {
-    // Placeholder until endpoint exists
-    return { success: true, data: [] };
+    return this.request<any[]>('/api/v1/wallets/transactions');
+  }
+
+  async deposit(data: { assetSymbol: string; amount: number; network?: string; destination?: string }) {
+    return this.request<any>('/api/v1/wallets/deposit', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async withdraw(data: { assetSymbol: string; amount: number; network?: string; destination?: string }) {
+    return this.request<any>('/api/v1/wallets/withdraw', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async getOrders(params?: any) {
