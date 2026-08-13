@@ -198,7 +198,7 @@ export function MarketExplorer() {
                           <MarketSparkline data={market.sparkline} isPositive={isPositive} className="h-[25px]" />
                         </td>
                         <td className="py-4 pr-4 text-right">
-                          <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity mr-2 hidden md:inline-flex" asChild>
+                          <Button size="sm" variant="ghost" className="mr-2 hidden md:inline-flex" asChild>
                             <Link href={`/markets/${market.id}`}>View</Link>
                           </Button>
                           <Button size="sm" asChild>
