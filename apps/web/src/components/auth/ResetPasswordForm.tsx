@@ -6,7 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { resetPasswordSchema, ResetPasswordInput } from "@/lib/validation/auth";
-import { MockAuthProvider } from "@/lib/auth/mock-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +33,7 @@ export function ResetPasswordForm() {
   const onSubmit = async (data: ResetPasswordInput) => {
     try {
       setGlobalError("");
-      await MockAuthProvider.resetPassword(data.password, "mock-token");
+      await apiClient.resetPassword(data.password, "mock-token");
       setSuccess(true);
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred.");

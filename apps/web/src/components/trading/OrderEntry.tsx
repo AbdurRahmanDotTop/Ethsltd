@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Market } from "@/lib/market-data/types"
-import { tradingProvider } from "@/lib/trading/mock-provider"
+import { apiClient } from "@ethsltd/api-client"
 import { useTradingUIStore } from "@/stores/trading-ui-store"
 import { usePaperAccountStore } from "@/stores/paper-account-store"
 import { parseMarketSymbol } from "@/lib/trading/calculations"
@@ -85,7 +85,7 @@ export function OrderEntry({ market }: { market: Market }) {
     setMessage(null)
     
     try {
-      await tradingProvider.placeOrder({
+      await apiClient.createOrder({
         market: market.id,
         side: selectedSide,
         type: selectedOrderType,

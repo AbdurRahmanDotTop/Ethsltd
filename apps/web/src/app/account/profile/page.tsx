@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, User } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
-import { MockAuthProvider } from "@/lib/auth/mock-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { profileSchema, ProfileInput } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,8 +35,10 @@ export default function ProfilePage() {
     try {
       setError("");
       setSuccess("");
-      const updated = await MockAuthProvider.updateProfile(data);
-      updateUser(updated);
+      const updated = await apiClient.updateProfile(data);
+      if (updated.success && updated.data) {
+        updateUser(updated.data);
+      }
       setSuccess("Profile updated successfully.");
     } catch (err: any) {
       setError(err.message || "Failed to update profile.");

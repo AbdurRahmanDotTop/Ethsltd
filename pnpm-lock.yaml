@@ -133,6 +133,10 @@ importers:
       '@ethsltd/types':
         specifier: workspace:^
         version: link:../types
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.43
 
   packages/types: {}
 

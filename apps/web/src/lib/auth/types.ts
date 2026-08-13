@@ -10,13 +10,13 @@ export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 export interface AuthUser {
   id: string;
   email: string;
-  displayName?: string;
-  firstName?: string;
-  lastName?: string;
-  emailVerified: boolean;
-  status: UserStatus;
-  createdAt: string;
-  avatarUrl?: string;
+  displayName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  emailVerified?: boolean;
+  status: UserStatus | string;
+  createdAt: string | Date | number;
+  avatarUrl?: string | null;
   role?: string;
 }
 

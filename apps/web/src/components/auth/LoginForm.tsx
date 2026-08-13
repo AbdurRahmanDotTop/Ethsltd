@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { loginSchema, LoginInput } from "@/lib/validation/auth";
-import { MockAuthProvider } from "@/lib/auth/mock-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,8 +32,12 @@ export function LoginForm() {
   const onSubmit = async (data: LoginInput) => {
     try {
       setGlobalError("");
-      const response = await MockAuthProvider.login(data);
-      setUser(response.user);
+      const response = await apiClient.login(data.email, data.password);
+      if (!response.success) {
+        setGlobalError(response.error || "Invalid credentials.");
+        return;
+      }
+      setUser(response.data?.user || null);
       router.push(redirectUrl);
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred during login.");

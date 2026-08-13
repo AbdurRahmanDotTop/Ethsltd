@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, Monitor, Smartphone, Globe } from "lucide-react";
-import { MockAuthProvider } from "@/lib/auth/mock-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { UserSession } from "@/lib/auth/types";
 import { Button } from "@/components/ui/button";
 
@@ -17,21 +17,21 @@ export default function SessionsPage() {
 
   const loadSessions = async () => {
     setIsLoading(true);
-    const data = await MockAuthProvider.getSessions();
-    setSessions(data);
+    const response = await apiClient.getSessions();
+    setSessions(response.data || []);
     setIsLoading(false);
   };
 
   const handleRevoke = async (id: string) => {
     setRevokingId(id);
-    await MockAuthProvider.revokeSession(id);
+    await apiClient.revokeSession(id);
     setSessions(sessions.filter((s) => s.id !== id));
     setRevokingId(null);
   };
 
   const handleRevokeAll = async () => {
     setRevokingId("all");
-    await MockAuthProvider.revokeAllSessions();
+    await apiClient.revokeAllSessions();
     setSessions(sessions.filter((s) => s.isCurrentSession));
     setRevokingId(null);
   };

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2, ShieldAlert } from "lucide-react";
-import { MockAuthProvider } from "@/lib/auth/mock-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { changePasswordSchema, ChangePasswordInput } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,9 +37,9 @@ export default function SecurityPage() {
     try {
       setGlobalError("");
       setSuccess("");
-      await MockAuthProvider.changePassword(data);
+      await apiClient.changePassword(data);
       if (data.revokeSessions) {
-        await MockAuthProvider.revokeAllSessions();
+        await apiClient.revokeAllSessions();
       }
       setSuccess("Your password has been changed successfully.");
       reset({ currentPassword: "", newPassword: "", confirmNewPassword: "", revokeSessions: true });

@@ -6,7 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { registerSchema, RegisterInput } from "@/lib/validation/auth";
-import { MockAuthProvider } from "@/lib/auth/mock-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +35,11 @@ export function RegisterForm() {
   const onSubmit = async (data: RegisterInput) => {
     try {
       setGlobalError("");
-      await MockAuthProvider.register(data);
+      const response = await apiClient.register(data.email, data.password);
+      if (!response.success) {
+        setGlobalError(response.error || "An error occurred during registration.");
+        return;
+      }
       // Redirect to verification flow
       router.push("/verify-email");
     } catch (err: any) {

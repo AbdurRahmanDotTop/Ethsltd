@@ -6,7 +6,7 @@ import { WalletSummary } from "@/components/wallet/WalletSummary";
 import { AssetTable } from "@/components/wallet/AssetTable";
 import { PortfolioAllocation } from "@/components/wallet/PortfolioAllocation";
 import { TransactionTable } from "@/components/wallet/TransactionTable";
-import { mockWalletProvider } from "@/lib/wallet/mock-wallet-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { AssetBalance, PortfolioSummary, AssetAllocation, WalletTransaction } from "@/lib/wallet/types";
 import { usePaperAccountStore } from "@/stores/paper-account-store";
 import { Loader2 } from "lucide-react";
@@ -26,15 +26,17 @@ export default function WalletPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const balanceData = await mockWalletProvider.getBalances();
-        setBalances(balanceData);
+        const balanceData = await apiClient.getWalletBalances();
+        setBalances(balanceData.data || []);
         
-        const { summary: s, allocations: a } = await mockWalletProvider.getPortfolio();
-        setSummary(s);
-        setAllocations(a);
+        const portfolioData = await apiClient.getWalletPortfolio();
+        if (portfolioData.success && portfolioData.data) {
+          setSummary(portfolioData.data.summary);
+          setAllocations(portfolioData.data.allocations);
+        }
 
-        const txs = await mockWalletProvider.getTransactions({ limit: 5 });
-        setRecentTransactions(txs);
+        const txs = await apiClient.getWalletTransactions({ limit: 5 });
+        setRecentTransactions(txs.data || []);
       } finally {
         setIsLoading(false);
       }

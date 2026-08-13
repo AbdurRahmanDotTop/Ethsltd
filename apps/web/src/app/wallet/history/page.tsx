@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { TransactionTable } from "@/components/wallet/TransactionTable";
 import { WalletTransaction } from "@/lib/wallet/types";
-import { mockWalletProvider } from "@/lib/wallet/mock-wallet-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { Loader2, ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,8 @@ export default function WalletHistoryPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const txs = await mockWalletProvider.getTransactions({ limit: 100 });
-        setTransactions(txs);
+        const response = await apiClient.getWalletTransactions({ limit: 100 });
+        setTransactions(response.data || []);
       } finally {
         setIsLoading(false);
       }

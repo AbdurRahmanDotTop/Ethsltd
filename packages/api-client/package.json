@@ -12,5 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "@ethsltd/types": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^20"
   }
 }

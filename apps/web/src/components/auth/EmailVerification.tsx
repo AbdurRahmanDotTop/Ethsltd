@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Mail } from "lucide-react";
-import { MockAuthProvider } from "@/lib/auth/mock-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { Button } from "@/components/ui/button";
 
 export function EmailVerification() {
@@ -22,7 +22,7 @@ export function EmailVerification() {
   const handleResend = async () => {
     try {
       setIsResending(true);
-      await MockAuthProvider.resendVerification();
+      await apiClient.resendVerification();
       setTimeLeft(45);
     } finally {
       setIsResending(false);

@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useWalletStore } from "@/stores/wallet-store";
-import { mockWalletProvider } from "@/lib/wallet/mock-wallet-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { AssetBalance } from "@/lib/wallet/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,7 @@ export function WithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: string }
   const amount = form.watch("amount");
 
   useEffect(() => {
-    mockWalletProvider.getBalances().then(setBalances);
+    apiClient.getWalletBalances().then(res => setBalances(res.data || []));
   }, []);
 
   const activeBalance = balances.find((b) => b.symbol === selectedAsset);

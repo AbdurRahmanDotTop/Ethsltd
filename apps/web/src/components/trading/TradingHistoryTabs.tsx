@@ -3,7 +3,7 @@ import { useState } from "react"
 import { usePaperAccountStore } from "@/stores/paper-account-store"
 import { formatPrice } from "@/lib/trading/calculations"
 import { Button } from "@/components/ui/button"
-import { tradingProvider } from "@/lib/trading/mock-provider"
+import { apiClient } from "@ethsltd/api-client"
 
 export function TradingHistoryTabs() {
   const [activeTab, setActiveTab] = useState<'open'|'history'|'trades'>('open')
@@ -20,7 +20,7 @@ export function TradingHistoryTabs() {
 
   const handleCancel = async (id: string) => {
     try {
-      await tradingProvider.cancelOrder(id);
+      await apiClient.cancelOrder(id);
     } catch(e) { console.error(e) }
   }
 
