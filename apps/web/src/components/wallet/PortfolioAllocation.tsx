@@ -44,7 +44,7 @@ export function PortfolioAllocation({ allocations }: { allocations: AssetAllocat
     <div className="bg-card border border-border rounded-xl p-6 shadow-sm h-full">
       <h3 className="text-lg font-bold text-foreground mb-6">Asset Allocation</h3>
       
-      <div className="flex flex-col sm:flex-row items-center gap-8">
+      <div className="flex flex-col items-center gap-6">
         <div className="relative w-[200px] h-[200px] shrink-0">
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
             {allocations.map((alloc, i) => {
