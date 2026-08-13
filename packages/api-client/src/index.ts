@@ -209,6 +209,32 @@ export class EthsltdClient {
       method: 'POST',
     });
   }
+
+  // Admin API Methods
+  async getAdminStats() {
+    return this.request<any>('/api/v1/admin/stats');
+  }
+
+  async getAdminUsers(params: { page?: number; limit?: number; search?: string; status?: string }) {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.search) query.append('search', params.search);
+    if (params.status) query.append('status', params.status);
+    
+    return this.request<any>(`/api/v1/admin/users?${query.toString()}`);
+  }
+
+  async updateAdminUserStatus(userId: string, status: string) {
+    return this.request<any>(`/api/v1/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async getAdminTransactions() {
+    return this.request<any[]>('/api/v1/admin/transactions');
+  }
 }
 
 export const apiClient = new EthsltdClient();

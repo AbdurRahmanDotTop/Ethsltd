@@ -7,6 +7,7 @@ import { authRoutes } from './routes/auth';
 import { walletRoutes } from './routes/wallets';
 import { tradingRoutes } from './routes/trading';
 import { p2pRoutes } from './routes/p2p';
+import { adminRoutes } from './routes/admin';
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -28,5 +29,6 @@ app.route('/api/v1/auth', authRoutes);
 app.route('/api/v1/wallets', walletRoutes);
 app.route('/api/v1/trading', tradingRoutes);
 app.route('/api/v1/p2p', p2pRoutes);
+app.route('/api/v1/admin', adminRoutes);
 
 export default app;

@@ -36,3 +36,13 @@ export async function jwtMiddleware(c: Context, next: Next) {
     return c.json({ success: false, error: 'Invalid or expired token' }, 401);
   }
 }
+
+export async function adminMiddleware(c: Context, next: Next) {
+  const user = c.get('user');
+  
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
+    return c.json({ success: false, error: 'Forbidden. Admin access required.' }, 403);
+  }
+
+  await next();
+}

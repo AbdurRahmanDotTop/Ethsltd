@@ -1,19 +1,50 @@
-import { Metadata } from "next";
-import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState, use } from "react";
+import { useRouter } from "next/navigation";
+import { apiClient } from "@ethsltd/api-client";
+import { AdminUser } from "@/lib/admin/types";
 import Link from "next/link";
-import { ChevronLeft, ShieldAlert, Ban, Unlock, Activity, Wallet, Info, Handshake } from "lucide-react";
+import { ChevronLeft, ShieldAlert, Ban, Unlock, Activity, Wallet, Info, Handshake, Loader2 } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "User Detail | ETHSLTD Admin",
-};
+export default function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const router = useRouter();
+  const [user, setUser] = useState<AdminUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const user = await MockAdminProvider.getUser(id);
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await apiClient.getAdminUsers({ search: id, limit: 1 });
+        if (res.success && res.data.items.length > 0) {
+          setUser(res.data.items[0]);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="p-6 md:p-8 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+      </div>
+    );
+  }
 
   if (!user) {
-    notFound();
+    return (
+      <div className="p-6 md:p-8 flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <ShieldAlert className="w-12 h-12 text-muted-foreground" />
+        <h2 className="text-xl font-bold">User Not Found</h2>
+        <Link href="/admin/users" className="text-brand-primary hover:underline">Return to Users</Link>
+      </div>
+    );
   }
 
   const formatUSD = (val: number) => {
@@ -25,6 +56,18 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
     FROZEN: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     SUSPENDED: "bg-red-500/10 text-red-500 border-red-500/20",
     PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  };
+
+  const toggleStatus = async () => {
+    const newStatus = user.status === "ACTIVE" ? "FROZEN" : "ACTIVE";
+    try {
+      const res = await apiClient.updateAdminUserStatus(user.id, newStatus);
+      if (res.success) {
+        setUser({ ...user, status: newStatus });
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
@@ -42,7 +85,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center text-xl font-bold text-brand-primary">
-              {user.name.charAt(0)}
+              {user.name.charAt(0).toUpperCase()}
             </div>
             <div>
               <h2 className="text-2xl font-bold">{user.name}</h2>
@@ -53,11 +96,11 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
           {/* Quick Actions */}
           <div className="flex gap-2">
             {user.status === "ACTIVE" ? (
-              <button className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-md transition-colors text-sm font-medium">
+              <button onClick={toggleStatus} className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-md transition-colors text-sm font-medium cursor-pointer">
                 <Ban className="w-4 h-4" /> Freeze Account
               </button>
             ) : (
-              <button className="flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 rounded-md transition-colors text-sm font-medium">
+              <button onClick={toggleStatus} className="flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 rounded-md transition-colors text-sm font-medium cursor-pointer">
                 <Unlock className="w-4 h-4" /> Unfreeze Account
               </button>
             )}

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
 import { AdminUser } from "@/lib/admin/types";
+import { apiClient } from "@ethsltd/api-client";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { Search, Filter } from "lucide-react";
 
@@ -23,14 +23,18 @@ export default function AdminUsersPage() {
     setLoading(true);
 
     // Debounce search slightly
-    const timer = setTimeout(() => {
-      MockAdminProvider.getUsers({ page, limit, status, search }).then((res) => {
-        if (isMounted) {
-          setUsers(res.items);
-          setTotal(res.total);
-          setLoading(false);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await apiClient.getAdminUsers({ page, limit, status, search });
+        if (isMounted && res.success) {
+          setUsers(res.data.items);
+          setTotal(res.data.total);
         }
-      });
+      } catch (err) {
+        console.error("Failed to load users", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     }, 300);
 
     return () => {
