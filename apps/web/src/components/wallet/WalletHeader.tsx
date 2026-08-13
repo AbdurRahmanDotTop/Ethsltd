@@ -16,7 +16,7 @@ export function WalletHeader() {
           Manage your assets, track your portfolio, and move simulated funds.
         </p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Link href="/wallet/history">
           <Button variant="outline" className="h-10">
             <History className="w-4 h-4 mr-2" />

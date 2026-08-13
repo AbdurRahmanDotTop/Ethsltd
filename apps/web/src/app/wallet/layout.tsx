@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { Loader2 } from "lucide-react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 export default function WalletLayout({ children }: { children: React.ReactNode }) {
   const { status } = useAuthStore();
@@ -25,10 +27,14 @@ export default function WalletLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="flex-1 bg-muted/10 w-full">
-      <div className="max-w-[1200px] mx-auto px-4 py-8">
-        {children}
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <div className="flex-1 bg-muted/10 w-full">
+        <div className="max-w-[1200px] mx-auto px-4 py-8 flex-1">
+          {children}
+        </div>
       </div>
+      <Footer />
     </div>
   );
 }
