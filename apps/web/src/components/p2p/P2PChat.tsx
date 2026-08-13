@@ -44,7 +44,7 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [orderMessages]);
+  }, [orderMessages.length]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
