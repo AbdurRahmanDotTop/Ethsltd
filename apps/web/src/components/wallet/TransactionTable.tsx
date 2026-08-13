@@ -40,7 +40,7 @@ export function TransactionTable({ transactions }: { transactions: WalletTransac
         <h3 className="font-semibold text-foreground">Transaction History</h3>
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-          <div className="flex items-center gap-1 bg-muted p-1 rounded-md">
+          <div className="flex flex-wrap items-center gap-1 bg-muted p-1 rounded-md w-full sm:w-auto justify-center">
             {["ALL", "DEPOSIT", "WITHDRAWAL", "TRADE", "P2P"].map(t => (
               <button
                 key={t}

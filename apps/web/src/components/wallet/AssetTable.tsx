@@ -21,7 +21,7 @@ export function AssetTable({ balances }: { balances: AssetBalance[] }) {
     <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
       <div className="p-4 border-b border-border flex flex-col sm:flex-row gap-4 justify-between items-center bg-muted/20">
         <h3 className="font-semibold text-foreground">Your Assets</h3>
-        <div className="flex items-center gap-4 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input

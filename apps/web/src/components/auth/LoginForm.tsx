@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect") || "/account";
   const setUser = useAuthStore((state) => state.setUser);
   const [showPassword, setShowPassword] = useState(false);
   const [globalError, setGlobalError] = useState("");
@@ -32,7 +34,7 @@ export function LoginForm() {
       setGlobalError("");
       const response = await MockAuthProvider.login(data);
       setUser(response.user);
-      router.push("/account");
+      router.push(redirectUrl);
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred during login.");
     }
