@@ -16,16 +16,31 @@ export class MockAuthProvider {
       throw new Error("Your account has been temporarily locked for security.");
     }
 
+    // Assign roles based on email for testing different permissions
+    let role: "USER" | "SUPER_ADMIN" | "ADMIN" | "COMPLIANCE_ADMIN" | "SUPPORT_ADMIN" = "USER";
+    let displayName = "Trader";
+    
+    if (data.email === "admin@ethsltd.com") {
+      role = "SUPER_ADMIN";
+      displayName = "System Admin";
+    } else if (data.email === "compliance@ethsltd.com") {
+      role = "COMPLIANCE_ADMIN";
+      displayName = "Compliance Officer";
+    } else if (data.email === "support@ethsltd.com") {
+      role = "SUPPORT_ADMIN";
+      displayName = "Support Agent";
+    }
+
     return {
       user: {
         id: "ETH-" + Math.random().toString(36).substring(2, 10).toUpperCase(),
         email: data.email,
-        displayName: "Trader",
+        displayName,
         emailVerified: true,
         status: "ACTIVE",
         createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         avatarUrl: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-        role: "SUPER_ADMIN",
+        role,
       },
       token: "mock_jwt_token_123",
     };

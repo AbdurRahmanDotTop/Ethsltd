@@ -1,4 +1,6 @@
 import { ShieldAlert, KeyRound, Activity } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function SecuritySection() {
   return (
@@ -56,6 +58,12 @@ export function SecuritySection() {
               <li>• Activity monitoring</li>
             </ul>
           </div>
+        </div>
+        
+        <div className="mt-16 text-center">
+          <Button variant="outline" size="lg" className="border-border" asChild>
+            <Link href="/learn/security">Learn About Security &rarr;</Link>
+          </Button>
         </div>
       </div>
     </section>

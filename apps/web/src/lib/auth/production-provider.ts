@@ -10,16 +10,20 @@ export class ProductionAuthProvider {
     }
 
     // Mapping the API User to AuthUser
+    let status: "ACTIVE" | "EMAIL_UNVERIFIED" | "LOCKED" | "SUSPENDED" | "CLOSED" = "ACTIVE";
+    if (res.data.status === "PENDING_VERIFICATION") status = "EMAIL_UNVERIFIED";
+    else if (res.data.status === "FROZEN") status = "LOCKED";
+    else if (res.data.status === "BANNED") status = "SUSPENDED";
+    else if (res.data.status === "ACTIVE") status = "ACTIVE";
+
     const authUser: AuthUser = {
       id: res.data.id,
       email: res.data.email,
       displayName: "Trader",
-      emailVerified: true,
-      status: res.data.status,
+      emailVerified: res.data.status !== "PENDING_VERIFICATION",
+      status: status,
       role: res.data.role,
-      mfaEnabled: res.data.mfaEnabled,
-      createdAt: res.data.createdAt,
-      lastLogin: Date.now(),
+      createdAt: new Date(res.data.createdAt).toISOString(),
     };
 
     return {

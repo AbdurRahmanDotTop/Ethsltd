@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 
 export function Hero() {
@@ -29,9 +30,9 @@ export function Hero() {
           </Button>
         </div>
         
-        <a href="#" className="mt-8 text-sm font-medium text-[var(--brand-foreground)] hover:text-brand-200 flex items-center transition-colors">
+        <Link href="/markets" className="mt-8 text-sm font-medium text-[var(--brand-foreground)] hover:text-brand-200 flex items-center transition-colors">
           Explore Markets <span className="ml-2">&rarr;</span>
-        </a>
+        </Link>
 
         {/* Hero Visual Mockup */}
         <div className="mt-20 w-full max-w-5xl relative">

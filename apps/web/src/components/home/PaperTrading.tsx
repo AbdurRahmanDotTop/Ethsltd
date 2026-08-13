@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function PaperTrading() {
   return (
@@ -59,8 +60,12 @@ export function PaperTrading() {
               Experience the ETHSLTD trading environment with virtual funds before moving into live trading.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="px-8">Try Paper Trading</Button>
-              <Button variant="outline" size="lg" className="border-border">How Paper Trading Works &rarr;</Button>
+              <Button size="lg" className="px-8" asChild>
+                <Link href="/trade">Try Paper Trading</Link>
+              </Button>
+              <Button variant="outline" size="lg" className="border-border" asChild>
+                <Link href="/learn/paper-trading">How Paper Trading Works &rarr;</Link>
+              </Button>
             </div>
           </div>
         </div>

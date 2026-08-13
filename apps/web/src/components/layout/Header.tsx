@@ -15,6 +15,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [announcementVisible, setAnnouncementVisible] = useState(true)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false)
   const pathname = usePathname()
   const { user, status, logout } = useAuthStore()
 
@@ -66,9 +67,34 @@ export function Header() {
               <Link href="/trade" className={`text-sm font-medium transition-colors ${pathname.startsWith('/trade') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Trade</Link>
               <Link href="/p2p" className={`text-sm font-medium transition-colors ${pathname.startsWith('/p2p') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>P2P</Link>
               <Link href="/wallet" className={`text-sm font-medium transition-colors ${pathname.startsWith('/wallet') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Wallet</Link>
-              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors pb-1">Assets</Link>
-              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors pb-1">Learn</Link>
-              <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors pb-1">More ▾</Link>
+              <Link href="/markets" className={`text-sm font-medium transition-colors ${pathname === '/markets' ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Assets</Link>
+              <Link href="/learn" className={`text-sm font-medium transition-colors ${pathname.startsWith('/learn') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Learn</Link>
+              
+              {/* More Dropdown */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setMoreDropdownOpen(true)}
+                onMouseLeave={() => setMoreDropdownOpen(false)}
+              >
+                <button 
+                  className={`text-sm font-medium transition-colors flex items-center gap-1 ${moreDropdownOpen ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'} pb-1`}
+                  onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                >
+                  More <ChevronDown className={`w-3 h-3 transition-transform ${moreDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {moreDropdownOpen && (
+                  <div className="absolute top-full right-0 pt-2 w-48 z-50">
+                    <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden py-1">
+                      <Link href="/fees" className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors">Fees</Link>
+                      <Link href="/account/security" className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors">Security</Link>
+                      <Link href="/support" className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors">Support</Link>
+                      <Link href="/developer" className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors">Developer API</Link>
+                      <Link href="/about" className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors">About ETHSLTD</Link>
+                    </div>
+                  </div>
+                )}
+              </div>
             </nav>
           </div>
 
@@ -155,8 +181,19 @@ export function Header() {
             <Link href="/trade" className={`text-lg font-medium py-2 border-b border-border ${pathname.startsWith('/trade') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Trade</Link>
             <Link href="/p2p" className={`text-lg font-medium py-2 border-b border-border ${pathname.startsWith('/p2p') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>P2P</Link>
             <Link href="/wallet" className={`text-lg font-medium py-2 border-b border-border ${pathname.startsWith('/wallet') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Wallet</Link>
-            <Link href="#" className="text-lg font-medium text-foreground py-2 border-b border-border">Assets</Link>
-            <Link href="#" className="text-lg font-medium text-foreground py-2 border-b border-border">Learn</Link>
+            <Link href="/markets" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Assets</Link>
+            <Link href="/learn" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Learn</Link>
+            
+            <div className="py-2 border-b border-border">
+              <span className="text-lg font-medium text-muted-foreground mb-2 block">More</span>
+              <div className="flex flex-col gap-2 pl-4">
+                <Link href="/fees" className="text-foreground" onClick={() => setMobileMenuOpen(false)}>Fees</Link>
+                <Link href="/account/security" className="text-foreground" onClick={() => setMobileMenuOpen(false)}>Security</Link>
+                <Link href="/support" className="text-foreground" onClick={() => setMobileMenuOpen(false)}>Support</Link>
+                <Link href="/developer" className="text-foreground" onClick={() => setMobileMenuOpen(false)}>Developer API</Link>
+                <Link href="/about" className="text-foreground" onClick={() => setMobileMenuOpen(false)}>About ETHSLTD</Link>
+              </div>
+            </div>
             <div className="flex flex-col gap-3 mt-4">
               {status === "authenticated" && user ? (
                 <>

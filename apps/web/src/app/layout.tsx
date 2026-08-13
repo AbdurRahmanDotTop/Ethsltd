@@ -22,6 +22,19 @@ import { BackToTop } from "@/components/layout/BackToTop";
 export const metadata: Metadata = {
   title: "ETHSLTD Crypto - Trade Crypto With Clarity",
   description: "The modern digital asset platform. Trade crypto with clarity and confidence.",
+  metadataBase: new URL('http://localhost:3000'),
+  openGraph: {
+    title: "ETHSLTD Crypto",
+    description: "The modern digital asset platform. Trade crypto with clarity and confidence.",
+    url: "/",
+    siteName: "ETHSLTD",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ETHSLTD Crypto",
+    description: "The modern digital asset platform.",
+  },
 };
 
 import Script from "next/script";
