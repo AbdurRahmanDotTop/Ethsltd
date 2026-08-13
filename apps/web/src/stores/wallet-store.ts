@@ -1,13 +1,15 @@
 import { create } from 'zustand';
-import { WalletTransaction } from '@/lib/wallet/types';
+import { WalletTransaction, AssetBalance } from '@/lib/wallet/types';
 import { apiClient } from '@ethsltd/api-client';
 
 interface WalletState {
+  balances: AssetBalance[];
   transactions: WalletTransaction[];
   isLoading: boolean;
   error: string | null;
   
   // Actions
+  fetchBalances: () => Promise<void>;
   fetchTransactions: () => Promise<void>;
   simulateDeposit: (asset: string, amount: number) => Promise<any>;
   simulateWithdrawal: (asset: string, amount: number, destination: string, network: string, fee: number) => Promise<any>;
@@ -15,9 +17,21 @@ interface WalletState {
 
 export const useWalletStore = create<WalletState>()(
   (set, get) => ({
+    balances: [],
     transactions: [],
     isLoading: false,
     error: null,
+
+    fetchBalances: async () => {
+      try {
+        const res = await apiClient.getWalletBalances();
+        if (res.success && res.data) {
+          set({ balances: res.data });
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch balances", err);
+      }
+    },
 
     fetchTransactions: async () => {
       set({ isLoading: true, error: null });
@@ -41,6 +55,7 @@ export const useWalletStore = create<WalletState>()(
       });
       
       if (res.success) {
+        await get().fetchBalances();
         await get().fetchTransactions();
       }
       return res;
@@ -55,6 +70,7 @@ export const useWalletStore = create<WalletState>()(
       });
       
       if (res.success) {
+        await get().fetchBalances();
         await get().fetchTransactions();
       }
       return res;

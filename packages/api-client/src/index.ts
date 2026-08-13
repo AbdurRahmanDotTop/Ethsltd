@@ -161,23 +161,24 @@ export class EthsltdClient {
   }
 
   async getOrders(params?: any) {
-    // Placeholder
-    return { success: true, data: [] };
+    return this.request<any[]>('/api/v1/trading/orders');
   }
 
   async getTrades(params?: any) {
-    // Placeholder
-    return { success: true, data: [] };
+    return this.request<any[]>('/api/v1/trading/trades');
   }
 
   async createOrder(data: any) {
-    // Placeholder
-    return { success: true, data };
+    return this.request<any>('/api/v1/trading/orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async cancelOrder(orderId: string) {
-    // Placeholder
-    return { success: true };
+    return this.request<any>(`/api/v1/trading/orders/${orderId}`, {
+      method: 'DELETE',
+    });
   }
 }
 

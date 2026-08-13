@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Market } from "@/lib/market-data/types"
 import { apiClient } from "@ethsltd/api-client"
 import { useTradingUIStore } from "@/stores/trading-ui-store"
-import { usePaperAccountStore } from "@/stores/paper-account-store"
+import { useWalletStore } from "@/stores/wallet-store"
 import { parseMarketSymbol } from "@/lib/trading/calculations"
 import { OrderSide, OrderType } from "@/lib/trading/types"
 import { cn } from "@/lib/utils"
@@ -22,11 +22,15 @@ const getOrderSchema = (type: OrderType) => z.object({
 
 export function OrderEntry({ market }: { market: Market }) {
   const { selectedSide, setSide, selectedOrderType, setOrderType, orderFormPrice, orderFormQuantity, setOrderFormPrice, setOrderFormQuantity } = useTradingUIStore()
-  const { balances } = usePaperAccountStore()
+  const { balances, fetchBalances } = useWalletStore()
   const { base, quote } = parseMarketSymbol(market.symbol)
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null)
+
+  useEffect(() => {
+    fetchBalances();
+  }, [fetchBalances]);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm({
     resolver: zodResolver(getOrderSchema(selectedOrderType)),
@@ -60,8 +64,8 @@ export function OrderEntry({ market }: { market: Market }) {
   const total = currentPrice * parsedQty
   const fee = total * 0.001 // 0.1% fee
   
-  const quoteBalance = balances.find(b => b.asset === quote)?.available || 0
-  const baseBalance = balances.find(b => b.asset === base)?.available || 0
+  const quoteBalance = balances.find(b => b.symbol === quote)?.available || 0
+  const baseBalance = balances.find(b => b.symbol === base)?.available || 0
 
   const handlePercentageClick = (pct: number) => {
     if (selectedSide === 'buy') {
@@ -87,14 +91,15 @@ export function OrderEntry({ market }: { market: Market }) {
     try {
       await apiClient.createOrder({
         market: market.id,
-        side: selectedSide,
-        type: selectedOrderType,
+        side: selectedSide === 'buy' ? 'BUY' : 'SELL',
+        type: selectedOrderType === 'market' ? 'MARKET' : 'LIMIT',
         price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
-        quantity: parseFloat(data.quantity)
+        amount: parseFloat(data.quantity)
       })
       
       setMessage({ type: 'success', text: 'Order placed successfully' })
       setValue("quantity", "") // Reset quantity on success
+      fetchBalances() // Refresh balances
       setTimeout(() => setMessage(null), 3000)
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Failed to place order' })
@@ -114,12 +119,14 @@ export function OrderEntry({ market }: { market: Market }) {
         <button 
           className={cn("flex-1 py-1.5 text-sm font-semibold z-10 transition-colors", selectedSide === 'buy' ? 'text-success' : 'text-muted-foreground')}
           onClick={() => setSide('buy')}
+          type="button"
         >
           Buy
         </button>
         <button 
           className={cn("flex-1 py-1.5 text-sm font-semibold z-10 transition-colors", selectedSide === 'sell' ? 'text-danger' : 'text-muted-foreground')}
           onClick={() => setSide('sell')}
+          type="button"
         >
           Sell
         </button>
@@ -130,12 +137,14 @@ export function OrderEntry({ market }: { market: Market }) {
         <button 
           className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'limit' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
           onClick={() => setOrderType('limit')}
+          type="button"
         >
           Limit
         </button>
         <button 
           className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'market' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
           onClick={() => setOrderType('market')}
+          type="button"
         >
           Market
         </button>

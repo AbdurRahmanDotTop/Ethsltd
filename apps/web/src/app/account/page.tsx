@@ -1,25 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useAuthStore } from "@/stores/auth-store";
-import { usePaperAccountStore } from "@/stores/paper-account-store";
+import { useWalletStore } from "@/stores/wallet-store";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, User, ShieldCheck, Wallet } from "lucide-react";
 
 export default function AccountOverviewPage() {
   const { user } = useAuthStore();
-  const { balances } = usePaperAccountStore();
+  const { balances, fetchBalances } = useWalletStore();
   
+  useEffect(() => {
+    fetchBalances();
+  }, [fetchBalances]);
+
   // Combine USDT and USDC for display
-  const usdtBal = balances.find(b => b.asset === 'USDT')?.total || 0;
-  const usdcBal = balances.find(b => b.asset === 'USDC')?.total || 0;
-  const paperBalance = usdtBal + usdcBal;
+  const usdtBal = balances.find(b => b.symbol === 'USDT')?.total || 0;
+  const usdcBal = balances.find(b => b.symbol === 'USDC')?.total || 0;
+  const totalBalance = usdtBal + usdcBal;
 
   // Format to USD as per PRD
   const formattedBalance = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(paperBalance);
+  }).format(totalBalance);
 
   if (!user) return null;
 
@@ -64,8 +69,8 @@ export default function AccountOverviewPage() {
               <Wallet className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">Paper Trading</h3>
-              <p className="text-sm text-muted-foreground">Virtual Balance</p>
+              <h3 className="font-semibold text-lg">Wallet Balance</h3>
+              <p className="text-sm text-muted-foreground">Available USD</p>
             </div>
           </div>
           <div className="pt-4 pb-2">
@@ -73,8 +78,8 @@ export default function AccountOverviewPage() {
           </div>
           <div className="mt-auto pt-6">
             <Button className="w-full" asChild>
-              <Link href="/trade">
-                Open Trading Terminal <ArrowRight className="w-4 h-4 ml-2" />
+              <Link href="/wallet">
+                Go to Wallet <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
           </div>

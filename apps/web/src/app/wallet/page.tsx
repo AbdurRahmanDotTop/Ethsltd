@@ -8,7 +8,7 @@ import { PortfolioAllocation } from "@/components/wallet/PortfolioAllocation";
 import { TransactionTable } from "@/components/wallet/TransactionTable";
 import { apiClient } from "@ethsltd/api-client";
 import { AssetBalance, PortfolioSummary, AssetAllocation, WalletTransaction } from "@/lib/wallet/types";
-import { usePaperAccountStore } from "@/stores/paper-account-store";
+import { useWalletStore } from "@/stores/wallet-store";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,8 @@ export default function WalletPage() {
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Subscribe to changes in the paper account store so the wallet updates when trades happen
-  const storeBalances = usePaperAccountStore(state => state.balances);
+  // Subscribe to wallet store balances to trigger re-fetch when they change globally
+  const storeBalances = useWalletStore(state => state.balances);
 
   useEffect(() => {
     async function loadData() {

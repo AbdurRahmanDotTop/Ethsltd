@@ -1,15 +1,33 @@
 "use client"
-import { useState } from "react"
-import { usePaperAccountStore } from "@/stores/paper-account-store"
+import { useState, useEffect } from "react"
 import { formatPrice } from "@/lib/trading/calculations"
 import { Button } from "@/components/ui/button"
 import { apiClient } from "@ethsltd/api-client"
 
 export function TradingHistoryTabs() {
   const [activeTab, setActiveTab] = useState<'open'|'history'|'trades'>('open')
-  const { orders, trades } = usePaperAccountStore()
+  const [orders, setOrders] = useState<any[]>([])
+  const [trades, setTrades] = useState<any[]>([])
   
-  const openOrders = orders.filter(o => o.status === 'open' || o.status === 'partially_filled')
+  const loadData = async () => {
+    try {
+      const oRes = await apiClient.getOrders()
+      if(oRes.success) setOrders(oRes.data || [])
+      
+      const tRes = await apiClient.getTrades()
+      if(tRes.success) setTrades(tRes.data || [])
+    } catch(e) {
+      console.error(e)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+    const interval = setInterval(loadData, 5000)
+    return () => clearInterval(interval)
+  }, [])
+  
+  const openOrders = orders.filter(o => o.status === 'OPEN')
   
   const fmtDate = (d: string) => {
     try {
@@ -21,6 +39,7 @@ export function TradingHistoryTabs() {
   const handleCancel = async (id: string) => {
     try {
       await apiClient.cancelOrder(id);
+      loadData();
     } catch(e) { console.error(e) }
   }
 
@@ -68,10 +87,10 @@ export function TradingHistoryTabs() {
                 <tr key={order.id} className="hover:bg-muted/30">
                   <td className="py-3 pl-4 font-mono text-xs text-muted-foreground hidden md:table-cell">{fmtDate(order.createdAt)}</td>
                   <td className="py-3 font-semibold text-xs">{order.market}</td>
-                  <td className="py-3 capitalize text-xs hidden sm:table-cell">{order.type}</td>
-                  <td className={`py-3 capitalize text-xs font-semibold ${order.side === 'buy' ? 'text-success' : 'text-danger'}`}>{order.side}</td>
+                  <td className="py-3 capitalize text-xs hidden sm:table-cell">{order.type.toLowerCase()}</td>
+                  <td className={`py-3 capitalize text-xs font-semibold ${order.side === 'BUY' ? 'text-success' : 'text-danger'}`}>{order.side.toLowerCase()}</td>
                   <td className="py-3 font-mono text-xs">{order.price ? formatPrice(order.price) : 'Market'}</td>
-                  <td className="py-3 font-mono text-xs">{order.quantity}</td>
+                  <td className="py-3 font-mono text-xs">{order.amount}</td>
                   <td className="py-3 pr-4 text-right">
                     <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => handleCancel(order.id)}>Cancel</Button>
                   </td>
@@ -101,11 +120,11 @@ export function TradingHistoryTabs() {
                 <tr key={order.id} className="hover:bg-muted/30">
                   <td className="py-3 pl-4 font-mono text-xs text-muted-foreground hidden md:table-cell">{fmtDate(order.createdAt)}</td>
                   <td className="py-3 font-semibold text-xs">{order.market}</td>
-                  <td className="py-3 capitalize text-xs hidden sm:table-cell">{order.type}</td>
-                  <td className={`py-3 capitalize text-xs font-semibold ${order.side === 'buy' ? 'text-success' : 'text-danger'}`}>{order.side}</td>
+                  <td className="py-3 capitalize text-xs hidden sm:table-cell">{order.type.toLowerCase()}</td>
+                  <td className={`py-3 capitalize text-xs font-semibold ${order.side === 'BUY' ? 'text-success' : 'text-danger'}`}>{order.side.toLowerCase()}</td>
                   <td className="py-3 font-mono text-xs">{order.price ? formatPrice(order.price) : 'Market'}</td>
-                  <td className="py-3 font-mono text-xs">{order.quantity}</td>
-                  <td className="py-3 capitalize text-xs text-muted-foreground">{order.status}</td>
+                  <td className="py-3 font-mono text-xs">{order.amount}</td>
+                  <td className="py-3 capitalize text-xs text-muted-foreground">{order.status.toLowerCase()}</td>
                 </tr>
               ))}
             </tbody>
@@ -130,13 +149,13 @@ export function TradingHistoryTabs() {
                 <tr><td colSpan={7} className="py-12 text-center text-muted-foreground">No trades yet. Your completed trades will appear here.</td></tr>
               ) : trades.map(trade => (
                 <tr key={trade.id} className="hover:bg-muted/30">
-                  <td className="py-3 pl-4 font-mono text-xs text-muted-foreground hidden md:table-cell">{fmtDate(trade.timestamp)}</td>
+                  <td className="py-3 pl-4 font-mono text-xs text-muted-foreground hidden md:table-cell">{fmtDate(trade.createdAt)}</td>
                   <td className="py-3 font-semibold text-xs">{trade.market}</td>
-                  <td className={`py-3 capitalize text-xs font-semibold ${trade.side === 'buy' ? 'text-success' : 'text-danger'}`}>{trade.side}</td>
+                  <td className={`py-3 capitalize text-xs font-semibold ${trade.side === 'BUY' ? 'text-success' : 'text-danger'}`}>{trade.side.toLowerCase()}</td>
                   <td className="py-3 font-mono text-xs">{formatPrice(trade.price)}</td>
-                  <td className="py-3 font-mono text-xs">{trade.quantity}</td>
+                  <td className="py-3 font-mono text-xs">{trade.amount}</td>
                   <td className="py-3 font-mono text-xs text-muted-foreground hidden sm:table-cell">{trade.fee.toFixed(4)} {trade.feeAsset}</td>
-                  <td className="py-3 pr-4 text-right font-mono text-xs font-medium">{trade.quoteAmount.toFixed(2)}</td>
+                  <td className="py-3 pr-4 text-right font-mono text-xs font-medium">{trade.total.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
