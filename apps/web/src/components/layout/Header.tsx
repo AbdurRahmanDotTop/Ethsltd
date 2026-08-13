@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, Search, X, User, ChevronDown, LogOut, LayoutDashboard, Shield, Settings, Bell } from "lucide-react"
+import { Menu, Search, X, User, ChevronDown, LogOut, LayoutDashboard, Shield, Settings, Bell, Info } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { MockAuthProvider } from "@/lib/auth/mock-provider"
 import { Button } from "@/components/ui/button"
@@ -175,6 +175,16 @@ export function Header() {
               )}
             </div>
           </nav>
+        </div>
+      )}
+
+      {/* P2P Demo Banner */}
+      {pathname.startsWith('/p2p') && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 px-4 py-2 text-sm flex items-center justify-center gap-2 border-b border-blue-100 dark:border-blue-900/50 w-full">
+          <Info className="w-4 h-4 shrink-0" />
+          <span className="font-medium">P2P Demo Mode:</span>
+          <span className="hidden sm:inline">Transactions on ETHSLTD are currently simulated. No real money or cryptocurrency is transferred.</span>
+          <span className="sm:hidden">Transactions are currently simulated.</span>
         </div>
       )}
     </header>

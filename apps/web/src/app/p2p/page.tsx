@@ -22,7 +22,7 @@ export default function P2PPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="bg-muted/30 pb-24">
       <P2PHero />
       
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 pb-24">

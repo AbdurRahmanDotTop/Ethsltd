@@ -4,8 +4,8 @@ import Link from "next/link";
 
 export default function P2POrderPage({ params }: { params: { id: string } }) {
   return (
-    <div className="min-h-screen bg-muted/30">
-      <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8">
+    <div className="bg-muted/30">
+      <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8 min-h-[70vh]">
         
         {/* Navigation */}
         <div className="mb-6">

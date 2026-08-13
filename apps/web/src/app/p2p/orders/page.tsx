@@ -12,8 +12,8 @@ export default function P2POrdersPage() {
   const { orders } = useP2PStore();
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8">
+    <div className="bg-muted/30">
+      <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8 min-h-[70vh]">
         
         <div className="flex items-center justify-between mb-8">
           <div>
