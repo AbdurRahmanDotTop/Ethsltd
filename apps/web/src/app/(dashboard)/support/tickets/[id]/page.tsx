@@ -93,7 +93,7 @@ export default function TicketDetailPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 md:px-8 py-8 md:py-12 flex flex-col">
+      <main className="flex-1 min-h-0 max-w-5xl w-full mx-auto px-4 md:px-8 py-8 md:py-12 flex flex-col">
         {/* Header */}
       <div className="shrink-0 mb-6 flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>

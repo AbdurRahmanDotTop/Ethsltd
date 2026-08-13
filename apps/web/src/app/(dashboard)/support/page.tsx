@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Search, MessageSquare, Ticket, FileText, ChevronRight, HelpCircle, Shield, Wallet, ArrowRightLeft } from "lucide-react";
+import { useState } from "react";
+import { Search, MessageSquare, Ticket, FileText, ChevronRight, HelpCircle, Shield, Wallet, ArrowRightLeft, ChevronDown } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
 const categories = [
-  { id: "account", name: "Account & Security", icon: Shield, desc: "2FA, passwords, KYC, and account recovery." },
-  { id: "trading", name: "Trading", icon: ArrowRightLeft, desc: "Order execution, fees, and market data." },
-  { id: "wallet", name: "Wallet & Transfers", icon: Wallet, desc: "Deposits, withdrawals, and crypto networks." },
-  { id: "p2p", name: "P2P Marketplace", icon: Users, desc: "Buying/selling, payments, and disputes." },
+  { id: "account", name: "Account & Security", icon: Shield, desc: "2FA, passwords, KYC, and account recovery.", link: "/learn/security" },
+  { id: "trading", name: "Trading", icon: ArrowRightLeft, desc: "Order execution, fees, and market data.", link: "/learn/trading" },
+  { id: "wallet", name: "Wallet & Transfers", icon: Wallet, desc: "Deposits, withdrawals, and crypto networks.", link: "/learn/crypto-basics" },
+  { id: "p2p", name: "P2P Marketplace", icon: Users, desc: "Buying/selling, payments, and disputes.", link: "/p2p" },
 ];
 
 function Users(props: any) {
@@ -35,13 +36,15 @@ function Users(props: any) {
 }
 
 const popularArticles = [
-  "How do I secure my ETHSLTD account?",
-  "How do I withdraw crypto?",
-  "Why is my withdrawal pending?",
-  "How do I contact support?",
+  { q: "How do I secure my ETHSLTD account?", a: "Enable Two-Factor Authentication (2FA) in your account settings, use a strong unique password, and never share your credentials or private keys with anyone. ETHSLTD support will never ask for your password." },
+  { q: "How do I withdraw crypto?", a: "Navigate to your Wallet, select 'Withdraw', choose the asset and network, enter the destination address, and confirm the transaction with your 2FA code." },
+  { q: "Why is my withdrawal pending?", a: "Withdrawals may be pending due to network congestion or required security checks. Most withdrawals process within a few minutes, but can take up to 24 hours in rare cases." },
+  { q: "How do I contact support?", a: "You can create a support ticket by clicking 'Create Ticket' above, or use the Live Chat widget at the bottom right of your screen for immediate assistance." },
 ];
 
 export default function SupportPage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -124,17 +127,17 @@ export default function SupportPage() {
           <h2 className="text-2xl font-bold">Popular Topics</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             {categories.map((cat) => (
-              <div key={cat.id} className="group border border-border rounded-xl p-5 hover:border-brand-primary/50 hover:shadow-md transition-all cursor-pointer bg-card">
+              <Link href={cat.link} key={cat.id} className="group border border-border rounded-xl p-5 hover:border-brand-primary/50 hover:shadow-md transition-all cursor-pointer bg-card block">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground group-hover:bg-brand-primary/10 group-hover:text-brand-primary transition-colors">
                     <cat.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">{cat.name}</h3>
+                    <h3 className="font-semibold group-hover:text-brand-primary transition-colors">{cat.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{cat.desc}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -142,10 +145,23 @@ export default function SupportPage() {
         <div>
           <h2 className="text-2xl font-bold mb-6">Frequently Asked</h2>
           <div className="space-y-3">
-            {popularArticles.map((title, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer group transition-colors">
-                <FileText className="w-5 h-5 text-muted-foreground group-hover:text-brand-primary transition-colors" />
-                <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">{title}</span>
+            {popularArticles.map((faq, i) => (
+              <div key={i} className="border border-border rounded-lg bg-card overflow-hidden transition-all">
+                <div 
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-muted-foreground group-hover:text-brand-primary transition-colors" />
+                    <span className="text-sm font-medium text-foreground/90 group-hover:text-foreground transition-colors">{faq.q}</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                </div>
+                {openFaq === i && (
+                  <div className="p-4 pt-0 text-sm text-muted-foreground border-t border-border bg-muted/20">
+                    {faq.a}
+                  </div>
+                )}
               </div>
             ))}
           </div>
