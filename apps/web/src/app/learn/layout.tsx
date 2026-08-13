@@ -50,6 +50,7 @@ export default function LearnLayout({
           </div>
         </main>
       </div>
+      </div>
       <Footer />
     </div>
   )

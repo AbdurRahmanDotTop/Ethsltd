@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { AuthCard } from "@/components/auth/AuthCard";
-import { VerifyEmailForm } from "@/components/auth/VerifyEmailForm";
+import { EmailVerification } from "@/components/auth/EmailVerification";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 

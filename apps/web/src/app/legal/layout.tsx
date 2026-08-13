@@ -54,6 +54,7 @@ export default function LegalLayout({
           </div>
         </main>
       </div>
+      </div>
       <Footer />
     </div>
   )
