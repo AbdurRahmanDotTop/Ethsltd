@@ -75,7 +75,9 @@ export function TradingExperience() {
                 </li>
               ))}
             </ul>
-            <Button size="lg" className="px-8">Launch Terminal</Button>
+            <Button size="lg" className="px-8" asChild>
+              <Link href="/trade">Launch Terminal</Link>
+            </Button>
           </div>
           
           <div className="relative">
