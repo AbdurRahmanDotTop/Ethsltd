@@ -1,4 +1,4 @@
-import { AdminDashboardKPIs, AuditEvent, AdminUser, KycApplication, FinancialTransaction, AdminOrder, AdminTrade } from "../types";
+import { AdminDashboardKPIs, AuditEvent, AdminUser, KycApplication, FinancialTransaction, AdminOrder, AdminTrade, AdminP2PDispute } from "../types";
 
 export interface AdminProvider {
   getDashboardKPIs(): Promise<AdminDashboardKPIs>;
@@ -10,6 +10,7 @@ export interface AdminProvider {
   getDeposits(params?: { page?: number; limit?: number; status?: string }): Promise<{ items: FinancialTransaction[]; total: number }>;
   getOrders(params?: { page?: number; limit?: number; status?: string; market?: string }): Promise<{ items: AdminOrder[]; total: number }>;
   getTrades(params?: { page?: number; limit?: number; market?: string }): Promise<{ items: AdminTrade[]; total: number }>;
+  getP2PDisputes(params?: { page?: number; limit?: number; status?: string }): Promise<{ items: AdminP2PDispute[]; total: number }>;
 }
 
 export const MockAdminProvider: AdminProvider = {
@@ -312,6 +313,38 @@ export const MockAdminProvider: AdminProvider = {
     return {
       items: mockTrades.slice(start, start + limit),
       total: mockTrades.length
+    };
+  },
+
+  async getP2PDisputes(params?: { page?: number; limit?: number; status?: string }): Promise<{ items: AdminP2PDispute[]; total: number }> {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    
+    let mockDisputes: AdminP2PDispute[] = Array.from({ length: 35 }).map((_, i) => ({
+      id: `DSP-300${i}`,
+      orderId: `P2P-ORD-70${i}`,
+      buyerId: `USR-${i % 2 === 0 ? 100 : 200}${i}`,
+      sellerId: `USR-${i % 2 === 0 ? 200 : 100}${i}`,
+      asset: i % 3 === 0 ? "ETH" : "USDT",
+      fiatAmount: 150 + Math.random() * 1000,
+      fiatCurrency: i % 2 === 0 ? "USD" : "EUR",
+      reason: i % 3 === 0 ? "Payment not received" : i % 2 === 0 ? "Buyer unresponsive" : "Seller refused to release",
+      status: i % 8 === 0 ? "RESOLVED_BUYER" : i % 7 === 0 ? "RESOLVED_SELLER" : i % 6 === 0 ? "CANCELED" : i % 2 === 0 ? "UNDER_REVIEW" : "OPEN",
+      raisedBy: i % 2 === 0 ? "BUYER" : "SELLER",
+      assignedAdmin: i % 4 === 0 ? "ADMIN-001" : undefined,
+      createdAt: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+    }));
+
+    if (params?.status && params.status !== "ALL") {
+      mockDisputes = mockDisputes.filter(d => d.status === params.status);
+    }
+
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const start = (page - 1) * limit;
+
+    return {
+      items: mockDisputes.slice(start, start + limit),
+      total: mockDisputes.length
     };
   }
 };

@@ -81,6 +81,21 @@ export interface AdminTrade {
   timestamp: string;
 }
 
+export interface AdminP2PDispute {
+  id: string;
+  orderId: string;
+  buyerId: string;
+  sellerId: string;
+  asset: string;
+  fiatAmount: number;
+  fiatCurrency: string;
+  reason: string;
+  status: "OPEN" | "UNDER_REVIEW" | "RESOLVED_BUYER" | "RESOLVED_SELLER" | "CANCELED";
+  raisedBy: "BUYER" | "SELLER";
+  assignedAdmin?: string;
+  createdAt: string;
+}
+
 export interface AdminDashboardKPIs {
   totalUsers: number;
   activeUsers: number;
