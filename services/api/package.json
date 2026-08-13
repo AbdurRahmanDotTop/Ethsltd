@@ -1,0 +1,23 @@
+{
+  "name": "@ethsltd/api",
+  "version": "1.0.0",
+  "description": "API Service",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@ethsltd/types": "workspace:^",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260813.1",
+    "typescript": "^5",
+    "wrangler": "^4.122.0"
+  }
+}

@@ -1,0 +1,10 @@
+name = "api"
+main = "src/index.ts"
+compatibility_date = "2024-04-05"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ethsltd-db"
+database_id = "local-db"
+migrations_dir = "../../database/migrations"
