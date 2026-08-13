@@ -2,7 +2,9 @@ import { P2POrderWorkspace } from "@/components/p2p/P2POrderWorkspace";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function P2POrderPage({ params }: { params: { id: string } }) {
+export default async function P2POrderPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  
   return (
     <div className="bg-muted/30">
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8 min-h-[70vh]">
@@ -16,7 +18,7 @@ export default function P2POrderPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* Workspace */}
-        <P2POrderWorkspace orderId={params.id} />
+        <P2POrderWorkspace orderId={resolvedParams.id} />
 
       </div>
     </div>
