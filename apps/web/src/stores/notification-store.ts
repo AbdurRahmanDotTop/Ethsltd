@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Notification, NotificationCategory } from "@/lib/notifications/types";
 import { MockNotificationProvider } from "@/lib/notifications/mock-notification-provider";
+import { apiClient } from "@ethsltd/api-client";
 
 interface NotificationPreferences {
   inApp: boolean;
@@ -59,8 +60,38 @@ export const useNotificationStore = create<NotificationState>()(
       fetchNotifications: async (userId, category = "ALL") => {
         set({ isLoading: true });
         try {
-          const res = await MockNotificationProvider.getNotifications({ userId, category });
-          set({ notifications: res.items, unreadCount: res.unreadCount, total: res.total, isLoading: false });
+          const res = await apiClient.getNotifications();
+          if (res.success && res.data) {
+            // Map backend data to frontend format
+            const items = res.data.map((n: any) => ({
+              id: n.id,
+              userId: n.userId,
+              title: n.title,
+              message: n.message,
+              category: n.type,
+              type: "SYSTEM_ANNOUNCEMENT" as any,
+              priority: "NORMAL" as any,
+              channels: ["IN_APP"] as any,
+              status: (n.isRead ? "READ" : "UNREAD") as any,
+              createdAt: n.createdAt,
+              actionUrl: "", // We can enhance backend to support actions later
+              actionText: ""
+            }));
+
+            // Filter if category is specified
+            let filtered = items;
+            if (category === "UNREAD") {
+              filtered = items.filter((i: any) => i.status === "UNREAD");
+            } else if (category !== "ALL") {
+              filtered = items.filter((i: any) => i.category === category);
+            }
+
+            const unreadCount = items.filter((i: any) => i.status === "UNREAD").length;
+
+            set({ notifications: filtered, unreadCount, total: items.length, isLoading: false });
+          } else {
+            set({ isLoading: false });
+          }
         } catch (error) {
           console.error("Failed to fetch notifications", error);
           set({ isLoading: false });
@@ -69,7 +100,7 @@ export const useNotificationStore = create<NotificationState>()(
 
       markAsRead: async (id) => {
         try {
-          await MockNotificationProvider.markAsRead(id);
+          await apiClient.markNotificationRead(id);
           set((state) => ({
             notifications: state.notifications.map((n) =>
               n.id === id ? { ...n, status: "READ", readAt: new Date().toISOString() } : n
@@ -83,7 +114,7 @@ export const useNotificationStore = create<NotificationState>()(
 
       markAllAsRead: async () => {
         try {
-          await MockNotificationProvider.markAllAsRead();
+          await apiClient.markAllNotificationsRead();
           set((state) => ({
             notifications: state.notifications.map((n) =>
               n.status === "UNREAD" ? { ...n, status: "READ", readAt: new Date().toISOString() } : n
@@ -97,10 +128,10 @@ export const useNotificationStore = create<NotificationState>()(
 
       archiveNotification: async (id) => {
         try {
-          await MockNotificationProvider.archiveNotification(id);
+          // Marking as read is our equivalent of archive for MVP, or just remove from UI
+          await apiClient.markNotificationRead(id);
           set((state) => ({
             notifications: state.notifications.filter((n) => n.id !== id),
-            // Re-fetch or adjust counts might be needed in a real app, but this removes it from UI immediately
           }));
         } catch (error) {
           console.error("Failed to archive notification", error);

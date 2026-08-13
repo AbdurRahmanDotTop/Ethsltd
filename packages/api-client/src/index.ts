@@ -235,6 +235,46 @@ export class EthsltdClient {
   async getAdminTransactions() {
     return this.request<any[]>('/api/v1/admin/transactions');
   }
+
+  // Notifications API Methods
+  async getNotifications() {
+    return this.request<any[]>('/api/v1/notifications');
+  }
+
+  async markNotificationRead(id: string) {
+    return this.request<any>(`/api/v1/notifications/${id}/read`, {
+      method: 'PATCH',
+    });
+  }
+
+  async markAllNotificationsRead() {
+    return this.request<any>('/api/v1/notifications/read-all', {
+      method: 'POST',
+    });
+  }
+
+  // Support API Methods
+  async getTickets() {
+    return this.request<any[]>('/api/v1/support/tickets');
+  }
+
+  async createTicket(data: { subject: string; category: string; message: string; priority?: string }) {
+    return this.request<any>('/api/v1/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getTicketMessages(ticketId: string) {
+    return this.request<any[]>(`/api/v1/support/tickets/${ticketId}/messages`);
+  }
+
+  async sendTicketMessage(ticketId: string, content: string) {
+    return this.request<any>(`/api/v1/support/tickets/${ticketId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
 }
 
 export const apiClient = new EthsltdClient();

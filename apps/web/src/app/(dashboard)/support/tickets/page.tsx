@@ -36,7 +36,6 @@ export default function SupportTicketsPage() {
     setIsSubmitting(true);
     try {
       await createTicket({
-        userId: user.id,
         subject,
         category,
         description,
