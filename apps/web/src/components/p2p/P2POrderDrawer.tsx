@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { apiClient } from "@ethsltd/api-client";
 import { P2PAdvertisement, P2PMerchant, P2POrder } from "@/lib/p2p/types";
 import { p2pOrderSchema, P2POrderInput } from "@/lib/validation/p2p";
 import { useP2PStore } from "@/stores/p2p-store";
@@ -21,7 +22,7 @@ interface P2POrderDrawerProps {
 
 export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
   const router = useRouter();
-  const { query, createOrder } = useP2PStore();
+  const { query } = useP2PStore();
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const {
@@ -85,32 +86,26 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
 
     setIsSubmittingOrder(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      const res = await apiClient.createP2pOrder({
+        adId: ad.id,
+        cryptoAmount: data.cryptoAmount.toString(),
+        fiatAmount: data.fiatAmount.toString(),
+        paymentMethod: data.paymentMethod,
+      });
 
-    const newOrder: P2POrder = {
-      id: `P2P-${Date.now().toString().slice(-6)}`,
-      advertisementId: ad.id,
-      merchantId: merchant.id,
-      userId: "u_demo",
-      side: ad.side, // ad side
-      asset: ad.asset,
-      fiat: ad.fiat,
-      cryptoAmount: data.cryptoAmount,
-      fiatAmount: data.fiatAmount,
-      price: ad.price,
-      paymentMethod: data.paymentMethod,
-      status: "CREATED",
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 mins
-    };
-
-    createOrder(newOrder);
-    setIsSubmittingOrder(false);
-    onClose();
-    
-    // Navigate to order workspace
-    router.push(`/p2p/order/${newOrder.id}`);
+      if (res.success) {
+        onClose();
+        // Navigate to order workspace
+        router.push(`/p2p/order/${(res as any).orderId}`);
+      } else {
+        alert(res.error || 'Failed to create order');
+      }
+    } catch(e) {
+      alert('Failed to place order');
+    } finally {
+      setIsSubmittingOrder(false);
+    }
   };
 
   return (

@@ -13,16 +13,19 @@ interface P2PChatProps {
 }
 
 export function P2PChat({ order, merchant }: P2PChatProps) {
-  const { messages, addMessage } = useP2PStore();
+  const [messages, setMessages] = useState<P2PMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const orderMessages = messages.filter(m => m.orderId === order.id);
   const isChatActive = order.status !== "COMPLETED" && order.status !== "CANCELLED";
+
+  const addMessage = (msg: P2PMessage) => {
+    setMessages(prev => [...prev, msg]);
+  };
 
   useEffect(() => {
     // Initial system messages if chat is empty
-    if (orderMessages.length === 0) {
+    if (messages.length === 0) {
       addMessage({
         id: `msg_sys_${Date.now()}`,
         orderId: order.id,
@@ -40,13 +43,13 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
         read: true,
       });
     }
-  }, [order.id, orderMessages.length, addMessage]);
+  }, [order.id, messages.length]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [orderMessages.length]);
+  }, [messages.length]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +100,7 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
           <p>Never release crypto before verifying payment in your bank account. ETHSLTD staff will never contact you directly or ask you to release funds.</p>
         </div>
 
-        {orderMessages.map((msg) => {
+        {messages.map((msg) => {
           if (msg.sender === "system") {
             return (
               <div key={msg.id} className="flex justify-center">

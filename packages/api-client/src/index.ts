@@ -180,6 +180,35 @@ export class EthsltdClient {
       method: 'DELETE',
     });
   }
+
+  // P2P API Methods
+  async getP2pAds(params?: any) {
+    return this.request<any[]>('/api/v1/p2p/ads');
+  }
+
+  async createP2pAd(data: any) {
+    return this.request<any>('/api/v1/p2p/ads', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getP2pOrders(params?: any) {
+    return this.request<any[]>('/api/v1/p2p/orders');
+  }
+
+  async createP2pOrder(data: any) {
+    return this.request<any>('/api/v1/p2p/orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateP2pOrderStatus(orderId: string, action: 'pay' | 'release' | 'cancel') {
+    return this.request<any>(`/api/v1/p2p/orders/${orderId}/${action}`, {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiClient = new EthsltdClient();

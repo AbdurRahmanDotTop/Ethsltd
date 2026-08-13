@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { p2pProvider } from "@/lib/p2p/provider";
+import { apiClient } from "@ethsltd/api-client";
 import { P2PAdvertisement, P2PMerchant } from "@/lib/p2p/types";
 import { useP2PStore } from "@/stores/p2p-store";
 import { Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
@@ -18,18 +18,38 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const results = await p2pProvider.getAdvertisements(query);
-        setAds(results);
-        
-        // Fetch missing merchants
-        const newMerchants = { ...merchants };
-        for (const ad of results) {
-          if (!newMerchants[ad.merchantId]) {
-            const m = await p2pProvider.getMerchant(ad.merchantId);
-            if (m) newMerchants[m.id] = m;
+        const res = await apiClient.getP2pAds();
+        if (res.success && res.data) {
+          // Filter ads based on query locally for MVP
+          const filteredAds = res.data.filter((ad: any) => 
+            ad.type.toLowerCase() === query.side &&
+            ad.asset === query.asset &&
+            ad.fiat === query.fiat
+          );
+          setAds(filteredAds);
+          
+          // Generate mock merchants since backend doesn't return full merchant details yet
+          const newMerchants: Record<string, P2PMerchant> = {};
+          for (const ad of filteredAds) {
+            newMerchants[ad.userId] = {
+              id: ad.userId,
+              displayName: `User_${ad.userId.substring(0,4)}`,
+              username: `user_${ad.userId.substring(0,4)}`,
+              verified: true,
+              completionRate: 98,
+              totalOrders: 150,
+              averageReleaseTime: 5,
+              online: true,
+              positiveFeedback: 148,
+              negativeFeedback: 2,
+              joinedAt: new Date().toISOString(),
+              supportedPaymentMethods: ["Bank Transfer"],
+            };
           }
+          setMerchants(newMerchants);
         }
-        setMerchants(newMerchants);
+      } catch(e) {
+        console.error(e)
       } finally {
         setIsLoading(false);
       }

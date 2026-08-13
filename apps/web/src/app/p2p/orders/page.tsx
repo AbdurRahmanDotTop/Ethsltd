@@ -7,9 +7,36 @@ import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
 import { ChevronLeft, History, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import { useEffect, useState } from "react";
+import { apiClient } from "@ethsltd/api-client";
+import { Loader2 } from "lucide-react";
+
 export default function P2POrdersPage() {
   const router = useRouter();
-  const { orders } = useP2PStore();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await apiClient.getP2pOrders();
+        if (res.success && res.data) {
+          setOrders(res.data);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[70vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-muted/30">

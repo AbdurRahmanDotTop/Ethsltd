@@ -1,10 +1,7 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useP2PStore } from "@/stores/p2p-store";
-import { p2pProvider } from "@/lib/p2p/provider";
-import { P2PMerchant, P2POrder } from "@/lib/p2p/types";
+import { apiClient } from "@ethsltd/api-client";
+import { P2PMerchant } from "@/lib/p2p/types";
 import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
 import { P2PChat } from "@/components/p2p/P2PChat";
 import { Loader2, AlertCircle, Copy, CheckCircle2, Clock, Check, Info } from "lucide-react";
@@ -16,44 +13,60 @@ interface P2POrderWorkspaceProps {
 
 export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   const router = useRouter();
-  const { orders, updateOrderStatus, addMessage } = useP2PStore();
+  const [order, setOrder] = useState<any>(null);
   const [merchant, setMerchant] = useState<P2PMerchant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const order = orders.find(o => o.id === orderId);
-
   useEffect(() => {
-    const fetchMerchant = async () => {
-      if (order) {
-        const m = await p2pProvider.getMerchant(order.merchantId);
-        setMerchant(m);
+    const fetchOrderData = async () => {
+      try {
+        const res = await apiClient.getP2pOrders();
+        if (res.success && res.data) {
+          const found = res.data.find((o: any) => o.id === orderId);
+          if (found) {
+            setOrder(found);
+            // In a real app we fetch merchant by sellerId/buyerId
+            // Here we just make a mock one based on the order
+            setMerchant({
+              id: found.sellerId,
+              username: `user_${found.sellerId.substring(0,4)}`,
+              displayName: `User_${found.sellerId.substring(0,4)}`,
+              verified: true,
+              completionRate: 99,
+              totalOrders: 100,
+              averageReleaseTime: 5,
+              online: true,
+              positiveFeedback: 99,
+              negativeFeedback: 1,
+              joinedAt: new Date().toISOString(),
+              supportedPaymentMethods: ["Bank Transfer"],
+            } as any);
+          }
+        }
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
-    fetchMerchant();
-  }, [order]);
+    fetchOrderData();
+  }, [orderId]);
 
   // Countdown timer logic
   useEffect(() => {
-    if (order && (order.status === "CREATED" || order.status === "AWAITING_PAYMENT")) {
+    if (order && (order.status === "PENDING")) {
       const updateTimer = () => {
         const expiry = new Date(order.expiresAt).getTime();
         const now = Date.now();
         const diff = Math.max(0, Math.floor((expiry - now) / 1000));
         setTimeLeft(diff);
-        
-        if (diff === 0 && order.status !== "EXPIRED") {
-          updateOrderStatus(order.id, "EXPIRED");
-        }
       };
       
       updateTimer();
       const interval = setInterval(updateTimer, 1000);
       return () => clearInterval(interval);
     }
-  }, [order, updateOrderStatus]);
+  }, [order]);
 
   if (isLoading) {
     return (
@@ -74,8 +87,8 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
     );
   }
 
-  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === order.fiat)?.symbol || "$";
-  const isBuy = order.side === "sell"; // if ad was sell, user is buying
+  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === "USD")?.symbol || "$";
+  const isBuy = true; // In our MVP we assume user is the buyer if they took a SELL ad
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -88,42 +101,39 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleMarkPaid = () => {
-    updateOrderStatus(order.id, "PAYMENT_MARKED");
-    addMessage({
-      id: `msg_sys_${Date.now()}`,
-      orderId: order.id,
-      sender: "system",
-      message: "Buyer marked payment as complete. Waiting for merchant to confirm.",
-      createdAt: new Date().toISOString(),
-      read: true,
-    });
-
-    // Simulate Merchant releasing crypto after a delay
-    setTimeout(() => {
-      updateOrderStatus(order.id, "COMPLETED");
-      addMessage({
-        id: `msg_sys_${Date.now()}`,
-        orderId: order.id,
-        sender: "system",
-        message: "Merchant confirmed payment and released crypto. Order completed successfully.",
-        createdAt: new Date().toISOString(),
-        read: true,
-      });
-    }, 4000); // 4 seconds simulated delay for merchant release
+  const handleMarkPaid = async () => {
+    try {
+      const res = await apiClient.updateP2pOrderStatus(order.id, "pay");
+      if (res.success) {
+        setOrder({ ...order, status: "PAID" });
+        alert("Payment marked as complete.");
+        
+        // Simulate Merchant releasing crypto after a delay for demo
+        setTimeout(async () => {
+          await apiClient.updateP2pOrderStatus(order.id, "release");
+          setOrder({ ...order, status: "RELEASED" });
+        }, 4000);
+      } else {
+        alert(res.error || "Failed to mark paid.");
+      }
+    } catch(e) {
+      alert("Error marking paid.");
+    }
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (confirm("Are you sure you want to cancel this order? This will release the simulated escrow.")) {
-      updateOrderStatus(order.id, "CANCELLED");
-      addMessage({
-        id: `msg_sys_${Date.now()}`,
-        orderId: order.id,
-        sender: "system",
-        message: "Order was cancelled by the user.",
-        createdAt: new Date().toISOString(),
-        read: true,
-      });
+      try {
+        const res = await apiClient.updateP2pOrderStatus(order.id, "cancel");
+        if (res.success) {
+          setOrder({ ...order, status: "CANCELLED" });
+          alert("Order cancelled.");
+        } else {
+          alert(res.error || "Failed to cancel.");
+        }
+      } catch(e) {
+        alert("Error cancelling order.");
+      }
     }
   };
 
@@ -141,7 +151,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
             </h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                order.status === "COMPLETED" ? "bg-green-100 text-green-700" :
+                order.status === "RELEASED" ? "bg-green-100 text-green-700" :
                 order.status === "CANCELLED" || order.status === "EXPIRED" ? "bg-red-100 text-red-700" :
                 "bg-yellow-100 text-yellow-800"
               }`}>
@@ -152,7 +162,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
             </p>
           </div>
           
-          {(order.status === "CREATED" || order.status === "AWAITING_PAYMENT") && (
+          {(order.status === "PENDING" || order.status === "AWAITING_PAYMENT") && (
             <div className="text-right">
               <p className="text-sm text-muted-foreground mb-1">Time remaining to pay</p>
               <div className="text-2xl font-mono font-bold text-orange-600 flex items-center justify-end gap-2">
@@ -174,19 +184,19 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-muted-foreground text-sm">Amount to Pay</span>
                 <span className="text-xl font-bold font-display text-brand-600 dark:text-brand-400">
-                  {fiatSymbol}{order.fiatAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiat}
+                  {fiatSymbol}{parseFloat(order.fiatAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiat}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-muted-foreground text-sm">Receive Crypto</span>
                 <span className="text-xl font-bold font-mono">
-                  {order.cryptoAmount.toLocaleString()} {order.asset}
+                  {parseFloat(order.cryptoAmount).toLocaleString()} {order.asset}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-muted-foreground text-sm">Price</span>
                 <span className="font-medium">
-                  {fiatSymbol}{order.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {order.asset}
+                  {fiatSymbol}{parseFloat(order.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {order.asset}
                 </span>
               </div>
             </div>
@@ -202,7 +212,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
               <div className="space-y-3">
                 <div>
                   <span className="text-xs text-muted-foreground block mb-1">Method</span>
-                  <span className="font-medium">{order.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                  <span className="font-medium">{order.paymentMethod.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
                 </div>
                 
                 <div>
@@ -239,7 +249,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
           </div>
 
           {/* Action Buttons */}
-          {(order.status === "CREATED" || order.status === "AWAITING_PAYMENT") && (
+          {(order.status === "PENDING" || order.status === "AWAITING_PAYMENT") && (
             <div className="p-6 bg-muted/10 border-t border-border flex flex-col sm:flex-row gap-4 items-center justify-end">
               <Button variant="outline" onClick={handleCancel}>
                 Cancel Order
@@ -250,7 +260,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
             </div>
           )}
 
-          {order.status === "PAYMENT_MARKED" && (
+          {order.status === "PAID" && (
             <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border-t border-blue-100 dark:border-blue-900/50 flex flex-col items-center justify-center text-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400 mb-4" />
               <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Awaiting Merchant Release</h3>
@@ -261,7 +271,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
             </div>
           )}
 
-          {order.status === "COMPLETED" && (
+          {order.status === "RELEASED" && (
             <div className="p-6 bg-green-50 dark:bg-green-900/10 border-t border-green-200 dark:border-green-900/50 flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
                 <Check className="w-8 h-8 text-green-600 dark:text-green-500" />
