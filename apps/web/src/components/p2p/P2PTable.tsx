@@ -23,11 +23,12 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
         const res = await apiClient.getP2pAds();
         if (res.success && res.data) {
           // Filter ads based on query locally for MVP
-          const filteredAds = res.data.filter((ad: any) => 
-            ad.type.toLowerCase() === query.side &&
-            ad.asset === query.asset &&
-            ad.fiat === query.fiat
-          );
+          const filteredAds = res.data.filter((ad: any) => {
+            const requiredAdType = query.side === "buy" ? "sell" : "buy";
+            return ad.type.toLowerCase() === requiredAdType &&
+                   ad.asset === query.asset &&
+                   ad.fiat === query.fiat;
+          });
           setAds(filteredAds);
           
           const newMerchants: Record<string, P2PMerchant> = {};
