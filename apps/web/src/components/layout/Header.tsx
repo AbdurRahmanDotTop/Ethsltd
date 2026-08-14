@@ -13,6 +13,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell"
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [announcementVisible, setAnnouncementVisible] = useState(true)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false)
@@ -97,12 +98,12 @@ export function Header() {
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="max-w-[1280px] mx-auto px-4 py-3 md:px-8 min-h-[4rem] flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-3 shrink-0">
-            <Link href="/" className="font-display font-bold text-xl text-foreground tracking-tight shrink-0">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link href="/" className="font-display font-bold text-xl text-foreground tracking-tight">
               ETHSLTD
             </Link>
-            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 shrink-0">
+            <nav className="hidden lg:flex items-center gap-6">
               <Link href="/markets" className={`text-sm font-medium transition-colors ${pathname === '/markets' ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground'}`}>Markets</Link>
               <Link href="/trade" className={`text-sm font-medium transition-colors ${pathname.startsWith('/trade') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Trade</Link>
               <Link href="/p2p" className={`text-sm font-medium transition-colors ${pathname.startsWith('/p2p') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>P2P</Link>
@@ -138,8 +139,8 @@ export function Header() {
             </nav>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4 shrink-0">
-            <button className="text-muted-foreground hover:text-foreground transition-colors w-9 h-9 flex items-center justify-center shrink-0">
+          <div className="hidden lg:flex items-center gap-4">
+            <button className="text-muted-foreground hover:text-foreground transition-colors w-9 h-9 flex items-center justify-center">
               <Search className="h-5 w-5" />
             </button>
             <ThemeToggle />
@@ -201,9 +202,78 @@ export function Header() {
             )}
           </div>
 
+          <div className="lg:hidden flex items-center gap-2">
+            <div className="scale-90 origin-right">
+              {renderToggle()}
+            </div>
+            <ThemeToggle />
+            <button className="text-foreground">
+              <Search className="h-5 w-5" />
+            </button>
+            <button 
+              className="text-foreground"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden absolute top-full left-0 w-full h-[calc(100vh-4rem)] overflow-y-auto bg-background border-t border-border p-4 pb-24 shadow-xl">
+          <nav className="flex flex-col gap-4">
+            <Link href="/markets" className={`text-lg font-medium py-2 border-b border-border ${pathname === '/markets' ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Markets</Link>
+            <Link href="/trade" className={`text-lg font-medium py-2 border-b border-border ${pathname.startsWith('/trade') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Trade</Link>
+            <Link href="/p2p" className={`text-lg font-medium py-2 border-b border-border ${pathname.startsWith('/p2p') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>P2P</Link>
+            <Link href="/wallet" className={`text-lg font-medium py-2 border-b border-border ${pathname.startsWith('/wallet') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Wallet</Link>
+            <Link href="/markets" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Assets</Link>
+            <Link href="/learn" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Learn</Link>
+            
+            <div className="py-2 border-b border-border">
+              <span className="text-lg font-medium text-muted-foreground mb-2 block">More</span>
+              <div className="flex flex-col gap-2 pl-4">
+                <Link href="/fees" className="text-foreground py-1" onClick={() => setMobileMenuOpen(false)}>Fees</Link>
+                <Link href="/account/security" className="text-foreground py-1" onClick={() => setMobileMenuOpen(false)}>Security</Link>
+                <Link href="/support" className="text-foreground py-1" onClick={() => setMobileMenuOpen(false)}>Support</Link>
+                <Link href="/developer" className="text-foreground py-1" onClick={() => setMobileMenuOpen(false)}>Developer API</Link>
+                <Link href="/about" className="text-foreground py-1" onClick={() => setMobileMenuOpen(false)}>About ETHSLTD</Link>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-3 mt-4">
+              {status === "authenticated" && user ? (
+                <>
+                  <div className="flex items-center gap-3 px-2 py-3 border-b border-border">
+                    <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center overflow-hidden">
+                      {user.avatarUrl ? (
+                        <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.displayName || user.email.split('@')[0]}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  <Link href="/account" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Account</Link>
+                  <Link href="/account/profile" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Profile</Link>
+                  <Link href="/account/security" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Security</Link>
+                  <Link href="/account/preferences" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Preferences</Link>
+                  <Button variant="outline" className="w-full justify-center mt-2 text-destructive border-destructive/20 hover:bg-destructive/10" onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>Log Out</Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" className="w-full justify-center" asChild><Link href="/login" onClick={() => setMobileMenuOpen(false)}>Log In</Link></Button>
+                  <Button variant="default" className="w-full justify-center" asChild><Link href="/register" onClick={() => setMobileMenuOpen(false)}>Sign Up</Link></Button>
+                </>
+              )}
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   )
 }
