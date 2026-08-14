@@ -1,10 +1,24 @@
 "use client";
 
-import { Search, Bell, Activity } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Search, Bell, Activity, User, Settings, LayoutDashboard, LogOut, Shield } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
+import Link from "next/link";
 
 export function AdminHeader() {
   const { user, logout } = useAuthStore();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-30">
@@ -38,25 +52,77 @@ export function AdminHeader() {
         </button>
 
         {/* Admin Profile */}
-        <div className="flex items-center gap-3 border-l border-border pl-6">
+        <div className="flex items-center gap-3 border-l border-border pl-6 relative" ref={dropdownRef}>
           <div className="flex flex-col items-end hidden sm:flex">
             <span className="text-sm font-medium leading-none">{user?.displayName || "Admin"}</span>
             <span className="text-xs text-muted-foreground mt-1">{user?.role || "Administrator"}</span>
           </div>
-          <div 
-            className="w-9 h-9 rounded-full bg-brand-primary/20 flex items-center justify-center cursor-pointer overflow-hidden border border-brand-primary/30"
-            onClick={() => {
-              if (confirm("Logout from Admin Console?")) {
-                logout();
-              }
-            }}
+          <button 
+            className="w-9 h-9 rounded-full bg-brand-primary/20 flex items-center justify-center cursor-pointer overflow-hidden border border-brand-primary/30 transition-transform hover:scale-105"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
             {user?.avatarUrl ? (
               <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-brand-primary font-bold text-sm">A</span>
+              <span className="text-brand-primary font-bold text-sm">
+                {user?.displayName ? user.displayName.charAt(0).toUpperCase() : "A"}
+              </span>
             )}
-          </div>
+          </button>
+
+          {/* Profile Dropdown */}
+          {isDropdownOpen && (
+            <div className="absolute right-0 top-12 mt-2 w-56 bg-card border border-border rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="px-4 py-3 border-b border-border bg-muted/20">
+                <p className="text-sm font-medium">{user?.displayName || "Admin User"}</p>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{user?.email}</p>
+                <div className="mt-2 flex items-center gap-1 text-[10px] uppercase font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded w-fit">
+                  <Shield className="w-3 h-3" />
+                  {user?.role?.replace('_', ' ') || "ADMIN"}
+                </div>
+              </div>
+              
+              <div className="py-1">
+                <Link 
+                  href="/account/profile" 
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  View Profile
+                </Link>
+                <Link 
+                  href="/dashboard" 
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                  User Dashboard
+                </Link>
+                <Link 
+                  href="/account/settings" 
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <Settings className="w-4 h-4 text-muted-foreground" />
+                  Settings
+                </Link>
+              </div>
+              
+              <div className="border-t border-border py-1">
+                <button 
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    logout();
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors text-left"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Log Out
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
