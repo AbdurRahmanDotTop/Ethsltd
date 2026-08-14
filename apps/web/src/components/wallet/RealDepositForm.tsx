@@ -18,6 +18,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [manualAddresses, setManualAddresses] = useState<Record<string, string>>({});
+  const [cryptoAssets, setCryptoAssets] = useState<string[]>(CRYPTO_ASSETS);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   useEffect(() => {
@@ -32,6 +33,11 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
       const res: any = await apiClient.getDepositSettings();
       if (res.success && res.manualAddresses) {
         setManualAddresses(res.manualAddresses);
+        const assets = Object.keys(res.manualAddresses);
+        if (assets.length > 0) {
+          setCryptoAssets(assets);
+          if (!assets.includes(selectedAsset)) setSelectedAsset(assets[0]);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -264,7 +270,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 <div className="space-y-1">
                   <label className="text-sm font-medium">Asset</label>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {CRYPTO_ASSETS.map((asset) => (
+                    {cryptoAssets.map((asset) => (
                       <button
                         key={asset}
                         type="button"

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 
 export default function AdminPaymentSettingsPage() {
@@ -16,6 +17,20 @@ export default function AdminPaymentSettingsPage() {
   const [editingMethod, setEditingMethod] = useState<any | null>(null);
   const [editInstructions, setEditInstructions] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Bank Account State
+  const [editingBank, setEditingBank] = useState<any | null>(null);
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [bankForm, setBankForm] = useState({
+    bank_name: "",
+    account_holder: "",
+    account_number: "",
+    currency: "USD",
+    ifsc: "",
+    swift: "",
+    branch: "",
+    instructions: ""
+  });
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -92,6 +107,60 @@ export default function AdminPaymentSettingsPage() {
     }
   };
 
+  const handleOpenBankModal = (bank: any = null) => {
+    if (bank) {
+      setEditingBank(bank);
+      setBankForm({
+        bank_name: bank.bank_name || "",
+        account_holder: bank.account_holder || "",
+        account_number: bank.account_number || "",
+        currency: bank.currency || "USD",
+        ifsc: bank.ifsc || "",
+        swift: bank.swift || "",
+        branch: bank.branch || "",
+        instructions: bank.instructions || ""
+      });
+    } else {
+      setEditingBank(null);
+      setBankForm({
+        bank_name: "", account_holder: "", account_number: "", currency: "USD", ifsc: "", swift: "", branch: "", instructions: ""
+      });
+    }
+    setIsBankModalOpen(true);
+  };
+
+  const handleSaveBank = async () => {
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      const isEdit = !!editingBank;
+      const url = isEdit 
+        ? `http://localhost:8000/api/v1/admin/payments/banks/${editingBank.id}`
+        : `http://localhost:8000/api/v1/admin/payments/banks`;
+      
+      const res = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(bankForm)
+      }).then(r => r.json());
+
+      if (res.success) {
+        toast.success(isEdit ? "Bank account updated!" : "Bank account added!");
+        setIsBankModalOpen(false);
+        fetchSettings();
+      } else {
+        toast.error(res.error || "Failed to save bank account");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Error saving");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -124,7 +193,7 @@ export default function AdminPaymentSettingsPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold">Bank Accounts</h3>
-          <Button>Add Bank Account</Button>
+          <Button onClick={() => handleOpenBankModal()}>Add Bank Account</Button>
         </div>
         {loading ? <p>Loading...</p> : banks.map(bank => (
           <div key={bank.id} className="p-4 border border-border rounded-lg bg-card flex justify-between items-center">
@@ -132,7 +201,7 @@ export default function AdminPaymentSettingsPage() {
               <h4 className="font-semibold">{bank.bank_name}</h4>
               <p className="text-sm text-muted-foreground">{bank.account_holder} - {bank.currency}</p>
             </div>
-            <Button variant="outline">Edit</Button>
+            <Button variant="outline" onClick={() => handleOpenBankModal(bank)}>Edit</Button>
           </div>
         ))}
         {banks.length === 0 && !loading && (
@@ -169,6 +238,61 @@ export default function AdminPaymentSettingsPage() {
             <Button variant="outline" onClick={() => setEditingMethod(null)}>Cancel</Button>
             <Button onClick={handleSaveMethod} disabled={isSaving}>
               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Bank Modal */}
+      <Dialog open={isBankModalOpen} onOpenChange={setIsBankModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingBank ? "Edit" : "Add"} Bank Account</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto px-2">
+            <div className="space-y-2">
+              <Label>Bank Name *</Label>
+              <Input value={bankForm.bank_name} onChange={e => setBankForm({...bankForm, bank_name: e.target.value})} />
+            </div>
+            <div className="space-y-2">
+              <Label>Account Holder *</Label>
+              <Input value={bankForm.account_holder} onChange={e => setBankForm({...bankForm, account_holder: e.target.value})} />
+            </div>
+            <div className="space-y-2">
+              <Label>Account Number *</Label>
+              <Input value={bankForm.account_number} onChange={e => setBankForm({...bankForm, account_number: e.target.value})} />
+            </div>
+            <div className="space-y-2">
+              <Label>Currency *</Label>
+              <Input value={bankForm.currency} onChange={e => setBankForm({...bankForm, currency: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>SWIFT / BIC</Label>
+                <Input value={bankForm.swift} onChange={e => setBankForm({...bankForm, swift: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>IFSC / Routing</Label>
+                <Input value={bankForm.ifsc} onChange={e => setBankForm({...bankForm, ifsc: e.target.value})} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Branch</Label>
+              <Input value={bankForm.branch} onChange={e => setBankForm({...bankForm, branch: e.target.value})} />
+            </div>
+            <div className="space-y-2">
+              <Label>Extra Instructions</Label>
+              <textarea 
+                value={bankForm.instructions} 
+                onChange={e => setBankForm({...bankForm, instructions: e.target.value})}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBankModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveBank} disabled={isSaving || !bankForm.bank_name || !bankForm.account_number}>
+              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save Account
             </Button>
           </DialogFooter>
         </DialogContent>

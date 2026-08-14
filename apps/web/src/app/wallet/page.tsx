@@ -122,10 +122,16 @@ export default function WalletPage() {
               : 'Manage your real digital assets and balances.'}
           </p>
         </div>
-        {mode === 'DEMO' && (
+        {mode === 'DEMO' ? (
           <Button onClick={handleTopUp} className="bg-orange-500 hover:bg-orange-600 text-white font-medium shadow shadow-orange-500/20">
             Top Up Demo Balance (100k USDT)
           </Button>
+        ) : (
+          <Link href="/wallet/deposit">
+            <Button className="bg-brand-500 hover:bg-brand-600 text-white font-medium shadow shadow-brand-500/20">
+              Deposit
+            </Button>
+          </Link>
         )}
       </div>
       

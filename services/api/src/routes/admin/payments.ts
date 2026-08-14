@@ -36,6 +36,21 @@ adminPaymentRoutes.put('/methods/:id', async (c) => {
   return c.json({ success: true });
 });
 
+// Create bank account
+adminPaymentRoutes.post('/banks', async (c) => {
+  const db = c.get('db');
+  const body = await c.req.json();
+  const now = new Date();
+  
+  await db.insert(bankAccounts).values({ 
+    id: crypto.randomUUID(),
+    ...body, 
+    created_at: now, 
+    updated_at: now 
+  });
+  return c.json({ success: true });
+});
+
 // Update bank account
 adminPaymentRoutes.put('/banks/:id', async (c) => {
   const db = c.get('db');
