@@ -10,7 +10,6 @@ interface PasswordStrengthProps {
 export function PasswordStrength({ password = "" }: PasswordStrengthProps) {
   const requirements = useMemo(() => {
     return [
-      { id: "length", text: "At least 12 characters", met: password.length >= 12 },
       { id: "uppercase", text: "One uppercase letter", met: /[A-Z]/.test(password) },
       { id: "lowercase", text: "One lowercase letter", met: /[a-z]/.test(password) },
       { id: "number", text: "One number", met: /[0-9]/.test(password) },
@@ -20,7 +19,7 @@ export function PasswordStrength({ password = "" }: PasswordStrengthProps) {
 
   const metCount = requirements.filter((r) => r.met).length;
   const strengthLevel =
-    metCount === 5 ? "Strong" : metCount >= 3 ? "Good" : metCount >= 1 ? "Fair" : "Weak";
+    metCount === 4 ? "Strong" : metCount >= 3 ? "Good" : metCount >= 1 ? "Fair" : "Weak";
 
   const getStrengthColor = () => {
     if (password.length === 0) return "bg-muted";
@@ -33,7 +32,7 @@ export function PasswordStrength({ password = "" }: PasswordStrengthProps) {
   const getStrengthWidth = () => {
     if (password.length === 0) return "w-0";
     if (metCount === 0) return "w-[10%]";
-    return `w-[${(metCount / 5) * 100}%]`;
+    return `w-[${(metCount / 4) * 100}%]`;
   };
 
   return (
@@ -43,7 +42,7 @@ export function PasswordStrength({ password = "" }: PasswordStrengthProps) {
         <div className="h-1 flex-1 bg-muted rounded-full overflow-hidden">
           <div
             className={cn("h-full transition-all duration-300", getStrengthColor())}
-            style={{ width: password.length === 0 ? "0%" : `${Math.max((metCount / 5) * 100, 10)}%` }}
+            style={{ width: password.length === 0 ? "0%" : `${Math.max((metCount / 4) * 100, 10)}%` }}
           />
         </div>
         <span className="text-xs font-medium w-12 text-right text-muted-foreground">
