@@ -28,12 +28,12 @@ export default function KYCPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   // Note: we can use react-hook-form but file inputs are easier handled manually or with custom components
-  const { register, handleSubmit } = useForm({
+  const { register, handleSubmit, reset } = useForm({
     defaultValues: {
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
+      firstName: "",
+      lastName: "",
       dateOfBirth: "",
-      country: "United States",
+      country: "",
       documentType: "ID_CARD",
       documentNumber: "",
     }
@@ -45,9 +45,16 @@ export default function KYCPage() {
         const res = await apiClient.getKYC();
         if (res.success && res.data) {
           setKycProfile(res.data);
-          // Only pre-fill if not already filled or if you want to allow edits
-          // We won't strictly enforce resetting values here to avoid overwriting user edits on slow loads,
-          // but if it's already approved/pending, the form is disabled anyway.
+          
+          // Pre-fill form fields with fetched data
+          reset({
+            firstName: res.data.firstName || "",
+            lastName: res.data.lastName || "",
+            dateOfBirth: res.data.dateOfBirth || "",
+            country: res.data.country || "",
+            documentType: res.data.documentType || "ID_CARD",
+            documentNumber: res.data.documentNumber || "",
+          });
         }
       } catch (err) {
         console.error("Failed to fetch KYC profile", err);
@@ -56,7 +63,7 @@ export default function KYCPage() {
       }
     };
     if (user) fetchProfile();
-  }, [user]);
+  }, [user, reset]);
 
   const [documentFront, setDocumentFront] = useState<File | null>(null);
   const [documentBack, setDocumentBack] = useState<File | null>(null);
