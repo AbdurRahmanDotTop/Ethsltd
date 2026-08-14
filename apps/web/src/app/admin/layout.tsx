@@ -15,11 +15,11 @@ export default function AdminLayout({
 }) {
   return (
     <AdminPermissionGuard>
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="h-screen overflow-hidden bg-background flex flex-col">
         <AdminHeader />
         <div className="flex flex-1 overflow-hidden">
           <AdminSidebar />
-          <main className="flex-1 overflow-y-auto bg-muted/20">
+          <main className="flex-1 overflow-y-auto bg-muted/20 custom-scrollbar">
             {children}
           </main>
         </div>
