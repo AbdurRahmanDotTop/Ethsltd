@@ -160,17 +160,22 @@ export const MockAdminProvider: AdminProvider = {
   async getKycApplications(params?: { page?: number; limit?: number; status?: string }): Promise<{ items: KycApplication[]; total: number }> {
     await new Promise((resolve) => setTimeout(resolve, 400));
     
-    let mockKyc: KycApplication[] = Array.from({ length: 30 }).map((_, i) => ({
+    let mockKyc: KycApplication[] = (Array.from({ length: 30 }).map((_, i) => ({
       id: `KYC-200${i}`,
       userId: `USR-100${i + 5}`,
-      name: `User ${i + 5}`,
+      firstName: `User`,
+      lastName: `${i + 5}`,
+      dateOfBirth: "1990-01-01",
+      documentNumber: `DOC${i}9823`,
+      documentFrontUrl: "",
+      selfieUrl: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       country: i % 3 === 0 ? "United Kingdom" : i % 4 === 0 ? "Canada" : "United States",
       documentType: i % 2 === 0 ? "PASSPORT" : "ID_CARD",
-      riskLevel: i % 10 === 0 ? "HIGH" : i % 5 === 0 ? "MEDIUM" : "LOW",
-      submittedAt: new Date(Date.now() - Math.random() * 500000000).toISOString(),
-      status: i % 8 === 0 ? "REJECTED" : i % 3 === 0 ? "UNDER_REVIEW" : i % 2 === 0 ? "VERIFIED" : "PENDING",
-      assignedAdmin: i % 3 === 0 ? "ADMIN-002" : undefined,
-    }));
+      status: i % 8 === 0 ? "REJECTED" : i % 2 === 0 ? "APPROVED" : "PENDING",
+      reviewedBy: i % 3 === 0 ? "ADMIN-002" : undefined,
+    })) as any) as KycApplication[];
 
     if (params?.status && params.status !== "ALL") {
       mockKyc = mockKyc.filter(k => k.status === params.status);
