@@ -81,9 +81,21 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
               </tr>
             ) : (
               ads.map((ad: any) => {
-                const merchantId = ad.userId || ad.merchant?.id || ad.merchantId;
-                const merchant = merchants[merchantId];
-                if (!merchant) return null;
+                const merchantId = ad.userId || ad.merchant?.id || ad.merchantId || "unknown";
+                const merchant = ad.merchant || merchants[merchantId] || {
+                  id: merchantId,
+                  displayName: `User_${String(merchantId).substring(0,4)}`,
+                  verified: false,
+                  completionRate: 100,
+                  totalOrders: 0
+                };
+                
+                // Ensure paymentMethods is an array of strings
+                let pm = ad.paymentMethods || [];
+                if (typeof pm === 'string') {
+                  try { pm = JSON.parse(pm); } catch(e) { pm = [pm]; }
+                }
+                if (!Array.isArray(pm)) pm = [];
 
                 return (
                   <tr key={ad.id} className="hover:bg-muted/30 transition-colors">
@@ -110,7 +122,7 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                     {/* Price Column */}
                     <td className="px-6 py-5">
                       <div className="font-display text-xl font-bold text-foreground">
-                        {fiatSymbol}{ad.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {fiatSymbol}{Number(ad.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {query.fiat} / {query.asset}
@@ -121,25 +133,25 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                     <td className="px-6 py-5 space-y-1.5 whitespace-nowrap">
                       <div className="flex items-center text-sm gap-4">
                         <span className="text-muted-foreground w-16">Available</span>
-                        <span className="font-mono text-foreground font-medium">{ad.availableAmount.toLocaleString()} {query.asset}</span>
+                        <span className="font-mono text-foreground font-medium">{Number(ad.availableAmount).toLocaleString()} {query.asset}</span>
                       </div>
                       <div className="flex items-center text-sm gap-4">
                         <span className="text-muted-foreground w-16">Limit</span>
-                        <span className="font-mono text-foreground">{fiatSymbol}{ad.minLimit.toLocaleString()} - {fiatSymbol}{ad.maxLimit.toLocaleString()}</span>
+                        <span className="font-mono text-foreground">{fiatSymbol}{Number(ad.minLimit).toLocaleString()} - {fiatSymbol}{Number(ad.maxLimit).toLocaleString()}</span>
                       </div>
                     </td>
 
                     {/* Payment Column */}
                     <td className="px-6 py-5">
                       <div className="flex flex-wrap gap-1.5 max-w-[200px]">
-                        {ad.paymentMethods.slice(0, 3).map(methodId => {
+                        {pm.slice(0, 3).map((methodId: string) => {
                           return (
                             <span key={methodId} className="px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded-md border border-border">
-                              {methodId.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              {String(methodId).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </span>
                           );
                         })}
-                        {ad.paymentMethods.length > 3 && (
+                        {pm.length > 3 && (
                           <span className="px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded-md border border-border">
                             +{ad.paymentMethods.length - 3}
                           </span>
