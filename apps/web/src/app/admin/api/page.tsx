@@ -49,7 +49,7 @@ export default function AdminApiDashboard() {
   const withdrawalKeysCount = keys.filter(k => k.permissions.includes("WITHDRAW") && k.status === "ACTIVE").length;
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">API Platform Management</h1>
         <p className="text-muted-foreground mt-1">Monitor API usage, manage global keys, and revoke compromised credentials.</p>
