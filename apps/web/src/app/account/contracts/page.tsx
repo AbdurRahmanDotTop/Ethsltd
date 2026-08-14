@@ -5,6 +5,7 @@ import { FileSignature, CheckCircle, Clock, ShieldCheck, FileText, Check, AlertC
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FilePreview } from "@/components/ui/file-preview";
 
 const now = new Date();
 const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -153,9 +154,17 @@ export default function UserContractsPage() {
                     </div>
                     <div className="space-y-3">
                       <Label>Digital Signature (Image) *</Label>
-                      <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                        <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                        <span className="text-xs text-primary font-semibold">Upload Signature</span>
+                      <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors h-32 relative overflow-hidden">
+                        {signatureImage ? (
+                          <div className="absolute inset-0 w-full h-full p-2">
+                            <FilePreview file={signatureImage} className="w-full h-full" />
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                            <span className="text-xs text-primary font-semibold">Upload Signature</span>
+                          </>
+                        )}
                         <input type="file" accept="image/*" className="sr-only" onChange={(e) => setSignatureImage(e.target.files?.[0] || null)} />
                       </label>
                       {signatureImage && <p className="text-xs text-green-500 font-medium truncate text-center">{signatureImage.name}</p>}
