@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,8 +18,15 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/account";
   const setUser = useAuthStore((state) => state.setUser);
+  const user = useAuthStore((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
   const [globalError, setGlobalError] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : redirectUrl);
+    }
+  }, [user, router, redirectUrl]);
 
   const {
     register,

@@ -1,18 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { forgotPasswordSchema, ForgotPasswordInput } from "@/lib/validation/auth";
 import { apiClient } from "@ethsltd/api-client";
+import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function ForgotPasswordForm() {
+  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
   const [globalError, setGlobalError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account');
+    }
+  }, [user, router]);
 
   const {
     register,

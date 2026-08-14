@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { registerSchema, RegisterInput } from "@/lib/validation/auth";
 import { apiClient } from "@ethsltd/api-client";
+import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,9 +16,16 @@ import { PasswordStrength } from "./PasswordStrength";
 
 export function RegisterForm() {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [globalError, setGlobalError] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account');
+    }
+  }, [user, router]);
 
   const {
     register,
