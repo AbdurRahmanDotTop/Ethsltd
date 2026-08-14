@@ -60,7 +60,7 @@ export function AdminSidebar() {
     {
       title: "P2P Marketplace",
       items: [
-        { name: "Orders", href: "/admin/p2p", icon: Handshake },
+        { name: "Orders", href: "/admin/p2p/orders", icon: Handshake },
         { name: "Disputes", href: "/admin/p2p/disputes", icon: AlertTriangle }
       ]
     },
