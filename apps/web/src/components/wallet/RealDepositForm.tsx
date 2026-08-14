@@ -29,7 +29,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   const fetchDepositSettings = async () => {
     setLoadingAddresses(true);
     try {
-      const res = await apiClient.getDepositSettings();
+      const res: any = await apiClient.getDepositSettings();
       if (res.success && res.manualAddresses) {
         setManualAddresses(res.manualAddresses);
       }
