@@ -214,9 +214,9 @@ export default function KYCPage() {
                 <div>
                   <Label>Document Front *</Label>
                   <label htmlFor="file-upload-front" className={`mt-2 relative overflow-hidden flex justify-center rounded-lg border border-dashed border-border px-6 py-8 transition-colors min-h-[200px] ${kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/50 hover:border-primary/50'}`}>
-                    {documentFront ? (
+                    {documentFront || kycProfile?.documentFrontUrl ? (
                       <div className="absolute inset-0 w-full h-full p-2">
-                        <FilePreview file={documentFront} className="w-full h-full" />
+                        <FilePreview file={documentFront || kycProfile?.documentFrontUrl} className="w-full h-full" />
                       </div>
                     ) : (
                       <div className="text-center">
@@ -238,9 +238,9 @@ export default function KYCPage() {
                 <div>
                   <Label>Document Back</Label>
                   <label htmlFor="file-upload-back" className={`mt-2 relative overflow-hidden flex justify-center rounded-lg border border-dashed border-border px-6 py-8 transition-colors min-h-[200px] ${kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/50 hover:border-primary/50'}`}>
-                    {documentBack ? (
+                    {documentBack || kycProfile?.documentBackUrl ? (
                       <div className="absolute inset-0 w-full h-full p-2">
-                        <FilePreview file={documentBack} className="w-full h-full" />
+                        <FilePreview file={documentBack || kycProfile?.documentBackUrl} className="w-full h-full" />
                       </div>
                     ) : (
                       <div className="text-center">
@@ -262,9 +262,9 @@ export default function KYCPage() {
                 <div>
                   <Label>Selfie with Document *</Label>
                   <label htmlFor="file-upload-selfie" className={`mt-2 relative overflow-hidden flex justify-center rounded-lg border border-dashed border-border px-6 py-8 transition-colors min-h-[200px] ${kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/50 hover:border-primary/50'}`}>
-                    {selfie ? (
+                    {selfie || kycProfile?.selfieUrl ? (
                       <div className="absolute inset-0 w-full h-full p-2">
-                        <FilePreview file={selfie} className="w-full h-full" />
+                        <FilePreview file={selfie || kycProfile?.selfieUrl} className="w-full h-full" />
                       </div>
                     ) : (
                       <div className="text-center">
