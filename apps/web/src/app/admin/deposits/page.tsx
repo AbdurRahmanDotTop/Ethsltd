@@ -16,12 +16,7 @@ export default function AdminDepositsPage() {
   const fetchPending = async () => {
     setLoading(true);
     try {
-      // In a real app we'd have adminApiClient, here we just fetch directly
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
-      const res = await fetch(`${apiUrl}/api/v1/admin/payments/pending-deposits`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r => r.json());
+      const res = await apiClient.adminGetPendingDeposits();
       
       if (res.success) {
         setManualDeposits(res.manualDeposits || []);
@@ -40,16 +35,9 @@ export default function AdminDepositsPage() {
 
   const handleApprove = async (id: string, type: "MANUAL" | "BANK") => {
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
-      const endpoint = type === "MANUAL" 
-        ? `${apiUrl}/api/v1/admin/payments/manual-deposits/${id}/approve`
-        : `${apiUrl}/api/v1/admin/payments/bank-deposits/${id}/approve`;
-        
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r => r.json());
+      const res = type === "MANUAL" 
+        ? await apiClient.adminApproveManualDeposit(id)
+        : await apiClient.adminApproveBankDeposit(id);
 
       if (res.success) {
         toast.success(`${type} deposit approved successfully! Ledger & Wallet updated.`);

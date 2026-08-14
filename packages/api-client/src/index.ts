@@ -322,6 +322,23 @@ export class EthsltdClient {
     return this.request<any[]>('/api/v1/admin/transactions');
   }
 
+  // Admin Deposits & Payments Methods
+  async adminGetPendingDeposits() {
+    return this.request<any>('/api/v1/admin/payments/pending-deposits');
+  }
+
+  async adminApproveManualDeposit(id: string) {
+    return this.request<any>(`/api/v1/admin/payments/manual-deposits/${id}/approve`, {
+      method: 'POST'
+    });
+  }
+
+  async adminApproveBankDeposit(id: string) {
+    return this.request<any>(`/api/v1/admin/payments/bank-deposits/${id}/approve`, {
+      method: 'POST'
+    });
+  }
+
   // Notifications API Methods
   async getNotifications() {
     return this.request<any[]>('/api/v1/notifications');
