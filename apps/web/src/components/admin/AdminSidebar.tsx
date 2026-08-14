@@ -85,10 +85,10 @@ export function AdminSidebar() {
 
   return (
     <aside className="w-64 bg-card border-r border-border hidden xl:flex flex-col h-full overflow-y-auto custom-scrollbar">
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-6">
         {navGroups.map((group) => (
           <div key={group.title}>
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
               {group.title}
             </h4>
             <nav className="space-y-1">
@@ -100,7 +100,7 @@ export function AdminSidebar() {
                     key={item.href} 
                     href={item.href}
                     ref={isActive ? activeItemRef : null}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
                       isActive 
                         ? "bg-brand-primary/10 text-brand-primary font-medium" 
                         : "text-foreground hover:bg-muted"
