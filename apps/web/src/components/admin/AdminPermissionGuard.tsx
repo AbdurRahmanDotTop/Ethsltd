@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 
 export function AdminPermissionGuard({ children }: { children: React.ReactNode }) {
-  const { user, status } = useAuthStore();
+  const { user, status, hasHydrated } = useAuthStore();
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (status === "loading") return;
+    if (!hasHydrated || status === "loading") return;
 
     if (!user) {
       router.push("/login?redirect=/admin");
@@ -24,9 +24,9 @@ export function AdminPermissionGuard({ children }: { children: React.ReactNode }
     }
 
     setAuthorized(true);
-  }, [user, status, router]);
+  }, [user, status, hasHydrated, router]);
 
-  if (!authorized) {
+  if (!hasHydrated || !authorized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
