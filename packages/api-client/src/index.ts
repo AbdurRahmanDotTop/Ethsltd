@@ -154,11 +154,21 @@ export class EthsltdClient {
     return this.request<any[]>(`/api/v1/wallets/transactions?mode=${mode}`);
   }
 
-  async deposit(data: { assetSymbol: string; amount: number; network?: string; destination?: string; mode?: string }) {
+  async deposit(data: { 
+    assetSymbol: string; 
+    amount: number; 
+    network?: string; 
+    destination?: string; 
+    mode?: string;
+    depositMethod?: string;
+    transactionHash?: string;
+    paymentReference?: string;
+    proofFileUrl?: string;
+  }): Promise<any> {
     return this.request<any>('/api/v1/wallets/deposit', {
       method: 'POST',
       body: JSON.stringify(data),
-    });
+    }) as Promise<any>;
   }
 
   async withdraw(data: { assetSymbol: string; amount: number; network?: string; destination?: string; mode?: string }) {

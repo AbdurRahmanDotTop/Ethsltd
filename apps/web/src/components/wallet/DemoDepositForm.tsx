@@ -89,20 +89,7 @@ export function DemoDepositForm({ defaultAsset = "USD" }: { defaultAsset?: strin
           </div>
         </div>
 
-        {!isFiat && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Simulated Deposit Address</label>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 bg-muted/50 p-3 rounded-md font-mono text-sm text-muted-foreground border border-border overflow-hidden text-ellipsis">
-                0xSimulatedDemoTradingAddressOnly
-              </div>
-              <Button type="button" variant="outline" size="icon" onClick={handleCopy} className="shrink-0">
-                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">Network: {selectedAsset} Native Network (Simulated)</p>
-          </div>
-        )}
+
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Amount</label>
@@ -131,7 +118,7 @@ export function DemoDepositForm({ defaultAsset = "USD" }: { defaultAsset?: strin
           ) : (
             <ArrowDownToLine className="w-5 h-5 mr-2" />
           )}
-          {isSubmitting ? "Processing Deposit..." : "Simulate Deposit"}
+          {isSubmitting ? "Adding Demo Balance..." : "Add Demo Balance"}
         </Button>
       </form>
     </div>

@@ -1,5 +1,4 @@
 import { Bindings } from '../db';
-import * as crypto from 'crypto';
 
 export class CregisClient {
   private apiKey: string;
@@ -20,6 +19,15 @@ export class CregisClient {
     if (assetSymbol.toUpperCase() === 'ETH') return `0xmock${userId.substring(0,8)}cregiseth`;
     if (assetSymbol.toUpperCase() === 'USDT') return `0xmock${userId.substring(0,8)}cregisusdt`;
     return `mock_${assetSymbol}_${userId.substring(0,8)}`;
+  }
+
+  // Create Payment Order for Cregis Payment Engine
+  // In a real prod environment, this signs a request to `/v1/payment/create` or similar
+  async createPaymentOrder(amount: number, currency: string, userId: string): Promise<string> {
+    // Generate a mock CID and return the checkout URL as seen in the screenshots
+    // Use Math.random to avoid any Cloudflare Worker / Node.js crypto module incompatibilities
+    const mockCid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    return `https://pay.cregis.io/?cid=${mockCid}&language=en-US`;
   }
 
   // Verifies Cregis webhook signatures

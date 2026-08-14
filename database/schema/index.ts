@@ -8,3 +8,6 @@ export * from './notifications';
 export * from './support';
 export * from './cregis';
 export * from './bank_transfers';
+export * from './manual_deposits';
+export * from './bank_accounts';
+export * from './payment_methods';

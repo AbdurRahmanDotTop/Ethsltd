@@ -5,12 +5,12 @@ import { createDb, Bindings, Variables } from './db';
 // Import routes (we will create these next)
 import { authRoutes } from './routes/auth';
 import { walletRoutes } from './routes/wallets';
-import { tradingRoutes } from './routes/trading';
 import { p2pRoutes } from './routes/p2p';
-import { adminRoutes } from './routes/admin';
-import { notificationRoutes } from './routes/notifications';
-import { supportRoutes } from './routes/support';
 import { settingsRoutes } from './routes/settings';
+import { supportRoutes } from './routes/support';
+import { tradingRoutes } from './routes/trading';
+import { adminRoutes } from './routes/admin';
+import { adminPaymentRoutes } from './routes/admin/payments';
 import { webhookRoutes } from './routes/webhooks';
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -32,12 +32,12 @@ app.get('/', (c) => c.json({ status: 'ok', service: 'Ethsltd API', version: '1.0
 // Mount routes
 app.route('/api/v1/auth', authRoutes);
 app.route('/api/v1/wallets', walletRoutes);
-app.route('/api/v1/trading', tradingRoutes);
 app.route('/api/v1/p2p', p2pRoutes);
-app.route('/api/v1/admin', adminRoutes);
-app.route('/api/v1/notifications', notificationRoutes);
-app.route('/api/v1/support', supportRoutes);
 app.route('/api/v1/settings', settingsRoutes);
+app.route('/api/v1/support', supportRoutes);
+app.route('/api/v1/trading', tradingRoutes);
+app.route('/api/v1/admin', adminRoutes);
+app.route('/api/v1/admin/payments', adminPaymentRoutes);
 app.route('/webhooks', webhookRoutes);
 
 export default app;

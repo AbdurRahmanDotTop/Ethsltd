@@ -1,96 +1,92 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
-import { FinancialTransaction } from "@/lib/admin/types";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
-import { Filter, ExternalLink } from "lucide-react";
+import { Filter, ExternalLink, CheckCircle, XCircle } from "lucide-react";
+import { apiClient } from "@ethsltd/api-client";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export default function AdminDepositsPage() {
-  const [deposits, setDeposits] = useState<FinancialTransaction[]>([]);
-  const [total, setTotal] = useState(0);
+  const [manualDeposits, setManualDeposits] = useState<any[]>([]);
+  const [bankDeposits, setBankDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("ALL");
-  const limit = 20;
+  const [activeTab, setActiveTab] = useState<"MANUAL" | "BANK">("MANUAL");
+
+  const fetchPending = async () => {
+    setLoading(true);
+    try {
+      // In a real app we'd have adminApiClient, here we just fetch directly
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8000/api/v1/admin/payments/pending-deposits", {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json());
+      
+      if (res.success) {
+        setManualDeposits(res.manualDeposits || []);
+        setBankDeposits(res.bankDeposits || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
+    fetchPending();
+  }, []);
 
-    MockAdminProvider.getDeposits({ page, limit, status }).then((res) => {
-      if (isMounted) {
-        setDeposits(res.items);
-        setTotal(res.total);
-        setLoading(false);
+  const handleApprove = async (id: string, type: "MANUAL" | "BANK") => {
+    try {
+      const token = localStorage.getItem("token");
+      const endpoint = type === "MANUAL" 
+        ? `http://localhost:8000/api/v1/admin/payments/manual-deposits/${id}/approve`
+        : `http://localhost:8000/api/v1/admin/payments/bank-deposits/${id}/approve`;
+        
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json());
+
+      if (res.success) {
+        toast.success(`${type} deposit approved successfully! Ledger & Wallet updated.`);
+        fetchPending();
+      } else {
+        toast.error(res.error || "Failed to approve deposit");
       }
-    });
+    } catch (e) {
+      toast.error("An error occurred");
+    }
+  };
 
-    return () => {
-      isMounted = false;
-    };
-  }, [page, status]);
+  const manualColumns: Column<any>[] = [
+    { header: "ID", accessor: "id", className: "font-mono text-xs" },
+    { header: "User", accessor: "user_id", className: "font-mono text-xs" },
+    { header: "Amount", accessor: (row) => <span className="font-bold text-green-500">+{row.amount} {row.asset}</span> },
+    { header: "Tx Hash", accessor: "transaction_hash", className: "font-mono text-xs max-w-[100px] truncate" },
+    { header: "Proof", accessor: (row) => row.proof_file_url ? <a href={row.proof_file_url} target="_blank" className="text-brand-500 underline text-xs">View Proof</a> : "No Proof" },
+    { header: "Status", accessor: (row) => <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 text-xs">{row.status}</span> },
+    { 
+      header: "Action", 
+      accessor: (row) => (
+        <Button size="sm" onClick={() => handleApprove(row.id, "MANUAL")} className="h-8">Approve</Button>
+      ) 
+    }
+  ];
 
-  const columns: Column<FinancialTransaction>[] = [
-    {
-      header: "Deposit ID",
-      accessor: "id",
-      className: "font-mono text-xs text-muted-foreground"
-    },
-    {
-      header: "User",
+  const bankColumns: Column<any>[] = [
+    { header: "ID", accessor: "id", className: "font-mono text-xs" },
+    { header: "User", accessor: "userId", className: "font-mono text-xs" },
+    { header: "Amount", accessor: (row) => <span className="font-bold text-green-500">+{row.amount} {row.currency}</span> },
+    { header: "Bank Ref", accessor: "bankReference", className: "font-mono text-xs" },
+    { header: "Proof", accessor: (row) => row.proofDocumentUrl ? <a href={row.proofDocumentUrl} target="_blank" className="text-brand-500 underline text-xs">View Proof</a> : "No Proof" },
+    { header: "Status", accessor: (row) => <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 text-xs">{row.status}</span> },
+    { 
+      header: "Action", 
       accessor: (row) => (
-        <div className="flex flex-col">
-          <span className="font-medium">{row.userName}</span>
-          <span className="text-xs text-muted-foreground font-mono">{row.userId}</span>
-        </div>
-      )
-    },
-    {
-      header: "Amount",
-      accessor: (row) => (
-        <span className="font-bold text-green-500">
-          +{row.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} {row.asset}
-        </span>
-      )
-    },
-    {
-      header: "Network / TxHash",
-      accessor: (row) => (
-        <div className="flex flex-col">
-          <span className="text-xs font-medium text-muted-foreground">{row.network}</span>
-          {row.txHash && (
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded truncate max-w-[150px]">
-                {row.txHash}
-              </span>
-              <ExternalLink className="w-3 h-3 text-brand-primary cursor-pointer" />
-            </div>
-          )}
-        </div>
-      )
-    },
-    {
-      header: "Status",
-      accessor: (row) => {
-        const colors: Record<string, string> = {
-          COMPLETED: "bg-green-500/10 text-green-500 border-green-500/20",
-          PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-          PROCESSING: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-          FAILED: "bg-red-500/10 text-red-500 border-red-500/20",
-        };
-        const color = colors[row.status] || "bg-muted text-foreground border-border";
-        return (
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${color}`}>
-            {row.status}
-          </span>
-        );
-      }
-    },
-    {
-      header: "Date Initiated",
-      accessor: (row) => <span className="text-xs text-muted-foreground">{new Date(row.createdAt).toLocaleString()}</span>
+        <Button size="sm" onClick={() => handleApprove(row.id, "BANK")} className="h-8">Approve</Button>
+      ) 
     }
   ];
 
@@ -98,25 +94,24 @@ export default function AdminDepositsPage() {
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Deposit Logs</h2>
-          <p className="text-muted-foreground mt-1 text-sm">Monitor all incoming user deposits.</p>
+          <h2 className="text-2xl font-bold tracking-tight">Deposit Approvals</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Review and approve manual and bank transfer deposits.</p>
         </div>
-        
-        <div className="flex gap-3">
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <select 
-              value={status}
-              onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-              className="pl-9 pr-8 py-2 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary appearance-none cursor-pointer"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="FAILED">Failed</option>
-            </select>
-          </div>
-        </div>
+      </div>
+
+      <div className="flex space-x-2 border-b border-border">
+        <button 
+          onClick={() => setActiveTab("MANUAL")} 
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "MANUAL" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
+        >
+          Manual Crypto Deposits ({manualDeposits.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab("BANK")} 
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "BANK" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
+        >
+          Bank Transfers ({bankDeposits.length})
+        </button>
       </div>
 
       <div className="relative min-h-[400px]">
@@ -126,13 +121,23 @@ export default function AdminDepositsPage() {
           </div>
         )}
         
-        <AdminDataTable 
-          columns={columns} 
-          data={deposits} 
-          page={page}
-          totalPages={Math.ceil(total / limit)}
-          onPageChange={setPage}
-        />
+        {activeTab === "MANUAL" ? (
+          <AdminDataTable 
+            columns={manualColumns} 
+            data={manualDeposits} 
+            page={1}
+            totalPages={1}
+            onPageChange={() => {}}
+          />
+        ) : (
+          <AdminDataTable 
+            columns={bankColumns} 
+            data={bankDeposits} 
+            page={1}
+            totalPages={1}
+            onPageChange={() => {}}
+          />
+        )}
       </div>
     </div>
   );

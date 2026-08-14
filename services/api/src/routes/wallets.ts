@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { wallets, walletTransactions } from 'database';
+import { wallets, walletTransactions, bankTransfers, real_manual_deposits } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
 
@@ -219,13 +219,55 @@ walletRoutes.post('/deposit', async (c) => {
     return c.json({ success: true, transactionId, message: 'Demo balance added' });
   } else {
     // For REAL, we need to generate a Cregis Address or Bank Transfer Request
-    if (depositMethod === 'CRYPTO') {
+    const { transactionHash, proofFileUrl, paymentReference } = body;
+    
+    if (depositMethod === 'CRYPTO' || depositMethod === 'AUTO') {
       const cregis = new CregisClient(c.env);
-      const address = await cregis.getDepositAddress(assetSymbol, user.id);
-      return c.json({ success: true, address, message: 'Deposit address generated' });
+      // For AUTO deposit (Payment Engine), generate checkout URL instead of direct WaaS address
+      const amountNum = Number(amount) || 0;
+      if (amountNum > 0) {
+        // Calculate fee if needed (e.g., 1%)
+        const fee = amountNum * 0.01;
+        const totalAmount = amountNum + fee;
+        
+        // Log transaction to DB with PENDING status (simplified here for demo)
+        const paymentReference = `ORD-${Date.now()}`;
+        
+        // Call Payment Engine API
+        const checkoutUrl = await cregis.createPaymentOrder(totalAmount, 'USD', user.id);
+        
+        return c.json({ success: true, checkoutUrl, message: 'Checkout URL generated' });
+      } else {
+        return c.json({ success: false, error: 'Valid amount required for checkout' }, 400);
+      }
     } else if (depositMethod === 'BANK') {
-      // In production, insert into bank_transfers
-      return c.json({ success: true, message: 'Bank transfer instructions provided', bankDetails: { accountName: 'ETHSLTD LLC', accountNumber: '123456789', bankName: 'Global Bank' } });
+      await db.insert(bankTransfers).values({
+        id: crypto.randomUUID(),
+        userId: user.id,
+        amount: amount.toString(),
+        currency: assetSymbol,
+        bankReference: paymentReference || `UTR-${Date.now()}`,
+        proofDocumentUrl: proofFileUrl,
+        status: 'PENDING',
+        createdAt: now,
+        updatedAt: now,
+      });
+      return c.json({ success: true, message: 'Bank transfer submitted successfully. Awaiting admin review.' });
+    } else if (depositMethod === 'MANUAL') {
+       await db.insert(real_manual_deposits).values({
+         id: crypto.randomUUID(),
+         deposit_id: transactionId,
+         user_id: user.id,
+         amount: parseFloat(amount),
+         asset: assetSymbol,
+         payment_reference: paymentReference || `REF-${Date.now()}`,
+         transaction_hash: transactionHash,
+         proof_file_url: proofFileUrl,
+         status: 'PENDING',
+         created_at: now,
+         updated_at: now,
+       });
+       return c.json({ success: true, message: 'Manual deposit submitted successfully. Awaiting admin review.' });
     } else {
       return c.json({ success: false, error: 'Invalid deposit method for REAL mode' }, 400);
     }
