@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { eq, ne } from 'drizzle-orm';
 // @ts-ignore
-import * as otplib from 'otplib';
-const authenticator = (otplib as any).authenticator || (otplib as any).default?.authenticator;
+import otplib from 'otplib';
+const authenticator = otplib?.authenticator || (otplib as any)?.default?.authenticator;
 import * as QRCode from 'qrcode';
 import { Bindings, Variables } from '../db';
 import { users, sessions } from 'database';
