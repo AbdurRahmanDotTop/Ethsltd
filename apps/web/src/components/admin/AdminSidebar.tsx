@@ -78,6 +78,11 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const activeItemRef = useRef<HTMLAnchorElement>(null);
 
+  const allHrefs = adminNavGroups.flatMap(g => g.items.map(i => i.href));
+  const activeHref = allHrefs
+    .filter(href => pathname === href || pathname.startsWith(href + '/'))
+    .sort((a, b) => b.length - a.length)[0] || pathname;
+
   useEffect(() => {
     if (activeItemRef.current) {
       activeItemRef.current.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -94,7 +99,7 @@ export function AdminSidebar() {
             </h4>
             <nav className="space-y-1">
               {group.items.map((item) => {
-                const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+                const isActive = item.href === activeHref;
                 const Icon = item.icon;
                 return (
                   <Link 

@@ -14,6 +14,11 @@ export function AdminHeader() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
+  const allHrefs = adminNavGroups.flatMap(g => g.items.map(i => i.href));
+  const activeHref = allHrefs
+    .filter(href => pathname === href || pathname.startsWith(href + '/'))
+    .sort((a, b) => b.length - a.length)[0] || pathname;
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -160,7 +165,7 @@ export function AdminHeader() {
                   </h4>
                   <nav className="space-y-1">
                     {group.items.map((item) => {
-                      const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+                      const isActive = item.href === activeHref;
                       const Icon = item.icon;
                       return (
                         <Link 
