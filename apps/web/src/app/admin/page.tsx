@@ -76,9 +76,9 @@ export default function AdminDashboardPage() {
   const kpis = {
     totalUsers: stats.totalUsers,
     activeUsers: Math.floor(stats.totalUsers * 0.8),
-    pendingKyc: stats.pendingKyc,
+    pendingKyc: stats.pendingKyc || 0,
     suspendedUsers: 0,
-    volume24h: stats.dailyVolumeUsd,
+    volume24h: stats.dailyVolumeUsd || 0,
     totalPlatformBalance: 4520000,
     depositsToday: 125000,
     pendingWithdrawals: 12,
