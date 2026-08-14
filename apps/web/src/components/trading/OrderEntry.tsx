@@ -91,8 +91,22 @@ export function OrderEntry({ market }: { market: Market }) {
     setIsSubmitting(true)
     setMessage(null)
     
+    const reqAmount = parseFloat(data.quantity);
+    const reqPrice = selectedOrderType === 'limit' ? parseFloat(data.price) : currentPrice;
+    const reqTotal = reqAmount * reqPrice;
+
+    if (selectedSide === 'buy' && reqTotal > quoteBalance) {
+      setMessage({ type: 'error', text: `Insufficient ${quote} balance.` });
+      setIsSubmitting(false);
+      return;
+    } else if (selectedSide === 'sell' && reqAmount > baseBalance) {
+      setMessage({ type: 'error', text: `Insufficient ${base} balance.` });
+      setIsSubmitting(false);
+      return;
+    }
+    
     try {
-      await apiClient.createOrder({
+      const res = await apiClient.createOrder({
         market: market.id,
         side: selectedSide === 'buy' ? 'BUY' : 'SELL',
         type: selectedOrderType === 'market' ? 'MARKET' : 'LIMIT',
@@ -100,6 +114,10 @@ export function OrderEntry({ market }: { market: Market }) {
         amount: parseFloat(data.quantity),
         mode: mode
       })
+      
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to place order')
+      }
       
       setMessage({ type: 'success', text: 'Order placed successfully' })
       setValue("quantity", "") // Reset quantity on success
