@@ -10,6 +10,7 @@ import { OrderEntry } from "./OrderEntry"
 import { TradingHistoryTabs } from "./TradingHistoryTabs"
 import { apiClient } from "@ethsltd/api-client"
 import { Market } from "@/lib/market-data/types"
+import { useTradingModeStore } from "@/stores/trading-mode-store"
 
 export function TradingTerminal({ symbol }: { symbol: string }) {
   const [market, setMarket] = useState<any>(null)
@@ -18,6 +19,7 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
   const [trades, setTrades] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [headerHeight, setHeaderHeight] = useState(64)
+  const { mode } = useTradingModeStore()
 
   useEffect(() => {
     // Dynamically measure main header height to stick this bar exactly below it
@@ -99,7 +101,7 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       >
         <div className="flex items-center gap-4">
           <MarketSelector currentSymbol={market.symbol} />
-          <TradingModeBadge />
+          {mode === 'PAPER' && <TradingModeBadge />}
         </div>
         <div className="mt-2 md:mt-0 overflow-x-auto no-scrollbar">
           <MarketSummary market={market} />
