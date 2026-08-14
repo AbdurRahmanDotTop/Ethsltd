@@ -19200,16 +19200,16 @@ init_schema();
 var tradingRoutes = new Hono2();
 var getMockPrice2 = /* @__PURE__ */ __name((symbol) => {
   const prices = {
-    "BTC-USD": 104250,
-    "ETH-USD": 3500,
-    "SOL-USD": 140
+    "BTC-USDT": 104250,
+    "ETH-USDT": 3500,
+    "SOL-USDT": 140
   };
   return prices[symbol] || 0;
 }, "getMockPrice");
 var DEFAULT_MARKETS = [
-  { symbol: "BTC-USD", baseAsset: "BTC", quoteAsset: "USD", minPrice: "1", maxPrice: "1000000", tickSize: "0.01", minAmount: "0.00001", stepSize: "0.00001", makerFee: "0.001", takerFee: "0.001" },
-  { symbol: "ETH-USD", baseAsset: "ETH", quoteAsset: "USD", minPrice: "1", maxPrice: "100000", tickSize: "0.01", minAmount: "0.001", stepSize: "0.001", makerFee: "0.001", takerFee: "0.001" },
-  { symbol: "SOL-USD", baseAsset: "SOL", quoteAsset: "USD", minPrice: "0.1", maxPrice: "1000", tickSize: "0.01", minAmount: "0.1", stepSize: "0.1", makerFee: "0.001", takerFee: "0.001" }
+  { symbol: "BTC-USDT", baseAsset: "BTC", quoteAsset: "USDT", minPrice: "1", maxPrice: "1000000", tickSize: "0.01", minAmount: "0.00001", stepSize: "0.00001", makerFee: "0.001", takerFee: "0.001" },
+  { symbol: "ETH-USDT", baseAsset: "ETH", quoteAsset: "USDT", minPrice: "1", maxPrice: "100000", tickSize: "0.01", minAmount: "0.001", stepSize: "0.001", makerFee: "0.001", takerFee: "0.001" },
+  { symbol: "SOL-USDT", baseAsset: "SOL", quoteAsset: "USDT", minPrice: "0.1", maxPrice: "1000", tickSize: "0.01", minAmount: "0.1", stepSize: "0.1", makerFee: "0.001", takerFee: "0.001" }
 ];
 tradingRoutes.get("/markets", async (c) => {
   const db = c.get("db");

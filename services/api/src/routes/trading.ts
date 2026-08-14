@@ -9,17 +9,17 @@ export const tradingRoutes = new Hono<{ Bindings: Bindings; Variables: Variables
 // Helper function to get mock prices for simulation
 const getMockPrice = (symbol: string) => {
   const prices: Record<string, number> = {
-    'BTC-USD': 104250.00,
-    'ETH-USD': 3500.00,
-    'SOL-USD': 140.00,
+    'BTC-USDT': 104250.00,
+    'ETH-USDT': 3500.00,
+    'SOL-USDT': 140.00,
   };
   return prices[symbol] || 0;
 };
 
 const DEFAULT_MARKETS = [
-  { symbol: 'BTC-USD', baseAsset: 'BTC', quoteAsset: 'USD', minPrice: '1', maxPrice: '1000000', tickSize: '0.01', minAmount: '0.00001', stepSize: '0.00001', makerFee: '0.001', takerFee: '0.001' },
-  { symbol: 'ETH-USD', baseAsset: 'ETH', quoteAsset: 'USD', minPrice: '1', maxPrice: '100000', tickSize: '0.01', minAmount: '0.001', stepSize: '0.001', makerFee: '0.001', takerFee: '0.001' },
-  { symbol: 'SOL-USD', baseAsset: 'SOL', quoteAsset: 'USD', minPrice: '0.1', maxPrice: '1000', tickSize: '0.01', minAmount: '0.1', stepSize: '0.1', makerFee: '0.001', takerFee: '0.001' },
+  { symbol: 'BTC-USDT', baseAsset: 'BTC', quoteAsset: 'USDT', minPrice: '1', maxPrice: '1000000', tickSize: '0.01', minAmount: '0.00001', stepSize: '0.00001', makerFee: '0.001', takerFee: '0.001' },
+  { symbol: 'ETH-USDT', baseAsset: 'ETH', quoteAsset: 'USDT', minPrice: '1', maxPrice: '100000', tickSize: '0.01', minAmount: '0.001', stepSize: '0.001', makerFee: '0.001', takerFee: '0.001' },
+  { symbol: 'SOL-USDT', baseAsset: 'SOL', quoteAsset: 'USDT', minPrice: '0.1', maxPrice: '1000', tickSize: '0.01', minAmount: '0.1', stepSize: '0.1', makerFee: '0.001', takerFee: '0.001' },
 ];
 
 tradingRoutes.get('/markets', async (c) => {

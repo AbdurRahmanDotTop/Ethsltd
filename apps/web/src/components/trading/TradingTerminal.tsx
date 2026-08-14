@@ -49,7 +49,7 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       
       try {
         const mRes = await apiClient.getMarkets()
-        const m = mRes.data?.find((m: any) => m.symbol === symbol || m.id === symbol)
+        const m = mRes.data?.find((m: any) => m.symbol.toLowerCase() === symbol.toLowerCase() || m.id.toLowerCase() === symbol.toLowerCase())
         
         if (m) {
           const [cRes, oRes, tRes] = await Promise.all([
