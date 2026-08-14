@@ -42,53 +42,6 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// .wrangler/tmp/bundle-G3EU5v/checked-fetch.js
-function checkURL(request, init) {
-  const url = request instanceof URL ? request : new URL(
-    (typeof request === "string" ? new Request(request, init) : request).url
-  );
-  if (url.port && url.port !== "443" && url.protocol === "https:") {
-    if (!urls.has(url.toString())) {
-      urls.add(url.toString());
-      console.warn(
-        `WARNING: known issue with \`fetch()\` requests to custom HTTPS ports in published Workers:
- - ${url.toString()} - the custom port will be ignored when the Worker is published using the \`wrangler deploy\` command.
-`
-      );
-    }
-  }
-}
-var urls;
-var init_checked_fetch = __esm({
-  ".wrangler/tmp/bundle-G3EU5v/checked-fetch.js"() {
-    "use strict";
-    urls = /* @__PURE__ */ new Set();
-    __name(checkURL, "checkURL");
-    globalThis.fetch = new Proxy(globalThis.fetch, {
-      apply(target, thisArg, argArray) {
-        const [request, init] = argArray;
-        checkURL(request, init);
-        return Reflect.apply(target, thisArg, argArray);
-      }
-    });
-  }
-});
-
-// wrangler-modules-watch:wrangler:modules-watch
-var init_wrangler_modules_watch = __esm({
-  "wrangler-modules-watch:wrangler:modules-watch"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
-  }
-});
-
-// ../../node_modules/.pnpm/wrangler@4.122.0_@cloudflare+workers-types@5.20260813.1/node_modules/wrangler/templates/modules-watch-stub.js
-var init_modules_watch_stub = __esm({
-  "../../node_modules/.pnpm/wrangler@4.122.0_@cloudflare+workers-types@5.20260813.1/node_modules/wrangler/templates/modules-watch-stub.js"() {
-    init_wrangler_modules_watch();
-  }
-});
-
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/entity.js
 function is(value, type) {
   if (!value || typeof value !== "object") {
@@ -116,8 +69,6 @@ function is(value, type) {
 var entityKind;
 var init_entity = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/entity.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     entityKind = /* @__PURE__ */ Symbol.for("drizzle:entityKind");
     __name(is, "is");
   }
@@ -127,8 +78,6 @@ var init_entity = __esm({
 var TableName;
 var init_table_utils = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/table.utils.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     TableName = /* @__PURE__ */ Symbol.for("drizzle:Name");
   }
 });
@@ -143,8 +92,6 @@ function getTableUniqueName(table) {
 var Schema, Columns, ExtraConfigColumns, OriginalName, BaseName, IsAlias, ExtraConfigBuilder, IsDrizzleTable, Table;
 var init_table = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/table.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table_utils();
     Schema = /* @__PURE__ */ Symbol.for("drizzle:Schema");
@@ -213,8 +160,6 @@ var init_table = __esm({
 var Column;
 var init_column = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/column.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     Column = class {
       static {
@@ -275,8 +220,6 @@ var init_column = __esm({
 var ColumnBuilder;
 var init_column_builder = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/column-builder.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     ColumnBuilder = class {
       static {
@@ -389,8 +332,6 @@ var init_column_builder = __esm({
 var ForeignKeyBuilder, ForeignKey;
 var init_foreign_keys = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/foreign-keys.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table_utils();
     ForeignKeyBuilder = class {
@@ -463,8 +404,6 @@ function iife(fn, ...args) {
 }
 var init_tracing_utils = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/tracing-utils.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     __name(iife, "iife");
   }
 });
@@ -476,8 +415,6 @@ function uniqueKeyName(table, columns) {
 var UniqueConstraintBuilder, UniqueOnConstraintBuilder, UniqueConstraint;
 var init_unique_constraint = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/unique-constraint.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table_utils();
     __name(uniqueKeyName, "uniqueKeyName");
@@ -615,8 +552,6 @@ function makePgArray(array) {
 }
 var init_array = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/utils/array.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     __name(parsePgArrayValue, "parsePgArrayValue");
     __name(parsePgNestedArray, "parsePgNestedArray");
     __name(parsePgArray, "parsePgArray");
@@ -628,8 +563,6 @@ var init_array = __esm({
 var PgColumnBuilder, PgColumn, ExtraConfigColumn, IndexedColumn, PgArrayBuilder, PgArray;
 var init_common = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/common.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_column_builder();
     init_column();
     init_entity();
@@ -847,8 +780,6 @@ function isPgEnum(obj) {
 var PgEnumObjectColumnBuilder, PgEnumObjectColumn, isPgEnumSym, PgEnumColumnBuilder, PgEnumColumn;
 var init_enum = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/enum.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_common();
     PgEnumObjectColumnBuilder = class extends PgColumnBuilder {
@@ -924,8 +855,6 @@ var init_enum = __esm({
 var Subquery, WithSubquery;
 var init_subquery = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/subquery.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     Subquery = class {
       static {
@@ -959,8 +888,6 @@ var init_subquery = __esm({
 var version;
 var init_version = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/version.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     version = "0.45.2";
   }
 });
@@ -969,8 +896,6 @@ var init_version = __esm({
 var otel, rawTracer, tracer;
 var init_tracing = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/tracing.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_tracing_utils();
     init_version();
     tracer = {
@@ -1011,8 +936,6 @@ var init_tracing = __esm({
 var ViewBaseConfig;
 var init_view_common = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/view-common.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     ViewBaseConfig = /* @__PURE__ */ Symbol.for("drizzle:ViewBaseConfig");
   }
 });
@@ -1068,8 +991,6 @@ function fillPlaceholders(params, values) {
 var FakePrimitiveParam, StringChunk, SQL, Name, noopDecoder, noopEncoder, noopMapper, Param, Placeholder, IsDrizzleView, View;
 var init_sql = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/sql.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_enum();
     init_subquery();
@@ -1578,8 +1499,6 @@ function getColumnNameAndConfig(a, b) {
 var textDecoder;
 var init_utils = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/utils.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_column();
     init_entity();
     init_sql();
@@ -1602,8 +1521,6 @@ var init_utils = __esm({
 var InlineForeignKeys, EnableRLS, PgTable;
 var init_table2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/table.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table();
     InlineForeignKeys = /* @__PURE__ */ Symbol.for("drizzle:PgInlineForeignKeys");
@@ -1634,8 +1551,6 @@ var init_table2 = __esm({
 var PrimaryKeyBuilder, PrimaryKey;
 var init_primary_keys = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/primary-keys.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table2();
     PrimaryKeyBuilder = class {
@@ -1774,8 +1689,6 @@ function notIlike(column, value) {
 var eq, ne, gt, gte, lt, lte;
 var init_conditions = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/expressions/conditions.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_column();
     init_entity();
     init_table();
@@ -1826,8 +1739,6 @@ function desc(column) {
 }
 var init_select = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/expressions/select.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_sql();
     __name(asc, "asc");
     __name(desc, "desc");
@@ -1837,8 +1748,6 @@ var init_select = __esm({
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/expressions/index.js
 var init_expressions = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/expressions/index.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_conditions();
     init_select();
   }
@@ -2055,8 +1964,6 @@ function mapRelationalRow(tablesConfig, tableConfig, row, buildQueryResultSelect
 var Relation, Relations, One, Many;
 var init_relations = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/relations.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_table();
     init_column();
     init_entity();
@@ -2168,8 +2075,6 @@ function mapColumnsInSQLToAlias(query, alias) {
 var ColumnAliasProxyHandler, TableAliasProxyHandler, RelationTableAliasProxyHandler;
 var init_alias = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/alias.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_column();
     init_entity();
     init_sql();
@@ -2263,8 +2168,6 @@ var init_alias = __esm({
 var SelectionProxyHandler;
 var init_selection_proxy = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/selection-proxy.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_alias();
     init_column();
     init_entity();
@@ -2347,8 +2250,6 @@ var init_selection_proxy = __esm({
 var QueryPromise;
 var init_query_promise = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/query-promise.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     QueryPromise = class {
       static {
@@ -2382,8 +2283,6 @@ var init_query_promise = __esm({
 var ForeignKeyBuilder2, ForeignKey2;
 var init_foreign_keys2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/foreign-keys.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table_utils();
     ForeignKeyBuilder2 = class {
@@ -2457,8 +2356,6 @@ function uniqueKeyName2(table, columns) {
 var UniqueConstraintBuilder2, UniqueOnConstraintBuilder2, UniqueConstraint2;
 var init_unique_constraint2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/unique-constraint.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table_utils();
     __name(uniqueKeyName2, "uniqueKeyName");
@@ -2515,8 +2412,6 @@ var init_unique_constraint2 = __esm({
 var SQLiteColumnBuilder, SQLiteColumn;
 var init_common2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/common.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_column_builder();
     init_column();
     init_entity();
@@ -2594,8 +2489,6 @@ function blob(a, b) {
 var SQLiteBigIntBuilder, SQLiteBigInt, SQLiteBlobJsonBuilder, SQLiteBlobJson, SQLiteBlobBufferBuilder, SQLiteBlobBuffer;
 var init_blob = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/blob.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_utils();
     init_common2();
@@ -2712,8 +2605,6 @@ function customType(customTypeParams) {
 var SQLiteCustomColumnBuilder, SQLiteCustomColumn;
 var init_custom = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/custom.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_utils();
     init_common2();
@@ -2777,8 +2668,6 @@ function integer(a, b) {
 var SQLiteBaseIntegerBuilder, SQLiteBaseInteger, SQLiteIntegerBuilder, SQLiteInteger, SQLiteTimestampBuilder, SQLiteTimestamp, SQLiteBooleanBuilder, SQLiteBoolean;
 var init_integer = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/integer.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_sql();
     init_utils();
@@ -2917,8 +2806,6 @@ function numeric(a, b) {
 var SQLiteNumericBuilder, SQLiteNumeric, SQLiteNumericNumberBuilder, SQLiteNumericNumber, SQLiteNumericBigIntBuilder, SQLiteNumericBigInt;
 var init_numeric = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/numeric.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_utils();
     init_common2();
@@ -3019,8 +2906,6 @@ function real(name) {
 var SQLiteRealBuilder, SQLiteReal;
 var init_real = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/real.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_common2();
     SQLiteRealBuilder = class extends SQLiteColumnBuilder {
@@ -3060,8 +2945,6 @@ function text(a, b = {}) {
 var SQLiteTextBuilder, SQLiteText, SQLiteTextJsonBuilder, SQLiteTextJson;
 var init_text = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/text.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_utils();
     init_common2();
@@ -3145,8 +3028,6 @@ function getSQLiteColumnBuilders() {
 }
 var init_all = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/all.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_blob();
     init_custom();
     init_integer();
@@ -3181,8 +3062,6 @@ function sqliteTableBase(name, columns, extraConfig, schema, baseName = name) {
 var InlineForeignKeys2, SQLiteTable, sqliteTable;
 var init_table3 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/table.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table();
     init_all();
@@ -3214,8 +3093,6 @@ var init_table3 = __esm({
 var CheckBuilder, Check;
 var init_checks = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/checks.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     CheckBuilder = class {
       static {
@@ -3251,8 +3128,6 @@ var init_checks = __esm({
 var IndexBuilderOn, IndexBuilder, Index;
 var init_indexes = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/indexes.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     IndexBuilderOn = class {
       static {
@@ -3311,8 +3186,6 @@ var init_indexes = __esm({
 var PrimaryKeyBuilder2, PrimaryKey2;
 var init_primary_keys2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/primary-keys.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table3();
     PrimaryKeyBuilder2 = class {
@@ -3367,8 +3240,6 @@ function extractUsedTable(table) {
 }
 var init_utils2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/utils.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_sql();
     init_subquery();
@@ -3382,8 +3253,6 @@ var init_utils2 = __esm({
 var SQLiteDeleteBase;
 var init_delete = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/delete.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_query_promise();
     init_selection_proxy();
@@ -3527,8 +3396,6 @@ function noopCase(input) {
 var CasingCache;
 var init_casing = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/casing.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_table();
     __name(toSnakeCase, "toSnakeCase");
@@ -3580,8 +3447,6 @@ var init_casing = __esm({
 var DrizzleError, DrizzleQueryError, TransactionRollbackError;
 var init_errors = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/errors.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     DrizzleError = class extends Error {
       static {
@@ -3623,24 +3488,18 @@ params: ${params}`);
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/functions/aggregate.js
 var init_aggregate = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/functions/aggregate.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
   }
 });
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/functions/vector.js
 var init_vector = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/functions/vector.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
   }
 });
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/functions/index.js
 var init_functions = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/functions/index.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_aggregate();
     init_vector();
   }
@@ -3649,8 +3508,6 @@ var init_functions = __esm({
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/index.js
 var init_sql2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/index.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_expressions();
     init_functions();
     init_sql();
@@ -3660,8 +3517,6 @@ var init_sql2 = __esm({
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/index.js
 var init_columns = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/columns/index.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_blob();
     init_common2();
     init_custom();
@@ -3676,8 +3531,6 @@ var init_columns = __esm({
 var SQLiteViewBase;
 var init_view_base = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/view-base.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_sql();
     SQLiteViewBase = class extends View {
@@ -3693,8 +3546,6 @@ var init_view_base = __esm({
 var SQLiteDialect, SQLiteSyncDialect, SQLiteAsyncDialect;
 var init_dialect = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/dialect.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_alias();
     init_casing();
     init_column();
@@ -4414,8 +4265,6 @@ var init_dialect = __esm({
 var TypedQueryBuilder;
 var init_query_builder = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/query-builders/query-builder.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     TypedQueryBuilder = class {
       static {
@@ -4451,8 +4300,6 @@ function createSetOperator(type, isAll) {
 var SQLiteSelectBuilder, SQLiteSelectQueryBuilderBase, SQLiteSelectBase, getSQLiteSetOperators, union, unionAll, intersect, except;
 var init_select2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/select.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_query_builder();
     init_query_promise();
@@ -5127,8 +4974,6 @@ var init_select2 = __esm({
 var QueryBuilder;
 var init_query_builder2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/query-builder.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_selection_proxy();
     init_dialect();
@@ -5212,8 +5057,6 @@ var init_query_builder2 = __esm({
 var SQLiteInsertBuilder, SQLiteInsertBase;
 var init_insert = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_query_promise();
     init_sql();
@@ -5405,8 +5248,6 @@ var init_insert = __esm({
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/select.types.js
 var init_select_types = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/select.types.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
   }
 });
 
@@ -5414,8 +5255,6 @@ var init_select_types = __esm({
 var SQLiteUpdateBuilder, SQLiteUpdateBase;
 var init_update = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/update.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_query_promise();
     init_selection_proxy();
@@ -5602,8 +5441,6 @@ var init_update = __esm({
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/index.js
 var init_query_builders = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/index.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_delete();
     init_insert();
     init_query_builder2();
@@ -5617,8 +5454,6 @@ var init_query_builders = __esm({
 var SQLiteCountBuilder;
 var init_count = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/count.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_sql();
     SQLiteCountBuilder = class _SQLiteCountBuilder extends SQL {
@@ -5673,8 +5508,6 @@ var init_count = __esm({
 var RelationalQueryBuilder, SQLiteRelationalQuery, SQLiteSyncRelationalQuery;
 var init_query = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/query.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_query_promise();
     init_relations();
@@ -5836,8 +5669,6 @@ var init_query = __esm({
 var SQLiteRaw;
 var init_raw = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/query-builders/raw.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_query_promise();
     SQLiteRaw = class extends QueryPromise {
@@ -5876,8 +5707,6 @@ var init_raw = __esm({
 var BaseSQLiteDatabase;
 var init_db = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/db.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_selection_proxy();
     init_sql();
@@ -6199,8 +6028,6 @@ async function hashQuery(sql2, params) {
 var Cache, NoopCache;
 var init_cache = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/cache/core/cache.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     Cache = class {
       static {
@@ -6231,8 +6058,6 @@ var init_cache = __esm({
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/alias.js
 var init_alias2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/alias.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
   }
 });
 
@@ -6240,8 +6065,6 @@ var init_alias2 = __esm({
 var ExecuteResultSync, SQLitePreparedQuery, SQLiteSession, SQLiteTransaction;
 var init_session = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/session.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_cache();
     init_entity();
     init_errors();
@@ -6459,8 +6282,6 @@ var init_session = __esm({
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/subquery.js
 var init_subquery2 = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/subquery.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
   }
 });
 
@@ -6468,8 +6289,6 @@ var init_subquery2 = __esm({
 var ViewBuilderCore, ViewBuilder, ManualViewBuilder, SQLiteView;
 var init_view = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/view.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_entity();
     init_selection_proxy();
     init_utils();
@@ -6578,8 +6397,6 @@ var init_view = __esm({
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/index.js
 var init_sqlite_core = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sqlite-core/index.js"() {
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_alias2();
     init_checks();
     init_columns();
@@ -6603,8 +6420,6 @@ var users, sessions;
 var init_auth = __esm({
   "../../database/schema/auth.ts"() {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_sqlite_core();
     users = sqliteTable("users", {
       id: text("id").primaryKey(),
@@ -6640,8 +6455,6 @@ var wallets, walletTransactions;
 var init_wallets = __esm({
   "../../database/schema/wallets.ts"() {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_sqlite_core();
     init_auth();
     wallets = sqliteTable("wallets", {
@@ -6678,8 +6491,6 @@ var kycProfiles;
 var init_kyc = __esm({
   "../../database/schema/kyc.ts"() {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_sqlite_core();
     init_auth();
     kycProfiles = sqliteTable("kyc_profiles", {
@@ -6708,8 +6519,6 @@ var ledgerAccounts, ledgerTransactions, ledgerEntries;
 var init_ledger = __esm({
   "../../database/schema/ledger.ts"() {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_sqlite_core();
     init_auth();
     ledgerAccounts = sqliteTable("ledger_accounts", {
@@ -6745,8 +6554,6 @@ var markets, orders, trades;
 var init_trading = __esm({
   "../../database/schema/trading.ts"() {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_sqlite_core();
     init_auth();
     markets = sqliteTable("markets", {
@@ -6808,8 +6615,6 @@ var p2pAds, p2pOrders, p2pMessages;
 var init_p2p = __esm({
   "../../database/schema/p2p.ts"() {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_sqlite_core();
     init_auth();
     p2pAds = sqliteTable("p2p_ads", {
@@ -6870,8 +6675,6 @@ var notifications;
 var init_notifications = __esm({
   "../../database/schema/notifications.ts"() {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_sqlite_core();
     init_auth();
     notifications = sqliteTable("notifications", {
@@ -6892,8 +6695,6 @@ var tickets, ticketMessages;
 var init_support = __esm({
   "../../database/schema/support.ts"() {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_sqlite_core();
     init_auth();
     tickets = sqliteTable("tickets", {
@@ -6942,8 +6743,6 @@ __export(schema_exports, {
 var init_schema = __esm({
   "../../database/schema/index.ts"() {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     init_auth();
     init_wallets();
     init_kyc();
@@ -6959,8 +6758,6 @@ var init_schema = __esm({
 var require_entity = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/entity.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7018,8 +6815,6 @@ var require_entity = __commonJS({
 var require_column = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/column.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7102,8 +6897,6 @@ var require_column = __commonJS({
 var require_column_builder = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/column-builder.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7238,8 +7031,6 @@ var require_column_builder = __commonJS({
 var require_table_utils = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/table.utils.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7270,8 +7061,6 @@ var require_table_utils = __commonJS({
 var require_foreign_keys = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/foreign-keys.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7379,8 +7168,6 @@ var require_foreign_keys = __commonJS({
 var require_tracing_utils = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/tracing-utils.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7414,8 +7201,6 @@ var require_tracing_utils = __commonJS({
 var require_unique_constraint = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/unique-constraint.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7513,8 +7298,6 @@ var require_unique_constraint = __commonJS({
 var require_array = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/utils/array.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7624,8 +7407,6 @@ var require_array = __commonJS({
 var require_common = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/common.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7867,8 +7648,6 @@ var require_common = __commonJS({
 var require_enum = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/enum.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7899,8 +7678,8 @@ var require_enum = __commonJS({
     });
     module.exports = __toCommonJS2(enum_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgEnumObjectColumnBuilder2 = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgEnumObjectColumnBuilder2 = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgEnumObjectColumnBuilder");
       }
@@ -7917,7 +7696,7 @@ var require_enum = __commonJS({
         );
       }
     };
-    var PgEnumObjectColumn2 = class extends import_common9.PgColumn {
+    var PgEnumObjectColumn2 = class extends import_common8.PgColumn {
       static {
         __name(this, "PgEnumObjectColumn");
       }
@@ -7937,7 +7716,7 @@ var require_enum = __commonJS({
       return !!obj && typeof obj === "function" && isPgEnumSym2 in obj && obj[isPgEnumSym2] === true;
     }
     __name(isPgEnum2, "isPgEnum");
-    var PgEnumColumnBuilder2 = class extends import_common9.PgColumnBuilder {
+    var PgEnumColumnBuilder2 = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgEnumColumnBuilder");
       }
@@ -7954,7 +7733,7 @@ var require_enum = __commonJS({
         );
       }
     };
-    var PgEnumColumn2 = class extends import_common9.PgColumn {
+    var PgEnumColumn2 = class extends import_common8.PgColumn {
       static {
         __name(this, "PgEnumColumn");
       }
@@ -8006,8 +7785,6 @@ var require_enum = __commonJS({
 var require_subquery = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/subquery.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8064,8 +7841,6 @@ var require_subquery = __commonJS({
 var require_version = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/version.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8098,8 +7873,6 @@ var require_version = __commonJS({
 var require_tracing = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/tracing.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8164,8 +7937,6 @@ var require_tracing = __commonJS({
 var require_view_common = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/view-common.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8196,8 +7967,6 @@ var require_view_common = __commonJS({
 var require_table = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/table.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8308,8 +8077,6 @@ var require_table = __commonJS({
 var require_sql = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/sql.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8812,8 +8579,6 @@ var require_sql = __commonJS({
 var require_alias = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/alias.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8966,8 +8731,6 @@ var require_alias = __commonJS({
 var require_errors = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/errors.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9034,8 +8797,6 @@ params: ${params}`);
 var require_logger = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/logger.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9106,8 +8867,6 @@ var require_logger = __commonJS({
 var require_operations = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/operations.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9130,8 +8889,6 @@ var require_operations = __commonJS({
 var require_query_promise = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/query-promise.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9187,8 +8944,6 @@ var require_query_promise = __commonJS({
 var require_utils = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/utils.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9396,8 +9151,6 @@ var require_utils = __commonJS({
 var require_int_common = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/int.common.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9421,8 +9174,8 @@ var require_int_common = __commonJS({
     });
     module.exports = __toCommonJS2(int_common_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgIntColumnBaseBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgIntColumnBaseBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgIntColumnBaseBuilder");
       }
@@ -9469,8 +9222,6 @@ var require_int_common = __commonJS({
 var require_bigint = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/bigint.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9499,7 +9250,7 @@ var require_bigint = __commonJS({
     module.exports = __toCommonJS2(bigint_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
+    var import_common8 = require_common();
     var import_int_common = require_int_common();
     var PgBigInt53Builder = class extends import_int_common.PgIntColumnBaseBuilder {
       static {
@@ -9514,7 +9265,7 @@ var require_bigint = __commonJS({
         return new PgBigInt53(table, this.config);
       }
     };
-    var PgBigInt53 = class extends import_common9.PgColumn {
+    var PgBigInt53 = class extends import_common8.PgColumn {
       static {
         __name(this, "PgBigInt53");
       }
@@ -9545,7 +9296,7 @@ var require_bigint = __commonJS({
         );
       }
     };
-    var PgBigInt64 = class extends import_common9.PgColumn {
+    var PgBigInt64 = class extends import_common8.PgColumn {
       static {
         __name(this, "PgBigInt64");
       }
@@ -9573,8 +9324,6 @@ var require_bigint = __commonJS({
 var require_bigserial = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/bigserial.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9603,8 +9352,8 @@ var require_bigserial = __commonJS({
     module.exports = __toCommonJS2(bigserial_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgBigSerial53Builder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgBigSerial53Builder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgBigSerial53Builder");
       }
@@ -9622,7 +9371,7 @@ var require_bigserial = __commonJS({
         );
       }
     };
-    var PgBigSerial53 = class extends import_common9.PgColumn {
+    var PgBigSerial53 = class extends import_common8.PgColumn {
       static {
         __name(this, "PgBigSerial53");
       }
@@ -9637,7 +9386,7 @@ var require_bigserial = __commonJS({
         return Number(value);
       }
     };
-    var PgBigSerial64Builder = class extends import_common9.PgColumnBuilder {
+    var PgBigSerial64Builder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgBigSerial64Builder");
       }
@@ -9654,7 +9403,7 @@ var require_bigserial = __commonJS({
         );
       }
     };
-    var PgBigSerial64 = class extends import_common9.PgColumn {
+    var PgBigSerial64 = class extends import_common8.PgColumn {
       static {
         __name(this, "PgBigSerial64");
       }
@@ -9682,8 +9431,6 @@ var require_bigserial = __commonJS({
 var require_boolean = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/boolean.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9709,8 +9456,8 @@ var require_boolean = __commonJS({
     });
     module.exports = __toCommonJS2(boolean_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgBooleanBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgBooleanBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgBooleanBuilder");
       }
@@ -9723,7 +9470,7 @@ var require_boolean = __commonJS({
         return new PgBoolean(table, this.config);
       }
     };
-    var PgBoolean = class extends import_common9.PgColumn {
+    var PgBoolean = class extends import_common8.PgColumn {
       static {
         __name(this, "PgBoolean");
       }
@@ -9743,8 +9490,6 @@ var require_boolean = __commonJS({
 var require_char = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/char.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9771,8 +9516,8 @@ var require_char = __commonJS({
     module.exports = __toCommonJS2(char_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgCharBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgCharBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgCharBuilder");
       }
@@ -9790,7 +9535,7 @@ var require_char = __commonJS({
         );
       }
     };
-    var PgChar = class extends import_common9.PgColumn {
+    var PgChar = class extends import_common8.PgColumn {
       static {
         __name(this, "PgChar");
       }
@@ -9813,8 +9558,6 @@ var require_char = __commonJS({
 var require_cidr = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/cidr.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9840,8 +9583,8 @@ var require_cidr = __commonJS({
     });
     module.exports = __toCommonJS2(cidr_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgCidrBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgCidrBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgCidrBuilder");
       }
@@ -9854,7 +9597,7 @@ var require_cidr = __commonJS({
         return new PgCidr(table, this.config);
       }
     };
-    var PgCidr = class extends import_common9.PgColumn {
+    var PgCidr = class extends import_common8.PgColumn {
       static {
         __name(this, "PgCidr");
       }
@@ -9874,8 +9617,6 @@ var require_cidr = __commonJS({
 var require_custom = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/custom.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9902,8 +9643,8 @@ var require_custom = __commonJS({
     module.exports = __toCommonJS2(custom_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgCustomColumnBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgCustomColumnBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgCustomColumnBuilder");
       }
@@ -9921,7 +9662,7 @@ var require_custom = __commonJS({
         );
       }
     };
-    var PgCustomColumn = class extends import_common9.PgColumn {
+    var PgCustomColumn = class extends import_common8.PgColumn {
       static {
         __name(this, "PgCustomColumn");
       }
@@ -9959,8 +9700,6 @@ var require_custom = __commonJS({
 var require_date_common = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/date.common.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9985,8 +9724,8 @@ var require_date_common = __commonJS({
     module.exports = __toCommonJS2(date_common_exports);
     var import_entity52 = require_entity();
     var import_sql17 = require_sql();
-    var import_common9 = require_common();
-    var PgDateColumnBaseBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgDateColumnBaseBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgDateColumnBaseBuilder");
       }
@@ -10002,8 +9741,6 @@ var require_date_common = __commonJS({
 var require_date = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/date.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10032,7 +9769,7 @@ var require_date = __commonJS({
     module.exports = __toCommonJS2(date_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
+    var import_common8 = require_common();
     var import_date_common = require_date_common();
     var PgDateBuilder = class extends import_date_common.PgDateColumnBaseBuilder {
       static {
@@ -10047,7 +9784,7 @@ var require_date = __commonJS({
         return new PgDate(table, this.config);
       }
     };
-    var PgDate = class extends import_common9.PgColumn {
+    var PgDate = class extends import_common8.PgColumn {
       static {
         __name(this, "PgDate");
       }
@@ -10079,7 +9816,7 @@ var require_date = __commonJS({
         );
       }
     };
-    var PgDateString = class extends import_common9.PgColumn {
+    var PgDateString = class extends import_common8.PgColumn {
       static {
         __name(this, "PgDateString");
       }
@@ -10107,8 +9844,6 @@ var require_date = __commonJS({
 var require_double_precision = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/double-precision.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10134,8 +9869,8 @@ var require_double_precision = __commonJS({
     });
     module.exports = __toCommonJS2(double_precision_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgDoublePrecisionBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgDoublePrecisionBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgDoublePrecisionBuilder");
       }
@@ -10151,7 +9886,7 @@ var require_double_precision = __commonJS({
         );
       }
     };
-    var PgDoublePrecision = class extends import_common9.PgColumn {
+    var PgDoublePrecision = class extends import_common8.PgColumn {
       static {
         __name(this, "PgDoublePrecision");
       }
@@ -10177,8 +9912,6 @@ var require_double_precision = __commonJS({
 var require_inet = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/inet.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10204,8 +9937,8 @@ var require_inet = __commonJS({
     });
     module.exports = __toCommonJS2(inet_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgInetBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgInetBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgInetBuilder");
       }
@@ -10218,7 +9951,7 @@ var require_inet = __commonJS({
         return new PgInet(table, this.config);
       }
     };
-    var PgInet = class extends import_common9.PgColumn {
+    var PgInet = class extends import_common8.PgColumn {
       static {
         __name(this, "PgInet");
       }
@@ -10238,8 +9971,6 @@ var require_inet = __commonJS({
 var require_integer = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/integer.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10265,7 +9996,7 @@ var require_integer = __commonJS({
     });
     module.exports = __toCommonJS2(integer_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
+    var import_common8 = require_common();
     var import_int_common = require_int_common();
     var PgIntegerBuilder = class extends import_int_common.PgIntColumnBaseBuilder {
       static {
@@ -10280,7 +10011,7 @@ var require_integer = __commonJS({
         return new PgInteger(table, this.config);
       }
     };
-    var PgInteger = class extends import_common9.PgColumn {
+    var PgInteger = class extends import_common8.PgColumn {
       static {
         __name(this, "PgInteger");
       }
@@ -10306,8 +10037,6 @@ var require_integer = __commonJS({
 var require_interval = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/interval.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10334,8 +10063,8 @@ var require_interval = __commonJS({
     module.exports = __toCommonJS2(interval_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgIntervalBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgIntervalBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgIntervalBuilder");
       }
@@ -10349,7 +10078,7 @@ var require_interval = __commonJS({
         return new PgInterval(table, this.config);
       }
     };
-    var PgInterval = class extends import_common9.PgColumn {
+    var PgInterval = class extends import_common8.PgColumn {
       static {
         __name(this, "PgInterval");
       }
@@ -10374,8 +10103,6 @@ var require_interval = __commonJS({
 var require_json = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/json.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10401,8 +10128,8 @@ var require_json = __commonJS({
     });
     module.exports = __toCommonJS2(json_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgJsonBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgJsonBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgJsonBuilder");
       }
@@ -10415,7 +10142,7 @@ var require_json = __commonJS({
         return new PgJson(table, this.config);
       }
     };
-    var PgJson = class extends import_common9.PgColumn {
+    var PgJson = class extends import_common8.PgColumn {
       static {
         __name(this, "PgJson");
       }
@@ -10451,8 +10178,6 @@ var require_json = __commonJS({
 var require_jsonb = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/jsonb.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10478,8 +10203,8 @@ var require_jsonb = __commonJS({
     });
     module.exports = __toCommonJS2(jsonb_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgJsonbBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgJsonbBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgJsonbBuilder");
       }
@@ -10492,7 +10217,7 @@ var require_jsonb = __commonJS({
         return new PgJsonb(table, this.config);
       }
     };
-    var PgJsonb = class extends import_common9.PgColumn {
+    var PgJsonb = class extends import_common8.PgColumn {
       static {
         __name(this, "PgJsonb");
       }
@@ -10528,8 +10253,6 @@ var require_jsonb = __commonJS({
 var require_line = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/line.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10558,8 +10281,8 @@ var require_line = __commonJS({
     module.exports = __toCommonJS2(line_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgLineBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgLineBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgLineBuilder");
       }
@@ -10575,7 +10298,7 @@ var require_line = __commonJS({
         );
       }
     };
-    var PgLineTuple = class extends import_common9.PgColumn {
+    var PgLineTuple = class extends import_common8.PgColumn {
       static {
         __name(this, "PgLineTuple");
       }
@@ -10591,7 +10314,7 @@ var require_line = __commonJS({
         return `{${value[0]},${value[1]},${value[2]}}`;
       }
     };
-    var PgLineABCBuilder = class extends import_common9.PgColumnBuilder {
+    var PgLineABCBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgLineABCBuilder");
       }
@@ -10607,7 +10330,7 @@ var require_line = __commonJS({
         );
       }
     };
-    var PgLineABC = class extends import_common9.PgColumn {
+    var PgLineABC = class extends import_common8.PgColumn {
       static {
         __name(this, "PgLineABC");
       }
@@ -10638,8 +10361,6 @@ var require_line = __commonJS({
 var require_macaddr = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/macaddr.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10665,8 +10386,8 @@ var require_macaddr = __commonJS({
     });
     module.exports = __toCommonJS2(macaddr_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgMacaddrBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgMacaddrBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgMacaddrBuilder");
       }
@@ -10679,7 +10400,7 @@ var require_macaddr = __commonJS({
         return new PgMacaddr(table, this.config);
       }
     };
-    var PgMacaddr = class extends import_common9.PgColumn {
+    var PgMacaddr = class extends import_common8.PgColumn {
       static {
         __name(this, "PgMacaddr");
       }
@@ -10699,8 +10420,6 @@ var require_macaddr = __commonJS({
 var require_macaddr8 = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/macaddr8.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10726,8 +10445,8 @@ var require_macaddr8 = __commonJS({
     });
     module.exports = __toCommonJS2(macaddr8_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgMacaddr8Builder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgMacaddr8Builder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgMacaddr8Builder");
       }
@@ -10740,7 +10459,7 @@ var require_macaddr8 = __commonJS({
         return new PgMacaddr8(table, this.config);
       }
     };
-    var PgMacaddr8 = class extends import_common9.PgColumn {
+    var PgMacaddr8 = class extends import_common8.PgColumn {
       static {
         __name(this, "PgMacaddr8");
       }
@@ -10760,8 +10479,6 @@ var require_macaddr8 = __commonJS({
 var require_numeric = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/numeric.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10793,8 +10510,8 @@ var require_numeric = __commonJS({
     module.exports = __toCommonJS2(numeric_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgNumericBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgNumericBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgNumericBuilder");
       }
@@ -10809,7 +10526,7 @@ var require_numeric = __commonJS({
         return new PgNumeric(table, this.config);
       }
     };
-    var PgNumeric = class extends import_common9.PgColumn {
+    var PgNumeric = class extends import_common8.PgColumn {
       static {
         __name(this, "PgNumeric");
       }
@@ -10835,7 +10552,7 @@ var require_numeric = __commonJS({
         }
       }
     };
-    var PgNumericNumberBuilder = class extends import_common9.PgColumnBuilder {
+    var PgNumericNumberBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgNumericNumberBuilder");
       }
@@ -10853,7 +10570,7 @@ var require_numeric = __commonJS({
         );
       }
     };
-    var PgNumericNumber = class extends import_common9.PgColumn {
+    var PgNumericNumber = class extends import_common8.PgColumn {
       static {
         __name(this, "PgNumericNumber");
       }
@@ -10880,7 +10597,7 @@ var require_numeric = __commonJS({
         }
       }
     };
-    var PgNumericBigIntBuilder = class extends import_common9.PgColumnBuilder {
+    var PgNumericBigIntBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgNumericBigIntBuilder");
       }
@@ -10898,7 +10615,7 @@ var require_numeric = __commonJS({
         );
       }
     };
-    var PgNumericBigInt = class extends import_common9.PgColumn {
+    var PgNumericBigInt = class extends import_common8.PgColumn {
       static {
         __name(this, "PgNumericBigInt");
       }
@@ -10936,8 +10653,6 @@ var require_numeric = __commonJS({
 var require_point = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/point.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -10966,8 +10681,8 @@ var require_point = __commonJS({
     module.exports = __toCommonJS2(point_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgPointTupleBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgPointTupleBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgPointTupleBuilder");
       }
@@ -10983,7 +10698,7 @@ var require_point = __commonJS({
         );
       }
     };
-    var PgPointTuple = class extends import_common9.PgColumn {
+    var PgPointTuple = class extends import_common8.PgColumn {
       static {
         __name(this, "PgPointTuple");
       }
@@ -11002,7 +10717,7 @@ var require_point = __commonJS({
         return `(${value[0]},${value[1]})`;
       }
     };
-    var PgPointObjectBuilder = class extends import_common9.PgColumnBuilder {
+    var PgPointObjectBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgPointObjectBuilder");
       }
@@ -11018,7 +10733,7 @@ var require_point = __commonJS({
         );
       }
     };
-    var PgPointObject = class extends import_common9.PgColumn {
+    var PgPointObject = class extends import_common8.PgColumn {
       static {
         __name(this, "PgPointObject");
       }
@@ -11052,8 +10767,6 @@ var require_point = __commonJS({
 var require_utils2 = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/postgis_extension/utils.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11123,8 +10836,6 @@ var require_utils2 = __commonJS({
 var require_geometry = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/postgis_extension/geometry.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11153,9 +10864,9 @@ var require_geometry = __commonJS({
     module.exports = __toCommonJS2(geometry_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
+    var import_common8 = require_common();
     var import_utils22 = require_utils2();
-    var PgGeometryBuilder = class extends import_common9.PgColumnBuilder {
+    var PgGeometryBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgGeometryBuilder");
       }
@@ -11171,7 +10882,7 @@ var require_geometry = __commonJS({
         );
       }
     };
-    var PgGeometry = class extends import_common9.PgColumn {
+    var PgGeometry = class extends import_common8.PgColumn {
       static {
         __name(this, "PgGeometry");
       }
@@ -11186,7 +10897,7 @@ var require_geometry = __commonJS({
         return `point(${value[0]} ${value[1]})`;
       }
     };
-    var PgGeometryObjectBuilder = class extends import_common9.PgColumnBuilder {
+    var PgGeometryObjectBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgGeometryObjectBuilder");
       }
@@ -11202,7 +10913,7 @@ var require_geometry = __commonJS({
         );
       }
     };
-    var PgGeometryObject = class extends import_common9.PgColumn {
+    var PgGeometryObject = class extends import_common8.PgColumn {
       static {
         __name(this, "PgGeometryObject");
       }
@@ -11233,8 +10944,6 @@ var require_geometry = __commonJS({
 var require_real = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/real.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11260,8 +10969,8 @@ var require_real = __commonJS({
     });
     module.exports = __toCommonJS2(real_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgRealBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgRealBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgRealBuilder");
       }
@@ -11275,7 +10984,7 @@ var require_real = __commonJS({
         return new PgReal(table, this.config);
       }
     };
-    var PgReal = class extends import_common9.PgColumn {
+    var PgReal = class extends import_common8.PgColumn {
       static {
         __name(this, "PgReal");
       }
@@ -11304,8 +11013,6 @@ var require_real = __commonJS({
 var require_serial = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/serial.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11331,8 +11038,8 @@ var require_serial = __commonJS({
     });
     module.exports = __toCommonJS2(serial_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgSerialBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgSerialBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgSerialBuilder");
       }
@@ -11347,7 +11054,7 @@ var require_serial = __commonJS({
         return new PgSerial(table, this.config);
       }
     };
-    var PgSerial = class extends import_common9.PgColumn {
+    var PgSerial = class extends import_common8.PgColumn {
       static {
         __name(this, "PgSerial");
       }
@@ -11367,8 +11074,6 @@ var require_serial = __commonJS({
 var require_smallint = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/smallint.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11394,7 +11099,7 @@ var require_smallint = __commonJS({
     });
     module.exports = __toCommonJS2(smallint_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
+    var import_common8 = require_common();
     var import_int_common = require_int_common();
     var PgSmallIntBuilder = class extends import_int_common.PgIntColumnBaseBuilder {
       static {
@@ -11409,7 +11114,7 @@ var require_smallint = __commonJS({
         return new PgSmallInt(table, this.config);
       }
     };
-    var PgSmallInt = class extends import_common9.PgColumn {
+    var PgSmallInt = class extends import_common8.PgColumn {
       static {
         __name(this, "PgSmallInt");
       }
@@ -11435,8 +11140,6 @@ var require_smallint = __commonJS({
 var require_smallserial = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/smallserial.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11462,8 +11165,8 @@ var require_smallserial = __commonJS({
     });
     module.exports = __toCommonJS2(smallserial_exports);
     var import_entity52 = require_entity();
-    var import_common9 = require_common();
-    var PgSmallSerialBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgSmallSerialBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgSmallSerialBuilder");
       }
@@ -11481,7 +11184,7 @@ var require_smallserial = __commonJS({
         );
       }
     };
-    var PgSmallSerial = class extends import_common9.PgColumn {
+    var PgSmallSerial = class extends import_common8.PgColumn {
       static {
         __name(this, "PgSmallSerial");
       }
@@ -11501,8 +11204,6 @@ var require_smallserial = __commonJS({
 var require_text = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/text.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11529,8 +11230,8 @@ var require_text = __commonJS({
     module.exports = __toCommonJS2(text_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgTextBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgTextBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgTextBuilder");
       }
@@ -11544,7 +11245,7 @@ var require_text = __commonJS({
         return new PgText(table, this.config);
       }
     };
-    var PgText = class extends import_common9.PgColumn {
+    var PgText = class extends import_common8.PgColumn {
       static {
         __name(this, "PgText");
       }
@@ -11566,8 +11267,6 @@ var require_text = __commonJS({
 var require_time = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/time.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11594,7 +11293,7 @@ var require_time = __commonJS({
     module.exports = __toCommonJS2(time_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
+    var import_common8 = require_common();
     var import_date_common = require_date_common();
     var PgTimeBuilder = class extends import_date_common.PgDateColumnBaseBuilder {
       static {
@@ -11613,7 +11312,7 @@ var require_time = __commonJS({
         return new PgTime(table, this.config);
       }
     };
-    var PgTime = class extends import_common9.PgColumn {
+    var PgTime = class extends import_common8.PgColumn {
       static {
         __name(this, "PgTime");
       }
@@ -11642,8 +11341,6 @@ var require_time = __commonJS({
 var require_timestamp = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/timestamp.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11672,7 +11369,7 @@ var require_timestamp = __commonJS({
     module.exports = __toCommonJS2(timestamp_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
+    var import_common8 = require_common();
     var import_date_common = require_date_common();
     var PgTimestampBuilder = class extends import_date_common.PgDateColumnBaseBuilder {
       static {
@@ -11689,7 +11386,7 @@ var require_timestamp = __commonJS({
         return new PgTimestamp(table, this.config);
       }
     };
-    var PgTimestamp = class extends import_common9.PgColumn {
+    var PgTimestamp = class extends import_common8.PgColumn {
       static {
         __name(this, "PgTimestamp");
       }
@@ -11731,7 +11428,7 @@ var require_timestamp = __commonJS({
         );
       }
     };
-    var PgTimestampString = class extends import_common9.PgColumn {
+    var PgTimestampString = class extends import_common8.PgColumn {
       static {
         __name(this, "PgTimestampString");
       }
@@ -11773,8 +11470,6 @@ var require_timestamp = __commonJS({
 var require_uuid = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/uuid.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11801,8 +11496,8 @@ var require_uuid = __commonJS({
     module.exports = __toCommonJS2(uuid_exports);
     var import_entity52 = require_entity();
     var import_sql17 = require_sql();
-    var import_common9 = require_common();
-    var PgUUIDBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgUUIDBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgUUIDBuilder");
       }
@@ -11821,7 +11516,7 @@ var require_uuid = __commonJS({
         return new PgUUID(table, this.config);
       }
     };
-    var PgUUID = class extends import_common9.PgColumn {
+    var PgUUID = class extends import_common8.PgColumn {
       static {
         __name(this, "PgUUID");
       }
@@ -11841,8 +11536,6 @@ var require_uuid = __commonJS({
 var require_varchar = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/varchar.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11869,8 +11562,8 @@ var require_varchar = __commonJS({
     module.exports = __toCommonJS2(varchar_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgVarcharBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgVarcharBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgVarcharBuilder");
       }
@@ -11888,7 +11581,7 @@ var require_varchar = __commonJS({
         );
       }
     };
-    var PgVarchar = class extends import_common9.PgColumn {
+    var PgVarchar = class extends import_common8.PgColumn {
       static {
         __name(this, "PgVarchar");
       }
@@ -11911,8 +11604,6 @@ var require_varchar = __commonJS({
 var require_bit = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/vector_extension/bit.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -11939,8 +11630,8 @@ var require_bit = __commonJS({
     module.exports = __toCommonJS2(bit_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgBinaryVectorBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgBinaryVectorBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgBinaryVectorBuilder");
       }
@@ -11957,7 +11648,7 @@ var require_bit = __commonJS({
         );
       }
     };
-    var PgBinaryVector = class extends import_common9.PgColumn {
+    var PgBinaryVector = class extends import_common8.PgColumn {
       static {
         __name(this, "PgBinaryVector");
       }
@@ -11979,8 +11670,6 @@ var require_bit = __commonJS({
 var require_halfvec = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/vector_extension/halfvec.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -12007,8 +11696,8 @@ var require_halfvec = __commonJS({
     module.exports = __toCommonJS2(halfvec_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgHalfVectorBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgHalfVectorBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgHalfVectorBuilder");
       }
@@ -12025,7 +11714,7 @@ var require_halfvec = __commonJS({
         );
       }
     };
-    var PgHalfVector = class extends import_common9.PgColumn {
+    var PgHalfVector = class extends import_common8.PgColumn {
       static {
         __name(this, "PgHalfVector");
       }
@@ -12053,8 +11742,6 @@ var require_halfvec = __commonJS({
 var require_sparsevec = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/vector_extension/sparsevec.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -12081,8 +11768,8 @@ var require_sparsevec = __commonJS({
     module.exports = __toCommonJS2(sparsevec_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgSparseVectorBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgSparseVectorBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgSparseVectorBuilder");
       }
@@ -12099,7 +11786,7 @@ var require_sparsevec = __commonJS({
         );
       }
     };
-    var PgSparseVector = class extends import_common9.PgColumn {
+    var PgSparseVector = class extends import_common8.PgColumn {
       static {
         __name(this, "PgSparseVector");
       }
@@ -12121,8 +11808,6 @@ var require_sparsevec = __commonJS({
 var require_vector = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/vector_extension/vector.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -12149,8 +11834,8 @@ var require_vector = __commonJS({
     module.exports = __toCommonJS2(vector_exports);
     var import_entity52 = require_entity();
     var import_utils17 = require_utils();
-    var import_common9 = require_common();
-    var PgVectorBuilder = class extends import_common9.PgColumnBuilder {
+    var import_common8 = require_common();
+    var PgVectorBuilder = class extends import_common8.PgColumnBuilder {
       static {
         __name(this, "PgVectorBuilder");
       }
@@ -12167,7 +11852,7 @@ var require_vector = __commonJS({
         );
       }
     };
-    var PgVector = class extends import_common9.PgColumn {
+    var PgVector = class extends import_common8.PgColumn {
       static {
         __name(this, "PgVector");
       }
@@ -12195,8 +11880,6 @@ var require_vector = __commonJS({
 var require_all = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/columns/all.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -12295,8 +11978,6 @@ var require_all = __commonJS({
 var require_table2 = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/table.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -12398,8 +12079,6 @@ var require_table2 = __commonJS({
 var require_primary_keys = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/pg-core/primary-keys.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -12474,8 +12153,6 @@ var require_primary_keys = __commonJS({
 var require_conditions = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/expressions/conditions.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -12695,8 +12372,6 @@ var require_conditions = __commonJS({
 var require_select = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/expressions/select.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -12736,8 +12411,6 @@ var require_select = __commonJS({
 var require_expressions = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/expressions/index.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -12763,8 +12436,6 @@ var require_expressions = __commonJS({
 var require_relations = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/relations.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -13103,8 +12774,6 @@ var require_relations = __commonJS({
 var require_aggregate = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/functions/aggregate.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -13176,8 +12845,6 @@ var require_aggregate = __commonJS({
 var require_vector2 = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/functions/vector.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -13259,8 +12926,6 @@ var require_vector2 = __commonJS({
 var require_functions = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/functions/index.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -13286,8 +12951,6 @@ var require_functions = __commonJS({
 var require_sql2 = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/sql/index.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -13314,8 +12977,6 @@ var require_sql2 = __commonJS({
 var require_drizzle_orm = __commonJS({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/index.cjs"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -13352,8 +13013,6 @@ var require_drizzle_orm = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/can-promise.js
 var require_can_promise = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/can-promise.js"(exports, module) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     module.exports = function() {
       return typeof Promise === "function" && Promise.prototype && Promise.prototype.then;
     };
@@ -13363,8 +13022,6 @@ var require_can_promise = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/utils.js
 var require_utils3 = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/utils.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var toSJISFunction;
     var CODEWORDS_COUNT = [
       0,
@@ -13444,8 +13101,6 @@ var require_utils3 = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/error-correction-level.js
 var require_error_correction_level = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/error-correction-level.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     exports.L = { bit: 1 };
     exports.M = { bit: 0 };
     exports.Q = { bit: 3 };
@@ -13492,8 +13147,6 @@ var require_error_correction_level = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/bit-buffer.js
 var require_bit_buffer = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/bit-buffer.js"(exports, module) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     function BitBuffer() {
       this.buffer = [];
       this.length = 0;
@@ -13530,8 +13183,6 @@ var require_bit_buffer = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/bit-matrix.js
 var require_bit_matrix = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/bit-matrix.js"(exports, module) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     function BitMatrix(size) {
       if (!size || size < 1) {
         throw new Error("BitMatrix size must be defined and greater than 0");
@@ -13562,8 +13213,6 @@ var require_bit_matrix = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/alignment-pattern.js
 var require_alignment_pattern = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/alignment-pattern.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var getSymbolSize = require_utils3().getSymbolSize;
     exports.getRowColCoords = /* @__PURE__ */ __name(function getRowColCoords(version2) {
       if (version2 === 1) return [];
@@ -13599,8 +13248,6 @@ var require_alignment_pattern = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/finder-pattern.js
 var require_finder_pattern = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/finder-pattern.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var getSymbolSize = require_utils3().getSymbolSize;
     var FINDER_PATTERN_SIZE = 7;
     exports.getPositions = /* @__PURE__ */ __name(function getPositions(version2) {
@@ -13620,8 +13267,6 @@ var require_finder_pattern = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/mask-pattern.js
 var require_mask_pattern = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/mask-pattern.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     exports.Patterns = {
       PATTERN000: 0,
       PATTERN001: 1,
@@ -13765,8 +13410,6 @@ var require_mask_pattern = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/error-correction-code.js
 var require_error_correction_code = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/error-correction-code.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var ECLevel = require_error_correction_level();
     var EC_BLOCKS_TABLE = [
       // L  M  Q  H
@@ -14128,8 +13771,6 @@ var require_error_correction_code = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/galois-field.js
 var require_galois_field = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/galois-field.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var EXP_TABLE = new Uint8Array(512);
     var LOG_TABLE = new Uint8Array(256);
     (/* @__PURE__ */ __name(function initTables() {
@@ -14163,8 +13804,6 @@ var require_galois_field = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/polynomial.js
 var require_polynomial = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/polynomial.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var GF = require_galois_field();
     exports.mul = /* @__PURE__ */ __name(function mul(p1, p2) {
       const coeff = new Uint8Array(p1.length + p2.length - 1);
@@ -14201,8 +13840,6 @@ var require_polynomial = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/reed-solomon-encoder.js
 var require_reed_solomon_encoder = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/reed-solomon-encoder.js"(exports, module) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Polynomial = require_polynomial();
     function ReedSolomonEncoder(degree) {
       this.genPoly = void 0;
@@ -14236,8 +13873,6 @@ var require_reed_solomon_encoder = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/version-check.js
 var require_version_check = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/version-check.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     exports.isValid = /* @__PURE__ */ __name(function isValid(version2) {
       return !isNaN(version2) && version2 >= 1 && version2 <= 40;
     }, "isValid");
@@ -14247,8 +13882,6 @@ var require_version_check = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/regex.js
 var require_regex = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/regex.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var numeric2 = "[0-9]+";
     var alphanumeric = "[A-Z $%*+\\-./:]+";
     var kanji = "(?:[u3000-u303F]|[u3040-u309F]|[u30A0-u30FF]|[uFF00-uFFEF]|[u4E00-u9FAF]|[u2605-u2606]|[u2190-u2195]|u203B|[u2010u2015u2018u2019u2025u2026u201Cu201Du2225u2260]|[u0391-u0451]|[u00A7u00A8u00B1u00B4u00D7u00F7])+";
@@ -14277,8 +13910,6 @@ var require_regex = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/mode.js
 var require_mode = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/mode.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var VersionCheck = require_version_check();
     var Regex = require_regex();
     exports.NUMERIC = {
@@ -14361,8 +13992,6 @@ var require_mode = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/version.js
 var require_version2 = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/version.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Utils = require_utils3();
     var ECCode = require_error_correction_code();
     var ECLevel = require_error_correction_level();
@@ -14462,8 +14091,6 @@ var require_version2 = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/format-info.js
 var require_format_info = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/format-info.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Utils = require_utils3();
     var G15 = 1 << 10 | 1 << 8 | 1 << 5 | 1 << 4 | 1 << 2 | 1 << 1 | 1 << 0;
     var G15_MASK = 1 << 14 | 1 << 12 | 1 << 10 | 1 << 4 | 1 << 1;
@@ -14482,8 +14109,6 @@ var require_format_info = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/numeric-data.js
 var require_numeric_data = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/numeric-data.js"(exports, module) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Mode = require_mode();
     function NumericData(data) {
       this.mode = Mode.NUMERIC;
@@ -14520,8 +14145,6 @@ var require_numeric_data = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/alphanumeric-data.js
 var require_alphanumeric_data = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/alphanumeric-data.js"(exports, module) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Mode = require_mode();
     var ALPHA_NUM_CHARS = [
       "0",
@@ -14602,8 +14225,6 @@ var require_alphanumeric_data = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/byte-data.js
 var require_byte_data = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/byte-data.js"(exports, module) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Mode = require_mode();
     function ByteData(data) {
       this.mode = Mode.BYTE;
@@ -14635,8 +14256,6 @@ var require_byte_data = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/kanji-data.js
 var require_kanji_data = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/kanji-data.js"(exports, module) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Mode = require_mode();
     var Utils = require_utils3();
     function KanjiData(data) {
@@ -14678,8 +14297,6 @@ var require_kanji_data = __commonJS({
 var require_dijkstra = __commonJS({
   "../../node_modules/.pnpm/dijkstrajs@1.0.3/node_modules/dijkstrajs/dijkstra.js"(exports, module) {
     "use strict";
-    init_checked_fetch();
-    init_modules_watch_stub();
     var dijkstra = {
       single_source_shortest_paths: /* @__PURE__ */ __name(function(graph, s, d) {
         var predecessors = {};
@@ -14780,8 +14397,6 @@ var require_dijkstra = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/segments.js
 var require_segments = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/segments.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Mode = require_mode();
     var NumericData = require_numeric_data();
     var AlphanumericData = require_alphanumeric_data();
@@ -14976,8 +14591,6 @@ var require_segments = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/qrcode.js
 var require_qrcode = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/core/qrcode.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Utils = require_utils3();
     var ECLevel = require_error_correction_level();
     var BitBuffer = require_bit_buffer();
@@ -15248,8 +14861,6 @@ var require_qrcode = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/renderer/utils.js
 var require_utils4 = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/renderer/utils.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     function hex2rgba(hex) {
       if (typeof hex === "number") {
         hex = hex.toString();
@@ -15331,8 +14942,6 @@ var require_utils4 = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/renderer/canvas.js
 var require_canvas = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/renderer/canvas.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Utils = require_utils4();
     function clearCanvas(ctx, canvas, size) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -15388,8 +14997,6 @@ var require_canvas = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/renderer/svg-tag.js
 var require_svg_tag = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/renderer/svg-tag.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var Utils = require_utils4();
     function getColorAttrib(color, attrib) {
       const alpha = color.a / 255;
@@ -15451,8 +15058,6 @@ var require_svg_tag = __commonJS({
 // ../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/browser.js
 var require_browser = __commonJS({
   "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/browser.js"(exports) {
-    init_checked_fetch();
-    init_modules_watch_stub();
     var canPromise = require_can_promise();
     var QRCode2 = require_qrcode();
     var CanvasRenderer = require_canvas();
@@ -15521,33 +15126,7 @@ var require_browser = __commonJS({
   }
 });
 
-// .wrangler/tmp/bundle-G3EU5v/middleware-loader.entry.ts
-init_checked_fetch();
-init_modules_watch_stub();
-
-// .wrangler/tmp/bundle-G3EU5v/middleware-insertion-facade.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// src/index.ts
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/index.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/hono.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/hono-base.js
-init_checked_fetch();
-init_modules_watch_stub();
-
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/compose.js
-init_checked_fetch();
-init_modules_watch_stub();
 var compose = /* @__PURE__ */ __name((middleware, onError, onNotFound) => {
   return (context, next) => {
     let index = -1;
@@ -15592,34 +15171,8 @@ var compose = /* @__PURE__ */ __name((middleware, onError, onNotFound) => {
   };
 }, "compose");
 
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/context.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/request.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/http-exception.js
-init_checked_fetch();
-init_modules_watch_stub();
-
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/request/constants.js
-init_checked_fetch();
-init_modules_watch_stub();
 var GET_MATCH_RESULT = /* @__PURE__ */ Symbol();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/body.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/buffer.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/crypto.js
-init_checked_fetch();
-init_modules_watch_stub();
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/buffer.js
 var bufferToFormData = /* @__PURE__ */ __name((arrayBuffer, contentType) => {
@@ -15721,8 +15274,6 @@ var handleParsingNestedValues = /* @__PURE__ */ __name((form, key, value) => {
 }, "handleParsingNestedValues");
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/url.js
-init_checked_fetch();
-init_modules_watch_stub();
 var splitPath = /* @__PURE__ */ __name((path) => {
   const paths = path.split("/");
   if (paths[0] === "") {
@@ -16209,8 +15760,6 @@ var HonoRequest = class {
 };
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/html.js
-init_checked_fetch();
-init_modules_watch_stub();
 var HtmlEscapedCallbackPhase = {
   Stringify: 1,
   BeforeStream: 2,
@@ -16678,8 +16227,6 @@ var Context = class {
 };
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router.js
-init_checked_fetch();
-init_modules_watch_stub();
 var METHOD_NAME_ALL = "ALL";
 var METHOD_NAME_ALL_LOWERCASE = "all";
 var METHODS = ["get", "post", "put", "delete", "options", "patch", "query"];
@@ -16691,8 +16238,6 @@ var UnsupportedPathError = class extends Error {
 };
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/constants.js
-init_checked_fetch();
-init_modules_watch_stub();
 var COMPOSED_HANDLER = "__COMPOSED_HANDLER";
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/hono-base.js
@@ -17075,17 +16620,7 @@ var Hono = class _Hono {
   }, "fire");
 };
 
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/reg-exp-router/index.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/reg-exp-router/router.js
-init_checked_fetch();
-init_modules_watch_stub();
-
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/reg-exp-router/matcher.js
-init_checked_fetch();
-init_modules_watch_stub();
 var emptyParam = [];
 function match(method, path) {
   const matchers = this.buildAllMatchers();
@@ -17108,8 +16643,6 @@ function match(method, path) {
 __name(match, "match");
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/reg-exp-router/node.js
-init_checked_fetch();
-init_modules_watch_stub();
 var LABEL_REG_EXP_STR = "[^/]+";
 var ONLY_WILDCARD_REG_EXP_STR = ".*";
 var TAIL_WILDCARD_REG_EXP_STR = "(?:|/.*)";
@@ -17221,8 +16754,6 @@ var Node = class _Node {
 };
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/reg-exp-router/trie.js
-init_checked_fetch();
-init_modules_watch_stub();
 var Trie = class {
   static {
     __name(this, "Trie");
@@ -17453,17 +16984,7 @@ var RegExpRouter = class {
   }
 };
 
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/reg-exp-router/prepared-router.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/smart-router/index.js
-init_checked_fetch();
-init_modules_watch_stub();
-
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/smart-router/router.js
-init_checked_fetch();
-init_modules_watch_stub();
 var SmartRouter = class {
   static {
     __name(this, "SmartRouter");
@@ -17521,17 +17042,7 @@ var SmartRouter = class {
   }
 };
 
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/trie-router/index.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/trie-router/router.js
-init_checked_fetch();
-init_modules_watch_stub();
-
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/router/trie-router/node.js
-init_checked_fetch();
-init_modules_watch_stub();
 var emptyParams = /* @__PURE__ */ Object.create(null);
 var hasChildren = /* @__PURE__ */ __name((children) => {
   for (const _ in children) {
@@ -17762,8 +17273,6 @@ var Hono2 = class extends Hono {
 };
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/middleware/cors/index.js
-init_checked_fetch();
-init_modules_watch_stub();
 var cors = /* @__PURE__ */ __name((options) => {
   const opts = {
     origin: "*",
@@ -17846,18 +17355,10 @@ var cors = /* @__PURE__ */ __name((options) => {
   }, "cors2");
 }, "cors");
 
-// src/db.ts
-init_checked_fetch();
-init_modules_watch_stub();
-
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/d1/driver.js
-init_checked_fetch();
-init_modules_watch_stub();
 init_entity();
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/logger.js
-init_checked_fetch();
-init_modules_watch_stub();
 init_entity();
 var ConsoleLogWriter = class {
   static {
@@ -17904,8 +17405,6 @@ init_db();
 init_dialect();
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@cloudflare+workers-types@5.20260813.1_@libsql+client@0.17.4/node_modules/drizzle-orm/d1/session.js
-init_checked_fetch();
-init_modules_watch_stub();
 init_entity();
 init_sql();
 init_sqlite_core();
@@ -18150,37 +17649,7 @@ var createDb = /* @__PURE__ */ __name((d1) => {
   return drizzle(d1, { schema: schema_exports });
 }, "createDb");
 
-// src/routes/auth.ts
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/middleware/jwt/index.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/middleware/jwt/jwt.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/helper/cookie/index.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/cookie.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/jwt/index.js
-init_checked_fetch();
-init_modules_watch_stub();
-
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/jwt/jwt.js
-init_checked_fetch();
-init_modules_watch_stub();
-
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/encode.js
-init_checked_fetch();
-init_modules_watch_stub();
 var decodeBase64Url = /* @__PURE__ */ __name((str) => {
   return decodeBase64(str.replace(/_|-/g, (m) => ({ _: "/", "-": "+" })[m] ?? m));
 }, "decodeBase64Url");
@@ -18205,8 +17674,6 @@ var decodeBase64 = /* @__PURE__ */ __name((str) => {
 }, "decodeBase64");
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/jwt/jwa.js
-init_checked_fetch();
-init_modules_watch_stub();
 var AlgorithmTypes = /* @__PURE__ */ ((AlgorithmTypes2) => {
   AlgorithmTypes2["HS256"] = "HS256";
   AlgorithmTypes2["HS384"] = "HS384";
@@ -18224,13 +17691,7 @@ var AlgorithmTypes = /* @__PURE__ */ ((AlgorithmTypes2) => {
   return AlgorithmTypes2;
 })(AlgorithmTypes || {});
 
-// ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/jwt/jws.js
-init_checked_fetch();
-init_modules_watch_stub();
-
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/helper/adapter/index.js
-init_checked_fetch();
-init_modules_watch_stub();
 var knownUserAgents = {
   deno: "Deno",
   bun: "Bun",
@@ -18264,8 +17725,6 @@ var checkUserAgentEquals = /* @__PURE__ */ __name((platform) => {
 }, "checkUserAgentEquals");
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/jwt/types.js
-init_checked_fetch();
-init_modules_watch_stub();
 var JwtAlgorithmNotImplemented = class extends Error {
   static {
     __name(this, "JwtAlgorithmNotImplemented");
@@ -18418,8 +17877,6 @@ var CryptoKeyUsage = /* @__PURE__ */ ((CryptoKeyUsage2) => {
 })(CryptoKeyUsage || {});
 
 // ../../node_modules/.pnpm/hono@4.13.1/node_modules/hono/dist/utils/jwt/utf8.js
-init_checked_fetch();
-init_modules_watch_stub();
 var utf8Encoder = new TextEncoder();
 var utf8Decoder = new TextDecoder();
 
@@ -18810,8 +18267,6 @@ var sign2 = Jwt.sign;
 init_schema();
 
 // src/middleware/jwt.ts
-init_checked_fetch();
-init_modules_watch_stub();
 init_schema();
 async function jwtMiddleware(c, next) {
   const authHeader = c.req.header("Authorization");
@@ -18987,8 +18442,6 @@ authRoutes.post("/sessions/revoke-all", jwtMiddleware, async (c) => {
 });
 
 // src/routes/wallets.ts
-init_checked_fetch();
-init_modules_watch_stub();
 init_schema();
 var walletRoutes = new Hono2();
 walletRoutes.use("*", jwtMiddleware);
@@ -19194,8 +18647,6 @@ walletRoutes.post("/withdraw", async (c) => {
 });
 
 // src/routes/trading.ts
-init_checked_fetch();
-init_modules_watch_stub();
 init_schema();
 var tradingRoutes = new Hono2();
 var getMockPrice2 = /* @__PURE__ */ __name((symbol) => {
@@ -19465,8 +18916,6 @@ tradingRoutes.delete("/orders/:id", async (c) => {
 });
 
 // src/routes/p2p.ts
-init_checked_fetch();
-init_modules_watch_stub();
 init_schema();
 var p2pRoutes = new Hono2();
 var DEFAULT_P2P_ADS = [
@@ -19714,8 +19163,6 @@ p2pRoutes.post("/orders/:id/cancel", async (c) => {
 });
 
 // src/routes/admin.ts
-init_checked_fetch();
-init_modules_watch_stub();
 init_schema();
 var adminRoutes = new Hono2();
 adminRoutes.use("*", jwtMiddleware);
@@ -19878,8 +19325,6 @@ adminRoutes.post("/kyc/:id/status", async (c) => {
 });
 
 // src/routes/notifications.ts
-init_checked_fetch();
-init_modules_watch_stub();
 init_schema();
 var notificationRoutes = new Hono2();
 notificationRoutes.use("*", jwtMiddleware);
@@ -19919,8 +19364,6 @@ notificationRoutes.post("/read-all", async (c) => {
 });
 
 // src/routes/support.ts
-init_checked_fetch();
-init_modules_watch_stub();
 init_schema();
 var supportRoutes = new Hono2();
 supportRoutes.use("*", jwtMiddleware);
@@ -20010,8 +19453,6 @@ supportRoutes.post("/tickets/:id/messages", async (c) => {
 });
 
 // src/routes/settings.ts
-init_checked_fetch();
-init_modules_watch_stub();
 var QRCode = __toESM(require_browser());
 init_schema();
 init_schema();
@@ -20257,193 +19698,8 @@ app.route("/api/v1/admin", adminRoutes);
 app.route("/api/v1/notifications", notificationRoutes);
 app.route("/api/v1/support", supportRoutes);
 app.route("/api/v1/settings", settingsRoutes);
-var src_default = app;
-
-// ../../node_modules/.pnpm/wrangler@4.122.0_@cloudflare+workers-types@5.20260813.1/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
-init_checked_fetch();
-init_modules_watch_stub();
-var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env);
-  } finally {
-    try {
-      if (request.body !== null && !request.bodyUsed) {
-        const reader = request.body.getReader();
-        while (!(await reader.read()).done) {
-        }
-      }
-    } catch (e) {
-      console.error("Failed to drain the unused request body.", e);
-    }
-  }
-}, "drainBody");
-var middleware_ensure_req_body_drained_default = drainBody;
-
-// ../../node_modules/.pnpm/wrangler@4.122.0_@cloudflare+workers-types@5.20260813.1/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
-init_checked_fetch();
-init_modules_watch_stub();
-function reduceError(e) {
-  return {
-    name: e?.name,
-    message: e?.message ?? String(e),
-    stack: e?.stack,
-    cause: e?.cause === void 0 ? void 0 : reduceError(e.cause)
-  };
-}
-__name(reduceError, "reduceError");
-var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env);
-  } catch (e) {
-    const error = reduceError(e);
-    const body = JSON.stringify(error);
-    const headers = {
-      "Content-Type": "application/json",
-      "MF-Experimental-Error-Stack": "true"
-    };
-    const encoded = encodeURIComponent(body);
-    if (encoded.length <= 8192) {
-      headers["MF-Experimental-Error-Stack-Payload"] = encoded;
-    }
-    return new Response(body, { status: 500, headers });
-  }
-}, "jsonError");
-var middleware_miniflare3_json_error_default = jsonError;
-
-// .wrangler/tmp/bundle-G3EU5v/middleware-insertion-facade.js
-var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
-  middleware_ensure_req_body_drained_default,
-  middleware_miniflare3_json_error_default
-];
-var middleware_insertion_facade_default = src_default;
-
-// ../../node_modules/.pnpm/wrangler@4.122.0_@cloudflare+workers-types@5.20260813.1/node_modules/wrangler/templates/middleware/common.ts
-init_checked_fetch();
-init_modules_watch_stub();
-var __facade_middleware__ = [];
-function __facade_register__(...args) {
-  __facade_middleware__.push(...args.flat());
-}
-__name(__facade_register__, "__facade_register__");
-function __facade_invokeChain__(request, env, ctx, dispatch, middlewareChain) {
-  const [head, ...tail] = middlewareChain;
-  const middlewareCtx = {
-    dispatch,
-    next(newRequest, newEnv) {
-      return __facade_invokeChain__(newRequest, newEnv, ctx, dispatch, tail);
-    }
-  };
-  return head(request, env, ctx, middlewareCtx);
-}
-__name(__facade_invokeChain__, "__facade_invokeChain__");
-function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
-  return __facade_invokeChain__(request, env, ctx, dispatch, [
-    ...__facade_middleware__,
-    finalMiddleware
-  ]);
-}
-__name(__facade_invoke__, "__facade_invoke__");
-
-// .wrangler/tmp/bundle-G3EU5v/middleware-loader.entry.ts
-var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
-  constructor(scheduledTime, cron, noRetry) {
-    this.scheduledTime = scheduledTime;
-    this.cron = cron;
-    this.#noRetry = noRetry;
-  }
-  scheduledTime;
-  cron;
-  static {
-    __name(this, "__Facade_ScheduledController__");
-  }
-  #noRetry;
-  noRetry() {
-    if (!(this instanceof ___Facade_ScheduledController__)) {
-      throw new TypeError("Illegal invocation");
-    }
-    this.#noRetry();
-  }
-};
-function wrapExportedHandler(worker) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
-    return worker;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
-    __facade_register__(middleware);
-  }
-  const fetchDispatcher = /* @__PURE__ */ __name(function(request, env, ctx) {
-    if (worker.fetch === void 0) {
-      throw new Error("Handler does not export a fetch() function.");
-    }
-    return worker.fetch(request, env, ctx);
-  }, "fetchDispatcher");
-  return {
-    ...worker,
-    fetch(request, env, ctx) {
-      const dispatcher = /* @__PURE__ */ __name(function(type, init) {
-        if (type === "scheduled" && worker.scheduled !== void 0) {
-          const controller = new __Facade_ScheduledController__(
-            Date.now(),
-            init.cron ?? "",
-            () => {
-            }
-          );
-          return worker.scheduled(controller, env, ctx);
-        }
-      }, "dispatcher");
-      return __facade_invoke__(request, env, ctx, dispatcher, fetchDispatcher);
-    }
-  };
-}
-__name(wrapExportedHandler, "wrapExportedHandler");
-function wrapWorkerEntrypoint(klass) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
-    return klass;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
-    __facade_register__(middleware);
-  }
-  return class extends klass {
-    #fetchDispatcher = /* @__PURE__ */ __name((request, env, ctx) => {
-      this.env = env;
-      this.ctx = ctx;
-      if (super.fetch === void 0) {
-        throw new Error("Entrypoint class does not define a fetch() function.");
-      }
-      return super.fetch(request);
-    }, "#fetchDispatcher");
-    #dispatcher = /* @__PURE__ */ __name((type, init) => {
-      if (type === "scheduled" && super.scheduled !== void 0) {
-        const controller = new __Facade_ScheduledController__(
-          Date.now(),
-          init.cron ?? "",
-          () => {
-          }
-        );
-        return super.scheduled(controller);
-      }
-    }, "#dispatcher");
-    fetch(request) {
-      return __facade_invoke__(
-        request,
-        this.env,
-        this.ctx,
-        this.#dispatcher,
-        this.#fetchDispatcher
-      );
-    }
-  };
-}
-__name(wrapWorkerEntrypoint, "wrapWorkerEntrypoint");
-var WRAPPED_ENTRY;
-if (typeof middleware_insertion_facade_default === "object") {
-  WRAPPED_ENTRY = wrapExportedHandler(middleware_insertion_facade_default);
-} else if (typeof middleware_insertion_facade_default === "function") {
-  WRAPPED_ENTRY = wrapWorkerEntrypoint(middleware_insertion_facade_default);
-}
-var middleware_loader_entry_default = WRAPPED_ENTRY;
+var index_default = app;
 export {
-  __INTERNAL_WRANGLER_MIDDLEWARE__,
-  middleware_loader_entry_default as default
+  index_default as default
 };
 //# sourceMappingURL=index.js.map

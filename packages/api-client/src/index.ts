@@ -116,6 +116,10 @@ export class EthsltdClient {
     });
   }
 
+  async getKYC() {
+    return this.request<any>('/api/v1/settings/kyc');
+  }
+
   async submitKYC(data: {
     firstName: string;
     lastName: string;

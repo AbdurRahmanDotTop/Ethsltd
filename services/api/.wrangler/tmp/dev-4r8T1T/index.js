@@ -20177,6 +20177,17 @@ settingsRoutes.delete("/sessions/all-except-current", async (c) => {
     return c.json({ success: false, error: "Failed to revoke sessions" }, 500);
   }
 });
+settingsRoutes.get("/kyc", async (c) => {
+  const db = c.get("db");
+  const user = c.get("user");
+  try {
+    const existing = await db.select().from(kycProfiles).where(eq(kycProfiles.userId, user.id)).get();
+    return c.json({ success: true, data: existing || null });
+  } catch (error) {
+    console.error("Error fetching KYC:", error);
+    return c.json({ success: false, error: "Failed to fetch KYC profile" }, 500);
+  }
+});
 settingsRoutes.post("/kyc", async (c) => {
   const db = c.get("db");
   const user = c.get("user");

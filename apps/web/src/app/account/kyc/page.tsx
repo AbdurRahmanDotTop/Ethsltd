@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Loader2, Upload, FileText, CheckCircle2 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
@@ -24,6 +24,8 @@ export default function KYCPage() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [kycProfile, setKycProfile] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   // Note: we can use react-hook-form but file inputs are easier handled manually or with custom components
   const { register, handleSubmit } = useForm({
@@ -37,11 +39,32 @@ export default function KYCPage() {
     }
   });
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await apiClient.getKYC();
+        if (res.success && res.data) {
+          setKycProfile(res.data);
+          // Only pre-fill if not already filled or if you want to allow edits
+          // We won't strictly enforce resetting values here to avoid overwriting user edits on slow loads,
+          // but if it's already approved/pending, the form is disabled anyway.
+        }
+      } catch (err) {
+        console.error("Failed to fetch KYC profile", err);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+    if (user) fetchProfile();
+  }, [user]);
+
   const [documentFront, setDocumentFront] = useState<File | null>(null);
   const [documentBack, setDocumentBack] = useState<File | null>(null);
   const [selfie, setSelfie] = useState<File | null>(null);
 
-  if (!user) return null;
+  const [selfie, setSelfie] = useState<File | null>(null);
+
+  if (!user || isLoadingProfile) return null;
 
   const onSubmit = async (data: any) => {
     try {
@@ -49,13 +72,13 @@ export default function KYCPage() {
       setSuccess("");
       setIsSubmitting(true);
 
-      if (!documentFront || !selfie) {
-        throw new Error("Document front and selfie are required.");
+      if (!kycProfile && (!documentFront || !selfie)) {
+        throw new Error("Document front and selfie are required for initial submission.");
       }
 
-      const documentFrontBase64 = await fileToBase64(documentFront);
+      const documentFrontBase64 = documentFront ? await fileToBase64(documentFront) : undefined;
       const documentBackBase64 = documentBack ? await fileToBase64(documentBack) : undefined;
-      const selfieBase64 = await fileToBase64(selfie);
+      const selfieBase64 = selfie ? await fileToBase64(selfie) : undefined;
 
       const res = await apiClient.submitKYC({
         ...data,
@@ -66,6 +89,7 @@ export default function KYCPage() {
 
       if (res.success) {
         setSuccess("KYC documents submitted successfully. Please wait for admin approval.");
+        setKycProfile({ status: 'PENDING' }); // Optimistic update
       } else {
         throw new Error(res.error || "Submission failed");
       }
@@ -83,7 +107,39 @@ export default function KYCPage() {
         <p className="text-muted-foreground">Submit your documents to unlock full platform features.</p>
       </div>
 
+      </div>
+
       <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+        {kycProfile?.status === 'APPROVED' && (
+          <div className="mb-6 p-4 rounded-md bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <p>Your KYC is Approved.</p>
+              <p className="text-sm font-normal opacity-90 mt-1">You have full access to platform features.</p>
+            </div>
+          </div>
+        )}
+
+        {kycProfile?.status === 'PENDING' && (
+          <div className="mb-6 p-4 rounded-md bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 font-medium flex items-start gap-3">
+            <Loader2 className="w-5 h-5 shrink-0 mt-0.5 animate-spin" />
+            <div>
+              <p>Your KYC is Pending Approval.</p>
+              <p className="text-sm font-normal opacity-90 mt-1">Please wait for an administrator to review your documents.</p>
+            </div>
+          </div>
+        )}
+
+        {kycProfile?.status === 'REJECTED' && (
+          <div className="mb-6 p-4 rounded-md bg-destructive/10 text-destructive font-medium flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <p>Your KYC was Rejected.</p>
+              <p className="text-sm font-normal opacity-90 mt-1">Reason: {kycProfile.rejectionReason || 'Invalid documents.'}</p>
+              <p className="text-sm font-normal opacity-90 mt-1">Please re-submit your documents below.</p>
+            </div>
+          </div>
+        )}
         {user.status === 'BANNED' && (
           <div className="mb-6 p-4 rounded-md bg-destructive/10 text-destructive font-medium flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
@@ -106,95 +162,130 @@ export default function KYCPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>First Name</Label>
-              <Input {...register("firstName")} required />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input id="firstName" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} {...register("firstName", { required: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input id="lastName" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} {...register("lastName", { required: true })} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Last Name</Label>
-              <Input {...register("lastName")} required />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dob">Date of Birth</Label>
+                <Input id="dob" type="date" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} {...register("dateOfBirth", { required: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input id="country" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} {...register("country", { required: true })} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Date of Birth</Label>
-              <Input type="date" {...register("dateOfBirth")} required />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Document Type</Label>
+                <select 
+                  {...register("documentType", { required: true })}
+                  disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'}
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="ID_CARD">ID Card</option>
+                  <option value="PASSPORT">Passport</option>
+                  <option value="DRIVERS_LICENSE">Driver's License</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="docNumber">Document Number</Label>
+                <Input id="docNumber" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} {...register("documentNumber", { required: true })} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Country</Label>
-              <Input {...register("country")} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Document Type</Label>
-              <select 
-                {...register("documentType")} 
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="ID_CARD">ID Card</option>
-                <option value="PASSPORT">Passport</option>
-                <option value="DRIVERS_LICENSE">Driver's License</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>Document Number</Label>
-              <Input {...register("documentNumber")} required />
-            </div>
-          </div>
 
           <div className="space-y-4 pt-4 border-t border-border">
             <h3 className="font-medium text-lg">Document Uploads</h3>
             
-            <div className="space-y-2">
-              <Label>Document Front *</Label>
-              <div className="border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center justify-center bg-muted/30">
-                <Input type="file" accept="image/*,application/pdf" className="hidden" id="docFront" onChange={e => setDocumentFront(e.target.files?.[0] || null)} />
-                <Label htmlFor="docFront" className="cursor-pointer flex flex-col items-center gap-2">
-                  <Upload className="w-8 h-8 text-muted-foreground" />
-                  <span className="text-sm font-medium text-brand-600 dark:text-brand-400">
-                    {documentFront ? documentFront.name : "Click to upload Document Front"}
-                  </span>
-                </Label>
-              </div>
-            </div>
+            <div className="grid grid-cols-1 gap-6">
+                <div>
+                  <Label>Document Front *</Label>
+                  <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-8">
+                    <div className="text-center">
+                      <FileText className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
+                      <div className="mt-4 flex justify-center text-sm leading-6">
+                        <label
+                          htmlFor="file-upload-front"
+                          className="relative cursor-pointer rounded-md font-semibold text-brand-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-foreground focus-within:ring-offset-2 hover:text-brand-foreground/80 disabled:opacity-50"
+                        >
+                          <span>Upload a file</span>
+                          <input id="file-upload-front" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} name="file-upload-front" type="file" accept="image/*" className="sr-only" onChange={(e) => setDocumentFront(e.target.files?.[0] || null)} />
+                        </label>
+                        <p className="pl-1 text-muted-foreground">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">PNG, JPG up to 5MB</p>
+                      {documentFront && <p className="text-xs text-green-500 mt-2 font-medium">{documentFront.name} selected</p>}
+                      {kycProfile?.documentFrontUrl && !documentFront && <p className="text-xs text-green-500 mt-2 font-medium">Existing document on file</p>}
+                    </div>
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Document Back (Optional for Passport)</Label>
-              <div className="border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center justify-center bg-muted/30">
-                <Input type="file" accept="image/*,application/pdf" className="hidden" id="docBack" onChange={e => setDocumentBack(e.target.files?.[0] || null)} />
-                <Label htmlFor="docBack" className="cursor-pointer flex flex-col items-center gap-2">
-                  <Upload className="w-8 h-8 text-muted-foreground" />
-                  <span className="text-sm font-medium text-brand-600 dark:text-brand-400">
-                    {documentBack ? documentBack.name : "Click to upload Document Back"}
-                  </span>
-                </Label>
-              </div>
-            </div>
+                <div>
+                  <Label>Document Back</Label>
+                  <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-8">
+                    <div className="text-center">
+                      <FileText className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
+                      <div className="mt-4 flex justify-center text-sm leading-6">
+                        <label
+                          htmlFor="file-upload-back"
+                          className="relative cursor-pointer rounded-md font-semibold text-brand-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-foreground focus-within:ring-offset-2 hover:text-brand-foreground/80 disabled:opacity-50"
+                        >
+                          <span>Upload a file</span>
+                          <input id="file-upload-back" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} name="file-upload-back" type="file" accept="image/*" className="sr-only" onChange={(e) => setDocumentBack(e.target.files?.[0] || null)} />
+                        </label>
+                        <p className="pl-1 text-muted-foreground">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">PNG, JPG up to 5MB</p>
+                      {documentBack && <p className="text-xs text-green-500 mt-2 font-medium">{documentBack.name} selected</p>}
+                      {kycProfile?.documentBackUrl && !documentBack && <p className="text-xs text-green-500 mt-2 font-medium">Existing document on file</p>}
+                    </div>
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Selfie with Document *</Label>
-              <div className="border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center justify-center bg-muted/30">
-                <Input type="file" accept="image/*" className="hidden" id="selfie" onChange={e => setSelfie(e.target.files?.[0] || null)} />
-                <Label htmlFor="selfie" className="cursor-pointer flex flex-col items-center gap-2">
-                  <Upload className="w-8 h-8 text-muted-foreground" />
-                  <span className="text-sm font-medium text-brand-600 dark:text-brand-400">
-                    {selfie ? selfie.name : "Click to upload Selfie"}
-                  </span>
-                </Label>
-              </div>
+                <div>
+                  <Label>Selfie with Document *</Label>
+                  <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-8">
+                    <div className="text-center">
+                      <FileText className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
+                      <div className="mt-4 flex justify-center text-sm leading-6">
+                        <label
+                          htmlFor="file-upload-selfie"
+                          className="relative cursor-pointer rounded-md font-semibold text-brand-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-foreground focus-within:ring-offset-2 hover:text-brand-foreground/80 disabled:opacity-50"
+                        >
+                          <span>Upload a file</span>
+                          <input id="file-upload-selfie" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} name="file-upload-selfie" type="file" accept="image/*" className="sr-only" onChange={(e) => setSelfie(e.target.files?.[0] || null)} />
+                        </label>
+                        <p className="pl-1 text-muted-foreground">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">PNG, JPG up to 5MB</p>
+                      {selfie && <p className="text-xs text-green-500 mt-2 font-medium">{selfie.name} selected</p>}
+                      {kycProfile?.selfieUrl && !selfie && <p className="text-xs text-green-500 mt-2 font-medium">Existing document on file</p>}
+                    </div>
+                  </div>
+                </div>
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                "Submit Documents"
-              )}
-            </Button>
-          </div>
+          <Button type="submit" className="w-full" disabled={isSubmitting || kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'}>
+            {isSubmitting ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</>
+            ) : kycProfile?.status === 'PENDING' ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Under Review</>
+            ) : kycProfile?.status === 'APPROVED' ? (
+              <><CheckCircle2 className="w-4 h-4 mr-2" /> Verified</>
+            ) : (
+              <><Upload className="w-4 h-4 mr-2" /> Submit KYC Documents</>
+            )}
+          </Button>
         </form>
       </div>
     </div>
