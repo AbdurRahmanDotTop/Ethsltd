@@ -77,7 +77,7 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
     // Simulate real-time updates every 5s
     const interval = setInterval(load, 5000);
     return () => { mounted = false; clearInterval(interval); }
-  }, [symbol]) // Remove market dependency to avoid infinite loop
+  }, [symbol, mode]) // Remove market dependency to avoid infinite loop
 
   if (loading && !market) {
     return <div className="min-h-[80vh] flex items-center justify-center bg-background"><div className="animate-spin h-8 w-8 border-4 border-brand-foreground border-t-transparent rounded-full" /></div>

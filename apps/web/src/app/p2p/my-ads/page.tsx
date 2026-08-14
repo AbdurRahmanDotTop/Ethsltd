@@ -8,16 +8,18 @@ import { Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
+import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export default function MyAdsPage() {
-  const { user, status } = useAuthStore();
+  const { user, status, hasHydrated } = useAuthStore();
   const router = useRouter();
+  const { mode } = useTradingModeStore();
   const [ads, setAds] = useState<P2PAdvertisement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/login?callbackUrl=/p2p/my-ads");
+    if (hasHydrated && status === "unauthenticated") {
+      router.push("/login?callbackUrl=/p2p/my-ads");
       return;
     }
 
@@ -41,9 +43,9 @@ export default function MyAdsPage() {
 
       fetchMyAds();
     }
-  }, [user, status, router]);
+  }, [user, status, router, mode]);
 
-  if (status === "loading" || (status === "authenticated" && isLoading)) {
+  if (!hasHydrated || status === "loading" || (status === "authenticated" && isLoading)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] bg-muted/30">
         <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
@@ -63,7 +65,7 @@ export default function MyAdsPage() {
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">My P2P Ads</h1>
             <p className="text-muted-foreground">Manage your peer-to-peer buy and sell advertisements.</p>
           </div>
-          <Button onClick={() => alert('Post Ad feature coming soon!')}>
+          <Button onClick={() => router.push('/p2p/post-ad')}>
             <Plus className="w-4 h-4 mr-2" />
             Post New Ad
           </Button>
@@ -140,7 +142,7 @@ export default function MyAdsPage() {
               <p className="text-muted-foreground max-w-md mx-auto mb-6">
                 You haven't posted any P2P advertisements yet. Create one to start trading with other users.
               </p>
-              <Button onClick={() => alert('Post Ad feature coming soon!')}>Post Your First Ad</Button>
+              <Button onClick={() => router.push('/p2p/post-ad')}>Post Your First Ad</Button>
             </div>
           )}
         </div>

@@ -7,9 +7,11 @@ import { useP2PStore } from "@/stores/p2p-store";
 import { Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
+import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, merchant: P2PMerchant) => void }) {
   const { query } = useP2PStore();
+  const { mode } = useTradingModeStore();
   const [ads, setAds] = useState<P2PAdvertisement[]>([]);
   const [merchants, setMerchants] = useState<Record<string, P2PMerchant>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -42,7 +44,7 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
     };
     
     fetchData();
-  }, [query]);
+  }, [query, mode]);
 
   const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === query.fiat)?.symbol || "$";
 

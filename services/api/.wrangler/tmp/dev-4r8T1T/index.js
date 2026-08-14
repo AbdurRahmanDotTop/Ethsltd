@@ -6648,7 +6648,7 @@ var init_wallets = __esm({
       id: text("id").primaryKey(),
       userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
       assetSymbol: text("asset_symbol").notNull(),
-      type: text("type", { enum: ["REAL", "PAPER"] }).notNull().default("REAL"),
+      type: text("type", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       balance: text("balance").notNull().default("0"),
       // stored as string to maintain precision
       lockedBalance: text("locked_balance").notNull().default("0"),
@@ -6659,7 +6659,7 @@ var init_wallets = __esm({
       id: text("id").primaryKey(),
       userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
       type: text("type", { enum: ["DEPOSIT", "WITHDRAWAL", "TRADE", "P2P", "TRANSFER", "FEE", "REWARD", "ADJUSTMENT"] }).notNull(),
-      mode: text("mode", { enum: ["REAL", "PAPER"] }).notNull().default("REAL"),
+      mode: text("mode", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       assetSymbol: text("asset_symbol").notNull(),
       amount: text("amount").notNull(),
       fee: text("fee").notNull().default("0"),
@@ -6773,7 +6773,7 @@ var init_trading = __esm({
       id: text("id").primaryKey(),
       userId: text("user_id").notNull().references(() => users.id),
       marketSymbol: text("market_symbol").notNull().references(() => markets.symbol),
-      mode: text("mode", { enum: ["REAL", "PAPER"] }).notNull().default("REAL"),
+      mode: text("mode", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       side: text("side", { enum: ["BUY", "SELL"] }).notNull(),
       type: text("type", { enum: ["MARKET", "LIMIT"] }).notNull(),
       status: text("status", { enum: ["OPEN", "FILLED", "CANCELED", "REJECTED"] }).notNull().default("OPEN"),
@@ -6791,7 +6791,7 @@ var init_trading = __esm({
     trades = sqliteTable("trades", {
       id: text("id").primaryKey(),
       marketSymbol: text("market_symbol").notNull().references(() => markets.symbol),
-      mode: text("mode", { enum: ["REAL", "PAPER"] }).notNull().default("REAL"),
+      mode: text("mode", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       makerOrderId: text("maker_order_id").notNull().references(() => orders.id),
       takerOrderId: text("taker_order_id").notNull().references(() => orders.id),
       price: text("price").notNull(),
@@ -6815,6 +6815,7 @@ var init_p2p = __esm({
     p2pAds = sqliteTable("p2p_ads", {
       id: text("id").primaryKey(),
       userId: text("user_id").notNull().references(() => users.id),
+      mode: text("mode", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       type: text("type", { enum: ["BUY", "SELL"] }).notNull(),
       // Buy ad means creator wants to buy crypto with fiat
       asset: text("asset").notNull(),
@@ -6843,12 +6844,14 @@ var init_p2p = __esm({
       adId: text("ad_id").notNull().references(() => p2pAds.id),
       buyerId: text("buyer_id").notNull().references(() => users.id),
       sellerId: text("seller_id").notNull().references(() => users.id),
+      mode: text("mode", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       cryptoAmount: text("crypto_amount").notNull(),
       fiatAmount: text("fiat_amount").notNull(),
       price: text("price").notNull(),
       status: text("status", { enum: ["PENDING", "PAID", "RELEASED", "CANCELLED", "DISPUTED"] }).notNull().default("PENDING"),
       paymentMethod: text("payment_method").notNull(),
       // The selected method for this trade
+      paymentDetails: text("payment_details"),
       expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
       // Usually 15-30 mins after creation
       createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
@@ -6858,7 +6861,9 @@ var init_p2p = __esm({
       id: text("id").primaryKey(),
       orderId: text("order_id").notNull().references(() => p2pOrders.id, { onDelete: "cascade" }),
       senderId: text("sender_id").notNull().references(() => users.id),
+      mode: text("mode", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       content: text("content").notNull(),
+      type: text("type", { enum: ["TEXT", "IMAGE", "SYSTEM"] }).notNull().default("TEXT"),
       attachmentUrl: text("attachment_url"),
       createdAt: integer("created_at", { mode: "timestamp" }).notNull()
     });
@@ -19476,20 +19481,22 @@ var DEFAULT_P2P_ADS = [
 ];
 p2pRoutes.get("/ads", async (c) => {
   const db = c.get("db");
+  const mode = c.req.header("x-trading-mode") || "REAL";
   let adsWithUsers = await db.select({
     ad: p2pAds,
     user: users
-  }).from(p2pAds).leftJoin(users, eq(p2pAds.userId, users.id)).where(eq(p2pAds.status, "ACTIVE")).orderBy(desc(p2pAds.createdAt)).all();
+  }).from(p2pAds).leftJoin(users, eq(p2pAds.userId, users.id)).where(and(eq(p2pAds.status, "ACTIVE"), eq(p2pAds.mode, mode))).orderBy(desc(p2pAds.createdAt)).all();
   if (adsWithUsers.length === 0) {
     const now = /* @__PURE__ */ new Date();
     const dummyUserId = "system-user-id";
     await db.insert(p2pAds).values(DEFAULT_P2P_ADS.map((ad) => ({
       ...ad,
+      mode,
       userId: dummyUserId,
       createdAt: now,
       updatedAt: now
     })));
-    adsWithUsers = await db.select({ ad: p2pAds, user: users }).from(p2pAds).leftJoin(users, eq(p2pAds.userId, users.id)).where(eq(p2pAds.status, "ACTIVE")).orderBy(desc(p2pAds.createdAt)).all();
+    adsWithUsers = await db.select({ ad: p2pAds, user: users }).from(p2pAds).leftJoin(users, eq(p2pAds.userId, users.id)).where(and(eq(p2pAds.status, "ACTIVE"), eq(p2pAds.mode, mode))).orderBy(desc(p2pAds.createdAt)).all();
   }
   const formattedAds = adsWithUsers.map(({ ad, user }) => {
     return {
@@ -19518,11 +19525,12 @@ p2pRoutes.use("*", jwtMiddleware);
 p2pRoutes.post("/ads", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const body = await c.req.json();
   const { type, asset, fiat, price, totalAmount, minLimit, maxLimit, paymentMethods, terms } = body;
   const amountNum = parseFloat(totalAmount);
   if (type === "SELL") {
-    let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, asset))).get();
+    let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, asset), eq(wallets.type, mode))).get();
     if (!wallet || parseFloat(wallet.balance) < amountNum) {
       return c.json({ success: false, error: "Insufficient crypto balance to create this ad." }, 400);
     }
@@ -19536,6 +19544,7 @@ p2pRoutes.post("/ads", async (c) => {
   await db.insert(p2pAds).values({
     id: adId,
     userId: user.id,
+    mode,
     type,
     asset,
     fiat,
@@ -19555,15 +19564,17 @@ p2pRoutes.post("/ads", async (c) => {
 p2pRoutes.get("/orders", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
-  const userOrders = await db.select().from(p2pOrders).where(or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id))).orderBy(desc(p2pOrders.createdAt)).all();
+  const mode = c.req.header("x-trading-mode") || "REAL";
+  const userOrders = await db.select().from(p2pOrders).where(and(or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id)), eq(p2pOrders.mode, mode))).orderBy(desc(p2pOrders.createdAt)).all();
   return c.json({ success: true, data: userOrders });
 });
 p2pRoutes.post("/orders", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const body = await c.req.json();
   const { adId, cryptoAmount, fiatAmount, paymentMethod } = body;
-  const ad = await db.select().from(p2pAds).where(eq(p2pAds.id, adId)).get();
+  const ad = await db.select().from(p2pAds).where(and(eq(p2pAds.id, adId), eq(p2pAds.mode, mode))).get();
   if (!ad || ad.status !== "ACTIVE") {
     return c.json({ success: false, error: "Ad is no longer active." }, 400);
   }
@@ -19578,7 +19589,7 @@ p2pRoutes.post("/orders", async (c) => {
   const sellerId = ad.type === "SELL" ? ad.userId : user.id;
   const now = /* @__PURE__ */ new Date();
   if (ad.type === "BUY") {
-    let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, ad.asset))).get();
+    let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, mode))).get();
     if (!wallet || parseFloat(wallet.balance) < cryptoNum) {
       return c.json({ success: false, error: "Insufficient crypto balance to fulfill this order." }, 400);
     }
@@ -19595,6 +19606,7 @@ p2pRoutes.post("/orders", async (c) => {
     adId,
     buyerId,
     sellerId,
+    mode,
     cryptoAmount: cryptoAmount.toString(),
     fiatAmount: fiatAmount.toString(),
     price: ad.price,
@@ -19609,8 +19621,9 @@ p2pRoutes.post("/orders", async (c) => {
 p2pRoutes.get("/orders/:id", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const orderId = c.req.param("id");
-  const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
+  const order = await db.select().from(p2pOrders).where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode))).get();
   if (!order) return c.json({ success: false, error: "Order not found." }, 404);
   if (order.buyerId !== user.id && order.sellerId !== user.id) {
     return c.json({ success: false, error: "Unauthorized." }, 403);
@@ -19620,20 +19633,22 @@ p2pRoutes.get("/orders/:id", async (c) => {
 p2pRoutes.get("/orders/:id/messages", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const orderId = c.req.param("id");
-  const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
+  const order = await db.select().from(p2pOrders).where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode))).get();
   if (!order || order.buyerId !== user.id && order.sellerId !== user.id) {
     return c.json({ success: false, error: "Unauthorized" }, 403);
   }
-  const msgs = await db.select().from(p2pMessages).where(eq(p2pMessages.orderId, orderId)).orderBy(p2pMessages.createdAt).all();
+  const msgs = await db.select().from(p2pMessages).where(and(eq(p2pMessages.orderId, orderId), eq(p2pMessages.mode, mode))).orderBy(p2pMessages.createdAt).all();
   return c.json({ success: true, data: msgs });
 });
 p2pRoutes.post("/orders/:id/messages", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const orderId = c.req.param("id");
   const body = await c.req.json();
-  const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
+  const order = await db.select().from(p2pOrders).where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode))).get();
   if (!order || order.buyerId !== user.id && order.sellerId !== user.id) {
     return c.json({ success: false, error: "Unauthorized" }, 403);
   }
@@ -19642,6 +19657,7 @@ p2pRoutes.post("/orders/:id/messages", async (c) => {
     id: msgId,
     orderId,
     senderId: user.id,
+    mode,
     content: body.content,
     createdAt: /* @__PURE__ */ new Date()
   });
