@@ -74,7 +74,14 @@ export default function WalletPage() {
   const handleTopUp = async () => {
     if (confirm("Are you sure you want to top up your paper trading balance with $100,000 USDT?")) {
       setIsLoading(true);
-      await apiClient.topUpPaperWallet();
+      try {
+        const res = await apiClient.topUpPaperWallet();
+        if (!res.success) {
+          alert("Top up failed: " + (res.error || "Unknown error"));
+        }
+      } catch (err: any) {
+        alert("Top up error: " + err.message);
+      }
       await loadData();
     }
   };
