@@ -32,7 +32,10 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
           
           const newMerchants: Record<string, P2PMerchant> = {};
           for (const ad of filteredAds) {
-            newMerchants[ad.userId] = ad.merchant;
+            const mId = ad.userId || ad.merchant?.id || ad.merchantId;
+            if (mId) {
+              newMerchants[mId] = ad.merchant;
+            }
           }
           setMerchants(newMerchants);
         }
@@ -76,8 +79,9 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                 </td>
               </tr>
             ) : (
-              ads.map((ad) => {
-                const merchant = merchants[ad.merchantId];
+              ads.map((ad: any) => {
+                const merchantId = ad.userId || ad.merchant?.id || ad.merchantId;
+                const merchant = merchants[merchantId];
                 if (!merchant) return null;
 
                 return (
