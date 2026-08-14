@@ -212,68 +212,59 @@ export default function KYCPage() {
             <div className="grid grid-cols-1 gap-6">
                 <div>
                   <Label>Document Front *</Label>
-                  <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-8">
+                  <label htmlFor="file-upload-front" className={`mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-8 transition-colors ${kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/50 hover:border-primary/50'}`}>
                     <div className="text-center">
                       <FileText className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
                       <div className="mt-4 flex justify-center text-sm leading-6">
-                        <label
-                          htmlFor="file-upload-front"
-                          className="relative cursor-pointer rounded-md font-semibold text-brand-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-foreground focus-within:ring-offset-2 hover:text-brand-foreground/80 disabled:opacity-50"
-                        >
+                        <span className="relative rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary/80">
                           <span>Upload a file</span>
                           <input id="file-upload-front" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} name="file-upload-front" type="file" accept="image/*" className="sr-only" onChange={(e) => setDocumentFront(e.target.files?.[0] || null)} />
-                        </label>
+                        </span>
                         <p className="pl-1 text-muted-foreground">or drag and drop</p>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">PNG, JPG up to 5MB</p>
                       {documentFront && <p className="text-xs text-green-500 mt-2 font-medium">{documentFront.name} selected</p>}
                       {kycProfile?.documentFrontUrl && !documentFront && <p className="text-xs text-green-500 mt-2 font-medium">Existing document on file</p>}
                     </div>
-                  </div>
+                  </label>
                 </div>
 
                 <div>
                   <Label>Document Back</Label>
-                  <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-8">
+                  <label htmlFor="file-upload-back" className={`mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-8 transition-colors ${kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/50 hover:border-primary/50'}`}>
                     <div className="text-center">
                       <FileText className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
                       <div className="mt-4 flex justify-center text-sm leading-6">
-                        <label
-                          htmlFor="file-upload-back"
-                          className="relative cursor-pointer rounded-md font-semibold text-brand-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-foreground focus-within:ring-offset-2 hover:text-brand-foreground/80 disabled:opacity-50"
-                        >
+                        <span className="relative rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary/80">
                           <span>Upload a file</span>
                           <input id="file-upload-back" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} name="file-upload-back" type="file" accept="image/*" className="sr-only" onChange={(e) => setDocumentBack(e.target.files?.[0] || null)} />
-                        </label>
+                        </span>
                         <p className="pl-1 text-muted-foreground">or drag and drop</p>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">PNG, JPG up to 5MB</p>
                       {documentBack && <p className="text-xs text-green-500 mt-2 font-medium">{documentBack.name} selected</p>}
                       {kycProfile?.documentBackUrl && !documentBack && <p className="text-xs text-green-500 mt-2 font-medium">Existing document on file</p>}
                     </div>
-                  </div>
+                  </label>
                 </div>
 
                 <div>
                   <Label>Selfie with Document *</Label>
-                  <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-8">
+                  <label htmlFor="file-upload-selfie" className={`mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-8 transition-colors ${kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/50 hover:border-primary/50'}`}>
                     <div className="text-center">
                       <FileText className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
                       <div className="mt-4 flex justify-center text-sm leading-6">
-                        <label
-                          htmlFor="file-upload-selfie"
-                          className="relative cursor-pointer rounded-md font-semibold text-brand-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-foreground focus-within:ring-offset-2 hover:text-brand-foreground/80 disabled:opacity-50"
-                        >
+                        <span className="relative rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary/80">
                           <span>Upload a file</span>
                           <input id="file-upload-selfie" disabled={kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'} name="file-upload-selfie" type="file" accept="image/*" className="sr-only" onChange={(e) => setSelfie(e.target.files?.[0] || null)} />
-                        </label>
+                        </span>
                         <p className="pl-1 text-muted-foreground">or drag and drop</p>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">PNG, JPG up to 5MB</p>
                       {selfie && <p className="text-xs text-green-500 mt-2 font-medium">{selfie.name} selected</p>}
                       {kycProfile?.selfieUrl && !selfie && <p className="text-xs text-green-500 mt-2 font-medium">Existing document on file</p>}
                     </div>
-                  </div>
+                  </label>
                 </div>
             </div>
           </div>
