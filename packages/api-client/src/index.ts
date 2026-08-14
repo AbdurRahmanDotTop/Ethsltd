@@ -35,6 +35,7 @@ export class EthsltdClient {
 
     try {
       const res = await fetch(`${this.baseUrl}${endpoint}`, {
+        cache: 'no-store',
         ...options,
         headers,
       });

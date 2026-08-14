@@ -7,11 +7,12 @@ import { useTheme } from "next-themes"
 export function TradingChart({ data }: { data: Candle[] }) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const { theme } = useTheme()
+  const chartRef = useRef<any>(null)
+  const seriesRef = useRef<any>(null)
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    // We can assume next-themes adds 'dark' class to html, or we can use the theme hook
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) || document.documentElement.classList.contains('dark')
 
     const chart = createChart(chartContainerRef.current, {
@@ -35,7 +36,6 @@ export function TradingChart({ data }: { data: Candle[] }) {
       }
     });
 
-    // Use specific hex colors to ensure they work universally with the canvas engine
     const upColor = '#16c784';
     const downColor = '#ea3943';
 
@@ -47,16 +47,8 @@ export function TradingChart({ data }: { data: Candle[] }) {
       wickDownColor: downColor,
     });
 
-    // Sort data ascending by time for lightweight-charts
-    const sortedData = [...data].sort((a, b) => (a.time as number) - (b.time as number));
-
-    series.setData(sortedData.map(d => ({
-      time: Math.floor(d.time as number) as any, // ensure integer seconds
-      open: d.open,
-      high: d.high,
-      low: d.low,
-      close: d.close,
-    })));
+    chartRef.current = chart;
+    seriesRef.current = series;
 
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -65,15 +57,29 @@ export function TradingChart({ data }: { data: Candle[] }) {
     };
 
     window.addEventListener('resize', handleResize);
-    
-    // Fit content initially
-    chart.timeScale().fitContent();
 
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
     };
-  }, [data, theme]);
+  }, [theme]); // Only recreate on theme change
+
+  useEffect(() => {
+    if (!seriesRef.current || !data || data.length === 0) return;
+
+    const sortedData = [...data].sort((a, b) => (a.time as number) - (b.time as number));
+    const formattedData = sortedData.map(d => ({
+      time: Math.floor(d.time as number) as any,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }));
+
+    seriesRef.current.setData(formattedData);
+  }, [data]);
 
   if (!data || data.length === 0) {
     return <div className="w-full h-full min-h-[300px] bg-muted/20 animate-pulse flex items-center justify-center text-muted-foreground text-sm">Loading Chart...</div>
