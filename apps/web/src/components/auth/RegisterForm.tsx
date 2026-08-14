@@ -129,11 +129,11 @@ export function RegisterForm() {
           <div className="space-y-1">
             <Label htmlFor="acceptTerms" className="font-normal text-muted-foreground text-sm leading-snug">
               I agree to the ETHSLTD{" "}
-              <Link href="/legal/terms" className="text-brand-foreground hover:underline">
+              <Link href="/legal/terms" className="text-blue-500 hover:text-blue-400 hover:underline">
                 Terms of Service
               </Link>{" "}
               and{" "}
-              <Link href="/legal/privacy" className="text-brand-foreground hover:underline">
+              <Link href="/legal/privacy" className="text-blue-500 hover:text-blue-400 hover:underline">
                 Privacy Policy
               </Link>
               .
