@@ -20,6 +20,7 @@ export default function WalletPage() {
   const [allocations, setAllocations] = useState<AssetAllocation[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const { mode } = useTradingModeStore();
 
@@ -36,10 +37,31 @@ export default function WalletPage() {
       if (portfolioData.success && portfolioData.data) {
         setSummary(portfolioData.data.summary);
         setAllocations(portfolioData.data.allocations);
+      } else {
+        setError(portfolioData.error || "Failed to load wallet data");
+        // Set a fallback summary so it doesn't spin forever
+        setSummary({
+          totalValueUsd: 0,
+          change24hUsd: 0,
+          change24hPercent: 0,
+          availableBalanceUsd: 0,
+          lockedBalanceUsd: 0
+        });
       }
 
       const txs = await apiClient.getWalletTransactions(mode);
-      setRecentTransactions(txs.data?.slice(0, 5) || []);
+      if (txs.success && txs.data) {
+        setRecentTransactions(txs.data.slice(0, 5) || []);
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred while loading wallet data");
+      setSummary({
+        totalValueUsd: 0,
+        change24hUsd: 0,
+        change24hPercent: 0,
+        availableBalanceUsd: 0,
+        lockedBalanceUsd: 0
+      });
     } finally {
       setIsLoading(false);
     }
@@ -57,10 +79,23 @@ export default function WalletPage() {
     }
   };
 
-  if (isLoading || !summary) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
+        <p className="text-muted-foreground animate-pulse">Loading your wallet data...</p>
+      </div>
+    );
+  }
+
+  if (error && !summary) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg max-w-md text-center">
+          <p className="font-semibold mb-2">Error Loading Wallet</p>
+          <p className="text-sm">{error}</p>
+        </div>
+        <Button onClick={loadData} variant="outline">Try Again</Button>
       </div>
     );
   }
