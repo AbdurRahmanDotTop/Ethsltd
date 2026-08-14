@@ -107,8 +107,6 @@ export default function KYCPage() {
         <p className="text-muted-foreground">Submit your documents to unlock full platform features.</p>
       </div>
 
-      </div>
-
       <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
         {kycProfile?.status === 'APPROVED' && (
           <div className="mb-6 p-4 rounded-md bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium flex items-start gap-3">
