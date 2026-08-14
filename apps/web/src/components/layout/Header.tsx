@@ -17,6 +17,7 @@ export function Header() {
   const [announcementVisible, setAnnouncementVisible] = useState(true)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const { user, status, logout } = useAuthStore()
   const { mode, toggleMode } = useTradingModeStore()
@@ -26,6 +27,11 @@ export function Header() {
     logout()
     setDropdownOpen(false)
   }
+
+  useEffect(() => {
+    setMounted(true)
+    apiClient.setMode(mode)
+  }, [mode])
 
   useEffect(() => {
     const handleScroll = () => {
