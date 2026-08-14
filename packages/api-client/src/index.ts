@@ -69,8 +69,8 @@ export class EthsltdClient {
       body: JSON.stringify({ email, password }),
     });
     
-    if (res.success && res.data?.token) {
-      this.setToken(res.data.token);
+    if (res.success && (res as any).token) {
+      this.setToken((res as any).token);
     }
     return res;
   }
@@ -81,8 +81,8 @@ export class EthsltdClient {
       body: JSON.stringify({ email, password }),
     });
     
-    if (res.success && res.data?.token) {
-      this.setToken(res.data.token);
+    if (res.success && (res as any).token) {
+      this.setToken((res as any).token);
     }
     return res;
   }
