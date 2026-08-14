@@ -63,7 +63,7 @@ ETHSLTD एक complete digital trading platform होगा जिसमें
 * suspicious activity investigate करें
 * system health monitor करें
 
-पूरी architecture इस तरह बनाई जाएगी कि future में simulated/paper environment से compliant real-money production environment तक evolve किया जा सके।
+पूरी architecture इस तरह बनाई जाएगी कि future में simulated/demo environment से compliant real-money production environment तक evolve किया जा सके।
 
 ---
 
@@ -1707,7 +1707,7 @@ REAL_SETTLEMENT = OFF
 Initial system:
 
 ```text
-PAPER_TRADING = ON
+DEMO_TRADING = ON
 P2P_SIMULATION = ON
 VIRTUAL_WALLET = ON
 ```
@@ -1733,7 +1733,7 @@ Workers
 
 लेकिन agent को **"free forever" assume नहीं करना है**।
 
-Free limits capacity constrain कर सकती हैं; आपके existing planning documents भी ₹0 को development/testing/demo/paper-trading phase तक सीमित मानते हैं। 
+Free limits capacity constrain कर सकती हैं; आपके existing planning documents भी ₹0 को development/testing/demo/demo-trading phase तक सीमित मानते हैं। 
 
 ---
 
@@ -3055,7 +3055,7 @@ Human approves
 ### Stage 1 — ₹0
 
 ```text
-Paper Trading
+Demo Trading
 +
 Virtual Wallet
 +

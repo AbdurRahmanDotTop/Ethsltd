@@ -6,7 +6,7 @@ export const metadata = {
   description: "Learn how to use our simulated trading environment.",
 }
 
-export default function PaperTradingGuide() {
+export default function DemoTradingGuide() {
   return (
     <article className="max-w-3xl prose prose-invert">
       <div className="mb-6 flex gap-2 text-sm text-muted-foreground">

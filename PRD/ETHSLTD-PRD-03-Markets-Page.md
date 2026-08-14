@@ -278,7 +278,7 @@ Primary CTA:
 
 Secondary CTA:
 
-**Try Paper Trading**
+**Try Demo Trading**
 
 ---
 
@@ -1371,7 +1371,7 @@ The Markets page must not make unsupported claims such as:
 
 The existing homepage wording should also remain consistent with this principle.
 
-Paper trading can be described as:
+Demo trading can be described as:
 
 > Risk-free simulation
 
@@ -1433,24 +1433,24 @@ Do not implement trading execution inside the Markets page.
 
 ---
 
-# 49. Paper Trading CTA
+# 49. Demo Trading CTA
 
 Include:
 
 ```text
-Try Paper Trading
+Try Demo Trading
 ```
 
 It should eventually navigate to:
 
 ```text
-/trade/BTC-USDT?mode=paper
+/trade/BTC-USDT?mode=demo
 ```
 
 or:
 
 ```text
-/paper-trading
+/demo-trading
 ```
 
 The exact final route should be standardized when the trading module is implemented.
@@ -1924,7 +1924,7 @@ market_favorite_added
 market_favorite_removed
 market_view
 market_trade_click
-paper_trading_click
+demo_trading_click
 ```
 
 Do not send:

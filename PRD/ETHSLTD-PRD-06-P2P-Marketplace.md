@@ -2,7 +2,7 @@ Yes. I’ve treated the current state as the source of truth:
 
 - `/` — Homepage complete
 - `/markets` — Markets complete
-- `/trade` — Paper Trading Terminal complete
+- `/trade` — Demo Trading Terminal complete
 - Next logical product surface — **`/p2p`**
 - Existing global Header/Footer, theme system, Tailwind design system, Zustand approach, TypeScript types, provider abstraction, mock-data architecture, and responsive behavior must remain intact.
 - This PRD does **not** introduce a real-money P2P payment/escrow system. The implementation at this stage is a **fully interactive P2P simulation**, architected so the mock provider can later be replaced by a live backend.
@@ -3641,7 +3641,7 @@ P2P simulated balance
 must remain logically separated from:
 
 ```
-Paper trading account
+Demo trading account
 
 ```
 
@@ -3651,12 +3651,12 @@ Do not mix the two stores.
 
 # 131. Critical Account Separation
 
-Current platform has a Paper Trading account.
+Current platform has a Demo Trading account.
 
 Do not modify:
 
 ```
-paper-account-store.ts
+demo-account-store.ts
 
 ```
 
@@ -5166,7 +5166,7 @@ Before considering P2P complete:
 - Chart
 - Order form
 - Order book
-- Paper balance
+- Demo balance
 - Cancel order
 
 All must continue functioning.

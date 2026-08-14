@@ -51,19 +51,19 @@ authRoutes.post('/register', async (c) => {
     createdAt: now,
   });
 
-  // Auto-fund paper trading wallets for new user
-  const initialPaperFunds = [
+  // Auto-fund demo trading wallets for new user
+  const initialDemoFunds = [
     { assetSymbol: 'USDT', amount: '100000' },
     { assetSymbol: 'BTC', amount: '10' },
     { assetSymbol: 'ETH', amount: '100' }
   ];
 
-  for (const fund of initialPaperFunds) {
+  for (const fund of initialDemoFunds) {
     await db.insert(wallets).values({
       id: crypto.randomUUID(),
       userId: userId,
       assetSymbol: fund.assetSymbol,
-      type: 'PAPER',
+      type: 'DEMO',
       balance: fund.amount,
       lockedBalance: '0',
       createdAt: now,

@@ -4,9 +4,9 @@ I’m keeping the existing architecture and completed work consistent:
 
 * `/` — Homepage ✅
 * `/markets` — Markets Explorer ✅
-* `/trade` — Paper Trading Terminal ✅
+* `/trade` — Demo Trading Terminal ✅
 * Next logical product layer — **Authentication + Account + Security foundation**
-* Paper Trading remains available without introducing real-money custody.
+* Demo Trading remains available without introducing real-money custody.
 * All monetary examples, balances, fees, portfolio values, and UI defaults in this PRD use **USD**.
 * No INR-specific UI, copy, balance, payment method, or default currency should be introduced.
 
@@ -34,7 +34,7 @@ I’m keeping the existing architecture and completed work consistent:
 | State                     | Existing Zustand architecture                                                                |
 | Validation                | Zod                                                                                          |
 | Forms                     | React Hook Form                                                                              |
-| Current trading mode      | Paper Trading                                                                                |
+| Current trading mode      | Demo Trading                                                                                |
 | Backend                   | Not required for initial UI prototype, but architecture must be backend-ready                |
 | Authentication            | Session-based architecture                                                                   |
 | Persistence               | Backend-ready; temporary mock/local persistence only where explicitly specified              |
@@ -60,7 +60,7 @@ This establishes the foundation required for:
 * Security settings
 * 2FA preparation
 * Session/device management
-* Paper trading account association
+* Demo trading account association
 * Account preferences
 * Currency preferences
 * Notification preferences
@@ -345,7 +345,7 @@ Create your ETHSLTD account
 ## Subtitle
 
 ```text
-Start exploring digital assets, markets, and paper trading with ETHSLTD.
+Start exploring digital assets, markets, and demo trading with ETHSLTD.
 ```
 
 ---
@@ -901,21 +901,21 @@ Do not display sensitive internal IDs unnecessarily.
 
 # 34. Trading Account Card
 
-Because the current `/trade` page is Paper Trading, display:
+Because the current `/trade` page is Demo Trading, display:
 
 ```text
-Paper Trading Account
+Demo Trading Account
 ```
 
 Example:
 
 ```text
-Paper Balance
+Demo Balance
 
 $10,000.00
 ```
 
-This must connect conceptually to the existing `paper-account-store`.
+This must connect conceptually to the existing `demo-account-store`.
 
 Important:
 
@@ -936,14 +936,14 @@ Virtual balance
 or:
 
 ```text
-Paper trading balance
+Demo trading balance
 ```
 
 ---
 
-# 35. Paper Trading Integration
+# 35. Demo Trading Integration
 
-The existing paper account:
+The existing demo account:
 
 ```text
 10,000 USDT/USDC
@@ -954,14 +954,14 @@ must remain consistent with `/trade`.
 The account page may show:
 
 ```text
-Paper Portfolio
+Demo Portfolio
 $10,000.00
 ```
 
 with:
 
 ```text
-View Paper Trading
+View Demo Trading
 ```
 
 CTA:
@@ -1536,7 +1536,7 @@ Critical security notifications should not be casually disabled.
 
 # 61. Trading Notifications
 
-Paper trading:
+Demo trading:
 
 ```text
 Order filled
@@ -1695,7 +1695,7 @@ where possible.
 Existing Zustand stores:
 
 ```text
-paper-account-store
+demo-account-store
 trading-ui-store
 ```
 
@@ -1789,7 +1789,7 @@ alex@example.com
 Mock account:
 
 ```text
-Paper Trading
+Demo Trading
 $10,000.00
 ```
 
@@ -1978,7 +1978,7 @@ Example:
 │ alex@example.com ✓                       │
 │                                          │
 ├──────────────────────────────────────────┤
-│ Paper Trading                            │
+│ Demo Trading                            │
 │ $10,000.00                               │
 │ Virtual balance                          │
 │                                          │
@@ -2203,9 +2203,9 @@ Remain public:
 /forgot-password
 ```
 
-The current `/trade` remains paper trading and may remain publicly accessible according to the existing product behavior.
+The current `/trade` remains demo trading and may remain publicly accessible according to the existing product behavior.
 
-If authenticated, it should use the user's persisted paper account.
+If authenticated, it should use the user's persisted demo account.
 
 ---
 
@@ -2214,7 +2214,7 @@ If authenticated, it should use the user's persisted paper account.
 Current behavior:
 
 ```text
-Try Paper Trading
+Try Demo Trading
 ```
 
 from homepage should continue to:
@@ -2223,7 +2223,7 @@ from homepage should continue to:
 /trade
 ```
 
-No authentication should accidentally break the existing paper trading flow.
+No authentication should accidentally break the existing demo trading flow.
 
 ---
 
@@ -2232,7 +2232,7 @@ No authentication should accidentally break the existing paper trading flow.
 If logged in:
 
 ```text
-Paper Account
+Demo Account
 $10,000.00
 ```
 
@@ -2249,21 +2249,21 @@ The two must share the same account abstraction.
 
 ---
 
-# 97. Logout and Paper Account
+# 97. Logout and Demo Account
 
-Logging out should not accidentally delete the paper account.
+Logging out should not accidentally delete the demo account.
 
 The conceptual relationship is:
 
 ```text
 User
  ↓
-Paper Trading Account
+Demo Trading Account
  ↓
-Paper Ledger
+Demo Ledger
 ```
 
-When authentication becomes backend-backed, paper trading state should move from browser-only persistence into the appropriate user-scoped backend storage.
+When authentication becomes backend-backed, demo trading state should move from browser-only persistence into the appropriate user-scoped backend storage.
 
 ---
 
@@ -2960,7 +2960,7 @@ Confirm USD
  ↓
 Open Trade
  ↓
-Verify paper account
+Verify demo account
 ```
 
 ---
@@ -3005,7 +3005,7 @@ still supports:
 * order history
 * trade history
 * cancellation
-* paper balance
+* demo balance
 
 ---
 
@@ -3069,7 +3069,7 @@ All mock financial values must use USD where fiat values are displayed.
 Example:
 
 ```text
-Paper Portfolio: $10,000.00
+Demo Portfolio: $10,000.00
 Estimated Fee: $1.25
 Total: $1,251.25
 ```
@@ -3239,7 +3239,7 @@ This PRD is complete when:
 
 * [ ] USD is default
 * [ ] USD appears in account balances
-* [ ] USD appears in paper portfolio
+* [ ] USD appears in demo portfolio
 * [ ] USD appears in fees
 * [ ] No accidental INR
 * [ ] `DisplayCurrency = "USD"`
@@ -3282,7 +3282,7 @@ The project should now conceptually look like:
           │            │            │
        Public       Markets       Trade
           │            │            │
-          │            │        Paper Trading
+          │            │        Demo Trading
           │            │            │
           └────────────┼────────────┘
                        │
@@ -3298,7 +3298,7 @@ The project should now conceptually look like:
        │
        └──────────────┐
                       │
-                Paper Account
+                Demo Account
                       │
                   USD Display
                       │
@@ -3318,7 +3318,7 @@ Locale: en-US
 Symbol: $
 Decimal places: 2 for fiat
 Crypto precision: asset-specific
-Default paper balance: $10,000.00 equivalent
+Default demo balance: $10,000.00 equivalent
 ```
 
 Examples:

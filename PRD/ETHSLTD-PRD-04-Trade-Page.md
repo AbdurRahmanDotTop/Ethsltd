@@ -12,9 +12,9 @@ Yes. I’ve treated the **Homepage + `/markets` as completed and frozen as the c
 * `/trade/[symbol]`
 * Example: `/trade/BTC-USDT`
 
-This PRD covers the **complete web trading terminal only**—UI, paper trading behavior, mock data architecture, order entry, order book, charts, trades, orders, balances, responsive/mobile behavior, validation, accessibility, performance, testing, and future live-trading compatibility.
+This PRD covers the **complete web trading terminal only**—UI, demo trading behavior, mock data architecture, order entry, order book, charts, trades, orders, balances, responsive/mobile behavior, validation, accessibility, performance, testing, and future live-trading compatibility.
 
-> **Important:** This implementation must initially operate in **Paper Trading mode**. It must not imply that real-money trading, deposits, withdrawals, custody, or real execution are available until the backend/compliance infrastructure actually exists.
+> **Important:** This implementation must initially operate in **Demo Trading mode**. It must not imply that real-money trading, deposits, withdrawals, custody, or real execution are available until the backend/compliance infrastructure actually exists.
 
 ---
 
@@ -26,7 +26,7 @@ This PRD covers the **complete web trading terminal only**—UI, paper trading b
 **Routes:** `/trade`, `/trade/[symbol]`
 **Status:** Implementation-ready
 **Previous completed surfaces:** Homepage, Markets
-**Primary mode:** Paper Trading
+**Primary mode:** Demo Trading
 **Secondary future mode:** Live Trading
 **Frontend:** Next.js + React + TypeScript
 **Styling:** Tailwind CSS
@@ -55,16 +55,16 @@ The Trade page should allow a user to:
 * Enter price and quantity.
 * See estimated total.
 * See estimated fees.
-* Submit paper orders.
+* Submit demo orders.
 * Receive simulated fills.
-* Cancel open paper orders.
+* Cancel open demo orders.
 * View open orders.
 * View order history.
 * View trade history.
 * View simulated balances.
 * Switch between markets.
 * Add/remove markets from favorites.
-* Understand clearly whether they are in Paper Trading or Live Trading.
+* Understand clearly whether they are in Demo Trading or Live Trading.
 
 The architecture must be designed so the mock trading engine can later be replaced by a real trading backend without redesigning the UI.
 
@@ -82,7 +82,7 @@ Primary principles:
 4. **Financial precision**
 5. **Responsive behavior**
 6. **Strong state handling**
-7. **Paper/live separation**
+7. **Demo/live separation**
 8. **No misleading financial claims**
 9. **Backend-ready architecture**
 10. **Consistent ETHSLTD design language**
@@ -225,7 +225,7 @@ Desktop target:
 ┌──────────────────────────────────────────────────────────────┐
 │ ETHSLTD Header                                               │
 ├──────────────────────────────────────────────────────────────┤
-│ Paper Trading Mode / Market Selector                         │
+│ Demo Trading Mode / Market Selector                         │
 ├──────────────────────────────────────────────────────────────┤
 │ BTC/USDT     Price      24h Change      High Low Volume      │
 ├─────────────────────────────────────┬────────────────────────┤
@@ -276,7 +276,7 @@ This is mandatory.
 Display:
 
 ```text
-PAPER TRADING
+DEMO TRADING
 ```
 
 clearly.
@@ -284,7 +284,7 @@ clearly.
 Example:
 
 ```text
-● PAPER TRADING
+● DEMO TRADING
 ```
 
 Use a visually distinct badge.
@@ -301,7 +301,7 @@ Do not say:
 Your money is safe
 ```
 
-because paper trading contains no real money.
+because demo trading contains no real money.
 
 ---
 
@@ -311,14 +311,14 @@ Architecture must support:
 
 ```typescript
 type TradingMode =
-  | "paper"
+  | "demo"
   | "live";
 ```
 
 For the current implementation:
 
 ```text
-paper = enabled
+demo = enabled
 live = unavailable
 ```
 
@@ -665,7 +665,7 @@ This is a core trading-terminal interaction.
 
 # 23. Order Book Updates
 
-Current paper implementation can simulate updates.
+Current demo implementation can simulate updates.
 
 Example:
 
@@ -746,7 +746,7 @@ Stop Market
 
 later without redesigning the order form.
 
-For the initial paper terminal, **Limit + Market** are required.
+For the initial demo terminal, **Limit + Market** are required.
 
 ---
 
@@ -936,7 +936,7 @@ EXPIRED
 
 ---
 
-# 34. Paper Trading Engine
+# 34. Demo Trading Engine
 
 The mock trading engine should behave like an actual trading engine.
 
@@ -954,7 +954,7 @@ It should:
 10. Record order event.
 11. Update trade history.
 
-Do not implement paper trading as:
+Do not implement demo trading as:
 
 ```typescript
 setBalance(balance - amount)
@@ -966,9 +966,9 @@ The architecture should reflect the eventual financial domain.
 
 ---
 
-# 35. Paper Wallet
+# 35. Demo Wallet
 
-Default paper account:
+Default demo account:
 
 ```text
 USDT
@@ -988,7 +988,7 @@ SOL             0.00
 
 ---
 
-# 36. Paper Balance Display
+# 36. Demo Balance Display
 
 Trading terminal should show:
 
@@ -1051,7 +1051,7 @@ interface FeeEngine {
 }
 ```
 
-Initial paper fee:
+Initial demo fee:
 
 ```text
 0.10%
@@ -1154,7 +1154,7 @@ This makes the eventual live backend migration safer.
 
 # 43. Order Confirmation
 
-After successful paper order:
+After successful demo order:
 
 ```text
 Order placed
@@ -1163,7 +1163,7 @@ Buy 0.01 BTC
 @ 104,284.32 USDT
 
 Order ID
-PAPER-...
+DEMO-...
 ```
 
 For a market order:
@@ -1248,7 +1248,7 @@ Cancel
 
 # 46. Cancel Order
 
-User can cancel open paper orders.
+User can cancel open demo orders.
 
 Confirmation should be lightweight.
 
@@ -1473,13 +1473,13 @@ BTC/USDT
 
 without losing the market context.
 
-Paper orders/history should remain available through the configured paper-trading persistence mechanism.
+Demo orders/history should remain available through the configured demo-trading persistence mechanism.
 
 ---
 
-# 57. Paper Trading Persistence
+# 57. Demo Trading Persistence
 
-For the current frontend-only implementation, paper trading state may use:
+For the current frontend-only implementation, demo trading state may use:
 
 ```text
 localStorage
@@ -1490,7 +1490,7 @@ or a dedicated client-side persistence layer.
 Store:
 
 ```text
-paper account
+demo account
 balances
 orders
 trades
@@ -1502,20 +1502,20 @@ Do not store sensitive authentication credentials in localStorage.
 
 ---
 
-# 58. Paper Reset
+# 58. Demo Reset
 
-Provide a safe reset mechanism in the user-facing paper trading experience.
+Provide a safe reset mechanism in the user-facing demo trading experience.
 
 Example:
 
 ```text
-Reset Paper Account
+Reset Demo Account
 ```
 
 Confirmation:
 
 ```text
-Reset your paper trading account?
+Reset your demo trading account?
 
 This will remove your simulated orders, trades and balances.
 ```
@@ -1531,14 +1531,14 @@ Default balance returns to configured starting balance.
 
 ---
 
-# 59. Do Not Mix Paper Data With Future Live Data
+# 59. Do Not Mix Demo Data With Future Live Data
 
 Architecture:
 
 ```text
 TradingAccount
    │
-   ├── PAPER
+   ├── DEMO
    │
    └── LIVE
 ```
@@ -2103,12 +2103,12 @@ Market data: Simulated
 
 ---
 
-# 87. Paper Trading Disclosure
+# 87. Demo Trading Disclosure
 
 Near the terminal:
 
 ```text
-Paper Trading
+Demo Trading
 
 All orders, balances and trades on this page are simulated and do not represent real transactions or real funds.
 ```
@@ -2125,7 +2125,7 @@ Include a concise link/notice:
 Crypto assets can be volatile and may involve significant risk.
 ```
 
-For paper trading, avoid making investment recommendations.
+For demo trading, avoid making investment recommendations.
 
 ---
 
@@ -2146,7 +2146,7 @@ SIMULATED
 or:
 
 ```text
-PAPER DATA
+DEMO DATA
 ```
 
 unless actual live data is connected.
@@ -2313,7 +2313,7 @@ Insufficient BTC balance.
 
 # 98. Partial Fills
 
-Paper engine should support partial fills.
+Demo engine should support partial fills.
 
 Example:
 
@@ -2377,7 +2377,7 @@ Generate unique IDs.
 Example:
 
 ```text
-PAPER-ORD-01H...
+DEMO-ORD-01H...
 ```
 
 Never rely on array index.
@@ -2389,7 +2389,7 @@ Never rely on array index.
 Example:
 
 ```text
-PAPER-TRD-01H...
+DEMO-TRD-01H...
 ```
 
 ---
@@ -2467,7 +2467,7 @@ Keep Order
 Cancel Order
 ```
 
-For paper trading, a simple confirmation may be used.
+For demo trading, a simple confirmation may be used.
 
 ---
 
@@ -2581,7 +2581,7 @@ components/trading/
 ├── TradeHistory.tsx
 ├── OrderDetails.tsx
 ├── CancelOrderDialog.tsx
-├── PaperTradingNotice.tsx
+├── DemoTradingNotice.tsx
 └── MobileTradingBar.tsx
 ```
 
@@ -2598,7 +2598,7 @@ Example:
 ```text
 market state
 trading form state
-paper account state
+demo account state
 UI state
 ```
 
@@ -2608,7 +2608,7 @@ UI state
 
 ```text
 useTradingUIStore
-usePaperAccountStore
+useDemoAccountStore
 ```
 
 Market server state:
@@ -2750,11 +2750,11 @@ Best price
 Earliest order
 ```
 
-Even though this is paper trading, this creates a realistic foundation.
+Even though this is demo trading, this creates a realistic foundation.
 
 ---
 
-# 120. Paper Order Book
+# 120. Demo Order Book
 
 There are two possible sources:
 
@@ -2765,7 +2765,7 @@ Simulated market liquidity
 and:
 
 ```text
-User-generated paper orders
+User-generated demo orders
 ```
 
 The architecture should permit both.
@@ -2808,10 +2808,10 @@ View chart
 View order book
 ```
 
-When attempting to place a paper trade:
+When attempting to place a demo trade:
 
 ```text
-Create a free account to start paper trading.
+Create a free account to start demo trading.
 ```
 
 If the project already implements authentication later, this should become an authentication gate.
@@ -2825,7 +2825,7 @@ The form may be visible to demonstrate the product.
 Clicking Buy/Sell:
 
 ```text
-Sign up to start paper trading.
+Sign up to start demo trading.
 ```
 
 Do not create anonymous persistent financial accounts unless intentionally designed.
@@ -2860,7 +2860,7 @@ order_submitted
 order_placed
 order_rejected
 order_cancelled
-paper_account_reset
+demo_account_reset
 ```
 
 Do not capture sensitive financial information unnecessarily.
@@ -3477,7 +3477,7 @@ Recent Trades
           │            │
           └──────┬─────┘
                  ▼
-          Paper Trading Engine
+          Demo Trading Engine
                  │
           ┌──────┼──────┐
           ▼      ▼      ▼
@@ -3516,7 +3516,7 @@ components/
     ├── TradeHistory.tsx
     ├── OrderDetails.tsx
     ├── CancelOrderDialog.tsx
-    ├── PaperTradingNotice.tsx
+    ├── DemoTradingNotice.tsx
     └── MobileTradingBar.tsx
 
 lib/
@@ -3535,13 +3535,13 @@ lib/
 
 stores/
 ├── trading-ui-store.ts
-└── paper-account-store.ts
+└── demo-account-store.ts
 
 hooks/
 ├── use-market-data.ts
 ├── use-order-book.ts
 ├── use-trading.ts
-└── use-paper-account.ts
+└── use-demo-account.ts
 
 schemas/
 └── trading.ts
@@ -3679,7 +3679,7 @@ Sign Up
 
 must remain accessible.
 
-Paper trading can be:
+Demo trading can be:
 
 ```text
 guest preview
@@ -3739,7 +3739,7 @@ Use consistent ETHSLTD terminology.
 ### Preferred:
 
 ```text
-Paper Trading
+Demo Trading
 Market
 Order
 Trade
@@ -3758,7 +3758,7 @@ Risk-free investment
 Guaranteed gains
 ```
 
-Paper trading is risk-free only in the narrow sense that it does not use real funds; crypto markets themselves are not risk-free.
+Demo trading is risk-free only in the narrow sense that it does not use real funds; crypto markets themselves are not risk-free.
 
 ---
 
@@ -3780,7 +3780,7 @@ No trades yet
 Completed trades will appear here.
 ```
 
-### Paper mode
+### Demo mode
 
 ```text
 You're using simulated funds. No real transactions are taking place.
@@ -3789,7 +3789,7 @@ You're using simulated funds. No real transactions are taking place.
 ### Login gate
 
 ```text
-Sign in to save your paper trading activity.
+Sign in to save your demo trading activity.
 ```
 
 ---
@@ -4199,14 +4199,14 @@ The frontend must not attempt to implement production custody or financial settl
 
 # 191. Important Production Boundary
 
-The current paper engine is a simulation.
+The current demo engine is a simulation.
 
 It is **not** a production exchange matching engine.
 
 It must never be promoted to live-money processing simply by changing:
 
 ```text
-paper = false
+demo = false
 ```
 
 Real trading requires backend-side:
@@ -4233,7 +4233,7 @@ The Trade page is complete when:
 * Invalid symbols show proper errors.
 * Existing Header works.
 * Existing theme switch works.
-* Paper Trading indicator is visible.
+* Demo Trading indicator is visible.
 * Market selector works.
 * Market summary works.
 * Chart works.
@@ -4247,7 +4247,7 @@ The Trade page is complete when:
 * Fee calculation works.
 * Balance calculation works.
 * Percentage buttons work.
-* Paper orders are created.
+* Demo orders are created.
 * Orders can be cancelled.
 * Partial fills are supported.
 * Filled orders appear in history.
@@ -4302,7 +4302,7 @@ Financial calculations
 are centralized.
 
 ```text
-Paper account
+Demo account
 ```
 
 is isolated from future Live account.
@@ -4373,7 +4373,7 @@ BTC/USDT
    ↓
 Trade BTC/USDT
    ↓
-Paper Trading
+Demo Trading
    ↓
 Place Order
    ↓
@@ -4403,12 +4403,12 @@ View Chart
    ↓
 View Order Book
    ↓
-View Paper Trading Interface
+View Demo Trading Interface
    ↓
 Sign Up / Log In
 ```
 
-### Authenticated Paper Trader
+### Authenticated Demo Trader
 
 ```text
 Login
@@ -4423,7 +4423,7 @@ Limit
    ↓
 Price + Amount
    ↓
-Place Paper Order
+Place Demo Order
    ↓
 Open Orders
    ↓
@@ -4460,7 +4460,7 @@ The developer **should**:
 * reuse existing components
 * create the trading domain layer
 * build the terminal
-* implement paper trading
+* implement demo trading
 * keep the provider abstraction
 * make the UI production-backend-ready
 * maintain light/dark mode
@@ -4478,7 +4478,7 @@ After implementing this PRD, ETHSLTD should have:
 ┌─────────────────────────────────────────────────────────────┐
 │                         ETHSLTD                              │
 ├─────────────────────────────────────────────────────────────┤
-│                    PAPER TRADING                             │
+│                    DEMO TRADING                             │
 │                                                             │
 │ BTC/USDT    $104,284.32    +2.41%    24h Vol $1.24B         │
 ├───────────────────────────────────────┬─────────────────────┤

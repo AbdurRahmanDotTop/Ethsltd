@@ -185,7 +185,7 @@ export default function TicketDetailPage() {
                 />
                 <div className="absolute bottom-3 left-3 flex items-center gap-2">
                   <button type="button" className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted">
-                    <Paperclip className="w-4 h-4" />
+                    <Paperclip className="w-5 h-5" />
                   </button>
                   <span className="text-xs text-muted-foreground/50">{replyText.length} characters</span>
                 </div>

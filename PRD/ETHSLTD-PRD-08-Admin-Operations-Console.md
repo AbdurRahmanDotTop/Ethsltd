@@ -1,6 +1,6 @@
 Based on the complete project history you provided, the next step should be the **Admin & Operations Console**.
 
-This is the most consistent next module because ETHSLTD already has the public website, Markets, Paper Trading, Authentication/Security, P2P, and Wallet/Portfolio flows. The next missing platform-level capability is the internal control center that can manage users, wallets, trading activity, P2P, risk, support, audit logs, system configuration, and eventually connect cleanly to the production backend.
+This is the most consistent next module because ETHSLTD already has the public website, Markets, Demo Trading, Authentication/Security, P2P, and Wallet/Portfolio flows. The next missing platform-level capability is the internal control center that can manage users, wallets, trading activity, P2P, risk, support, audit logs, system configuration, and eventually connect cleanly to the production backend.
 
 I would **not** move to real-money trading yet. The Admin/Operations layer should exist before production financial integrations.
 
@@ -1834,7 +1834,7 @@ USD
 
 ```text
 Trading Enabled
-Paper Trading Enabled
+Demo Trading Enabled
 Maintenance Mode
 ```
 
@@ -2701,7 +2701,7 @@ Transaction
 Buyer
 Seller
 
-Paper
+Demo
 Live
 ```
 
@@ -2718,23 +2718,23 @@ unless required by a specific context.
 
 ---
 
-# 111. PAPER VS LIVE
+# 111. DEMO VS LIVE
 
-The platform already uses Paper Trading.
+The platform already uses Demo Trading.
 
 The Admin Console must distinguish:
 
 ```text
-PAPER
+DEMO
 LIVE
 ```
 
-Paper data must never be confused with live financial data.
+Demo data must never be confused with live financial data.
 
 Display badges:
 
 ```text
-PAPER
+DEMO
 ```
 
 and later:
@@ -2750,7 +2750,7 @@ LIVE
 Current implementation should default to:
 
 ```text
-PAPER / MOCK
+DEMO / MOCK
 ```
 
 No real financial transaction should occur.
@@ -3767,7 +3767,7 @@ Reuse:
 
 ```text
 Market types
-Paper account concepts
+Demo account concepts
 Wallet types
 P2P types
 Auth types
@@ -3857,7 +3857,7 @@ System Status
 Always display:
 
 ```text
-PAPER / MOCK
+DEMO / MOCK
 ```
 
 during development.
@@ -3885,7 +3885,7 @@ This prevents accidental production operations.
 Before production, the interface must make it impossible to confuse:
 
 ```text
-PAPER
+DEMO
 STAGING
 PRODUCTION
 ```
@@ -3902,7 +3902,7 @@ Use:
 
 ```text
 Simulated
-Paper
+Demo
 Mock
 ```
 
@@ -4598,7 +4598,7 @@ ETHSLTD
 ├── Public Platform
 │   ├── Home
 │   ├── Markets
-│   ├── Paper Trading
+│   ├── Demo Trading
 │   └── Education
 │
 ├── Authentication
@@ -4677,7 +4677,7 @@ Homepage
 +
 Markets
 +
-Paper Trading
+Demo Trading
 +
 Authentication
 +
@@ -4692,6 +4692,6 @@ into a unified operational platform.
 
 **Default financial display: USD.**
 
-**Default development environment: Mock/Paper.**
+**Default development environment: Mock/Demo.**
 
 **Real-money financial operations: not enabled by this PRD.**

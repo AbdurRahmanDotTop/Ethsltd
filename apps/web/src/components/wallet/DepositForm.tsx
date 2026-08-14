@@ -47,7 +47,7 @@ export function DepositForm({ defaultAsset = "USD" }: { defaultAsset?: string })
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText("0xSimulatedPaperTradingAddressOnly");
+    navigator.clipboard.writeText("0xSimulatedDemoTradingAddressOnly");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -94,7 +94,7 @@ export function DepositForm({ defaultAsset = "USD" }: { defaultAsset?: string })
             <label className="text-sm font-medium text-foreground">Simulated Deposit Address</label>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-muted/50 p-3 rounded-md font-mono text-sm text-muted-foreground border border-border overflow-hidden text-ellipsis">
-                0xSimulatedPaperTradingAddressOnly
+                0xSimulatedDemoTradingAddressOnly
               </div>
               <Button type="button" variant="outline" size="icon" onClick={handleCopy} className="shrink-0">
                 {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}

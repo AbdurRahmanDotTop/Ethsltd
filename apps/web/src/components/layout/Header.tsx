@@ -65,7 +65,7 @@ export function Header() {
       >
         <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${mode === 'DEMO' ? 'translate-x-4.5' : 'translate-x-1'}`} />
       </button>
-      <span className={`text-xs font-medium ${mode === 'DEMO' ? 'text-orange-500' : 'text-muted-foreground'}`}>Paper</span>
+      <span className={`text-xs font-medium ${mode === 'DEMO' ? 'text-orange-500' : 'text-muted-foreground'}`}>Demo</span>
     </div>
   );
 

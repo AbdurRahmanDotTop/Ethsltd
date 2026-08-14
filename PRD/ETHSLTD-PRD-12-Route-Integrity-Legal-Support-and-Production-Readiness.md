@@ -67,7 +67,7 @@ Examples:
 | Explore Markets | `/markets`               |
 | View Markets    | `/markets`               |
 | Explore Trading | `/trade`                 |
-| Paper Trading   | `/trade`                 |
+| Demo Trading   | `/trade`                 |
 | P2P Marketplace | `/p2p`                   |
 | Buy Crypto      | `/p2p?side=buy`          |
 | Sell Crypto     | `/p2p?side=sell`         |
@@ -296,7 +296,7 @@ The footer should be reorganized into meaningful groups.
 ```text
 Markets
 Trade
-Paper Trading
+Demo Trading
 P2P Marketplace
 Wallet
 ```
@@ -409,20 +409,20 @@ Use the specific feature destination rather than `/support`.
 
 ---
 
-# 10. Paper Trading section
+# 10. Demo Trading section
 
-### Start Paper Trading
+### Start Demo Trading
 
 ```text
 /trade
 ```
 
-### Learn About Paper Trading
+### Learn About Demo Trading
 
 Create:
 
 ```text
-/learn/paper-trading
+/learn/demo-trading
 ```
 
 This is better than routing educational intent into support.
@@ -503,7 +503,7 @@ Contents:
 
 * Crypto basics
 * Trading fundamentals
-* Paper trading
+* Demo trading
 * Technical analysis
 * Risk management
 * Security
@@ -545,7 +545,7 @@ Content:
 * Liquidity
 * Candlestick charts
 * Trading fees
-* Paper trading
+* Demo trading
 * Risk management
 
 The content should explain the same terminology used by `/trade`.
@@ -723,7 +723,7 @@ Include risks around:
 * Technology failure
 * Force majeure
 
-The page must make clear whether the current application is **paper/simulation trading** or real-money trading.
+The page must make clear whether the current application is **demo/simulation trading** or real-money trading.
 
 ---
 
@@ -1104,7 +1104,7 @@ ETHSLTD Markets | Explore Crypto Markets
 ### Trade
 
 ```text
-ETHSLTD Trading | Paper Trading
+ETHSLTD Trading | Demo Trading
 ```
 
 ### P2P
@@ -1520,7 +1520,7 @@ Examples:
 ```text
 /trading → /trade
 /assets → /markets
-/paper-trading → /trade
+/demo-trading → /trade
 ```
 
 Only create redirects when an old URL is known to exist.
@@ -1572,7 +1572,7 @@ Therefore this PRD must **not** falsely claim that the platform is already a rea
 Public pages should clearly distinguish:
 
 ```text
-Paper Trading
+Demo Trading
 ```
 
 from:
@@ -1629,7 +1629,7 @@ Every claim must be backed by an actual implemented control or approved business
 
 The footer should include a concise disclaimer appropriate to the application's current state.
 
-For the paper-trading environment, clearly communicate that simulated trading does not represent actual execution or guaranteed real-world results.
+For the demo-trading environment, clearly communicate that simulated trading does not represent actual execution or guaranteed real-world results.
 
 Exact legal language should be finalized by counsel.
 
@@ -1925,7 +1925,7 @@ This PRD is complete only when all of the following are true.
 * [ ] `/learn`
 * [ ] `/learn/crypto-basics`
 * [ ] `/learn/trading`
-* [ ] `/learn/paper-trading`
+* [ ] `/learn/demo-trading`
 * [ ] `/learn/security`
 * [ ] `/learn/market-insights`
 * [ ] `/fees`
@@ -2075,8 +2075,8 @@ CRYPTO BASICS
 TRADING GUIDE
 /learn/trading
 
-PAPER TRADING
-/learn/paper-trading
+DEMO TRADING
+/learn/demo-trading
 
 SECURITY EDUCATION
 /learn/security

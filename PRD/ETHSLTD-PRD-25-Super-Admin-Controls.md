@@ -11,7 +11,7 @@ To provide the `SUPER_ADMIN` role with absolute control over the ETHSLTD platfor
    - Change User Role (`USER`, `SUPPORT_ADMIN`, `COMPLIANCE_ADMIN`, `SUPER_ADMIN`).
    - Hard Delete or Wipe User Data (if necessary for compliance).
 2. **Wallet & Balance Overrides:**
-   - View full wallet balances (Real & Paper) for any user.
+   - View full wallet balances (Real & Demo) for any user.
    - Adjust balances manually (e.g., in case of severe system bugs or manual P2P dispute resolutions).
 3. **Platform Global Settings:**
    - Toggle Platform Maintenance Mode.

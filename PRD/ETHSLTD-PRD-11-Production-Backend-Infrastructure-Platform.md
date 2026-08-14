@@ -601,7 +601,7 @@ Existing wallet functionality must migrate from:
 ```text
 wallet-store.ts
 +
-paper-account-store.ts
+demo-account-store.ts
 ```
 
 to a production financial backend.
@@ -1855,7 +1855,7 @@ Existing stores must be reviewed.
 For example:
 
 ```text
-paper-account-store.ts
+demo-account-store.ts
 trading-ui-store.ts
 wallet-store.ts
 notification-store.ts

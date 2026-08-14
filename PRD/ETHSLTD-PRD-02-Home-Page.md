@@ -19,7 +19,7 @@ It must communicate, within the first few seconds:
 * That the platform supports spot/crypto trading.
 * That users can access markets and real-time market information.
 * That ETHSLTD provides a secure, professional trading environment.
-* That users can start with either **Paper Trading** or **Live Trading**, subject to account eligibility and availability.
+* That users can start with either **Demo Trading** or **Live Trading**, subject to account eligibility and availability.
 * That the platform has supporting products such as P2P, wallet services, contracts, and mobile access.
 * That ETHSLTD is designed for both new and experienced traders.
 
@@ -122,7 +122,7 @@ unless those claims are actually verified and legally approved.
 Introduce:
 
 * Spot Trading
-* Paper Trading
+* Demo Trading
 * P2P
 * Wallet
 * Market Data
@@ -146,7 +146,7 @@ Needs:
 * Easy entry
 * Confidence
 * Educational guidance
-* Paper trading option
+* Demo trading option
 
 Primary CTA:
 
@@ -154,7 +154,7 @@ Primary CTA:
 
 Secondary:
 
-**Try Paper Trading**
+**Try Demo Trading**
 
 ---
 
@@ -224,7 +224,7 @@ The complete homepage should follow this order:
 ├───────────────────────────────────────────────┤
 │ Markets                                        │
 ├───────────────────────────────────────────────┤
-│ Paper Trading                                  │
+│ Demo Trading                                  │
 ├───────────────────────────────────────────────┤
 │ P2P Marketplace                                │
 ├───────────────────────────────────────────────┤
@@ -267,7 +267,7 @@ ETHSLTD Markets are live — Explore the latest digital assets →
 Alternative:
 
 ```text
-Paper Trading is available — Practice without using real funds →
+Demo Trading is available — Practice without using real funds →
 ```
 
 ### Requirements
@@ -320,7 +320,7 @@ Dropdown:
 Dropdown:
 
 * Spot Trading
-* Paper Trading
+* Demo Trading
 * Advanced Trading
 
 #### P2P
@@ -432,7 +432,7 @@ Alternative supporting headline:
 
 ### Supporting copy
 
-> Discover markets, practice with paper trading, and access the tools you need to manage your digital-asset journey.
+> Discover markets, practice with demo trading, and access the tools you need to manage your digital-asset journey.
 
 Avoid financial promises.
 
@@ -446,7 +446,7 @@ Primary:
 
 Secondary:
 
-**Try Paper Trading**
+**Try Demo Trading**
 
 Optional tertiary text link:
 
@@ -458,9 +458,9 @@ Optional tertiary text link:
 
 → account/authentication flow.
 
-`Try Paper Trading`
+`Try Demo Trading`
 
-→ paper-trading onboarding.
+→ demo-trading onboarding.
 
 `Explore Markets`
 
@@ -862,7 +862,7 @@ Recommended:
 
 ---
 
-# 24. Paper Trading Section
+# 24. Demo Trading Section
 
 This is a major ETHSLTD differentiator for the initial product positioning.
 
@@ -879,7 +879,7 @@ Supporting copy:
 Show:
 
 ```text
-Paper Trading
+Demo Trading
 
 Virtual Balance
 ₹10,00,000
@@ -902,13 +902,13 @@ SIMULATED
 
 ### CTA
 
-**Try Paper Trading**
+**Try Demo Trading**
 
 Secondary:
 
-**How Paper Trading Works →**
+**How Demo Trading Works →**
 
-Never imply paper-trading balances are withdrawable or real.
+Never imply demo-trading balances are withdrawable or real.
 
 ---
 
@@ -1107,7 +1107,7 @@ Discover available assets and trading pairs.
 
 **Practice or Trade**
 
-Use paper trading or eligible live trading functionality.
+Use demo trading or eligible live trading functionality.
 
 ### Step 4
 
@@ -1133,7 +1133,7 @@ Introductory explanation.
 
 Explain buy/sell orders.
 
-### What is Paper Trading?
+### What is Demo Trading?
 
 Explain simulated trading.
 
@@ -1208,7 +1208,7 @@ Secondary:
 
 Optional:
 
-**Try Paper Trading**
+**Try Demo Trading**
 
 ---
 
@@ -1240,7 +1240,7 @@ ETHSLTD
 Trade
     Markets
     Spot Trading
-    Paper Trading
+    Demo Trading
     Fees
 
 P2P
@@ -1311,7 +1311,7 @@ HOME
 │
 ├── Trade
 │   ├── Spot
-│   ├── Paper Trading
+│   ├── Demo Trading
 │   └── Advanced
 │
 ├── P2P
@@ -1398,7 +1398,7 @@ CTA
 Market Ticker
 Markets
 Trading Experience
-Paper Trading
+Demo Trading
 P2P
 Security
 Mobile App
@@ -1820,7 +1820,7 @@ Homepage must include:
 
 ### Meta description
 
-> Explore digital asset markets, real-time market data, paper trading, P2P trading and modern crypto trading tools with ETHSLTD.
+> Explore digital asset markets, real-time market data, demo trading, P2P trading and modern crypto trading tools with ETHSLTD.
 
 Final SEO copy must be reviewed against actual products and jurisdictional claims.
 
@@ -1999,7 +1999,7 @@ HomePage
 │   ├── MarketTable
 │   └── MarketsCTA
 │
-├── PaperTradingSection
+├── DemoTradingSection
 │
 ├── P2PSection
 │
@@ -2043,7 +2043,7 @@ components/
     ├── trading-terminal-preview.tsx
     ├── markets-section.tsx
     ├── market-table.tsx
-    ├── paper-trading-section.tsx
+    ├── demo-trading-section.tsx
     ├── p2p-section.tsx
     ├── security-section.tsx
     ├── mobile-app-section.tsx
@@ -2081,7 +2081,7 @@ Anonymous user:
 
 ```text
 Start Trading → Sign Up
-Try Paper Trading → Paper Trading onboarding
+Try Demo Trading → Demo Trading onboarding
 Explore Markets → Public markets
 ```
 
@@ -2089,7 +2089,7 @@ Authenticated user:
 
 ```text
 Start Trading → Trading terminal
-Try Paper Trading → Paper Trading
+Try Demo Trading → Demo Trading
 Portfolio → Account
 ```
 
@@ -2097,12 +2097,12 @@ Do not expose private balances or account information on the public homepage.
 
 ---
 
-# 65. Paper vs Live Trading
+# 65. Demo vs Live Trading
 
 The homepage must clearly distinguish:
 
 ```text
-PAPER TRADING
+DEMO TRADING
 SIMULATED
 ```
 
@@ -2156,12 +2156,12 @@ Track meaningful interactions:
 ```text
 homepage_view
 hero_start_trading_click
-hero_paper_trading_click
+hero_demo_trading_click
 markets_view
 market_click
 market_trade_click
 p2p_click
-paper_trading_click
+demo_trading_click
 security_section_view
 mobile_app_click
 education_article_click
@@ -2189,7 +2189,7 @@ See Trading Experience
 Build Trust
    ↓
 Choose Entry
-   ├── Paper Trading
+   ├── Demo Trading
    └── Live Account
 ```
 
@@ -2231,7 +2231,7 @@ The homepage is considered complete only when:
 ### Marketing
 
 * [ ] Hero communicates product clearly.
-* [ ] Paper Trading is explained.
+* [ ] Demo Trading is explained.
 * [ ] P2P is introduced.
 * [ ] Security positioning is included.
 * [ ] Mobile experience is included.
@@ -2271,7 +2271,7 @@ The homepage is considered complete only when:
 * [ ] No unsupported financial claims.
 * [ ] No fabricated platform metrics.
 * [ ] No fabricated regulatory claims.
-* [ ] Paper/live trading distinction is explicit.
+* [ ] Demo/live trading distinction is explicit.
 
 ---
 
@@ -2292,7 +2292,7 @@ The AI coding/design agent must treat this PRD as the **single source of truth f
 9. Never fabricate live market data.
 10. Never fabricate user counts, volume, liquidity, licenses or regulatory claims.
 11. Never create fake security guarantees.
-12. Clearly label simulated/paper-trading content.
+12. Clearly label simulated/demo-trading content.
 13. Keep animations subtle.
 14. Respect reduced-motion preferences.
 15. Optimize for performance.
@@ -2334,7 +2334,7 @@ The finished homepage should communicate this journey:
                        │
              ┌─────────┴─────────┐
              ▼                   ▼
-       Start Trading       Paper Trading
+       Start Trading       Demo Trading
              │                   │
              └─────────┬─────────┘
                        ▼

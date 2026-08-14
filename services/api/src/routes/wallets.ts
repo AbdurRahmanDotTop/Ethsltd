@@ -25,23 +25,23 @@ const getMockPrice = (symbol: string) => {
   return prices[symbol] || 0;
 };
 
-walletRoutes.post('/top-up-paper', async (c) => {
+walletRoutes.post('/top-up-demo', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   
-  // We'll give 100,000 USDT in paper mode
+  // We'll give 100,000 USDT in demo mode
   const assetSymbol = 'USDT';
   const amount = '100000';
   const now = new Date();
   
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, 'PAPER'))).get();
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, 'DEMO'))).get();
   
   if (!wallet) {
     await db.insert(wallets).values({
       id: crypto.randomUUID(),
       userId: user.id,
       assetSymbol,
-      type: 'PAPER',
+      type: 'DEMO',
       balance: amount,
       lockedBalance: '0',
       createdAt: now,
@@ -54,10 +54,10 @@ walletRoutes.post('/top-up-paper', async (c) => {
   }
   
   await db.insert(walletTransactions).values({
-    id: `TX-PAPER-${Date.now()}`,
+    id: `TX-DEMO-${Date.now()}`,
     userId: user.id,
     type: 'DEPOSIT',
-    mode: 'PAPER',
+    mode: 'DEMO',
     assetSymbol,
     amount,
     status: 'COMPLETED',
@@ -72,7 +72,7 @@ walletRoutes.post('/top-up-paper', async (c) => {
 walletRoutes.get('/balances', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'PAPER';
+  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
   
@@ -102,7 +102,7 @@ walletRoutes.get('/balances', async (c) => {
 walletRoutes.get('/portfolio', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'PAPER';
+  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
   
@@ -145,7 +145,7 @@ walletRoutes.get('/portfolio', async (c) => {
 walletRoutes.get('/transactions', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'PAPER';
+  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   const transactions = await db.select().from(walletTransactions)
     .where(and(eq(walletTransactions.userId, user.id), eq(walletTransactions.mode, mode)))
@@ -206,7 +206,7 @@ walletRoutes.post('/deposit', async (c) => {
     mode: mode,
     assetSymbol,
     amount: amount.toString(),
-    status: 'COMPLETED', // Simulated paper trading completes instantly
+    status: 'COMPLETED', // Simulated demo trading completes instantly
     network: network || 'Internal',
     destination: destination,
     createdAt: now,
@@ -245,7 +245,7 @@ walletRoutes.post('/withdraw', async (c) => {
     mode: mode,
     assetSymbol,
     amount: amount.toString(),
-    status: 'COMPLETED', // Simulated paper trading completes instantly
+    status: 'COMPLETED', // Simulated demo trading completes instantly
     destination,
     network: network || 'Internal',
     createdAt: now,

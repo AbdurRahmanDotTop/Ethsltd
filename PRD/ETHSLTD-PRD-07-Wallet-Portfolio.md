@@ -19,7 +19,7 @@ The implementation should remain **USD-first**, consistent with the existing ETH
 | Route                  | `/wallet`                                                |
 | Supporting routes      | `/wallet/deposit`, `/wallet/withdraw`, `/wallet/history` |
 | Default fiat           | **USD**                                                  |
-| Default account        | **Paper Trading**                                        |
+| Default account        | **Demo Trading**                                        |
 | Crypto assets          | BTC, ETH, USDT, USDC, SOL and supported assets           |
 | Current backend        | Mock provider                                            |
 | Current financial mode | Simulation only                                          |
@@ -67,7 +67,7 @@ The feature must integrate consistently with the existing:
 * authentication system
 * security system
 * USD-first configuration
-* paper trading architecture
+* demo trading architecture
 
 ---
 
@@ -130,7 +130,7 @@ Can see public information but cannot access private balances.
 
 Can access wallet and portfolio.
 
-### Paper Trading User
+### Demo Trading User
 
 Uses simulated balances.
 
@@ -141,7 +141,7 @@ Uses actual balances.
 The architecture must support both:
 
 ```text
-PAPER
+DEMO
 LIVE
 ```
 
@@ -156,7 +156,7 @@ The core concept:
 ```text
 User
  │
- ├── Paper Account
+ ├── Demo Account
  │      ├── USD
  │      ├── BTC
  │      ├── ETH
@@ -175,7 +175,7 @@ Initially:
 
 ```text
 LIVE = disabled / unavailable
-PAPER = enabled
+DEMO = enabled
 ```
 
 ---
@@ -295,7 +295,7 @@ Display:
 Clearly show:
 
 ```text
-PAPER TRADING
+DEMO TRADING
 ```
 
 for the current implementation.
@@ -303,7 +303,7 @@ for the current implementation.
 Example:
 
 ```text
-● Paper Trading
+● Demo Trading
 ```
 
 Do not make users believe simulated funds are real.
@@ -615,9 +615,9 @@ Purpose:
 
 Allow the user to simulate adding funds.
 
-Because the current product is paper trading, deposit must be explicitly labeled:
+Because the current product is demo trading, deposit must be explicitly labeled:
 
-> Paper Trading Deposit
+> Demo Trading Deposit
 
 ---
 
@@ -666,7 +666,7 @@ Amount
 
 ---
 
-# 26. Paper Deposit UX
+# 26. Demo Deposit UX
 
 The current implementation should NOT pretend that blockchain transactions are occurring.
 
@@ -697,7 +697,7 @@ New Balance
 $11,000.00
 
 Simulation
-Paper Trading
+Demo Trading
 
 [Cancel]
 [Confirm Deposit]
@@ -723,7 +723,7 @@ Enter a valid amount.
 
 Minimum deposit is $1.00.
 
-Maximum paper deposit is $100,000.00.
+Maximum demo deposit is $100,000.00.
 
 This asset is not supported.
 ```
@@ -781,7 +781,7 @@ ________ BTC
 
 ---
 
-# 31. Paper Withdrawal
+# 31. Demo Withdrawal
 
 Clearly display:
 
@@ -864,7 +864,7 @@ Locked funds may come from:
 
 # 35. Integration With Trade
 
-The `/trade` paper account currently has balances.
+The `/trade` demo account currently has balances.
 
 Those balances must become conceptually connected to the wallet model.
 
@@ -1048,7 +1048,7 @@ Updated
 Aug 13, 2026
 
 Mode
-Paper Trading
+Demo Trading
 ```
 
 ---
@@ -1191,12 +1191,12 @@ This should use the same ledger abstraction.
 
 ---
 
-# 48. Paper Account Reset
+# 48. Demo Account Reset
 
 Since this is a simulated environment, provide:
 
 ```text
-Reset Paper Account
+Reset Demo Account
 ```
 
 inside an appropriate settings/account area rather than prominently on the wallet.
@@ -1204,9 +1204,9 @@ inside an appropriate settings/account area rather than prominently on the walle
 Confirmation:
 
 ```text
-Reset Paper Trading Account?
+Reset Demo Trading Account?
 
-Your simulated balances and paper trading history will be reset.
+Your simulated balances and demo trading history will be reset.
 
 Starting balance:
 $10,000.00 USD
@@ -1217,7 +1217,7 @@ $10,000.00 USD
 
 ---
 
-# 49. Default Paper Balance
+# 49. Default Demo Balance
 
 Maintain consistency with existing `/trade`:
 
@@ -1396,7 +1396,7 @@ withdraw()
 transfer()
 refreshBalances()
 loadTransactions()
-resetPaperAccount()
+resetDemoAccount()
 ```
 
 ---
@@ -1524,7 +1524,7 @@ Risk review
 Manual approval
 ```
 
-For current paper mode, these may be simulated or disabled.
+For current demo mode, these may be simulated or disabled.
 
 ---
 
@@ -1602,7 +1602,7 @@ You Receive
 99 USDT
 ```
 
-For paper mode, values are simulated.
+For demo mode, values are simulated.
 
 ---
 
@@ -1833,9 +1833,9 @@ guaranteed returns
 
 # 74. Financial Disclosures
 
-Paper mode must clearly communicate:
+Demo mode must clearly communicate:
 
-> Paper trading uses simulated funds and does not represent real deposits, withdrawals, or blockchain transactions.
+> Demo trading uses simulated funds and does not represent real deposits, withdrawals, or blockchain transactions.
 
 This should appear where users initiate simulated financial operations.
 
@@ -2326,7 +2326,7 @@ DEPOSIT_CREATED
 WITHDRAWAL_CREATED
 WITHDRAWAL_CANCELLED
 TRANSFER_CREATED
-PAPER_ACCOUNT_RESET
+DEMO_ACCOUNT_RESET
 ```
 
 ---
@@ -2754,7 +2754,7 @@ After implementation:
 │     └── Market discovery
 │
 ├── /trade
-│     └── Paper trading
+│     └── Demo trading
 │
 ├── /p2p
 │     └── P2P marketplace
@@ -2835,7 +2835,7 @@ The following are mandatory:
 ```text
 DEFAULT_FIAT = USD
 DEFAULT_CURRENCY_SYMBOL = $
-DEFAULT_PAPER_BALANCE = 10000
+DEFAULT_DEMO_BALANCE = 10000
 DEFAULT_LOCALE = en-US
 ```
 
@@ -2922,7 +2922,7 @@ REVIEW
 BLOCKED
 ```
 
-Current paper mode:
+Current demo mode:
 
 ```text
 NORMAL
@@ -3070,7 +3070,7 @@ The PRD is complete when all of the following are true.
 
 * [ ] `/wallet` exists.
 * [ ] Wallet requires authentication.
-* [ ] Paper Trading mode is clearly displayed.
+* [ ] Demo Trading mode is clearly displayed.
 * [ ] Total portfolio value is displayed in USD.
 * [ ] Available and locked balances are displayed.
 * [ ] Asset table works.
@@ -3164,7 +3164,7 @@ all work together.
 
 # 132. Important Scope Boundary
 
-This PRD builds the **Wallet & Portfolio experience and its paper/simulation financial domain**.
+This PRD builds the **Wallet & Portfolio experience and its demo/simulation financial domain**.
 
 It must **not falsely implement real-money custody**.
 
@@ -3173,7 +3173,7 @@ The current architecture should remain:
 ```text
 ETHSLTD
    ↓
-Paper Trading
+Demo Trading
    ↓
 Simulated Wallet
    ↓
@@ -3209,7 +3209,7 @@ Select BTC/USDT
    ↓
 Trade
    ↓
-Place Paper Order
+Place Demo Order
    ↓
 Order Filled
    ↓

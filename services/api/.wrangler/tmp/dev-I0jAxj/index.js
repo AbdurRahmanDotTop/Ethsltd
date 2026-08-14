@@ -18879,17 +18879,17 @@ authRoutes.post("/register", async (c) => {
       ipAddress: c.req.header("x-real-ip") || c.req.header("x-forwarded-for") || "Unknown",
       createdAt: now
     });
-    const initialPaperFunds = [
+    const initialDemoFunds = [
       { assetSymbol: "USDT", amount: "100000" },
       { assetSymbol: "BTC", amount: "10" },
       { assetSymbol: "ETH", amount: "100" }
     ];
-    for (const fund of initialPaperFunds) {
+    for (const fund of initialDemoFunds) {
       await db.insert(wallets).values({
         id: crypto.randomUUID(),
         userId,
         assetSymbol: fund.assetSymbol,
-        type: "PAPER",
+        type: "DEMO",
         balance: fund.amount,
         lockedBalance: "0",
         createdAt: now,
@@ -19006,19 +19006,19 @@ var getMockPrice = /* @__PURE__ */ __name((symbol) => {
   };
   return prices[symbol] || 0;
 }, "getMockPrice");
-walletRoutes.post("/top-up-paper", async (c) => {
+walletRoutes.post("/top-up-demo", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
   const assetSymbol = "USDT";
   const amount = "100000";
   const now = /* @__PURE__ */ new Date();
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, "PAPER"))).get();
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, "DEMO"))).get();
   if (!wallet) {
     await db.insert(wallets).values({
       id: crypto.randomUUID(),
       userId: user.id,
       assetSymbol,
-      type: "PAPER",
+      type: "DEMO",
       balance: amount,
       lockedBalance: "0",
       createdAt: now,
@@ -19029,10 +19029,10 @@ walletRoutes.post("/top-up-paper", async (c) => {
     await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
   }
   await db.insert(walletTransactions).values({
-    id: `TX-PAPER-${Date.now()}`,
+    id: `TX-DEMO-${Date.now()}`,
     userId: user.id,
     type: "DEPOSIT",
-    mode: "PAPER",
+    mode: "DEMO",
     assetSymbol,
     amount,
     status: "COMPLETED",
@@ -19154,7 +19154,7 @@ walletRoutes.post("/deposit", async (c) => {
     assetSymbol,
     amount: amount.toString(),
     status: "COMPLETED",
-    // Simulated paper trading completes instantly
+    // Simulated demo trading completes instantly
     network: network || "Internal",
     destination,
     createdAt: now,
@@ -19184,7 +19184,7 @@ walletRoutes.post("/withdraw", async (c) => {
     assetSymbol,
     amount: amount.toString(),
     status: "COMPLETED",
-    // Simulated paper trading completes instantly
+    // Simulated demo trading completes instantly
     destination,
     network: network || "Internal",
     createdAt: now,
