@@ -15,8 +15,9 @@ import { settingsRoutes } from './routes/settings';
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use('*', cors({
-  origin: ['http://localhost:3000'],
+  origin: (origin) => origin || '*',
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Trading-Mode'],
 }));
 
 // Setup DB context middleware
