@@ -135,7 +135,7 @@ tradingRoutes.use('*', jwtMiddleware);
 tradingRoutes.get('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = c.req.header('x-trading-mode') || 'REAL';
+  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'PAPER';
   
   const userOrders = await db.select().from(orders)
     .where(and(eq(orders.userId, user.id), eq(orders.mode, mode)))
@@ -162,7 +162,7 @@ tradingRoutes.get('/orders', async (c) => {
 tradingRoutes.get('/trades', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = c.req.header('x-trading-mode') || 'REAL';
+  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'PAPER';
   
   // Fetch user's orders first to match trades
   const userOrders = await db.select().from(orders).where(and(eq(orders.userId, user.id), eq(orders.mode, mode))).all();
@@ -200,7 +200,7 @@ tradingRoutes.post('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const mode = c.req.header('x-trading-mode') || 'REAL';
+  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'PAPER';
   const { market, side, type, amount, price } = body;
   
   const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
