@@ -48,7 +48,8 @@ export default function AdminPaymentSettingsPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/admin/payments/settings", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
+      const res = await fetch(`${apiUrl}/api/v1/admin/payments/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       }).then(r => r.json());
       
@@ -96,7 +97,8 @@ export default function AdminPaymentSettingsPage() {
         }
       }
 
-      const res = await fetch(`http://localhost:8000/api/v1/admin/payments/methods/${editingMethod.id}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
+      const res = await fetch(`${apiUrl}/api/v1/admin/payments/methods/${editingMethod.id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -131,7 +133,8 @@ export default function AdminPaymentSettingsPage() {
         }
       }
 
-      const res = await fetch(`http://localhost:8000/api/v1/admin/payments/methods`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
+      const res = await fetch(`${apiUrl}/api/v1/admin/payments/methods`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(addMethodForm)
@@ -178,11 +181,12 @@ export default function AdminPaymentSettingsPage() {
     try {
       const token = localStorage.getItem("token");
       const isEdit = !!editingBank;
-      const url = isEdit 
-        ? `http://localhost:8000/api/v1/admin/payments/banks/${editingBank.id}`
-        : `http://localhost:8000/api/v1/admin/payments/banks`;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
+      const endpoint = isEdit 
+        ? `${apiUrl}/api/v1/admin/payments/banks/${editingBank.id}`
+        : `${apiUrl}/api/v1/admin/payments/banks`;
       
-      const res = await fetch(url, {
+      const res = await fetch(endpoint, {
         method: isEdit ? "PUT" : "POST",
         headers: { 
           "Content-Type": "application/json",
