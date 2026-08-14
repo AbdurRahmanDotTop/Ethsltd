@@ -62,8 +62,6 @@ export default function KYCPage() {
   const [documentBack, setDocumentBack] = useState<File | null>(null);
   const [selfie, setSelfie] = useState<File | null>(null);
 
-  const [selfie, setSelfie] = useState<File | null>(null);
-
   if (!user || isLoadingProfile) return null;
 
   const onSubmit = async (data: any) => {
