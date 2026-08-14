@@ -5,13 +5,37 @@ import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
 import { KycApplication } from "@/lib/admin/types";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { apiClient } from "@ethsltd/api-client";
-import { Filter, Eye, X, CheckCircle, XCircle } from "lucide-react";
+import { Filter, Eye, X, CheckCircle, XCircle, FileText } from "lucide-react";
 
 export default function AdminKycPage() {
   const [kycApps, setKycApps] = useState<KycApplication[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<KycApplication | null>(null);
+
+  const renderDocumentPreview = (url: string | undefined | null, altText: string) => {
+    if (!url) {
+      return <span className="text-muted-foreground text-xs italic">No document provided</span>;
+    }
+    
+    if (url.startsWith('data:application/pdf')) {
+      return (
+        <div className="flex flex-col items-center gap-2 w-full h-full justify-center">
+          <FileText className="w-10 h-10 text-muted-foreground" />
+          <span className="text-xs font-medium">PDF Document</span>
+          <a 
+            href={url} 
+            download={`${altText.replace(' ', '_')}.pdf`}
+            className="mt-2 px-3 py-1 bg-brand-primary text-brand-primary-foreground text-xs rounded-md hover:bg-brand-primary/90"
+          >
+            Download PDF
+          </a>
+        </div>
+      );
+    }
+
+    return <img src={url} alt={altText} className="max-h-48 object-contain" />;
+  };
   
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("PENDING");
@@ -216,32 +240,20 @@ export default function AdminKycPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="border border-border rounded-lg overflow-hidden flex flex-col">
                     <div className="bg-muted/30 px-3 py-2 text-xs font-medium border-b border-border">Document Front</div>
-                    <div className="p-2 flex-1 flex items-center justify-center bg-black/5">
-                      {selectedApp.documentFrontUrl ? (
-                        <img src={selectedApp.documentFrontUrl} alt="Document Front" className="max-h-48 object-contain" />
-                      ) : (
-                        <span className="text-muted-foreground text-xs italic">No image provided</span>
-                      )}
+                    <div className="p-2 flex-1 flex items-center justify-center bg-black/5 min-h-[12rem]">
+                      {renderDocumentPreview(selectedApp.documentFrontUrl, "Document Front")}
                     </div>
                   </div>
                   <div className="border border-border rounded-lg overflow-hidden flex flex-col">
                     <div className="bg-muted/30 px-3 py-2 text-xs font-medium border-b border-border">Document Back</div>
-                    <div className="p-2 flex-1 flex items-center justify-center bg-black/5">
-                      {selectedApp.documentBackUrl ? (
-                        <img src={selectedApp.documentBackUrl} alt="Document Back" className="max-h-48 object-contain" />
-                      ) : (
-                        <span className="text-muted-foreground text-xs italic">No image provided</span>
-                      )}
+                    <div className="p-2 flex-1 flex items-center justify-center bg-black/5 min-h-[12rem]">
+                      {renderDocumentPreview(selectedApp.documentBackUrl, "Document Back")}
                     </div>
                   </div>
                   <div className="border border-border rounded-lg overflow-hidden flex flex-col">
                     <div className="bg-muted/30 px-3 py-2 text-xs font-medium border-b border-border">Selfie</div>
-                    <div className="p-2 flex-1 flex items-center justify-center bg-black/5">
-                      {selectedApp.selfieUrl ? (
-                        <img src={selectedApp.selfieUrl} alt="Selfie" className="max-h-48 object-contain" />
-                      ) : (
-                        <span className="text-muted-foreground text-xs italic">No image provided</span>
-                      )}
+                    <div className="p-2 flex-1 flex items-center justify-center bg-black/5 min-h-[12rem]">
+                      {renderDocumentPreview(selectedApp.selfieUrl, "Selfie")}
                     </div>
                   </div>
                 </div>
