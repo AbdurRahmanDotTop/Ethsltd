@@ -12,9 +12,9 @@ const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 *
 
 // Mock User Contracts
 const MOCK_USER_CONTRACTS = [
-  { id: "CNT-8902", type: "OTC Master Agreement", status: "pending_approval", issuedAt: daysAgo(2), signedAt: daysAgo(1) },
+  { id: "CNT-8902", type: "OTC Master Agreement", status: "pending_approval", issuedAt: daysAgo(2), signedAt: daysAgo(1), signedName: "Abdur Rahman", signatureUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iNTAiPjx0ZXh0IHk9IjMwIiBmb250LWZhbWlseT0iY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCI+QWJkdXIgUmFobWFuPC90ZXh0Pjwvc3ZnPg==" },
   { id: "CNT-8903", type: "Margin Trading Facility", status: "pending_signature", issuedAt: daysAgo(1) },
-  { id: "CNT-7100", type: "API Trading Access Terms", status: "approved", issuedAt: daysAgo(100), signedAt: daysAgo(99) }
+  { id: "CNT-7100", type: "API Trading Access Terms", status: "approved", issuedAt: daysAgo(100), signedAt: daysAgo(99), signedName: "Abdur Rahman", signatureUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iNTAiPjx0ZXh0IHk9IjMwIiBmb250LWZhbWlseT0iY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCI+QWJkdXIgUmFobWFuPC90ZXh0Pjwvc3ZnPg==" }
 ];
 
 export default function UserContractsPage() {
@@ -27,9 +27,11 @@ export default function UserContractsPage() {
 
   const handleSign = (id: string) => {
     setIsSigning(true);
+    const sigUrl = signatureImage ? URL.createObjectURL(signatureImage) : "";
+    const sName = fullName;
     setTimeout(() => {
       setContracts(prev => prev.map(c => 
-        c.id === id ? { ...c, status: "pending_approval", signedAt: new Date().toISOString() } : c
+        c.id === id ? { ...c, status: "pending_approval", signedAt: new Date().toISOString(), signatureUrl: sigUrl, signedName: sName } : c
       ));
       setIsSigning(false);
       setSelectedContract(null);
@@ -187,12 +189,33 @@ export default function UserContractsPage() {
               )}
 
               {selectedContract.signedAt && (
-                <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4 flex gap-4 text-sm">
-                  <ShieldCheck className="w-6 h-6 text-green-500 shrink-0" />
-                  <div>
-                    <h3 className="font-bold text-green-500">Electronically Signed</h3>
-                    <p className="text-muted-foreground mt-1">You signed this agreement on {new Date(selectedContract.signedAt).toLocaleString()}.</p>
+                <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-6 flex flex-col gap-4 text-sm mt-6">
+                  <div className="flex gap-4">
+                    <ShieldCheck className="w-6 h-6 text-green-500 shrink-0" />
+                    <div>
+                      <h3 className="font-bold text-green-500">Electronically Signed</h3>
+                      <p className="text-muted-foreground mt-1">You signed this agreement on {new Date(selectedContract.signedAt).toLocaleString()}.</p>
+                    </div>
                   </div>
+                  
+                  {(selectedContract.signatureUrl || selectedContract.signedName) && (
+                    <div className="mt-4 pt-4 border-t border-green-500/20 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {selectedContract.signedName && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Signed By (Legal Name)</p>
+                          <p className="font-medium text-base">{selectedContract.signedName}</p>
+                        </div>
+                      )}
+                      {selectedContract.signatureUrl && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">Digital Signature</p>
+                          <div className="h-16 w-32 relative">
+                            <FilePreview file={selectedContract.signatureUrl} className="w-full h-full object-contain" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
