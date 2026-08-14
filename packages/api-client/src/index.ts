@@ -138,6 +138,24 @@ export class EthsltdClient {
     });
   }
 
+  // Trading Data API Methods
+  async getMarkets(params?: any) {
+    return this.request<any[]>('/api/v1/trading/markets');
+  }
+
+  async getMarketCandles(symbol: string, interval: string = '15m') {
+    return this.request<any[]>(`/api/v1/trading/markets/${symbol}/candles?interval=${interval}`);
+  }
+
+  async getMarketOrderBook(symbol: string) {
+    return this.request<any>(`/api/v1/trading/markets/${symbol}/orderbook`);
+  }
+
+  async getMarketTrades(symbol: string) {
+    return this.request<any[]>(`/api/v1/trading/markets/${symbol}/trades`);
+  }
+
+  // Trading Execution API Methods
   async getOrders(params?: any) {
     return this.request<any[]>('/api/v1/trading/orders');
   }

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { Search, Star, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { Market } from "@/lib/market-data/types"
-import { MockMarketDataProvider } from "@/lib/market-data/mock-provider"
+import { apiClient } from "@ethsltd/api-client"
 import { MarketSparkline } from "./MarketSparkline"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils"
 const CATEGORIES = ["All", "Favorites", "USDT", "USDC", "BTC", "ETH", "New"]
 
 export function MarketExplorer() {
-  const [markets, setMarkets] = useState<Market[]>([])
+  const [markets, setMarkets] = useState<any[]>([])
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState("All")
-  const [sortField, setSortField] = useState<keyof Market>("volume24h")
+  const [sortField, setSortField] = useState<string>("volume24h")
   const [sortDir, setSortDir] = useState<'asc'|'desc'>("desc")
   const [loading, setLoading] = useState(true)
   const [favorites, setFavorites] = useState<string[]>([])
@@ -28,12 +28,31 @@ export function MarketExplorer() {
 
   useEffect(() => {
     setLoading(true)
-    MockMarketDataProvider.getMarkets({ search, category }, { field: sortField, direction: sortDir }).then(res => {
-      if (category === 'Favorites') {
-        setMarkets(res.items.filter(m => favorites.includes(m.id)))
-      } else {
-        setMarkets(res.items)
+    apiClient.getMarkets().then(res => {
+      let filtered = res.data || []
+      
+      // Search
+      if (search) {
+        filtered = filtered.filter((m: any) => m.symbol.toLowerCase().includes(search.toLowerCase()) || m.baseAsset?.toLowerCase().includes(search.toLowerCase()))
       }
+      
+      // Category
+      if (category === 'Favorites') {
+        filtered = filtered.filter((m: any) => favorites.includes(m.id || m.symbol))
+      } else if (category !== 'All' && category !== 'New') {
+        filtered = filtered.filter((m: any) => m.quoteAsset === category || m.baseAsset === category)
+      }
+
+      // Sort
+      filtered.sort((a: any, b: any) => {
+        const valA = a[sortField] || 0
+        const valB = b[sortField] || 0
+        if (valA < valB) return sortDir === 'asc' ? -1 : 1
+        if (valA > valB) return sortDir === 'asc' ? 1 : -1
+        return 0
+      })
+
+      setMarkets(filtered)
       setLoading(false)
     })
   }, [search, category, sortField, sortDir, favorites])

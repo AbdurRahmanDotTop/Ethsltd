@@ -56,6 +56,76 @@ tradingRoutes.get('/markets', async (c) => {
   return c.json({ success: true, data: formattedMarkets });
 });
 
+tradingRoutes.get('/markets/:symbol/candles', async (c) => {
+  const symbol = c.req.param('symbol');
+  const currentPrice = getMockPrice(symbol) || 100000;
+  
+  const candles = [];
+  let price = currentPrice * 0.95; // start lower
+  const now = Date.now();
+  
+  for(let i = 100; i >= 0; i--) {
+    const isUp = Math.random() > 0.5;
+    const change = price * (Math.random() * 0.005);
+    const open = price;
+    const close = isUp ? price + change : price - change;
+    const high = Math.max(open, close) + price * (Math.random() * 0.002);
+    const low = Math.min(open, close) - price * (Math.random() * 0.002);
+    
+    candles.push({
+      time: (now - (i * 15 * 60 * 1000)) / 1000, // 15m intervals unix
+      open, high, low, close,
+      volume: Math.random() * 100
+    });
+    price = close;
+  }
+  
+  candles[candles.length - 1].close = currentPrice;
+  return c.json({ success: true, data: candles });
+});
+
+tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
+  const symbol = c.req.param('symbol');
+  const currentPrice = getMockPrice(symbol) || 100000;
+  
+  const asks = [];
+  const bids = [];
+  let currentAsk = currentPrice * 1.0001;
+  let currentBid = currentPrice * 0.9999;
+  
+  for(let i = 0; i < 20; i++) {
+    const askAmount = Math.random() * 2 + 0.1;
+    asks.push({ price: currentAsk, amount: askAmount, total: currentAsk * askAmount });
+    currentAsk *= (1 + (Math.random() * 0.001));
+    
+    const bidAmount = Math.random() * 2 + 0.1;
+    bids.push({ price: currentBid, amount: bidAmount, total: currentBid * bidAmount });
+    currentBid *= (1 - (Math.random() * 0.001));
+  }
+  
+  return c.json({ success: true, data: { asks: asks.reverse(), bids } });
+});
+
+tradingRoutes.get('/markets/:symbol/trades', async (c) => {
+  const symbol = c.req.param('symbol');
+  const currentPrice = getMockPrice(symbol) || 100000;
+  
+  const trades = [];
+  for(let i = 0; i < 30; i++) {
+    trades.push({
+      id: Math.random().toString(),
+      price: currentPrice * (1 + (Math.random() * 0.002 - 0.001)),
+      amount: Math.random() * 1.5 + 0.01,
+      time: new Date(Date.now() - Math.random() * 600000).toLocaleTimeString(),
+      isBuyerMaker: Math.random() > 0.5
+    });
+  }
+  
+  const sortedTrades = trades.sort((a,b) => b.time.localeCompare(a.time));
+  return c.json({ success: true, data: sortedTrades });
+});
+
+
 // Secure all other routes
 tradingRoutes.use('*', jwtMiddleware);
 

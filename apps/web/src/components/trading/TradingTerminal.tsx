@@ -8,11 +8,11 @@ import { OrderBook } from "./OrderBook"
 import { RecentTrades } from "./RecentTrades"
 import { OrderEntry } from "./OrderEntry"
 import { TradingHistoryTabs } from "./TradingHistoryTabs"
-import { MockMarketDataProvider } from "@/lib/market-data/mock-provider"
+import { apiClient } from "@ethsltd/api-client"
 import { Market } from "@/lib/market-data/types"
 
 export function TradingTerminal({ symbol }: { symbol: string }) {
-  const [market, setMarket] = useState<Market | null>(null)
+  const [market, setMarket] = useState<any>(null)
   const [candles, setCandles] = useState<any[]>([])
   const [orderbook, setOrderbook] = useState<any>(null)
   const [trades, setTrades] = useState<any[]>([])
@@ -48,18 +48,20 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       if (!market) setLoading(true)
       
       try {
-        const m = await MockMarketDataProvider.getTicker(symbol)
+        const mRes = await apiClient.getMarkets()
+        const m = mRes.data?.find((m: any) => m.symbol === symbol || m.id === symbol)
+        
         if (m) {
-          const [c, o, t] = await Promise.all([
-            MockMarketDataProvider.getCandles(symbol, '15m'),
-            MockMarketDataProvider.getOrderBook(symbol),
-            MockMarketDataProvider.getRecentTrades(symbol)
+          const [cRes, oRes, tRes] = await Promise.all([
+            apiClient.getMarketCandles(symbol, '15m'),
+            apiClient.getMarketOrderBook(symbol),
+            apiClient.getMarketTrades(symbol)
           ])
           if (mounted) {
             setMarket(m)
-            setCandles(c)
-            setOrderbook(o)
-            setTrades(t)
+            setCandles(cRes.data || [])
+            setOrderbook(oRes.data || { asks: [], bids: [] })
+            setTrades(tRes.data || [])
           }
         }
       } catch (e) {

@@ -3,7 +3,7 @@ import { MarketsHero } from "@/components/markets/MarketsHero"
 import { MarketStats } from "@/components/markets/MarketStats"
 import { MarketExplorer } from "@/components/markets/MarketExplorer"
 import { MarketGridSection } from "@/components/markets/MarketGridSection"
-import { MockMarketDataProvider } from "@/lib/market-data/mock-provider"
+import { apiClient } from "@ethsltd/api-client"
 import { FinalCTA } from "@/components/home/FinalCTA"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
@@ -21,11 +21,21 @@ export const metadata: Metadata = {
 }
 
 export default async function MarketsPage() {
-  const stats = await MockMarketDataProvider.getMarketStats();
-  const trending = await MockMarketDataProvider.getTrending();
-  const topGainers = await MockMarketDataProvider.getTopGainers();
-  const topLosers = await MockMarketDataProvider.getTopLosers();
-  const newListings = await MockMarketDataProvider.getNewListings();
+  const mRes = await apiClient.getMarkets();
+  const markets = mRes.data || [];
+  
+  const stats = {
+    totalMarkets: markets.length,
+    volume24h: markets.reduce((acc, m) => acc + (m.volume24h || 0), 0),
+    btcDominance: 58.4,
+    activeAssets: new Set(markets.flatMap(m => [m.baseAsset, m.quoteAsset])).size,
+    status: '24/7'
+  };
+
+  const trending = [...markets].sort((a, b) => (b.volume24h || 0) - (a.volume24h || 0)).slice(0, 3);
+  const topGainers = [...markets].sort((a, b) => (b.change24h || 0) - (a.change24h || 0)).slice(0, 3);
+  const topLosers = [...markets].sort((a, b) => (a.change24h || 0) - (b.change24h || 0)).slice(0, 3);
+  const newListings = [...markets].sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1)).slice(0, 3);
 
   return (
     <div className="flex flex-col min-h-screen">

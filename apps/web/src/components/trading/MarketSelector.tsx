@@ -3,18 +3,23 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Search, ChevronDown } from "lucide-react"
 import { Market } from "@/lib/market-data/types"
-import { MockMarketDataProvider } from "@/lib/market-data/mock-provider"
+import { apiClient } from "@ethsltd/api-client"
 import { Button } from "@/components/ui/button"
 
 export function MarketSelector({ currentSymbol }: { currentSymbol: string }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
-  const [markets, setMarkets] = useState<Market[]>([])
+  const [markets, setMarkets] = useState<any[]>([])
   const router = useRouter()
 
   useEffect(() => {
     if (open) {
-      MockMarketDataProvider.getMarkets({ search }, undefined, { page: 1, pageSize: 20 }).then(res => setMarkets(res.items))
+      apiClient.getMarkets().then(res => {
+        if (res.success && res.data) {
+          const filtered = res.data.filter((m: any) => m.symbol.toLowerCase().includes(search.toLowerCase()))
+          setMarkets(filtered.slice(0, 20))
+        }
+      })
     }
   }, [search, open])
 
