@@ -1,0 +1,113 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 94655006836,
+      "run_id": 31763653238,
+      "workflow_name": "Deploy to Cloudflare Workers",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/AbdurRahmanDotTop/Ethsltd/actions/runs/31763653238",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOT2Q0Ic8AAAAWCeDIdA",
+      "head_sha": "8a10662ed2b5e2175d550100d7e9d48f454cccb9",
+      "url": "https://api.github.com/repos/AbdurRahmanDotTop/Ethsltd/actions/jobs/94655006836",
+      "html_url": "https://github.com/AbdurRahmanDotTop/Ethsltd/actions/runs/31763653238/job/94655006836",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-14T02:25:00Z",
+      "started_at": "2026-08-14T02:25:02Z",
+      "completed_at": "2026-08-14T02:26:01Z",
+      "name": "Build & Deploy",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-08-14T02:25:04Z",
+          "completed_at": "2026-08-14T02:25:05Z"
+        },
+        {
+          "name": "Checkout repository",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-08-14T02:25:05Z",
+          "completed_at": "2026-08-14T02:25:06Z"
+        },
+        {
+          "name": "Setup Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-08-14T02:25:06Z",
+          "completed_at": "2026-08-14T02:25:07Z"
+        },
+        {
+          "name": "Setup pnpm",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-08-14T02:25:07Z",
+          "completed_at": "2026-08-14T02:25:08Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-08-14T02:25:08Z",
+          "completed_at": "2026-08-14T02:25:23Z"
+        },
+        {
+          "name": "Build and Deploy Next.js Web",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 6,
+          "started_at": "2026-08-14T02:25:23Z",
+          "completed_at": "2026-08-14T02:25:59Z"
+        },
+        {
+          "name": "Post Setup pnpm",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-08-14T02:25:59Z",
+          "completed_at": "2026-08-14T02:25:59Z"
+        },
+        {
+          "name": "Post Setup Node.js",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 11,
+          "started_at": "2026-08-14T02:25:59Z",
+          "completed_at": "2026-08-14T02:25:59Z"
+        },
+        {
+          "name": "Post Checkout repository",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-08-14T02:25:59Z",
+          "completed_at": "2026-08-14T02:25:59Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-08-14T02:25:59Z",
+          "completed_at": "2026-08-14T02:25:59Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/AbdurRahmanDotTop/Ethsltd/check-runs/94655006836",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000016,
+      "runner_name": "GitHub Actions 1000000016",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}

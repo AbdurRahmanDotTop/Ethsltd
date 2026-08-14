@@ -11759,7 +11759,7 @@ walletRoutes.post("/top-up-paper", async (c) => {
 walletRoutes.get("/balances", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
-  const mode = c.req.query("mode") || "REAL";
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
   const formattedBalances = userWallets.map((w) => {
     const available = parseFloat(w.balance);
@@ -11785,7 +11785,7 @@ walletRoutes.get("/balances", async (c) => {
 walletRoutes.get("/portfolio", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
-  const mode = c.req.query("mode") || "REAL";
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
   let totalValueUsd = 0;
   let availableBalanceUsd = 0;
@@ -11819,7 +11819,7 @@ walletRoutes.get("/portfolio", async (c) => {
 walletRoutes.get("/transactions", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
-  const mode = c.req.query("mode") || "REAL";
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const transactions = await db.select().from(walletTransactions).where(and(eq(walletTransactions.userId, user.id), eq(walletTransactions.mode, mode))).orderBy(desc(walletTransactions.createdAt)).all();
   const mappedTxs = transactions.map((tx) => ({
     id: tx.id,
@@ -12016,7 +12016,7 @@ tradingRoutes.use("*", jwtMiddleware);
 tradingRoutes.get("/orders", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
-  const mode = c.req.query("mode") || "REAL";
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const userOrders = await db.select().from(orders).where(and(eq(orders.userId, user.id), eq(orders.mode, mode))).orderBy(desc(orders.createdAt)).all();
   const formattedOrders = userOrders.map((o) => ({
     id: o.id,
@@ -12035,7 +12035,7 @@ tradingRoutes.get("/orders", async (c) => {
 tradingRoutes.get("/trades", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
-  const mode = c.req.query("mode") || "REAL";
+  const mode = c.req.header("x-trading-mode") || "REAL";
   const userOrders = await db.select().from(orders).where(and(eq(orders.userId, user.id), eq(orders.mode, mode))).all();
   const orderIds = userOrders.map((o) => o.id);
   if (orderIds.length === 0) {
@@ -12064,7 +12064,8 @@ tradingRoutes.post("/orders", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
   const body = await c.req.json();
-  const { market, side, type, amount, price, mode = "REAL" } = body;
+  const mode = c.req.header("x-trading-mode") || "REAL";
+  const { market, side, type, amount, price } = body;
   const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
   if (!marketInfo) {
     return c.json({ success: false, error: "Market not found" }, 400);

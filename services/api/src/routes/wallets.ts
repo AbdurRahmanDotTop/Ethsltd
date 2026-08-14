@@ -72,7 +72,7 @@ walletRoutes.post('/top-up-paper', async (c) => {
 walletRoutes.get('/balances', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = c.req.query('mode') || 'REAL';
+  const mode = c.req.header('x-trading-mode') || 'REAL';
   
   const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
   
@@ -102,7 +102,7 @@ walletRoutes.get('/balances', async (c) => {
 walletRoutes.get('/portfolio', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = c.req.query('mode') || 'REAL';
+  const mode = c.req.header('x-trading-mode') || 'REAL';
   
   const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
   
@@ -145,7 +145,7 @@ walletRoutes.get('/portfolio', async (c) => {
 walletRoutes.get('/transactions', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = c.req.query('mode') || 'REAL';
+  const mode = c.req.header('x-trading-mode') || 'REAL';
   
   const transactions = await db.select().from(walletTransactions)
     .where(and(eq(walletTransactions.userId, user.id), eq(walletTransactions.mode, mode)))

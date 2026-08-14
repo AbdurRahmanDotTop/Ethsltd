@@ -3,6 +3,7 @@ import { User } from '@ethsltd/types';
 export class EthsltdClient {
   private baseUrl: string;
   private token: string | null = null;
+  private mode: 'REAL' | 'PAPER' = 'REAL';
 
   constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || 'https://api.ethsltd-api.workers.dev') {
     this.baseUrl = baseUrl;
@@ -23,6 +24,10 @@ export class EthsltdClient {
     }
   }
 
+  setMode(mode: 'REAL' | 'PAPER') {
+    this.mode = mode;
+  }
+
   private async request<T>(endpoint: string, options?: RequestInit): Promise<{ success: boolean; data?: T; error?: any }> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -32,6 +37,8 @@ export class EthsltdClient {
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
+    
+    headers['X-Trading-Mode'] = this.mode;
 
     try {
       const res = await fetch(`${this.baseUrl}${endpoint}`, {
