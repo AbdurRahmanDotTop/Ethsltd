@@ -1,11 +1,25 @@
+"use client";
+
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { apiClient } from "@ethsltd/api-client";
 
 export function P2PSection() {
-  const p2pAds = [
-    { type: 'Buy', price: '$1.00', payment: 'Zelle', available: '$5,000' },
-    { type: 'Sell', price: '$0.99', payment: 'Bank Transfer', available: '$7,500' },
-  ]
+  const defaultAds = [
+    { type: 'BUY', price: '1.00', paymentMethods: 'Zelle', availableAmount: '5000', assetSymbol: 'USDT' },
+    { type: 'SELL', price: '0.99', paymentMethods: 'Bank Transfer', availableAmount: '7500', assetSymbol: 'USDT' },
+  ];
+
+  const [p2pAds, setP2pAds] = useState<any[]>(defaultAds);
+
+  useEffect(() => {
+    apiClient.getP2pAds().then((res) => {
+      if (res.success && res.data && res.data.length > 0) {
+        setP2pAds(res.data.slice(0, 2));
+      }
+    });
+  }, []);
 
   return (
     <section className="bg-muted py-24">
@@ -40,45 +54,48 @@ export function P2PSection() {
           </div>
           
           <div className="space-y-4">
-            {p2pAds.map((ad, i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-6 hover:border-border transition-colors">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#26A17B] text-white flex items-center justify-center font-bold">
-                      ₮
+            {p2pAds.map((ad, i) => {
+              const isBuy = ad.type.toUpperCase() === 'BUY';
+              return (
+                <div key={i} className="bg-card border border-border rounded-xl p-6 hover:border-border transition-colors">
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full text-white flex items-center justify-center font-bold ${ad.assetSymbol === 'BTC' ? 'bg-[#F7931A]' : ad.assetSymbol === 'ETH' ? 'bg-[#627EEA]' : 'bg-[#26A17B]'}`}>
+                        {ad.assetSymbol === 'BTC' ? '₿' : ad.assetSymbol === 'ETH' ? 'Ξ' : '₮'}
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">{ad.assetSymbol}</h4>
+                        <p className="text-xs text-muted-foreground">{ad.assetSymbol === 'BTC' ? 'Bitcoin' : ad.assetSymbol === 'ETH' ? 'Ethereum' : 'Tether US'}</p>
+                      </div>
+                    </div>
+                    <div className={`px-3 py-1 rounded text-xs font-bold uppercase ${isBuy ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
+                      {ad.type}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Price</p>
+                      <p className="font-mono text-lg font-medium text-foreground">${parseFloat(ad.price).toFixed(2)}</p>
                     </div>
                     <div>
-                      <h4 className="font-medium text-foreground">USDT</h4>
-                      <p className="text-xs text-muted-foreground">Tether US</p>
+                      <p className="text-xs text-muted-foreground mb-1">Available</p>
+                      <p className="font-mono text-sm text-muted-foreground mt-1">${parseFloat(ad.availableAmount || ad.amount || 0).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
+                      <p className="text-sm text-muted-foreground truncate" title={ad.paymentMethods}>{ad.paymentMethods}</p>
                     </div>
                   </div>
-                  <div className={`px-3 py-1 rounded text-xs font-bold uppercase ${ad.type === 'Buy' ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
-                    {ad.type}
-                  </div>
+                  
+                  <Button className="w-full" variant={isBuy ? 'success' : 'destructive'} asChild>
+                    <Link href={`/p2p?type=${ad.type.toLowerCase()}`}>
+                      {ad.type} {ad.assetSymbol}
+                    </Link>
+                  </Button>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Price</p>
-                    <p className="font-mono text-lg font-medium text-foreground">{ad.price}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Available</p>
-                    <p className="font-mono text-sm text-muted-foreground mt-1">{ad.available}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
-                    <p className="text-sm text-muted-foreground">{ad.payment}</p>
-                  </div>
-                </div>
-                
-                <Button className="w-full" variant={ad.type === 'Buy' ? 'success' : 'destructive'} asChild>
-                  <Link href={`/p2p?type=${ad.type.toLowerCase()}`}>
-                    {ad.type} USDT
-                  </Link>
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
