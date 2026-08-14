@@ -19,8 +19,9 @@ export default function AdminDepositsPage() {
       const res = await apiClient.adminGetPendingDeposits();
       
       if (res.success) {
-        setManualDeposits(res.manualDeposits || []);
-        setBankDeposits(res.bankDeposits || []);
+        const data = res as any;
+        setManualDeposits(data.manualDeposits || []);
+        setBankDeposits(data.bankDeposits || []);
       }
     } catch (e) {
       console.error(e);
