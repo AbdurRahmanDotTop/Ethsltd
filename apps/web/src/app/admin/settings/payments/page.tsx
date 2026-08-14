@@ -18,6 +18,18 @@ export default function AdminPaymentSettingsPage() {
   const [editInstructions, setEditInstructions] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  // Add Method State
+  const [isAddMethodModalOpen, setIsAddMethodModalOpen] = useState(false);
+  const [addMethodForm, setAddMethodForm] = useState({
+    method: "MANUAL",
+    enabled: true,
+    min_amount: 10,
+    fee_type: "ZERO",
+    fee_value: 0,
+    display_order: 1,
+    instructions: "{}"
+  });
+
   // Bank Account State
   const [editingBank, setEditingBank] = useState<any | null>(null);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
@@ -107,6 +119,38 @@ export default function AdminPaymentSettingsPage() {
     }
   };
 
+  const handleAddMethod = async () => {
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      if (addMethodForm.method === 'MANUAL') {
+        try { JSON.parse(addMethodForm.instructions); } catch(e) {
+          toast.error("Invalid JSON format for crypto addresses.");
+          setIsSaving(false); return;
+        }
+      }
+
+      const res = await fetch(`http://localhost:8000/api/v1/admin/payments/methods`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(addMethodForm)
+      }).then(r => r.json());
+
+      if (res.success) {
+        toast.success("Payment method added!");
+        setIsAddMethodModalOpen(false);
+        fetchSettings();
+      } else {
+        toast.error(res.error || "Failed to add method");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Error adding method");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleOpenBankModal = (bank: any = null) => {
     if (bank) {
       setEditingBank(bank);
@@ -173,7 +217,10 @@ export default function AdminPaymentSettingsPage() {
       </div>
 
       <div className="space-y-6">
-        <h3 className="text-xl font-semibold">Payment Methods</h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold">Payment Methods</h3>
+          <Button onClick={() => setIsAddMethodModalOpen(true)}>Add Method</Button>
+        </div>
         {loading ? <p>Loading...</p> : methods.map(method => (
           <div key={method.id} className="p-4 border border-border rounded-lg bg-card flex justify-between items-center">
             <div>
@@ -238,6 +285,52 @@ export default function AdminPaymentSettingsPage() {
             <Button variant="outline" onClick={() => setEditingMethod(null)}>Cancel</Button>
             <Button onClick={handleSaveMethod} disabled={isSaving}>
               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Method Modal */}
+      <Dialog open={isAddMethodModalOpen} onOpenChange={setIsAddMethodModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Payment Method</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Method Type</Label>
+              <select 
+                value={addMethodForm.method}
+                onChange={e => setAddMethodForm({...addMethodForm, method: e.target.value})}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="MANUAL">MANUAL (Crypto)</option>
+                <option value="BANK_TRANSFER">BANK TRANSFER</option>
+                <option value="AUTO">AUTO (Payment Gateway)</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Min Deposit Amount (USD)</Label>
+              <Input 
+                type="number" 
+                value={addMethodForm.min_amount} 
+                onChange={e => setAddMethodForm({...addMethodForm, min_amount: parseFloat(e.target.value) || 0})} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Instructions (JSON for MANUAL)</Label>
+              <textarea 
+                value={addMethodForm.instructions} 
+                onChange={e => setAddMethodForm({...addMethodForm, instructions: e.target.value})}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono min-h-[100px]"
+                placeholder={addMethodForm.method === 'MANUAL' ? '{\n  "USDT": "0x...",\n  "BTC": "bc1..."\n}' : "Instructions"}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddMethodModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddMethod} disabled={isSaving}>
+              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Add Method
             </Button>
           </DialogFooter>
         </DialogContent>
