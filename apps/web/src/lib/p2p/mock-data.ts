@@ -1,4 +1,4 @@
-import { P2PAdvertisement, P2PMerchant, P2PAsset, PaymentMethodInfo } from "./types";
+import { P2PAdvertisement, P2PMerchant, P2PAsset, PaymentMethodInfo, P2PExpertProfile, P2PExpertService } from "./types";
 
 export const ASSETS: P2PAsset[] = [
   { symbol: "USDT", name: "Tether", icon: "₮", decimals: 6, status: "active" },
@@ -310,5 +310,107 @@ export const MOCK_ADVERTISEMENTS: P2PAdvertisement[] = [
     terms: "Instant SOL release.",
     status: "online",
     createdAt: "2024-03-07T12:00:00Z"
+  }
+];
+
+export const MOCK_EXPERTS: P2PExpertProfile[] = [
+  {
+    id: "exp_001",
+    userId: "u_101",
+    displayName: "CryptoKing Expert",
+    avatar: "https://i.pravatar.cc/150?u=exp_001",
+    bio: "I have been trading P2P for over 5 years. I specialize in helping new merchants setup their flow securely.",
+    experienceYears: 5,
+    languages: ["English", "Hindi"],
+    categories: ["P2P Trading Guidance", "Merchant Setup Assistance", "Risk Management"],
+    rating: 4.9,
+    completedServices: 120,
+    customersHelped: 105,
+    verificationStatus: "VERIFIED",
+    availabilityStatus: "AVAILABLE",
+    createdAt: "2024-01-15T00:00:00Z"
+  },
+  {
+    id: "exp_002",
+    userId: "u_102",
+    displayName: "Jane P2P Pro",
+    avatar: "https://i.pravatar.cc/150?u=exp_002",
+    bio: "Ex-institutional trader and currently a Top P2P merchant. I teach you how to maximize profits and minimize chargebacks.",
+    experienceYears: 7,
+    languages: ["English", "Spanish"],
+    categories: ["P2P Strategy", "Risk Management", "Trading Education"],
+    rating: 4.8,
+    completedServices: 85,
+    customersHelped: 70,
+    verificationStatus: "VERIFIED",
+    availabilityStatus: "AVAILABLE",
+    createdAt: "2024-02-10T00:00:00Z"
+  },
+  {
+    id: "exp_003",
+    userId: "u_103",
+    displayName: "Satoshi Sensei",
+    avatar: "https://i.pravatar.cc/150?u=exp_003",
+    bio: "Learn everything about crypto basics and how to safely buy your first crypto.",
+    experienceYears: 3,
+    languages: ["English", "Japanese"],
+    categories: ["Crypto Basics", "Payment Method Guidance"],
+    rating: 4.6,
+    completedServices: 40,
+    customersHelped: 40,
+    verificationStatus: "VERIFIED",
+    availabilityStatus: "BUSY",
+    createdAt: "2024-03-20T00:00:00Z"
+  }
+];
+
+export const MOCK_SERVICES: P2PExpertService[] = [
+  {
+    id: "srv_001",
+    expertId: "exp_001",
+    title: "Merchant Setup Consultation",
+    description: "A 60-minute call to help you set up your merchant account, configure payment methods safely, and establish a process to avoid fraud.",
+    category: "Merchant Setup Assistance",
+    duration: 60,
+    price: 999,
+    currency: "INR",
+    pricingType: "FIXED",
+    status: "ACTIVE"
+  },
+  {
+    id: "srv_002",
+    expertId: "exp_001",
+    title: "P2P Beginner Guidance",
+    description: "Learn how to buy and sell on P2P without getting scammed.",
+    category: "P2P Trading Guidance",
+    duration: 30,
+    price: 499,
+    currency: "INR",
+    pricingType: "FIXED",
+    status: "ACTIVE"
+  },
+  {
+    id: "srv_003",
+    expertId: "exp_002",
+    title: "Advanced P2P Strategy & Risk Management",
+    description: "Deep dive into chargeback defense and identifying scam patterns before releasing escrow.",
+    category: "Risk Management",
+    duration: 45,
+    price: 75,
+    currency: "USD",
+    pricingType: "FIXED",
+    status: "ACTIVE"
+  },
+  {
+    id: "srv_004",
+    expertId: "exp_003",
+    title: "Crypto Wallet Setup & Basics",
+    description: "A secure session where I help you understand seed phrases and set up your self-custody wallet.",
+    category: "Crypto Basics",
+    duration: 30,
+    price: 500,
+    currency: "INR",
+    pricingType: "FIXED",
+    status: "ACTIVE"
   }
 ];

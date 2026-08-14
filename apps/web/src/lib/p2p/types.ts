@@ -129,3 +129,49 @@ export type PaymentMethodInfo = {
   currency: string[];
   enabled: boolean;
 };
+
+export type P2PExpertProfile = {
+  id: string;
+  userId: string;
+  displayName: string;
+  avatar?: string;
+  bio: string;
+  experienceYears: number;
+  languages: string[];
+  categories: string[];
+  rating: number;
+  completedServices: number;
+  customersHelped: number;
+  verificationStatus: "VERIFIED" | "PENDING" | "UNVERIFIED";
+  availabilityStatus: "AVAILABLE" | "BUSY" | "OFFLINE";
+  createdAt: string;
+};
+
+export type P2PExpertService = {
+  id: string;
+  expertId: string;
+  title: string;
+  description: string;
+  category: string;
+  duration: number; // in minutes
+  price: number;
+  currency: string; // e.g. "INR", "USD"
+  pricingType: "FIXED" | "PER_HOUR" | "CUSTOM";
+  status: "ACTIVE" | "PAUSED" | "DELETED";
+};
+
+export type P2PExpertBooking = {
+  id: string;
+  bookingNo: string;
+  expertId: string;
+  customerId: string;
+  serviceId: string;
+  scheduledAt: string;
+  duration: number;
+  amount: number;
+  currency: string;
+  paymentStatus: "PENDING" | "PAID" | "HELD" | "REFUNDED";
+  bookingStatus: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "DISPUTED";
+  meetingMethod: string;
+  createdAt: string;
+};
