@@ -20,6 +20,8 @@ authRoutes.post('/register', async (c) => {
   const body = await c.req.json();
   const db = c.get('db');
   
+  try {
+  
   const existingUser = await db.select().from(users).where(eq(users.email, body.email)).get();
   if (existingUser) {
     return c.json({ success: false, error: 'Email already in use' }, 400);
@@ -74,6 +76,9 @@ authRoutes.post('/register', async (c) => {
   const user = await db.select().from(users).where(eq(users.id, userId)).get();
 
   return c.json({ success: true, token, data: { user } });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message, stack: err.stack }, 500);
+  }
 });
 
 authRoutes.post('/login', async (c) => {
