@@ -15,8 +15,18 @@ export function P2PSection() {
 
   useEffect(() => {
     apiClient.getP2pAds().then((res) => {
-      if (res.success && res.data && res.data.length > 0) {
-        setP2pAds(res.data.slice(0, 2));
+      if (res.success && res.data) {
+        const buyAd = res.data.find((ad: any) => ad.type.toUpperCase() === 'BUY');
+        const sellAd = res.data.find((ad: any) => ad.type.toUpperCase() === 'SELL');
+        
+        const newAds = [];
+        if (buyAd) newAds.push(buyAd);
+        else newAds.push(defaultAds[0]);
+        
+        if (sellAd) newAds.push(sellAd);
+        else newAds.push(defaultAds[1]);
+        
+        setP2pAds(newAds);
       }
     });
   }, []);
