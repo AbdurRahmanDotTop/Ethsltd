@@ -5,12 +5,13 @@ import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
 import { KycApplication } from "@/lib/admin/types";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { apiClient } from "@ethsltd/api-client";
-import { Filter } from "lucide-react";
+import { Filter, Eye, X, CheckCircle, XCircle } from "lucide-react";
 
 export default function AdminKycPage() {
   const [kycApps, setKycApps] = useState<KycApplication[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [selectedApp, setSelectedApp] = useState<KycApplication | null>(null);
   
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("PENDING");
@@ -81,32 +82,40 @@ export default function AdminKycPage() {
       accessor: (row) => (
         <div className="flex gap-2">
           <button 
-            className="text-xs font-medium text-green-600 hover:underline"
-            onClick={async () => {
-              if (confirm('Approve KYC?')) {
-                await apiClient.updateAdminKYCStatus(row.id, 'APPROVED');
-                window.location.reload();
-              }
-            }}
+            className="text-xs font-medium text-brand-primary hover:underline flex items-center gap-1"
+            onClick={() => setSelectedApp(row)}
           >
-            Approve
-          </button>
-          <button 
-            className="text-xs font-medium text-red-600 hover:underline"
-            onClick={async () => {
-              const reason = prompt('Rejection reason:');
-              if (reason !== null) {
-                await apiClient.updateAdminKYCStatus(row.id, 'REJECTED', reason);
-                window.location.reload();
-              }
-            }}
-          >
-            Reject
+            <Eye className="w-3 h-3" /> View Details
           </button>
         </div>
       )
     }
   ];
+
+  const handleApprove = async (id: string) => {
+    if (confirm('Approve this KYC application?')) {
+      await apiClient.updateAdminKYCStatus(id, 'APPROVED');
+      setSelectedApp(null);
+      setLoading(true);
+      const res = await apiClient.getAdminPendingKYC();
+      setKycApps(res.data || []);
+      setTotal(res.data?.length || 0);
+      setLoading(false);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    const reason = prompt('Please enter the reason for rejection:');
+    if (reason !== null) {
+      await apiClient.updateAdminKYCStatus(id, 'REJECTED', reason);
+      setSelectedApp(null);
+      setLoading(true);
+      const res = await apiClient.getAdminPendingKYC();
+      setKycApps(res.data || []);
+      setTotal(res.data?.length || 0);
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
@@ -149,6 +158,123 @@ export default function AdminKycPage() {
           onPageChange={setPage}
         />
       </div>
+
+      {/* KYC Details Modal */}
+      {selectedApp && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
+              <h3 className="text-xl font-bold">KYC Application Details</h3>
+              <button 
+                onClick={() => setSelectedApp(null)}
+                className="p-2 hover:bg-muted rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-4">Personal Information</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-xs text-muted-foreground block">Full Name</span>
+                      <span className="font-medium">{selectedApp.firstName} {selectedApp.lastName}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground block">Date of Birth</span>
+                      <span className="font-medium">{selectedApp.dateOfBirth}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground block">Country</span>
+                      <span className="font-medium">{selectedApp.country}</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-4">Document Details</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-xs text-muted-foreground block">Document Type</span>
+                      <span className="font-medium capitalize">{selectedApp.documentType.replace('_', ' ').toLowerCase()}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground block">Document Number</span>
+                      <span className="font-mono">{selectedApp.documentNumber}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground block">User ID</span>
+                      <span className="font-mono text-xs">{selectedApp.userId}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-4">Submitted Documents</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="border border-border rounded-lg overflow-hidden flex flex-col">
+                    <div className="bg-muted/30 px-3 py-2 text-xs font-medium border-b border-border">Document Front</div>
+                    <div className="p-2 flex-1 flex items-center justify-center bg-black/5">
+                      {selectedApp.documentFrontUrl ? (
+                        <img src={selectedApp.documentFrontUrl} alt="Document Front" className="max-h-48 object-contain" />
+                      ) : (
+                        <span className="text-muted-foreground text-xs italic">No image provided</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="border border-border rounded-lg overflow-hidden flex flex-col">
+                    <div className="bg-muted/30 px-3 py-2 text-xs font-medium border-b border-border">Document Back</div>
+                    <div className="p-2 flex-1 flex items-center justify-center bg-black/5">
+                      {selectedApp.documentBackUrl ? (
+                        <img src={selectedApp.documentBackUrl} alt="Document Back" className="max-h-48 object-contain" />
+                      ) : (
+                        <span className="text-muted-foreground text-xs italic">No image provided</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="border border-border rounded-lg overflow-hidden flex flex-col">
+                    <div className="bg-muted/30 px-3 py-2 text-xs font-medium border-b border-border">Selfie</div>
+                    <div className="p-2 flex-1 flex items-center justify-center bg-black/5">
+                      {selectedApp.selfieUrl ? (
+                        <img src={selectedApp.selfieUrl} alt="Selfie" className="max-h-48 object-contain" />
+                      ) : (
+                        <span className="text-muted-foreground text-xs italic">No image provided</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-border flex justify-end gap-3 sticky bottom-0 bg-card z-10">
+              <button 
+                onClick={() => setSelectedApp(null)}
+                className="px-4 py-2 border border-border rounded-md text-sm font-medium hover:bg-muted"
+              >
+                Close
+              </button>
+              {selectedApp.status === 'PENDING' && (
+                <>
+                  <button 
+                    onClick={() => handleReject(selectedApp.id)}
+                    className="px-4 py-2 bg-destructive/10 text-destructive border border-destructive/20 rounded-md text-sm font-medium hover:bg-destructive hover:text-white flex items-center gap-2 transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" /> Reject
+                  </button>
+                  <button 
+                    onClick={() => handleApprove(selectedApp.id)}
+                    className="px-4 py-2 bg-green-500/10 text-green-600 border border-green-500/20 rounded-md text-sm font-medium hover:bg-green-600 hover:text-white flex items-center gap-2 transition-colors"
+                  >
+                    <CheckCircle className="w-4 h-4" /> Approve
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
