@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileSignature, CheckCircle, Clock, ShieldCheck, FileText, Check, AlertCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,15 @@ import { FilePreview } from "@/components/ui/file-preview";
 const now = new Date();
 const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
 // Mock User Contracts
 const MOCK_USER_CONTRACTS = [
   { id: "CNT-8902", type: "OTC Master Agreement", status: "pending_approval", issuedAt: daysAgo(2), signedAt: daysAgo(1), signedName: "Abdur Rahman", signatureUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iNTAiPjx0ZXh0IHk9IjMwIiBmb250LWZhbWlseT0iY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCI+QWJkdXIgUmFobWFuPC90ZXh0Pjwvc3ZnPg==" },
@@ -18,16 +27,42 @@ const MOCK_USER_CONTRACTS = [
 ];
 
 export default function UserContractsPage() {
-  const [contracts, setContracts] = useState(MOCK_USER_CONTRACTS);
+  const [contracts, setContracts] = useState<any[]>(MOCK_USER_CONTRACTS);
+  const [isClient, setIsClient] = useState(false);
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [isSigning, setIsSigning] = useState(false);
   const [hasAgreed, setHasAgreed] = useState(false);
   const [signatureImage, setSignatureImage] = useState<File | null>(null);
   const [fullName, setFullName] = useState("");
 
-  const handleSign = (id: string) => {
+  useEffect(() => {
+    setIsClient(true);
+    const saved = localStorage.getItem('mock_contracts');
+    if (saved) {
+      try {
+        setContracts(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse saved contracts");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem('mock_contracts', JSON.stringify(contracts));
+    }
+  }, [contracts, isClient]);
+
+  const handleSign = async (id: string) => {
     setIsSigning(true);
-    const sigUrl = signatureImage ? URL.createObjectURL(signatureImage) : "";
+    let sigUrl = "";
+    if (signatureImage) {
+      try {
+        sigUrl = await fileToBase64(signatureImage);
+      } catch (e) {
+        console.error("Failed to read image");
+      }
+    }
     const sName = fullName;
     setTimeout(() => {
       setContracts(prev => prev.map(c => 
@@ -49,6 +84,8 @@ export default function UserContractsPage() {
       default: return null;
     }
   };
+
+  if (!isClient) return null;
 
   return (
     <div className="space-y-6">

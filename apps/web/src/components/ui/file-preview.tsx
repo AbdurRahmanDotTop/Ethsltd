@@ -12,7 +12,7 @@ export function FilePreview({ file, className = "" }: { file: File | string | nu
     }
     
     if (typeof file === "string") {
-      if (!file.startsWith('http') && !file.startsWith('/') && !file.startsWith('data:') && file.length > 50) {
+      if (!file.startsWith('http') && !file.startsWith('/') && !file.startsWith('data:') && !file.startsWith('blob:') && file.length > 50) {
         if (file.startsWith('JVBERi')) {
           setPreviewUrl(`data:application/pdf;base64,${file}`);
         } else {
