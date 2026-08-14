@@ -97,16 +97,12 @@ export function Header() {
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="max-w-[1280px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4 overflow-x-auto scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-          <style dangerouslySetInnerHTML={{__html: `
-            .scrollbar-hide::-webkit-scrollbar { display: none; }
-          `}} />
-          <div className="flex items-center gap-6 shrink-0">
+        <div className="max-w-[1280px] mx-auto px-4 py-3 md:px-8 min-h-[4rem] flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3 shrink-0">
             <Link href="/" className="font-display font-bold text-xl text-foreground tracking-tight shrink-0">
               ETHSLTD
             </Link>
-            
-            <nav className="flex items-center gap-4 sm:gap-6 shrink-0">
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 shrink-0">
               <Link href="/markets" className={`text-sm font-medium transition-colors ${pathname === '/markets' ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground'}`}>Markets</Link>
               <Link href="/trade" className={`text-sm font-medium transition-colors ${pathname.startsWith('/trade') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Trade</Link>
               <Link href="/p2p" className={`text-sm font-medium transition-colors ${pathname.startsWith('/p2p') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>P2P</Link>
@@ -142,7 +138,7 @@ export function Header() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 shrink-0">
             <button className="text-muted-foreground hover:text-foreground transition-colors w-9 h-9 flex items-center justify-center shrink-0">
               <Search className="h-5 w-5" />
             </button>
@@ -205,7 +201,6 @@ export function Header() {
             )}
           </div>
 
-          </div>
         </div>
       </div>
 
