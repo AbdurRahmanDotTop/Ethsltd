@@ -92,7 +92,7 @@ export function AdminHeader() {
                   View Profile
                 </Link>
                 <Link 
-                  href="/dashboard" 
+                  href="/account" 
                   onClick={() => setIsDropdownOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
                 >
