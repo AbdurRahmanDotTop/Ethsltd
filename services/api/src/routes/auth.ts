@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { sign } from 'hono/jwt';
 import { eq, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { users, sessions } from 'database';
+import { users, sessions, wallets } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const authRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -48,6 +48,26 @@ authRoutes.post('/register', async (c) => {
     ipAddress: c.req.header('x-real-ip') || c.req.header('x-forwarded-for') || 'Unknown',
     createdAt: now,
   });
+
+  // Auto-fund paper trading wallets for new user
+  const initialPaperFunds = [
+    { assetSymbol: 'USDT', amount: '100000' },
+    { assetSymbol: 'BTC', amount: '10' },
+    { assetSymbol: 'ETH', amount: '100' }
+  ];
+
+  for (const fund of initialPaperFunds) {
+    await db.insert(wallets).values({
+      id: crypto.randomUUID(),
+      userId: userId,
+      assetSymbol: fund.assetSymbol,
+      type: 'PAPER',
+      balance: fund.amount,
+      lockedBalance: '0',
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 
   const token = await sign({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }, JWT_SECRET);
 

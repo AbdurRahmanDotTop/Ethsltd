@@ -13,6 +13,10 @@ Currently, the platform has a frontend toggle for Real/Paper trading. However, t
   - Automatically refetch all relevant user data (wallet balances, order history, active trades) when the mode is toggled.
 - **Frontend API Client**:
   - Update the `@ethsltd/api-client` to accept and send the active trading mode with every authenticated request (e.g., via an `X-Trading-Mode` HTTP header).
+- **P2P Demo Banner Visibility**:
+  - Ensure the "P2P Demo Mode" banner only appears if the user has explicitly turned on the Paper Trading toggle (`mode === 'PAPER'`). It should remain hidden in Real Trading mode.
+- **Paper Trading Auto-Funding**:
+  - Upon user signup (registration), automatically seed their "PAPER" wallet with demo funds (e.g. 100,000 USDT, 10 BTC, 100 ETH) so they can immediately test trading strategies risk-free.
 - **Backend API (`services/api`)**:
   - Update all Wallet endpoints (balances, deposits, withdrawals, history) to filter and mutate data based on the requested `mode`.
   - Update all Trading endpoints (order creation, order history, active trades) to respect the `mode`.

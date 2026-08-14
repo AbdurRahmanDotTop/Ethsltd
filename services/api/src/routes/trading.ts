@@ -43,13 +43,16 @@ tradingRoutes.get('/markets', async (c) => {
     return {
       id: m.symbol,
       symbol: m.symbol,
+      name: m.symbol,
       baseAsset: m.baseAsset,
       quoteAsset: m.quoteAsset,
-      lastPrice: currentPrice,
-      change24h: 0,
+      price: currentPrice,
+      priceChange24h: 0,
       high24h: currentPrice * 1.02,
       low24h: currentPrice * 0.98,
       volume24h: 1000000,
+      sparkline: [currentPrice, currentPrice * 1.01, currentPrice * 0.99, currentPrice],
+      isNew: false
     };
   });
   

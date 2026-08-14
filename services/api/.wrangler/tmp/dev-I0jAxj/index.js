@@ -11614,6 +11614,23 @@ authRoutes.post("/register", async (c) => {
     ipAddress: c.req.header("x-real-ip") || c.req.header("x-forwarded-for") || "Unknown",
     createdAt: now
   });
+  const initialPaperFunds = [
+    { assetSymbol: "USDT", amount: "100000" },
+    { assetSymbol: "BTC", amount: "10" },
+    { assetSymbol: "ETH", amount: "100" }
+  ];
+  for (const fund of initialPaperFunds) {
+    await db.insert(wallets).values({
+      id: crypto.randomUUID(),
+      userId,
+      assetSymbol: fund.assetSymbol,
+      type: "PAPER",
+      balance: fund.amount,
+      lockedBalance: "0",
+      createdAt: now,
+      updatedAt: now
+    });
+  }
   const token = await sign2({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1e3) + 60 * 60 * 24 }, JWT_SECRET);
   const user = await db.select().from(users).where(eq(users.id, userId)).get();
   return c.json({ success: true, token, data: { user } });
@@ -11941,13 +11958,16 @@ tradingRoutes.get("/markets", async (c) => {
     return {
       id: m.symbol,
       symbol: m.symbol,
+      name: m.symbol,
       baseAsset: m.baseAsset,
       quoteAsset: m.quoteAsset,
-      lastPrice: currentPrice,
-      change24h: 0,
+      price: currentPrice,
+      priceChange24h: 0,
       high24h: currentPrice * 1.02,
       low24h: currentPrice * 0.98,
-      volume24h: 1e6
+      volume24h: 1e6,
+      sparkline: [currentPrice, currentPrice * 1.01, currentPrice * 0.99, currentPrice],
+      isNew: false
     };
   });
   return c.json({ success: true, data: formattedMarkets });
