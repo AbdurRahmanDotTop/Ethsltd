@@ -30,13 +30,20 @@ export interface AdminUser {
 export interface KycApplication {
   id: string;
   userId: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
   country: string;
   documentType: "PASSPORT" | "ID_CARD" | "DRIVERS_LICENSE";
-  riskLevel: "LOW" | "MEDIUM" | "HIGH";
-  submittedAt: string;
-  status: "PENDING" | "UNDER_REVIEW" | "VERIFIED" | "REJECTED";
-  assignedAdmin?: string;
+  documentNumber: string;
+  documentFrontUrl: string;
+  documentBackUrl?: string;
+  selfieUrl: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  rejectionReason?: string;
+  reviewedBy?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FinancialTransaction {
