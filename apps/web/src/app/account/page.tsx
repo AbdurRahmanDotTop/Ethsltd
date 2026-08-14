@@ -44,9 +44,11 @@ export default function AccountOverviewPage() {
             <div className="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center">
               <User className="w-6 h-6" />
             </div>
-            <div>
-              <h3 className="font-semibold text-lg">{user.displayName || user.email.split('@')[0]}</h3>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-lg truncate" title={user.displayName || user.email.split('@')[0]}>
+                {user.displayName || user.email.split('@')[0]}
+              </h3>
+              <p className="text-sm text-muted-foreground truncate" title={user.email}>{user.email}</p>
             </div>
           </div>
           <div className="space-y-3 pt-4 border-t border-border">
@@ -54,9 +56,9 @@ export default function AccountOverviewPage() {
               <span className="text-muted-foreground">Status</span>
               <span className="font-medium text-green-600 dark:text-green-500 capitalize">{user.status.toLowerCase()}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Account ID</span>
-              <span className="font-mono text-xs">{user.id}</span>
+            <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
+              <span className="text-muted-foreground whitespace-nowrap">Account ID</span>
+              <span className="font-mono text-[11px] break-all sm:text-right">{user.id}</span>
             </div>
           </div>
           <Button variant="outline" className="w-full mt-6" asChild>
