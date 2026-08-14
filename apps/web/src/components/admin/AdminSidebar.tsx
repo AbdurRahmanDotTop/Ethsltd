@@ -76,7 +76,7 @@ export function AdminSidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-card border-r border-border hidden xl:flex flex-col h-[calc(100vh-64px)] sticky top-16 overflow-y-auto custom-scrollbar">
+    <aside className="w-64 bg-card border-r border-border hidden xl:flex flex-col h-full overflow-y-auto custom-scrollbar">
       <div className="p-4 space-y-3">
         {navGroups.map((group) => (
           <div key={group.title}>
