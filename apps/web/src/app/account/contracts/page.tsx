@@ -1,14 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { FileSignature, CheckCircle, Clock, ShieldCheck, FileText, Check, AlertCircle } from "lucide-react";
+import { FileSignature, CheckCircle, Clock, ShieldCheck, FileText, Check, AlertCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const now = new Date();
+const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 
 // Mock User Contracts
 const MOCK_USER_CONTRACTS = [
-  { id: "CNT-8902", type: "OTC Master Agreement", status: "pending_approval", issuedAt: "2026-08-12T10:00:00Z", signedAt: "2026-08-14T09:15:22Z" },
-  { id: "CNT-8903", type: "Margin Trading Facility", status: "pending_signature", issuedAt: "2026-08-13T14:30:00Z" },
-  { id: "CNT-7100", type: "API Trading Access Terms", status: "approved", issuedAt: "2026-05-01T10:00:00Z", signedAt: "2026-05-02T11:11:00Z" }
+  { id: "CNT-8902", type: "OTC Master Agreement", status: "pending_approval", issuedAt: daysAgo(2), signedAt: daysAgo(1) },
+  { id: "CNT-8903", type: "Margin Trading Facility", status: "pending_signature", issuedAt: daysAgo(1) },
+  { id: "CNT-7100", type: "API Trading Access Terms", status: "approved", issuedAt: daysAgo(100), signedAt: daysAgo(99) }
 ];
 
 export default function UserContractsPage() {
@@ -16,6 +21,8 @@ export default function UserContractsPage() {
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [isSigning, setIsSigning] = useState(false);
   const [hasAgreed, setHasAgreed] = useState(false);
+  const [signatureImage, setSignatureImage] = useState<File | null>(null);
+  const [fullName, setFullName] = useState("");
 
   const handleSign = (id: string) => {
     setIsSigning(true);
@@ -26,6 +33,8 @@ export default function UserContractsPage() {
       setIsSigning(false);
       setSelectedContract(null);
       setHasAgreed(false);
+      setSignatureImage(null);
+      setFullName("");
     }, 1500);
   };
 
@@ -131,18 +140,41 @@ export default function UserContractsPage() {
               </div>
 
               {selectedContract.status === 'pending_signature' && (
-                <label className="flex items-start gap-3 cursor-pointer p-4 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors">
-                  <input 
-                    type="checkbox" 
-                    className="mt-1 w-4 h-4 rounded border-border text-brand-primary focus:ring-brand-primary"
-                    checked={hasAgreed}
-                    onChange={(e) => setHasAgreed(e.target.checked)}
-                  />
-                  <div className="text-sm">
-                    <p className="font-semibold">I acknowledge and agree to the terms above.</p>
-                    <p className="text-muted-foreground text-xs mt-1">My IP address and a cryptographic timestamp will be recorded.</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border border-border rounded-lg bg-muted/20">
+                    <div className="space-y-3">
+                      <Label htmlFor="fullName">Full Legal Name *</Label>
+                      <Input 
+                        id="fullName" 
+                        placeholder="Type your exact legal name"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <Label>Digital Signature (Image) *</Label>
+                      <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                        <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                        <span className="text-xs text-primary font-semibold">Upload Signature</span>
+                        <input type="file" accept="image/*" className="sr-only" onChange={(e) => setSignatureImage(e.target.files?.[0] || null)} />
+                      </label>
+                      {signatureImage && <p className="text-xs text-green-500 font-medium truncate text-center">{signatureImage.name}</p>}
+                    </div>
                   </div>
-                </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-4 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors">
+                    <input 
+                      type="checkbox" 
+                      className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                      checked={hasAgreed}
+                      onChange={(e) => setHasAgreed(e.target.checked)}
+                    />
+                    <div className="text-sm">
+                      <p className="font-semibold">I acknowledge and agree to the terms above.</p>
+                      <p className="text-muted-foreground text-xs mt-1">My IP address and a cryptographic timestamp will be recorded.</p>
+                    </div>
+                  </label>
+                </div>
               )}
 
               {selectedContract.signedAt && (
@@ -162,6 +194,8 @@ export default function UserContractsPage() {
                 onClick={() => {
                   setSelectedContract(null);
                   setHasAgreed(false);
+                  setSignatureImage(null);
+                  setFullName("");
                 }}
                 disabled={isSigning}
               >
@@ -171,7 +205,7 @@ export default function UserContractsPage() {
               {selectedContract.status === 'pending_signature' && (
                 <Button 
                   onClick={() => handleSign(selectedContract.id)}
-                  disabled={!hasAgreed || isSigning}
+                  disabled={!hasAgreed || !fullName.trim() || !signatureImage || isSigning}
                 >
                   {isSigning ? (
                     <span className="flex items-center"><Clock className="w-4 h-4 mr-2 animate-spin" /> Processing...</span>
