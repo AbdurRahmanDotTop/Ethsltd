@@ -97,18 +97,41 @@ export default function AdminUsersPage() {
     {
       header: "Actions",
       accessor: (row) => (
-        <select 
-          className="text-xs bg-muted border border-border rounded p-1"
-          value={row.status}
-          onChange={async (e) => {
-            await apiClient.updateAdminUserStatus(row.id, e.target.value);
-            window.location.reload();
-          }}
-        >
-          <option value="ACTIVE">ACTIVE</option>
-          <option value="FROZEN">FROZEN</option>
-          <option value="BANNED">BANNED</option>
-        </select>
+        <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+          <select 
+            className="text-xs bg-muted border border-border rounded p-1"
+            value={row.status}
+            onChange={async (e) => {
+              try {
+                await apiClient.updateAdminUserStatus(row.id, e.target.value);
+                window.location.reload();
+              } catch(err) {
+                alert("Failed to update status");
+              }
+            }}
+          >
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="FROZEN">FROZEN</option>
+            <option value="BANNED">BANNED</option>
+          </select>
+          <select 
+            className="text-xs bg-muted border border-border rounded p-1"
+            value={row.role}
+            onChange={async (e) => {
+              try {
+                await apiClient.updateAdminUserRole(row.id, e.target.value);
+                window.location.reload();
+              } catch(err) {
+                alert("Failed to update role");
+              }
+            }}
+          >
+            <option value="USER">USER</option>
+            <option value="SUPPORT_ADMIN">SUPPORT_ADMIN</option>
+            <option value="COMPLIANCE_ADMIN">COMPLIANCE_ADMIN</option>
+            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+          </select>
+        </div>
       )
     }
   ];

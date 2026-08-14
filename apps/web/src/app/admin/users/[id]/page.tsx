@@ -10,15 +10,23 @@ import { ChevronLeft, ShieldAlert, Ban, Unlock, Activity, Wallet, Info, Handshak
 export default function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [user, setUser] = useState<AdminUser | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("Activity");
+
+  // Wallet Adjust State
+  const [assetSymbol, setAssetSymbol] = useState("USDT");
+  const [walletType, setWalletType] = useState<"REAL"|"PAPER">("REAL");
+  const [adjustAction, setAdjustAction] = useState<"CREDIT"|"DEBIT">("CREDIT");
+  const [adjustAmount, setAdjustAmount] = useState("");
+  const [isAdjusting, setIsAdjusting] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
         const res = await apiClient.getAdminUsers({ search: id, limit: 1 });
-        if (res.success && res.data.items.length > 0) {
-          setUser(res.data.items[0]);
+        if (res.success && res.data && res.data.length > 0) {
+          setUser(res.data[0]);
         }
       } catch (e) {
         console.error(e);
@@ -88,7 +96,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-2xl font-bold">{user.name}</h2>
+              <h2 className="text-2xl font-bold">{user.displayName || 'Unknown User'}</h2>
               <p className="text-muted-foreground font-mono text-sm">{user.email}</p>
             </div>
           </div>
@@ -104,9 +112,23 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                 <Unlock className="w-4 h-4" /> Unfreeze Account
               </button>
             )}
-            <button className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 text-foreground border border-border rounded-md transition-colors text-sm font-medium">
-              Reset Security
-            </button>
+            <select 
+              className="text-sm bg-muted border border-border rounded px-3 py-2 font-medium"
+              value={user.role}
+              onChange={async (e) => {
+                try {
+                  await apiClient.updateAdminUserRole(user.id, e.target.value);
+                  setUser({ ...user, role: e.target.value });
+                } catch(err) {
+                  alert("Failed to update role");
+                }
+              }}
+            >
+              <option value="USER">USER</option>
+              <option value="SUPPORT_ADMIN">SUPPORT_ADMIN</option>
+              <option value="COMPLIANCE_ADMIN">COMPLIANCE_ADMIN</option>
+              <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+            </select>
           </div>
         </div>
       </div>
@@ -191,14 +213,80 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
 
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <div className="border-b border-border bg-muted/30 px-4 py-3 flex gap-6">
-              <button className="text-sm font-medium text-brand-primary border-b-2 border-brand-primary pb-1">Activity</button>
-              <button className="text-sm font-medium text-muted-foreground hover:text-foreground pb-1">Balances</button>
-              <button className="text-sm font-medium text-muted-foreground hover:text-foreground pb-1">Orders</button>
-              <button className="text-sm font-medium text-muted-foreground hover:text-foreground pb-1">Transfers</button>
+              {["Activity", "Balances", "Orders", "Transfers"].map(tab => (
+                <button 
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`text-sm font-medium pb-1 ${activeTab === tab ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
-            <div className="p-8 text-center text-muted-foreground flex flex-col items-center">
-              <Info className="w-8 h-8 mb-3 opacity-50" />
-              <p>Activity timeline module will be connected to the Ledger Service in Phase 3.</p>
+            
+            <div className="p-6">
+              {activeTab === "Balances" ? (
+                <div className="space-y-4 max-w-md">
+                  <h3 className="font-semibold text-lg">Super Admin: Manual Balance Adjustment</h3>
+                  <p className="text-sm text-muted-foreground">Force-update user balances for dispute resolution or correction.</p>
+                  
+                  <div className="space-y-3 p-4 bg-muted/20 border border-border rounded-lg">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Asset Symbol</label>
+                        <input type="text" value={assetSymbol} onChange={e => setAssetSymbol(e.target.value.toUpperCase())} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="USDT" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Wallet Type</label>
+                        <select value={walletType} onChange={e => setWalletType(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
+                          <option value="REAL">REAL</option>
+                          <option value="PAPER">PAPER</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Action</label>
+                        <select value={adjustAction} onChange={e => setAdjustAction(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
+                          <option value="CREDIT">CREDIT (+)</option>
+                          <option value="DEBIT">DEBIT (-)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Amount</label>
+                        <input type="number" min="0" step="0.000001" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="100.00" />
+                      </div>
+                    </div>
+                    <button 
+                      disabled={isAdjusting || !adjustAmount || parseFloat(adjustAmount) <= 0}
+                      onClick={async () => {
+                        setIsAdjusting(true);
+                        try {
+                          const res = await apiClient.adjustAdminUserWallet(user.id, assetSymbol, adjustAmount, walletType, adjustAction);
+                          if (res.success) {
+                            alert("Balance adjusted successfully!");
+                            setAdjustAmount("");
+                          } else {
+                            alert("Error: " + res.error);
+                          }
+                        } catch (err: any) {
+                          alert("Failed: " + err.message);
+                        } finally {
+                          setIsAdjusting(false);
+                        }
+                      }}
+                      className="w-full mt-4 bg-brand-primary text-primary-foreground py-2 rounded-md font-medium text-sm hover:opacity-90 disabled:opacity-50"
+                    >
+                      {isAdjusting ? 'Processing...' : 'Confirm Adjustment'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground flex flex-col items-center py-8">
+                  <Info className="w-8 h-8 mb-3 opacity-50" />
+                  <p>Module will be connected to the Ledger Service in Phase 3.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

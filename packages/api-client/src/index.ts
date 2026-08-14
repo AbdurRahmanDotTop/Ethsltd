@@ -270,8 +270,22 @@ export class EthsltdClient {
 
   async updateAdminUserStatus(userId: string, status: string) {
     return this.request<any>(`/api/v1/admin/users/${userId}/status`, {
-      method: 'PATCH',
+      method: 'POST',
       body: JSON.stringify({ status }),
+    });
+  }
+
+  async updateAdminUserRole(userId: string, role: string) {
+    return this.request<any>(`/api/v1/admin/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    });
+  }
+
+  async adjustAdminUserWallet(userId: string, assetSymbol: string, amount: string, type: 'REAL' | 'PAPER', action: 'CREDIT' | 'DEBIT') {
+    return this.request<any>(`/api/v1/admin/users/${userId}/wallets/adjust`, {
+      method: 'POST',
+      body: JSON.stringify({ assetSymbol, amount, type, action }),
     });
   }
 

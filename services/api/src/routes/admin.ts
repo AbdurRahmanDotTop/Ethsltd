@@ -12,7 +12,7 @@ adminRoutes.use('*', jwtMiddleware);
 // Admin Middleware Check
 adminRoutes.use('*', async (c, next) => {
   const user = c.get('user');
-  if (user.role !== 'ADMIN') {
+  if (!['SUPER_ADMIN', 'COMPLIANCE_ADMIN', 'SUPPORT_ADMIN', 'ADMIN'].includes(user.role)) {
     return c.json({ success: false, error: 'Unauthorized: Admin access required' }, 403);
   }
   await next();
@@ -67,8 +67,13 @@ adminRoutes.get('/users', async (c) => {
 // POST /api/v1/admin/users/:id/status
 adminRoutes.post('/users/:id/status', async (c) => {
   const db = c.get('db');
+  const admin = c.get('user');
   const userId = c.req.param('id');
   const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can change user status' }, 403);
+  }
   
   if (!['ACTIVE', 'FROZEN', 'BANNED'].includes(body.status)) {
     return c.json({ success: false, error: 'Invalid status' }, 400);
@@ -79,6 +84,85 @@ adminRoutes.post('/users/:id/status', async (c) => {
     return c.json({ success: true });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to update user status' }, 500);
+  }
+});
+
+// PUT /api/v1/admin/users/:id/role
+adminRoutes.put('/users/:id/role', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const userId = c.req.param('id');
+  const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can change user roles' }, 403);
+  }
+
+  if (!['USER', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN', 'SUPER_ADMIN'].includes(body.role)) {
+    return c.json({ success: false, error: 'Invalid role' }, 400);
+  }
+
+  try {
+    await db.update(users).set({ role: body.role, updatedAt: new Date() }).where(eq(users.id, userId));
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update user role' }, 500);
+  }
+});
+
+// POST /api/v1/admin/users/:id/wallets/adjust
+adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const userId = c.req.param('id');
+  const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can adjust balances' }, 403);
+  }
+
+  const { assetSymbol, amount, type, action } = body;
+
+  try {
+    const { and, eq } = require('drizzle-orm');
+    const { wallets } = require('database');
+    
+    let wallet = await db.select().from(wallets).where(
+      and(eq(wallets.userId, userId), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, type))
+    ).get();
+
+    if (!wallet) {
+      if (action === 'DEBIT') {
+        return c.json({ success: false, error: 'Insufficient balance to debit' }, 400);
+      }
+      await db.insert(wallets).values({
+        id: crypto.randomUUID(),
+        userId,
+        assetSymbol,
+        type,
+        balance: amount.toString(),
+        lockedBalance: '0',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    } else {
+      let currentBalance = parseFloat(wallet.balance);
+      let adjustment = parseFloat(amount);
+      if (action === 'DEBIT') {
+        if (currentBalance < adjustment) {
+          return c.json({ success: false, error: 'Insufficient balance' }, 400);
+        }
+        currentBalance -= adjustment;
+      } else {
+        currentBalance += adjustment;
+      }
+      await db.update(wallets).set({ balance: currentBalance.toString(), updatedAt: new Date() }).where(eq(wallets.id, wallet.id));
+    }
+
+    return c.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return c.json({ success: false, error: 'Failed to adjust wallet balance' }, 500);
   }
 });
 
