@@ -59,10 +59,11 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
   };
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     ACTIVE: "bg-green-500/10 text-green-500 border-green-500/20",
     FROZEN: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     SUSPENDED: "bg-red-500/10 text-red-500 border-red-500/20",
+    BANNED: "bg-red-500/10 text-red-500 border-red-500/20",
     PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   };
 
@@ -141,7 +142,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Account Status</span>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[user.status]}`}>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[user.status] || "bg-muted text-foreground border-border"}`}>
                   {user.status}
                 </span>
               </div>
