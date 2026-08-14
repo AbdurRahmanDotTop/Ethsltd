@@ -254,15 +254,6 @@ export function Header() {
         </div>
       )}
 
-      {/* P2P Demo Banner */}
-      {pathname.startsWith('/p2p') && mode === 'PAPER' && (
-        <div className="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-300 px-4 py-2 text-sm flex items-center justify-center gap-2 border-b border-blue-100 dark:border-blue-900/50 w-full z-50">
-          <Info className="w-4 h-4 shrink-0" />
-          <span className="font-medium">P2P Demo Mode:</span>
-          <span className="hidden sm:inline">Transactions on ETHSLTD are currently simulated. No real money or cryptocurrency is transferred.</span>
-          <span className="sm:hidden">Transactions are currently simulated.</span>
-        </div>
-      )}
     </header>
   )
 }
