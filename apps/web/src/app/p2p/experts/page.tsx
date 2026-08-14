@@ -1,20 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { MOCK_EXPERTS } from "@/lib/p2p/mock-data";
+import { getMockExperts } from "@/lib/p2p/mock-data";
 import { ExpertCard } from "@/components/p2p/ExpertCard";
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import { useTradingModeStore } from "@/stores/trading-mode-store";
+
 export default function ExpertsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const { mode } = useTradingModeStore();
+  
+  const currentExperts = getMockExperts(mode);
 
   // Extract all unique categories
-  const allCategories = ["All", ...Array.from(new Set(MOCK_EXPERTS.flatMap(e => e.categories)))];
+  const allCategories = ["All", ...Array.from(new Set(currentExperts.flatMap(e => e.categories)))];
 
-  const filteredExperts = MOCK_EXPERTS.filter(expert => {
+  const filteredExperts = currentExperts.filter(expert => {
     const matchesSearch = expert.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           expert.bio.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "All" || expert.categories.includes(categoryFilter);

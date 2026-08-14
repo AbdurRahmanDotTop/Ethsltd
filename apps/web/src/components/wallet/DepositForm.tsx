@@ -15,7 +15,7 @@ const SUPPORTED_ASSETS = ["USD", "USDT", "USDC", "BTC", "ETH", "SOL"];
 
 const depositSchema = z.object({
   asset: z.string().min(1, "Asset is required"),
-  amount: z.number().positive("Amount must be greater than 0").max(100000, "Maximum paper deposit is $100,000"),
+  amount: z.number().positive("Amount must be greater than 0").max(100000, "Maximum demo deposit is $100,000"),
 });
 
 export function DepositForm({ defaultAsset = "USD" }: { defaultAsset?: string }) {
@@ -62,7 +62,7 @@ export function DepositForm({ defaultAsset = "USD" }: { defaultAsset?: string })
           <div>
             <h3 className="font-semibold text-blue-900 dark:text-blue-100">Simulation Mode</h3>
             <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-              This deposit is simulated for Paper Trading and does not transfer real funds or execute on any blockchain.
+              This deposit is simulated for Demo Trading and does not transfer real funds or execute on any blockchain.
             </p>
           </div>
         </div>

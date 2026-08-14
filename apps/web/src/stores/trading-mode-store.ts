@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiClient } from "@ethsltd/api-client";
 
-type TradingMode = 'REAL' | 'PAPER';
+type TradingMode = 'REAL' | 'DEMO';
 
 interface TradingModeState {
   mode: TradingMode;
@@ -19,7 +19,7 @@ export const useTradingModeStore = create<TradingModeState>()(
         set({ mode });
       },
       toggleMode: () => set((state) => {
-        const newMode = state.mode === 'REAL' ? 'PAPER' : 'REAL';
+        const newMode = state.mode === 'REAL' ? 'DEMO' : 'REAL';
         apiClient.setMode(newMode);
         return { mode: newMode };
       }),

@@ -61,20 +61,20 @@ export function Header() {
       <span className={`text-xs font-medium ${mode === 'REAL' ? 'text-green-500' : 'text-muted-foreground'}`}>Real</span>
       <button 
         onClick={toggleMode}
-        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${mode === 'PAPER' ? 'bg-orange-500' : 'bg-muted-foreground/30'}`}
+        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${mode === 'DEMO' ? 'bg-orange-500' : 'bg-muted-foreground/30'}`}
       >
-        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${mode === 'PAPER' ? 'translate-x-4.5' : 'translate-x-1'}`} />
+        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${mode === 'DEMO' ? 'translate-x-4.5' : 'translate-x-1'}`} />
       </button>
-      <span className={`text-xs font-medium ${mode === 'PAPER' ? 'text-orange-500' : 'text-muted-foreground'}`}>Paper</span>
+      <span className={`text-xs font-medium ${mode === 'DEMO' ? 'text-orange-500' : 'text-muted-foreground'}`}>Paper</span>
     </div>
   );
 
   return (
     <header className="sticky top-0 z-50 w-full flex flex-col">
-      {/* Paper Trading Banner */}
-      {mode === 'PAPER' && (
+      {/* Demo Trading Banner */}
+      {mode === 'DEMO' && (
         <div className="bg-orange-500 text-white px-4 py-1.5 text-[10px] sm:text-xs font-bold flex justify-center items-center tracking-wider sm:tracking-widest uppercase">
-          ⚠️ YOU ARE IN PAPER TRADING MODE — NO REAL FUNDS AT RISK ⚠️
+          ⚠️ YOU ARE IN DEMO TRADING MODE — NO REAL FUNDS AT RISK ⚠️
         </div>
       )}
       {/* Announcement Bar */}
@@ -146,7 +146,7 @@ export function Header() {
             </button>
             <ThemeToggle />
             
-            {/* Paper Trading Toggle */}
+            {/* Demo Trading Toggle */}
             {renderToggle()}
 
             {status === "authenticated" && user ? (
@@ -204,7 +204,7 @@ export function Header() {
           </div>
 
           <div className="lg:hidden flex items-center gap-2">
-            {/* Paper Trading Toggle Mobile */}
+            {/* Demo Trading Toggle Mobile */}
             <div className="scale-90 origin-right">
               {renderToggle()}
             </div>

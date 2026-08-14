@@ -25,7 +25,7 @@ export default function MarketInsights() {
       
       <div className="bg-brand-500/10 border border-brand-500/20 p-4 rounded-lg mb-8">
         <p className="text-sm text-brand-200">
-          <strong>Note:</strong> The articles below are simulated content for the paper-trading environment and do not represent actual financial advice.
+          <strong>Note:</strong> The articles below are simulated content for the demo-trading environment and do not represent actual financial advice.
         </p>
       </div>
 

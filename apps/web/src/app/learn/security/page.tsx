@@ -37,7 +37,7 @@ export default function SecurityEducation() {
 
       <div className="mt-12 pt-8 border-t border-border flex justify-between items-center">
         <Button variant="outline" asChild>
-          <Link href="/learn/paper-trading">&larr; Previous: Paper Trading</Link>
+          <Link href="/learn/demo-trading">&larr; Previous: Demo Trading</Link>
         </Button>
         <Button asChild>
           <Link href="/learn/market-insights">Next: Market Insights &rarr;</Link>

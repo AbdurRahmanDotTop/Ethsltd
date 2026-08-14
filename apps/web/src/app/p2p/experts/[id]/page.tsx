@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, use } from "react";
-import { MOCK_EXPERTS, MOCK_SERVICES } from "@/lib/p2p/mock-data";
+import { getMockExperts, getMockServices } from "@/lib/p2p/mock-data";
 import { P2PExpertService, P2PExpertProfile } from "@/lib/p2p/types";
 import { ExpertServiceCard } from "@/components/p2p/ExpertServiceCard";
 import { BookingModal } from "@/components/p2p/BookingModal";
@@ -9,14 +9,17 @@ import { BadgeCheck, Star, Users, Clock, Globe, ArrowLeft, MessageSquare } from 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+import { useTradingModeStore } from "@/stores/trading-mode-store";
+
 export default function ExpertProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const expertId = resolvedParams.id;
   
   const [selectedService, setSelectedService] = useState<P2PExpertService | null>(null);
+  const { mode } = useTradingModeStore();
 
-  const expert = MOCK_EXPERTS.find(e => e.id === expertId);
-  const services = MOCK_SERVICES.filter(s => s.expertId === expertId && s.status === "ACTIVE");
+  const expert = getMockExperts(mode).find(e => e.id === expertId);
+  const services = getMockServices(mode).filter(s => s.expertId === expertId && s.status === "ACTIVE");
 
   if (!expert) {
     return (

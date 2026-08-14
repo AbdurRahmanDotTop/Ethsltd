@@ -414,3 +414,26 @@ export const MOCK_SERVICES: P2PExpertService[] = [
     status: "ACTIVE"
   }
 ];
+
+export const getMockExperts = (mode: "REAL" | "DEMO"): P2PExpertProfile[] => {
+  if (mode === "DEMO") {
+    return MOCK_EXPERTS.map(e => ({
+      ...e,
+      id: `demo_${e.id}`,
+      displayName: `[Demo] ${e.displayName}`
+    }));
+  }
+  return MOCK_EXPERTS;
+};
+
+export const getMockServices = (mode: "REAL" | "DEMO"): P2PExpertService[] => {
+  if (mode === "DEMO") {
+    return MOCK_SERVICES.map(s => ({
+      ...s,
+      id: `demo_${s.id}`,
+      expertId: `demo_${s.expertId}`,
+      title: `[Demo] ${s.title}`
+    }));
+  }
+  return MOCK_SERVICES;
+};

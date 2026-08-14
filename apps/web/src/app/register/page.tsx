@@ -20,7 +20,7 @@ export default function RegisterPage() {
       <main className="flex-1 flex items-center justify-center p-4 py-12">
       <AuthCard
         title="Create your ETHSLTD account"
-        subtitle="Start exploring digital assets, markets, and paper trading with ETHSLTD."
+        subtitle="Start exploring digital assets, markets, and demo trading with ETHSLTD."
         footerText="Already have an account?"
         footerActionText="Log in"
         footerActionLink="/login"

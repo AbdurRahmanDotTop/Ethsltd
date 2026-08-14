@@ -18,7 +18,7 @@ export function Hero() {
         </h1>
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-          Discover markets, practice with paper trading, and access the tools you need to manage your digital-asset journey.
+          Discover markets, practice with demo trading, and access the tools you need to manage your digital-asset journey.
         </p>
         
         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -26,7 +26,7 @@ export function Hero() {
             <Link href="/trade">Start Trading</Link>
           </Button>
           <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 px-8 text-base border-border hover:bg-foreground/5" asChild>
-            <Link href="/learn/paper-trading">Try Paper Trading</Link>
+            <Link href="/learn/demo-trading">Try Demo Trading</Link>
           </Button>
         </div>
         

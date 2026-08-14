@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
-export function PaperTrading() {
+export function DemoTrading() {
   return (
     <section className="bg-background py-24 border-b border-border relative overflow-hidden">
       {/* Background glow */}
@@ -14,7 +14,7 @@ export function PaperTrading() {
               <div className="absolute -top-3 -right-3 bg-brand-500 text-foreground text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                 Simulated
               </div>
-              <h4 className="text-xl font-medium text-foreground mb-2">Paper Trading</h4>
+              <h4 className="text-xl font-medium text-foreground mb-2">Demo Trading</h4>
               <p className="text-muted-foreground text-sm mb-8">Virtual Balance</p>
               
               <div className="font-display text-4xl md:text-5xl font-bold text-foreground mb-8 tracking-tight">
@@ -61,10 +61,10 @@ export function PaperTrading() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" className="px-8" asChild>
-                <Link href="/trade">Try Paper Trading</Link>
+                <Link href="/trade">Try Demo Trading</Link>
               </Button>
               <Button variant="outline" size="lg" className="border-border" asChild>
-                <Link href="/learn/paper-trading">How Paper Trading Works &rarr;</Link>
+                <Link href="/learn/demo-trading">How Demo Trading Works &rarr;</Link>
               </Button>
             </div>
           </div>

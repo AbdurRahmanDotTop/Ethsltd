@@ -101,7 +101,7 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       >
         <div className="flex items-center gap-4">
           <MarketSelector currentSymbol={market.symbol} />
-          {mode === 'PAPER' && <TradingModeBadge />}
+          {mode === 'DEMO' && <TradingModeBadge />}
         </div>
         <div className="mt-2 md:mt-0 overflow-x-auto no-scrollbar">
           <MarketSummary market={market} />

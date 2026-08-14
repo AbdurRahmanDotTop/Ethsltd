@@ -1,4 +1,4 @@
-export type TradingMode = "paper" | "live";
+export type TradingMode = "demo" | "live";
 export type OrderType = "market" | "limit";
 export type OrderSide = "buy" | "sell";
 export type OrderStatus = 

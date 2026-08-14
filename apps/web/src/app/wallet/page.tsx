@@ -72,10 +72,10 @@ export default function WalletPage() {
   }, [storeBalances, mode]);
 
   const handleTopUp = async () => {
-    if (confirm("Are you sure you want to top up your paper trading balance with $100,000 USDT?")) {
+    if (confirm("Are you sure you want to top up your demo trading balance with $100,000 USDT?")) {
       setIsLoading(true);
       try {
-        const res = await apiClient.topUpPaperWallet();
+        const res = await apiClient.topUpDemoWallet();
         if (!res.success) {
           alert("Top up failed: " + (res.error || "Unknown error"));
         }
@@ -114,17 +114,17 @@ export default function WalletPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            {mode === 'PAPER' ? 'Paper Trading Wallet' : 'Spot Wallet'}
+            {mode === 'DEMO' ? 'Demo Trading Wallet' : 'Spot Wallet'}
           </h2>
           <p className="text-muted-foreground mt-1">
-            {mode === 'PAPER' 
+            {mode === 'DEMO' 
               ? 'Manage your simulated balances and test strategies risk-free.' 
               : 'Manage your real digital assets and balances.'}
           </p>
         </div>
-        {mode === 'PAPER' && (
+        {mode === 'DEMO' && (
           <Button onClick={handleTopUp} className="bg-orange-500 hover:bg-orange-600 text-white font-medium shadow shadow-orange-500/20">
-            Top Up Paper Balance (100k USDT)
+            Top Up Demo Balance (100k USDT)
           </Button>
         )}
       </div>

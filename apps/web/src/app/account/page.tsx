@@ -66,7 +66,7 @@ export default function AccountOverviewPage() {
           </Button>
         </div>
 
-        {/* Paper Trading Card */}
+        {/* Demo Trading Card */}
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">

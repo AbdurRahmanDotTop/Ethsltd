@@ -3,7 +3,7 @@ import { User } from '@ethsltd/types';
 export class EthsltdClient {
   private baseUrl: string;
   private token: string | null = null;
-  private mode: 'REAL' | 'PAPER' = 'REAL';
+  private mode: 'REAL' | 'DEMO' = 'REAL';
 
   constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || 'https://api.ethsltd-api.workers.dev') {
     this.baseUrl = baseUrl;
@@ -24,7 +24,7 @@ export class EthsltdClient {
     }
   }
 
-  setMode(mode: 'REAL' | 'PAPER') {
+  setMode(mode: 'REAL' | 'DEMO') {
     this.mode = mode;
   }
 
@@ -168,8 +168,8 @@ export class EthsltdClient {
     });
   }
 
-  async topUpPaperWallet() {
-    return this.request<any>('/api/v1/wallets/top-up-paper', {
+  async topUpDemoWallet() {
+    return this.request<any>('/api/v1/wallets/top-up-demo', {
       method: 'POST',
     });
   }
@@ -286,7 +286,7 @@ export class EthsltdClient {
     });
   }
 
-  async adjustAdminUserWallet(userId: string, assetSymbol: string, amount: string, type: 'REAL' | 'PAPER', action: 'CREDIT' | 'DEBIT') {
+  async adjustAdminUserWallet(userId: string, assetSymbol: string, amount: string, type: 'REAL' | 'DEMO', action: 'CREDIT' | 'DEBIT') {
     return this.request<any>(`/api/v1/admin/users/${userId}/wallets/adjust`, {
       method: 'POST',
       body: JSON.stringify({ assetSymbol, amount, type, action }),

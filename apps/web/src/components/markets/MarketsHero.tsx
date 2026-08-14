@@ -19,7 +19,7 @@ export function MarketsHero() {
             <Link href="/trade">Start Trading</Link>
           </Button>
           <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base" asChild>
-            <Link href="/learn/paper-trading">Try Paper Trading</Link>
+            <Link href="/learn/demo-trading">Try Demo Trading</Link>
           </Button>
         </div>
       </div>

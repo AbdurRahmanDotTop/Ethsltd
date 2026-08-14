@@ -50,7 +50,7 @@ export default function TradingGuide() {
           <Link href="/learn/crypto-basics">&larr; Previous: Crypto Basics</Link>
         </Button>
         <Button asChild>
-          <Link href="/learn/paper-trading">Next: Paper Trading &rarr;</Link>
+          <Link href="/learn/demo-trading">Next: Demo Trading &rarr;</Link>
         </Button>
       </div>
     </article>

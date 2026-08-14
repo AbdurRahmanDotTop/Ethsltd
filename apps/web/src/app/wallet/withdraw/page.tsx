@@ -14,7 +14,7 @@ export default function WithdrawPage({ searchParams }: { searchParams: { asset?:
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Withdraw</h1>
-          <p className="text-sm text-muted-foreground">Withdraw simulated funds from your paper trading wallet</p>
+          <p className="text-sm text-muted-foreground">Withdraw simulated funds from your demo trading wallet</p>
         </div>
       </div>
 

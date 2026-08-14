@@ -40,7 +40,7 @@ export function FinalCTA() {
           
           <div className="mt-8">
             <Button variant="ghost" className="text-[var(--brand-foreground)] hover:text-foreground" asChild>
-              <Link href="/learn/paper-trading">Try Paper Trading &rarr;</Link>
+              <Link href="/learn/demo-trading">Try Demo Trading &rarr;</Link>
             </Button>
           </div>
         </div>

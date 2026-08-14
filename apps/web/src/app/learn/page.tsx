@@ -6,7 +6,7 @@ export default function LearnHome() {
   const topics = [
     { href: "/learn/crypto-basics", title: "Crypto Basics", desc: "Start here to understand blockchain, wallets, and the fundamentals of crypto.", icon: <Lightbulb className="w-8 h-8 text-brand-500" /> },
     { href: "/learn/trading", title: "Trading Guide", desc: "Learn about market orders, limit orders, order books, and trading strategies.", icon: <TrendingUp className="w-8 h-8 text-brand-500" /> },
-    { href: "/learn/paper-trading", title: "Paper Trading", desc: "Practice trading in a risk-free environment using virtual funds.", icon: <PieChart className="w-8 h-8 text-brand-500" /> },
+    { href: "/learn/demo-trading", title: "Demo Trading", desc: "Practice trading in a risk-free environment using virtual funds.", icon: <PieChart className="w-8 h-8 text-brand-500" /> },
     { href: "/learn/security", title: "Security Education", desc: "How to keep your account, funds, and personal data secure.", icon: <Shield className="w-8 h-8 text-brand-500" /> },
     { href: "/learn/market-insights", title: "Market Insights", desc: "Read the latest simulated market updates and overviews.", icon: <BookOpen className="w-8 h-8 text-brand-500" /> },
   ]
@@ -36,7 +36,7 @@ export default function LearnHome() {
           <p className="text-sm text-muted-foreground">Try our simulated trading environment.</p>
         </div>
         <Button asChild>
-          <Link href="/trade">Start Paper Trading</Link>
+          <Link href="/trade">Start Demo Trading</Link>
         </Button>
       </div>
     </div>

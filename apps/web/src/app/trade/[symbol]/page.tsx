@@ -7,7 +7,7 @@ export async function generateMetadata({ params }: { params: { symbol: string } 
   const { symbol } = await params;
   return {
     title: `${symbol.toUpperCase().replace('-', '/')} Trading | ETHSLTD`,
-    description: `Trade ${symbol.toUpperCase().replace('-', '/')} in the ETHSLTD paper trading terminal.`,
+    description: `Trade ${symbol.toUpperCase().replace('-', '/')} in the ETHSLTD demo trading terminal.`,
   }
 }
 

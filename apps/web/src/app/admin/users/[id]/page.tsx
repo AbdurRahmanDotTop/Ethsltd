@@ -16,7 +16,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
 
   // Wallet Adjust State
   const [assetSymbol, setAssetSymbol] = useState("USDT");
-  const [walletType, setWalletType] = useState<"REAL"|"PAPER">("REAL");
+  const [walletType, setWalletType] = useState<"REAL"|"DEMO">("REAL");
   const [adjustAction, setAdjustAction] = useState<"CREDIT"|"DEBIT">("CREDIT");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [isAdjusting, setIsAdjusting] = useState(false);
@@ -241,7 +241,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                         <label className="text-xs text-muted-foreground mb-1 block">Wallet Type</label>
                         <select value={walletType} onChange={e => setWalletType(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
                           <option value="REAL">REAL</option>
-                          <option value="PAPER">PAPER</option>
+                          <option value="DEMO">DEMO</option>
                         </select>
                       </div>
                     </div>

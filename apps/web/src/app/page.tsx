@@ -5,7 +5,7 @@ import { LiveMarketTicker } from "@/components/home/LiveMarketTicker"
 import { PlatformMetrics } from "@/components/home/PlatformMetrics"
 import { TradingExperience } from "@/components/home/TradingExperience"
 import { MarketsTable } from "@/components/home/MarketsTable"
-import { PaperTrading } from "@/components/home/PaperTrading"
+import { DemoTrading } from "@/components/home/DemoTrading"
 import { P2PSection } from "@/components/home/P2PSection"
 import { SecuritySection } from "@/components/home/SecuritySection"
 import { MobileAppSection } from "@/components/home/MobileAppSection"
@@ -23,7 +23,7 @@ export default function Home() {
         <PlatformMetrics />
         <TradingExperience />
         <MarketsTable />
-        <PaperTrading />
+        <DemoTrading />
         <P2PSection />
         <SecuritySection />
         <MobileAppSection />

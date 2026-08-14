@@ -14,7 +14,7 @@ export default function DepositPage({ searchParams }: { searchParams: { asset?: 
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Deposit</h1>
-          <p className="text-sm text-muted-foreground">Add simulated funds to your paper trading wallet</p>
+          <p className="text-sm text-muted-foreground">Add simulated funds to your demo trading wallet</p>
         </div>
       </div>
 
