@@ -100,7 +100,7 @@ export function AdminHeader() {
                   User Dashboard
                 </Link>
                 <Link 
-                  href="/account/settings" 
+                  href="/account/preferences" 
                   onClick={() => setIsDropdownOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
                 >
