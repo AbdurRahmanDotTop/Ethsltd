@@ -1,0 +1,105 @@
+
+> @ethsltd/web@0.1.0 build C:\Users\abdur\Downloads\Clients\Ethsltd\apps\web
+> next build
+
+▲ Next.js 16.3.0 (Turbopack)
+- Environments: .env
+⚠ `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+⚠ Invalid next.config.ts options detected: 
+⚠     Unrecognized key(s) in object: 'eslint'
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+✓ Running next.config.ts took 62ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 22.4s
+  Skipping validation of types
+  Finished TypeScript config validation in 113ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/71) ...
+  Generating static pages using 7 workers (17/71) 
+  Generating static pages using 7 workers (35/71) 
+  Generating static pages using 7 workers (53/71) 
+✓ Generating static pages using 7 workers (71/71) in 3.2s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /account
+├ ○ /account/api-keys
+├ ○ /account/api-usage
+├ ○ /account/contracts
+├ ○ /account/kyc
+├ ○ /account/notifications
+├ ○ /account/preferences
+├ ○ /account/preferences/notifications
+├ ○ /account/profile
+├ ○ /account/security
+├ ○ /account/sessions
+├ ○ /admin
+├ ○ /admin/api
+├ ○ /admin/audit
+├ ○ /admin/contracts
+├ ○ /admin/deposits
+├ ○ /admin/kyc
+├ ○ /admin/notifications
+├ ○ /admin/orders
+├ ○ /admin/p2p/disputes
+├ ○ /admin/p2p/orders
+├ ○ /admin/risk
+├ ○ /admin/settings
+├ ○ /admin/support
+├ ƒ /admin/support/tickets/[id]
+├ ○ /admin/system
+├ ○ /admin/trades
+├ ○ /admin/trading
+├ ○ /admin/users
+├ ƒ /admin/users/[id]
+├ ○ /admin/wallets
+├ ○ /admin/withdrawals
+├ ○ /developers
+├ ○ /developers/docs
+├ ○ /developers/playground
+├ ○ /fees
+├ ○ /forgot-password
+├ ○ /learn
+├ ○ /learn/crypto-basics
+├ ○ /learn/demo-trading
+├ ○ /learn/market-insights
+├ ○ /learn/security
+├ ○ /learn/trading
+├ ○ /legal/cookies
+├ ○ /legal/privacy
+├ ○ /legal/risk-disclosure
+├ ○ /legal/security
+├ ○ /legal/terms
+├ ○ /login
+├ ƒ /markets
+├ ○ /notifications
+├ ○ /p2p
+├ ○ /p2p/experts
+├ ƒ /p2p/experts/[id]
+├ ○ /p2p/my-ads
+├ ƒ /p2p/order/[id]
+├ ○ /p2p/orders
+├ ○ /p2p/post-ad
+├ ○ /register
+├ ○ /reset-password
+├ ○ /robots.txt
+├ ○ /sitemap.xml
+├ ○ /support
+├ ○ /support/tickets
+├ ƒ /support/tickets/[id]
+├ ○ /support/tickets/new
+├ ○ /trade
+├ ƒ /trade/[symbol]
+├ ○ /verify-email
+├ ○ /wallet
+├ ƒ /wallet/deposit
+├ ○ /wallet/history
+└ ƒ /wallet/withdraw
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

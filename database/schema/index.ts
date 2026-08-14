@@ -6,3 +6,5 @@ export * from './trading';
 export * from './p2p';
 export * from './notifications';
 export * from './support';
+export * from './cregis';
+export * from './bank_transfers';

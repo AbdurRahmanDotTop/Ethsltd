@@ -3,6 +3,7 @@ import { eq, desc, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { wallets, walletTransactions } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
+import { CregisClient } from '../services/cregis';
 
 export const walletRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -173,7 +174,7 @@ walletRoutes.post('/deposit', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const { assetSymbol, amount, network, destination, mode = 'REAL' } = body;
+  const { assetSymbol, amount, network, destination, mode = 'REAL', depositMethod } = body;
 
   const transactionId = `TX-${Date.now()}`;
   const now = new Date();
@@ -188,32 +189,47 @@ walletRoutes.post('/deposit', async (c) => {
       userId: user.id,
       assetSymbol,
       type: mode,
-      balance: amount.toString(),
+      balance: '0',
       lockedBalance: '0',
       createdAt: now,
       updatedAt: now,
     });
-  } else {
-    const newBalance = (parseFloat(wallet.balance) + parseFloat(amount)).toString();
-    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+    wallet = { id: walletId, userId: user.id, assetSymbol, type: mode, balance: '0', lockedBalance: '0', createdAt: now, updatedAt: now };
   }
   
-  // Record transaction
-  await db.insert(walletTransactions).values({
-    id: transactionId,
-    userId: user.id,
-    type: 'DEPOSIT',
-    mode: mode,
-    assetSymbol,
-    amount: amount.toString(),
-    status: 'COMPLETED', // Simulated demo trading completes instantly
-    network: network || 'Internal',
-    destination: destination,
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  return c.json({ success: true, transactionId });
+  if (mode === 'DEMO') {
+    // For DEMO, we instantly credit the wallet
+    const newBalance = (parseFloat(wallet.balance) + parseFloat(amount)).toString();
+    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+    
+    // Record transaction
+    await db.insert(walletTransactions).values({
+      id: transactionId,
+      userId: user.id,
+      type: 'DEPOSIT',
+      mode: mode,
+      assetSymbol,
+      amount: amount.toString(),
+      status: 'COMPLETED',
+      network: 'System',
+      destination: 'Demo Wallet',
+      createdAt: now,
+      updatedAt: now,
+    });
+    return c.json({ success: true, transactionId, message: 'Demo balance added' });
+  } else {
+    // For REAL, we need to generate a Cregis Address or Bank Transfer Request
+    if (depositMethod === 'CRYPTO') {
+      const cregis = new CregisClient(c.env);
+      const address = await cregis.getDepositAddress(assetSymbol, user.id);
+      return c.json({ success: true, address, message: 'Deposit address generated' });
+    } else if (depositMethod === 'BANK') {
+      // In production, insert into bank_transfers
+      return c.json({ success: true, message: 'Bank transfer instructions provided', bankDetails: { accountName: 'ETHSLTD LLC', accountNumber: '123456789', bankName: 'Global Bank' } });
+    } else {
+      return c.json({ success: false, error: 'Invalid deposit method for REAL mode' }, 400);
+    }
+  }
 });
 
 walletRoutes.post('/withdraw', async (c) => {

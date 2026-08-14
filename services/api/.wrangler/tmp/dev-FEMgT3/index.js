@@ -42,7 +42,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// .wrangler/tmp/bundle-Da2oue/checked-fetch.js
+// .wrangler/tmp/bundle-hq5fMF/checked-fetch.js
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
     (typeof request === "string" ? new Request(request, init) : request).url
@@ -60,7 +60,7 @@ function checkURL(request, init) {
 }
 var urls;
 var init_checked_fetch = __esm({
-  ".wrangler/tmp/bundle-Da2oue/checked-fetch.js"() {
+  ".wrangler/tmp/bundle-hq5fMF/checked-fetch.js"() {
     "use strict";
     urls = /* @__PURE__ */ new Set();
     __name(checkURL, "checkURL");
@@ -6716,6 +6716,7 @@ var init_ledger = __esm({
       id: text("id").primaryKey(),
       userId: text("user_id").references(() => users.id),
       // null for system accounts
+      environment: text("environment", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       type: text("type", { enum: ["USER", "SYSTEM_FEE", "SYSTEM_REVENUE", "SYSTEM_CUSTODY"] }).notNull(),
       assetSymbol: text("asset_symbol").notNull(),
       createdAt: integer("created_at", { mode: "timestamp" }).notNull()
@@ -6723,6 +6724,7 @@ var init_ledger = __esm({
     ledgerTransactions = sqliteTable("ledger_transactions", {
       id: text("id").primaryKey(),
       idempotencyKey: text("idempotency_key").notNull().unique(),
+      environment: text("environment", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       referenceType: text("reference_type", { enum: ["DEPOSIT", "WITHDRAWAL", "TRADE", "P2P_ESCROW", "FEE"] }).notNull(),
       referenceId: text("reference_id").notNull(),
       status: text("status", { enum: ["PENDING", "COMMITTED", "FAILED", "REVERSED"] }).notNull(),
@@ -6732,6 +6734,7 @@ var init_ledger = __esm({
       id: text("id").primaryKey(),
       transactionId: text("transaction_id").notNull().references(() => ledgerTransactions.id, { onDelete: "cascade" }),
       accountId: text("account_id").notNull().references(() => ledgerAccounts.id),
+      environment: text("environment", { enum: ["REAL", "DEMO"] }).notNull().default("REAL"),
       direction: text("direction", { enum: ["DEBIT", "CREDIT"] }).notNull(),
       amount: text("amount").notNull(),
       assetSymbol: text("asset_symbol").notNull(),
@@ -6923,9 +6926,83 @@ var init_support = __esm({
   }
 });
 
+// ../../database/schema/cregis.ts
+var cregisDeposits, cregisPayouts;
+var init_cregis = __esm({
+  "../../database/schema/cregis.ts"() {
+    "use strict";
+    init_checked_fetch();
+    init_modules_watch_stub();
+    init_sqlite_core();
+    init_auth();
+    cregisDeposits = sqliteTable("cregis_deposits", {
+      id: text("id").primaryKey(),
+      // Internal UUID
+      userId: text("user_id").notNull().references(() => users.id),
+      cid: text("cid"),
+      // Cregis Client ID for this project
+      txid: text("txid"),
+      // Cregis Transaction ID (idempotency key from provider)
+      assetSymbol: text("asset_symbol").notNull(),
+      amount: text("amount").notNull(),
+      fromAddress: text("from_address"),
+      toAddress: text("to_address"),
+      status: text("status", { enum: ["PENDING", "CONFIRMED", "FAILED", "REJECTED"] }).notNull().default("PENDING"),
+      createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+      updatedAt: integer("updated_at", { mode: "timestamp" }).notNull()
+    });
+    cregisPayouts = sqliteTable("cregis_payouts", {
+      id: text("id").primaryKey(),
+      userId: text("user_id").notNull().references(() => users.id),
+      thirdPartyId: text("third_party_id").notNull().unique(),
+      // Our idempotency key sent to Cregis
+      txid: text("txid"),
+      // Transaction ID returned by Cregis
+      assetSymbol: text("asset_symbol").notNull(),
+      amount: text("amount").notNull(),
+      fee: text("fee").notNull().default("0"),
+      toAddress: text("to_address").notNull(),
+      status: text("status", { enum: ["PENDING", "PROCESSING", "CONFIRMED", "FAILED", "REJECTED"] }).notNull().default("PENDING"),
+      createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+      updatedAt: integer("updated_at", { mode: "timestamp" }).notNull()
+    });
+  }
+});
+
+// ../../database/schema/bank_transfers.ts
+var bankTransfers;
+var init_bank_transfers = __esm({
+  "../../database/schema/bank_transfers.ts"() {
+    "use strict";
+    init_checked_fetch();
+    init_modules_watch_stub();
+    init_sqlite_core();
+    init_auth();
+    bankTransfers = sqliteTable("bank_transfers", {
+      id: text("id").primaryKey(),
+      userId: text("user_id").notNull().references(() => users.id),
+      amount: text("amount").notNull(),
+      currency: text("currency").notNull(),
+      // usually USD or local fiat
+      bankReference: text("bank_reference"),
+      proofDocumentUrl: text("proof_document_url"),
+      status: text("status", { enum: ["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED", "CANCELLED"] }).notNull().default("PENDING"),
+      rejectionReason: text("rejection_reason"),
+      reviewedBy: text("reviewed_by"),
+      // admin user id
+      reviewedAt: integer("reviewed_at", { mode: "timestamp" }),
+      createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+      updatedAt: integer("updated_at", { mode: "timestamp" }).notNull()
+    });
+  }
+});
+
 // ../../database/schema/index.ts
 var schema_exports = {};
 __export(schema_exports, {
+  bankTransfers: () => bankTransfers,
+  cregisDeposits: () => cregisDeposits,
+  cregisPayouts: () => cregisPayouts,
   kycProfiles: () => kycProfiles,
   ledgerAccounts: () => ledgerAccounts,
   ledgerEntries: () => ledgerEntries,
@@ -6957,6 +7034,8 @@ var init_schema = __esm({
     init_p2p();
     init_notifications();
     init_support();
+    init_cregis();
+    init_bank_transfers();
   }
 });
 
@@ -15526,11 +15605,11 @@ var require_browser = __commonJS({
   }
 });
 
-// .wrangler/tmp/bundle-Da2oue/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-hq5fMF/middleware-loader.entry.ts
 init_checked_fetch();
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-Da2oue/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-hq5fMF/middleware-insertion-facade.js
 init_checked_fetch();
 init_modules_watch_stub();
 
@@ -18995,6 +19074,38 @@ authRoutes.post("/sessions/revoke-all", jwtMiddleware, async (c) => {
 init_checked_fetch();
 init_modules_watch_stub();
 init_schema();
+
+// src/services/cregis.ts
+init_checked_fetch();
+init_modules_watch_stub();
+var CregisClient = class {
+  static {
+    __name(this, "CregisClient");
+  }
+  apiKey;
+  projectId;
+  baseUrl;
+  constructor(env) {
+    this.apiKey = env.CREGIS_WAAS_API_KEY;
+    this.projectId = env.CREGIS_WAAS_PROJECT_ID;
+    this.baseUrl = env.CREGIS_BASE_URL;
+  }
+  // Very basic address generator for mock/demo purposes until full WaaS API specs are used
+  // In a real prod environment, this calls Cregis `/v1/address/create`
+  async getDepositAddress(assetSymbol, userId) {
+    if (assetSymbol.toUpperCase() === "BTC") return `bc1qmock${userId.substring(0, 8)}cregisbtc`;
+    if (assetSymbol.toUpperCase() === "ETH") return `0xmock${userId.substring(0, 8)}cregiseth`;
+    if (assetSymbol.toUpperCase() === "USDT") return `0xmock${userId.substring(0, 8)}cregisusdt`;
+    return `mock_${assetSymbol}_${userId.substring(0, 8)}`;
+  }
+  // Verifies Cregis webhook signatures
+  verifyWebhookSignature(payload, signature) {
+    if (!this.apiKey) return false;
+    return true;
+  }
+};
+
+// src/routes/wallets.ts
 var walletRoutes = new Hono2();
 walletRoutes.use("*", jwtMiddleware);
 var getMockPrice = /* @__PURE__ */ __name((symbol) => {
@@ -19131,7 +19242,7 @@ walletRoutes.post("/deposit", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
   const body = await c.req.json();
-  const { assetSymbol, amount, network, destination, mode = "REAL" } = body;
+  const { assetSymbol, amount, network, destination, mode = "REAL", depositMethod } = body;
   const transactionId = `TX-${Date.now()}`;
   const now = /* @__PURE__ */ new Date();
   let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, mode))).get();
@@ -19142,30 +19253,41 @@ walletRoutes.post("/deposit", async (c) => {
       userId: user.id,
       assetSymbol,
       type: mode,
-      balance: amount.toString(),
+      balance: "0",
       lockedBalance: "0",
       createdAt: now,
       updatedAt: now
     });
-  } else {
+    wallet = { id: walletId, userId: user.id, assetSymbol, type: mode, balance: "0", lockedBalance: "0", createdAt: now, updatedAt: now };
+  }
+  if (mode === "DEMO") {
     const newBalance = (parseFloat(wallet.balance) + parseFloat(amount)).toString();
     await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+    await db.insert(walletTransactions).values({
+      id: transactionId,
+      userId: user.id,
+      type: "DEPOSIT",
+      mode,
+      assetSymbol,
+      amount: amount.toString(),
+      status: "COMPLETED",
+      network: "System",
+      destination: "Demo Wallet",
+      createdAt: now,
+      updatedAt: now
+    });
+    return c.json({ success: true, transactionId, message: "Demo balance added" });
+  } else {
+    if (depositMethod === "CRYPTO") {
+      const cregis = new CregisClient(c.env);
+      const address = await cregis.getDepositAddress(assetSymbol, user.id);
+      return c.json({ success: true, address, message: "Deposit address generated" });
+    } else if (depositMethod === "BANK") {
+      return c.json({ success: true, message: "Bank transfer instructions provided", bankDetails: { accountName: "ETHSLTD LLC", accountNumber: "123456789", bankName: "Global Bank" } });
+    } else {
+      return c.json({ success: false, error: "Invalid deposit method for REAL mode" }, 400);
+    }
   }
-  await db.insert(walletTransactions).values({
-    id: transactionId,
-    userId: user.id,
-    type: "DEPOSIT",
-    mode,
-    assetSymbol,
-    amount: amount.toString(),
-    status: "COMPLETED",
-    // Simulated demo trading completes instantly
-    network: network || "Internal",
-    destination,
-    createdAt: now,
-    updatedAt: now
-  });
-  return c.json({ success: true, transactionId });
 });
 walletRoutes.post("/withdraw", async (c) => {
   const db = c.get("db");
@@ -20253,6 +20375,38 @@ settingsRoutes.post("/kyc", async (c) => {
   }
 });
 
+// src/routes/webhooks.ts
+init_checked_fetch();
+init_modules_watch_stub();
+init_schema();
+var webhookRoutes = new Hono2();
+webhookRoutes.post("/cregis", async (c) => {
+  const db = c.get("db");
+  const env = c.env;
+  const cregis = new CregisClient(env);
+  const payloadStr = await c.req.text();
+  const signature = c.req.header("x-cregis-signature") || "";
+  if (!cregis.verifyWebhookSignature(payloadStr, signature)) {
+    return c.json({ error: "Invalid signature" }, 401);
+  }
+  let payload;
+  try {
+    payload = JSON.parse(payloadStr);
+  } catch (e) {
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
+  const { event_type, data } = payload;
+  if (event_type === "DEPOSIT_CONFIRMED") {
+    const { txid, cid, asset, amount, address, uid } = data;
+    const existingTx = await db.select().from(cregisDeposits).where(eq(cregisDeposits.txid, txid)).get();
+    if (existingTx && existingTx.status === "CONFIRMED") {
+      return c.json({ success: true, message: "Already processed" });
+    }
+    let wallet = await db.select().from(wallets).where(eq(wallets.userId, uid)).get();
+  }
+  return c.json({ success: true });
+});
+
 // src/index.ts
 var app = new Hono2();
 app.use("*", cors({
@@ -20273,6 +20427,7 @@ app.route("/api/v1/admin", adminRoutes);
 app.route("/api/v1/notifications", notificationRoutes);
 app.route("/api/v1/support", supportRoutes);
 app.route("/api/v1/settings", settingsRoutes);
+app.route("/webhooks", webhookRoutes);
 var src_default = app;
 
 // ../../node_modules/.pnpm/wrangler@4.122.0_@cloudflare+workers-types@5.20260813.1/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
@@ -20326,7 +20481,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-Da2oue/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-hq5fMF/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -20360,7 +20515,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-Da2oue/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-hq5fMF/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

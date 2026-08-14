@@ -3,6 +3,9 @@ import * as schema from 'database'; // This imports from our database package
 
 export type Bindings = {
   DB: D1Database;
+  CREGIS_WAAS_API_KEY: string;
+  CREGIS_WAAS_PROJECT_ID: string;
+  CREGIS_BASE_URL: string;
 };
 
 export type Variables = {

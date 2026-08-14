@@ -11,6 +11,7 @@ import { adminRoutes } from './routes/admin';
 import { notificationRoutes } from './routes/notifications';
 import { supportRoutes } from './routes/support';
 import { settingsRoutes } from './routes/settings';
+import { webhookRoutes } from './routes/webhooks';
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -37,5 +38,6 @@ app.route('/api/v1/admin', adminRoutes);
 app.route('/api/v1/notifications', notificationRoutes);
 app.route('/api/v1/support', supportRoutes);
 app.route('/api/v1/settings', settingsRoutes);
+app.route('/webhooks', webhookRoutes);
 
 export default app;

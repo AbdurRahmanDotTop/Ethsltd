@@ -1,9 +1,12 @@
-import { DepositForm } from "@/components/wallet/DepositForm";
+import { DepositFormWrapper } from "@/components/wallet/DepositFormWrapper";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { use } from "react";
 
-export default function DepositPage({ searchParams }: { searchParams: { asset?: string } }) {
+export default function DepositPage({ searchParams }: { searchParams: Promise<{ asset?: string }> }) {
+  const params = use(searchParams);
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 mb-8">
@@ -14,11 +17,13 @@ export default function DepositPage({ searchParams }: { searchParams: { asset?: 
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Deposit</h1>
-          <p className="text-sm text-muted-foreground">Add simulated funds to your demo trading wallet</p>
+          <p className="text-sm text-muted-foreground">Add funds to your trading wallet</p>
         </div>
       </div>
 
-      <DepositForm defaultAsset={searchParams.asset} />
+      <DepositFormWrapper defaultAsset={params.asset} />
     </div>
   );
 }
+
+

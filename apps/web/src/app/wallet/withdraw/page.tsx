@@ -1,9 +1,12 @@
-import { WithdrawForm } from "@/components/wallet/WithdrawForm";
+import { WithdrawFormWrapper } from "@/components/wallet/WithdrawFormWrapper";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { use } from "react";
 
-export default function WithdrawPage({ searchParams }: { searchParams: { asset?: string } }) {
+export default function WithdrawPage({ searchParams }: { searchParams: Promise<{ asset?: string }> }) {
+  const params = use(searchParams);
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 mb-8">
@@ -14,11 +17,11 @@ export default function WithdrawPage({ searchParams }: { searchParams: { asset?:
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Withdraw</h1>
-          <p className="text-sm text-muted-foreground">Withdraw simulated funds from your demo trading wallet</p>
+          <p className="text-sm text-muted-foreground">Withdraw funds from your trading wallet</p>
         </div>
       </div>
 
-      <WithdrawForm defaultAsset={searchParams.asset} />
+      <WithdrawFormWrapper defaultAsset={params.asset} />
     </div>
   );
 }

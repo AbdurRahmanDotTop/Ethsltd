@@ -18,7 +18,7 @@ const depositSchema = z.object({
   amount: z.number().positive("Amount must be greater than 0").max(100000, "Maximum demo deposit is $100,000"),
 });
 
-export function DepositForm({ defaultAsset = "USD" }: { defaultAsset?: string }) {
+export function DemoDepositForm({ defaultAsset = "USD" }: { defaultAsset?: string }) {
   const router = useRouter();
   const simulateDeposit = useWalletStore((state) => state.simulateDeposit);
   const [isSubmitting, setIsSubmitting] = useState(false);
