@@ -76,8 +76,8 @@ export function AdminSidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-card border-r border-border hidden xl:flex flex-col h-[calc(100vh-64px)] sticky top-16 overflow-y-auto">
-      <div className="p-4 space-y-6">
+    <aside className="w-64 bg-card border-r border-border hidden xl:flex flex-col h-[calc(100vh-64px)] sticky top-16 overflow-y-auto custom-scrollbar">
+      <div className="p-4 space-y-3">
         {navGroups.map((group) => (
           <div key={group.title}>
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">
