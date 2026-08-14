@@ -12,6 +12,7 @@ export default function AdminKycPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<KycApplication | null>(null);
+  const [previewData, setPreviewData] = useState<{ url: string, type: 'image' | 'pdf' } | null>(null);
 
   const renderDocumentPreview = (url: string | undefined | null, altText: string) => {
     if (!url) {
@@ -23,18 +24,39 @@ export default function AdminKycPage() {
         <div className="flex flex-col items-center gap-2 w-full h-full justify-center">
           <FileText className="w-10 h-10 text-muted-foreground" />
           <span className="text-xs font-medium">PDF Document</span>
-          <a 
-            href={url} 
-            download={`${altText.replace(' ', '_')}.pdf`}
-            className="mt-2 px-3 py-1 bg-brand-primary text-brand-primary-foreground text-xs rounded-md hover:bg-brand-primary/90"
-          >
-            Download PDF
-          </a>
+          <div className="flex gap-2 mt-2">
+            <button 
+              onClick={() => setPreviewData({ url, type: 'pdf' })}
+              className="px-3 py-1 bg-secondary text-secondary-foreground text-xs rounded-md hover:bg-secondary/80"
+            >
+              Preview
+            </button>
+            <a 
+              href={url} 
+              download={`${altText.replace(' ', '_')}.pdf`}
+              className="px-3 py-1 bg-brand-primary text-brand-primary-foreground text-xs rounded-md hover:bg-brand-primary/90"
+            >
+              Download
+            </a>
+          </div>
         </div>
       );
     }
 
-    return <img src={url} alt={altText} className="max-h-48 object-contain" />;
+    return (
+      <div className="relative group w-full h-full flex items-center justify-center min-h-[12rem]">
+        <img src={url} alt={altText} className="max-h-48 object-contain" />
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md backdrop-blur-sm">
+          <button 
+            onClick={() => setPreviewData({ url, type: 'image' })}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black text-xs font-medium rounded-md hover:bg-gray-200"
+          >
+            <Eye className="w-4 h-4" />
+            Preview Full Size
+          </button>
+        </div>
+      </div>
+    );
   };
   
   const [page, setPage] = useState(1);
@@ -282,6 +304,27 @@ export default function AdminKycPage() {
                     <CheckCircle className="w-4 h-4" /> Approve
                   </button>
                 </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Screen Document Preview Modal */}
+      {previewData && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-5xl h-[90vh] bg-background border border-border rounded-xl overflow-hidden flex flex-col shadow-2xl">
+            <div className="flex justify-between items-center p-4 border-b border-border bg-muted/30">
+              <h3 className="text-lg font-medium">Document Preview</h3>
+              <button onClick={() => setPreviewData(null)} className="p-2 hover:bg-muted rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/10">
+              {previewData.type === 'pdf' ? (
+                <iframe src={previewData.url} className="w-full h-full border-0 rounded-lg shadow-inner bg-white" title="PDF Preview" />
+              ) : (
+                <img src={previewData.url} alt="Preview" className="max-w-full max-h-full object-contain drop-shadow-xl" />
               )}
             </div>
           </div>
