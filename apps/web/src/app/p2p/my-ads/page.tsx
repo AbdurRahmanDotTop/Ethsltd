@@ -31,7 +31,7 @@ export default function MyAdsPage() {
           if (res.success && res.data) {
             // Filter ads belonging to the logged in user
             // In a real backend, we would call a specific endpoint or the backend would filter by JWT
-            const myAds = res.data.filter((ad: P2PAdvertisement) => ad.merchantId === user.id);
+            const myAds = res.data.filter((ad: any) => ad.userId === user.id || ad.merchant?.id === user.id || ad.merchantId === user.id);
             setAds(myAds);
           }
         } catch (e) {
@@ -88,9 +88,9 @@ export default function MyAdsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {ads.map((ad) => {
+                  {ads.map((ad: any) => {
                     const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === ad.fiat)?.symbol || "$";
-                    const isBuy = ad.side.toLowerCase() === "buy";
+                    const isBuy = (ad.side || ad.type || "").toLowerCase() === "buy";
                     
                     return (
                       <tr key={ad.id} className="hover:bg-muted/10 transition-colors">
