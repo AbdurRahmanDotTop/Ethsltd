@@ -82,7 +82,7 @@ export function TradingExperience() {
           
           <div className="relative">
             <div className="absolute -inset-4 bg-[radial-gradient(circle_at_center,rgba(20,91,140,0.28)_0%,transparent_70%)] rounded-3xl blur-xl pointer-events-none" />
-            <div className="relative rounded-2xl border border-border bg-muted overflow-hidden shadow-2xl aspect-[4/3] flex flex-col">
+            <div className="relative rounded-2xl border border-border bg-muted overflow-hidden shadow-2xl aspect-square sm:aspect-[4/3] flex flex-col">
               {/* Mock Terminal Header */}
               <div className="h-12 border-b border-border flex items-center px-4 bg-card justify-between">
                 <div className="flex gap-4">
@@ -95,10 +95,10 @@ export function TradingExperience() {
                 </div>
               </div>
               {/* Mock Terminal Body */}
-              <div className="flex-1 flex">
-                <div className="flex-1 border-r border-border p-4 flex flex-col">
+              <div className="flex-1 flex flex-col sm:flex-row">
+                <div className="flex-1 border-b sm:border-b-0 sm:border-r border-border p-4 flex flex-col">
                   {/* Chart area */}
-                  <div className="flex-1 border-b border-border mb-4 relative flex items-end">
+                  <div className="flex-1 border-b border-border mb-4 relative flex items-end min-h-[100px]">
                     <svg viewBox="0 0 100 50" className="w-full h-full" preserveAspectRatio="none">
                       {/* Fake candles */}
                       {[...Array(20)].map((_, i) => (
@@ -107,13 +107,13 @@ export function TradingExperience() {
                     </svg>
                   </div>
                   {/* Orders area */}
-                  <div className="h-1/3">
+                  <div className="h-1/3 sm:h-1/3">
                     <div className="h-3 w-24 bg-foreground/10 rounded mb-2" />
                     <div className="h-3 w-full bg-foreground/5 rounded mb-2" />
                     <div className="h-3 w-full bg-foreground/5 rounded mb-2" />
                   </div>
                 </div>
-                <div className="w-48 p-4 hidden sm:block">
+                <div className="w-full sm:w-48 p-4">
                   {/* Order book area */}
                   <div className="h-3 w-16 bg-foreground/10 rounded mb-4" />
                   {[...Array(6)].map((_, i) => (
