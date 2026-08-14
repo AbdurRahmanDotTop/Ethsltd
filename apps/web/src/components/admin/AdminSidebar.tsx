@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { 
   LayoutDashboard, Users, UserCheck, Activity, 
   ListOrdered, ArrowRightLeft, Wallet, ArrowDownToLine, 
@@ -12,6 +13,13 @@ import {
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const activeItemRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    if (activeItemRef.current) {
+      activeItemRef.current.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [pathname]);
 
   const navGroups = [
     {
@@ -91,6 +99,7 @@ export function AdminSidebar() {
                   <Link 
                     key={item.href} 
                     href={item.href}
+                    ref={isActive ? activeItemRef : null}
                     className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                       isActive 
                         ? "bg-brand-primary/10 text-brand-primary font-medium" 

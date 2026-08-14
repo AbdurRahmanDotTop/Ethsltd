@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, User, Shield, KeyRound, Bell, Settings, Code, Activity } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { LayoutDashboard, User, Shield, KeyRound, Bell, Settings, Code, Activity, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -14,11 +15,19 @@ const navigation = [
   { name: "Notifications", href: "/account/preferences/notifications", icon: Bell },
   { name: "API Keys", href: "/account/api-keys", icon: Code },
   { name: "API Usage", href: "/account/api-usage", icon: Activity },
+  { name: "Agreements & Contracts", href: "/account/contracts", icon: FileSignature },
   { name: "Preferences", href: "/account/preferences", icon: Settings },
 ];
 
 export function AccountSidebar() {
   const pathname = usePathname();
+  const activeItemRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    if (activeItemRef.current) {
+      activeItemRef.current.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [pathname]);
 
   return (
     <nav className="space-y-1">
@@ -30,6 +39,7 @@ export function AccountSidebar() {
           <Link
             key={item.name}
             href={item.href}
+            ref={isActive ? activeItemRef : null}
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
               isActive 
