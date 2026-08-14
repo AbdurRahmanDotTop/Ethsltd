@@ -11,6 +11,69 @@ import {
   KeyRound, Code
 } from "lucide-react";
 
+export const adminNavGroups = [
+  {
+    title: "Overview",
+    items: [
+      { name: "Dashboard", href: "/admin", icon: LayoutDashboard }
+    ]
+  },
+  {
+    title: "Identity",
+    items: [
+      { name: "Users", href: "/admin/users", icon: Users },
+      { name: "KYC", href: "/admin/kyc", icon: UserCheck }
+    ]
+  },
+  {
+    title: "Developer",
+    items: [
+      { name: "API Platform", href: "/admin/api", icon: Code }
+    ]
+  },
+  {
+    title: "Market Activity",
+    items: [
+      { name: "Trading", href: "/admin/trading", icon: Activity },
+      { name: "Orders", href: "/admin/orders", icon: ListOrdered },
+      { name: "Trades", href: "/admin/trades", icon: ArrowRightLeft }
+    ]
+  },
+  {
+    title: "Financials",
+    items: [
+      { name: "Wallets", href: "/admin/wallets", icon: Wallet },
+      { name: "Deposits", href: "/admin/deposits", icon: ArrowDownToLine },
+      { name: "Withdrawals", href: "/admin/withdrawals", icon: ArrowUpFromLine }
+    ]
+  },
+  {
+    title: "P2P Marketplace",
+    items: [
+      { name: "Orders", href: "/admin/p2p/orders", icon: Handshake },
+      { name: "Disputes", href: "/admin/p2p/disputes", icon: AlertTriangle }
+    ]
+  },
+  {
+    title: "Operations",
+    items: [
+      { name: "Risk", href: "/admin/risk", icon: ShieldCheck },
+      { name: "Support", href: "/admin/support", icon: LifeBuoy },
+      { name: "Contracts", href: "/admin/contracts", icon: FileSignature },
+      { name: "Notifications", href: "/admin/notifications", icon: Bell }
+    ]
+  },
+  {
+    title: "Platform",
+    items: [
+      { name: "Audit Logs", href: "/admin/audit", icon: ShieldCheck },
+      { name: "Settings", href: "/admin/settings", icon: Settings },
+      { name: "Payment Settings", href: "/admin/settings/payments", icon: Wallet },
+      { name: "System", href: "/admin/system", icon: Server }
+    ]
+  }
+];
+
 export function AdminSidebar() {
   const pathname = usePathname();
   const activeItemRef = useRef<HTMLAnchorElement>(null);
@@ -21,72 +84,10 @@ export function AdminSidebar() {
     }
   }, [pathname]);
 
-  const navGroups = [
-    {
-      title: "Overview",
-      items: [
-        { name: "Dashboard", href: "/admin", icon: LayoutDashboard }
-      ]
-    },
-    {
-      title: "Identity",
-      items: [
-        { name: "Users", href: "/admin/users", icon: Users },
-        { name: "KYC", href: "/admin/kyc", icon: UserCheck }
-      ]
-    },
-    {
-      title: "Developer",
-      items: [
-        { name: "API Platform", href: "/admin/api", icon: Code }
-      ]
-    },
-    {
-      title: "Market Activity",
-      items: [
-        { name: "Trading", href: "/admin/trading", icon: Activity },
-        { name: "Orders", href: "/admin/orders", icon: ListOrdered },
-        { name: "Trades", href: "/admin/trades", icon: ArrowRightLeft }
-      ]
-    },
-    {
-      title: "Financials",
-      items: [
-        { name: "Wallets", href: "/admin/wallets", icon: Wallet },
-        { name: "Deposits", href: "/admin/deposits", icon: ArrowDownToLine },
-        { name: "Withdrawals", href: "/admin/withdrawals", icon: ArrowUpFromLine }
-      ]
-    },
-    {
-      title: "P2P Marketplace",
-      items: [
-        { name: "Orders", href: "/admin/p2p/orders", icon: Handshake },
-        { name: "Disputes", href: "/admin/p2p/disputes", icon: AlertTriangle }
-      ]
-    },
-    {
-      title: "Operations",
-      items: [
-        { name: "Risk", href: "/admin/risk", icon: ShieldCheck },
-        { name: "Support", href: "/admin/support", icon: LifeBuoy },
-        { name: "Contracts", href: "/admin/contracts", icon: FileSignature },
-        { name: "Notifications", href: "/admin/notifications", icon: Bell }
-      ]
-    },
-    {
-      title: "Platform",
-      items: [
-        { name: "Audit Logs", href: "/admin/audit", icon: ShieldCheck },
-        { name: "Settings", href: "/admin/settings", icon: Settings },
-        { name: "System", href: "/admin/system", icon: Server }
-      ]
-    }
-  ];
-
   return (
     <aside className="w-64 bg-card border-r border-border hidden xl:flex flex-col h-full overflow-y-auto custom-scrollbar">
       <div className="p-4 space-y-6">
-        {navGroups.map((group) => (
+        {adminNavGroups.map((group) => (
           <div key={group.title}>
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
               {group.title}

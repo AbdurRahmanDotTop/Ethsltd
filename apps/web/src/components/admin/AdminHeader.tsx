@@ -1,14 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, Bell, Activity, User, Settings, LayoutDashboard, LogOut, Shield } from "lucide-react";
+import { Search, Bell, Activity, User, Settings, LayoutDashboard, LogOut, Shield, Menu, X } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { adminNavGroups } from "./AdminSidebar";
 
 export function AdminHeader() {
   const { user, logout } = useAuthStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -23,7 +27,15 @@ export function AdminHeader() {
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-30">
       <div className="flex items-center gap-4">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">
+        {/* Mobile Menu Toggle */}
+        <button 
+          className="xl:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <h1 className="text-xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent hidden sm:block">
           ETHSLTD Admin
         </h1>
         
@@ -125,6 +137,54 @@ export function AdminHeader() {
           )}
         </div>
       </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex xl:hidden">
+          <div 
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="relative w-72 max-w-[80vw] bg-card border-r border-border flex flex-col h-full animate-in slide-in-from-left">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <span className="font-bold text-lg">Admin Menu</span>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-6 overflow-y-auto custom-scrollbar flex-1 pb-20">
+              {adminNavGroups.map((group) => (
+                <div key={group.title}>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
+                    {group.title}
+                  </h4>
+                  <nav className="space-y-1">
+                    {group.items.map((item) => {
+                      const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+                      const Icon = item.icon;
+                      return (
+                        <Link 
+                          key={item.href} 
+                          href={item.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+                            isActive 
+                              ? "bg-brand-primary/10 text-brand-primary font-medium" 
+                              : "text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <Icon size={18} className={isActive ? "text-brand-primary" : "text-muted-foreground"} />
+                          <span className="text-sm">{item.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
