@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -127,7 +128,15 @@ export function RegisterForm() {
           />
           <div className="space-y-1">
             <Label htmlFor="acceptTerms" className="font-normal text-muted-foreground text-sm leading-snug">
-              I agree to the ETHSLTD Terms of Service and Privacy Policy.
+              I agree to the ETHSLTD{" "}
+              <Link href="/legal/terms" className="text-brand-foreground hover:underline">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/legal/privacy" className="text-brand-foreground hover:underline">
+                Privacy Policy
+              </Link>
+              .
             </Label>
             {errors.acceptTerms && (
               <p className="text-xs text-destructive">{errors.acceptTerms.message}</p>
