@@ -6,14 +6,15 @@ import { jwtMiddleware } from '../middleware/jwt';
 
 export const tradingRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// Helper function to get mock prices for simulation
-const getMockPrice = (symbol: string) => {
-  const prices: Record<string, number> = {
-    'BTC-USDT': 104250.00,
-    'ETH-USDT': 3500.00,
-    'SOL-USDT': 140.00,
-  };
-  return prices[symbol] || 0;
+const getRealPrice = async (symbol: string): Promise<number> => {
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol.replace('-', '')}`);
+    const data = await res.json() as any;
+    return parseFloat(data.price || 0);
+  } catch (e) {
+    console.error('Error fetching real price:', e);
+    return 0;
+  }
 };
 
 const DEFAULT_MARKETS = [
@@ -37,23 +38,57 @@ tradingRoutes.get('/markets', async (c) => {
     allMarkets = await db.select().from(markets).all();
   }
   
+  // Fetch real data from Binance
+  let binanceData: Record<string, any> = {};
+  try {
+    const symbolsParam = allMarkets.map(m => `"${m.symbol.replace('-', '')}"`).join(',');
+    const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=[${symbolsParam}]`);
+    const data = await res.json() as any[];
+    if (Array.isArray(data)) {
+      data.forEach(item => {
+        const origSymbol = allMarkets.find(m => m.symbol.replace('-', '') === item.symbol)?.symbol || item.symbol;
+        binanceData[origSymbol] = item;
+      });
+    }
+  } catch(e) {
+    console.error('Binance API error:', e);
+  }
+
   // Format for frontend
   const formattedMarkets = allMarkets.map(m => {
-    const currentPrice = getMockPrice(m.symbol);
-    return {
-      id: m.symbol,
-      symbol: m.symbol,
-      name: m.symbol,
-      baseAsset: m.baseAsset,
-      quoteAsset: m.quoteAsset,
-      price: currentPrice,
-      priceChange24h: 0,
-      high24h: currentPrice * 1.02,
-      low24h: currentPrice * 0.98,
-      volume24h: 1000000,
-      sparkline: [currentPrice, currentPrice * 1.01, currentPrice * 0.99, currentPrice],
-      isNew: false
-    };
+    const bData = binanceData[m.symbol];
+    if (bData) {
+      const price = parseFloat(bData.lastPrice);
+      return {
+        id: m.symbol,
+        symbol: m.symbol,
+        name: m.symbol,
+        baseAsset: m.baseAsset,
+        quoteAsset: m.quoteAsset,
+        price: price,
+        priceChange24h: parseFloat(bData.priceChange),
+        high24h: parseFloat(bData.highPrice),
+        low24h: parseFloat(bData.lowPrice),
+        volume24h: parseFloat(bData.volume),
+        sparkline: [parseFloat(bData.openPrice), parseFloat(bData.lowPrice), parseFloat(bData.highPrice), price],
+        isNew: false
+      };
+    } else {
+      return {
+        id: m.symbol,
+        symbol: m.symbol,
+        name: m.symbol,
+        baseAsset: m.baseAsset,
+        quoteAsset: m.quoteAsset,
+        price: 0,
+        priceChange24h: 0,
+        high24h: 0,
+        low24h: 0,
+        volume24h: 0,
+        sparkline: [0, 0, 0, 0],
+        isNew: false
+      };
+    }
   });
   
   return c.json({ success: true, data: formattedMarkets });
@@ -61,7 +96,28 @@ tradingRoutes.get('/markets', async (c) => {
 
 tradingRoutes.get('/markets/:symbol/candles', async (c) => {
   const symbol = c.req.param('symbol');
-  const currentPrice = getMockPrice(symbol) || 100000;
+  const interval = c.req.query('interval') || '15m';
+
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol.replace('-', '')}&interval=${interval}&limit=100`);
+    const data = await res.json() as any[];
+    if (Array.isArray(data)) {
+      const candles = data.map(k => ({
+        time: k[0] / 1000,
+        open: parseFloat(k[1]),
+        high: parseFloat(k[2]),
+        low: parseFloat(k[3]),
+        close: parseFloat(k[4]),
+        volume: parseFloat(k[5])
+      }));
+      return c.json({ success: true, data: candles });
+    }
+  } catch(e) {
+    console.error('Binance API error (candles):', e);
+  }
+
+  // Fallback to mock data if Binance fails
+  const currentPrice = await getRealPrice(symbol) || 100000;
   
   const candles = [];
   let price = currentPrice * 0.95; // start lower
@@ -89,7 +145,21 @@ tradingRoutes.get('/markets/:symbol/candles', async (c) => {
 
 tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
   const symbol = c.req.param('symbol');
-  const currentPrice = getMockPrice(symbol) || 100000;
+
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol.replace('-', '')}&limit=20`);
+    const data = await res.json() as any;
+    if (data && data.bids && data.asks) {
+      const bids = data.bids.map((b: string[]) => ({ price: parseFloat(b[0]), amount: parseFloat(b[1]), total: parseFloat(b[0]) * parseFloat(b[1]) }));
+      const asks = data.asks.map((a: string[]) => ({ price: parseFloat(a[0]), amount: parseFloat(a[1]), total: parseFloat(a[0]) * parseFloat(a[1]) })).reverse();
+      return c.json({ success: true, data: { asks, bids } });
+    }
+  } catch(e) {
+    console.error('Binance API error (orderbook):', e);
+  }
+
+  // Fallback to mock data if Binance fails
+  const currentPrice = await getRealPrice(symbol) || 100000;
   
   const asks = [];
   const bids = [];
@@ -111,7 +181,26 @@ tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
 
 tradingRoutes.get('/markets/:symbol/trades', async (c) => {
   const symbol = c.req.param('symbol');
-  const currentPrice = getMockPrice(symbol) || 100000;
+  
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/trades?symbol=${symbol.replace('-', '')}&limit=30`);
+    const data = await res.json() as any[];
+    if (Array.isArray(data)) {
+      const formattedTrades = data.map(t => ({
+        id: t.id.toString(),
+        price: parseFloat(t.price),
+        amount: parseFloat(t.qty),
+        time: new Date(t.time).toLocaleTimeString(),
+        isBuyerMaker: t.isBuyerMaker
+      })).reverse(); // Show newest trades first
+      return c.json({ success: true, data: formattedTrades });
+    }
+  } catch(e) {
+    console.error('Binance API error (trades):', e);
+  }
+
+  // Fallback to mock data if Binance fails
+  const currentPrice = await getRealPrice(symbol) || 100000;
   
   const trades = [];
   for(let i = 0; i < 30; i++) {
@@ -208,7 +297,7 @@ tradingRoutes.post('/orders', async (c) => {
     return c.json({ success: false, error: 'Market not found' }, 400);
   }
 
-  const orderPrice = type === 'MARKET' ? getMockPrice(market) : parseFloat(price);
+  const orderPrice = type === 'MARKET' ? await getRealPrice(market) : parseFloat(price);
   if (orderPrice <= 0) {
     return c.json({ success: false, error: 'Invalid price' }, 400);
   }
