@@ -11,7 +11,7 @@ import { supportRoutes } from './routes/support';
 import { tradingRoutes } from './routes/trading';
 import { adminRoutes } from './routes/admin';
 import { adminPaymentRoutes } from './routes/admin/payments';
-import { notificationsRoutes } from './routes/notifications';
+import { notificationRoutes } from './routes/notifications';
 import { webhookRoutes } from './routes/webhooks';
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -39,7 +39,7 @@ app.route('/api/v1/support', supportRoutes);
 app.route('/api/v1/trading', tradingRoutes);
 app.route('/api/v1/admin', adminRoutes);
 app.route('/api/v1/admin/payments', adminPaymentRoutes);
-app.route('/api/v1/notifications', notificationsRoutes);
+app.route('/api/v1/notifications', notificationRoutes);
 app.route('/webhooks', webhookRoutes);
 
 export default app;
