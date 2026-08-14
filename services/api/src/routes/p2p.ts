@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, and, desc, or } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { p2pAds, p2pOrders, wallets } from 'database';
+import { p2pAds, p2pOrders, wallets, p2pMessages, users } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const p2pRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -14,11 +14,20 @@ const DEFAULT_P2P_ADS = [
 
 p2pRoutes.get('/ads', async (c) => {
   const db = c.get('db');
-  let ads = await db.select().from(p2pAds).where(eq(p2pAds.status, 'ACTIVE')).orderBy(desc(p2pAds.createdAt)).all();
+  
+  let adsWithUsers = await db
+    .select({
+      ad: p2pAds,
+      user: users
+    })
+    .from(p2pAds)
+    .leftJoin(users, eq(p2pAds.userId, users.id))
+    .where(eq(p2pAds.status, 'ACTIVE'))
+    .orderBy(desc(p2pAds.createdAt))
+    .all();
 
-  if (ads.length === 0) {
+  if (adsWithUsers.length === 0) {
     const now = new Date();
-    // In a real app we wouldn't seed random user ids for ads, but we'll use a dummy ID here for MVP.
     const dummyUserId = 'system-user-id'; 
     await db.insert(p2pAds).values(DEFAULT_P2P_ADS.map(ad => ({
       ...ad,
@@ -26,13 +35,35 @@ p2pRoutes.get('/ads', async (c) => {
       createdAt: now,
       updatedAt: now
     })));
-    ads = await db.select().from(p2pAds).where(eq(p2pAds.status, 'ACTIVE')).orderBy(desc(p2pAds.createdAt)).all();
+    adsWithUsers = await db
+      .select({ ad: p2pAds, user: users })
+      .from(p2pAds)
+      .leftJoin(users, eq(p2pAds.userId, users.id))
+      .where(eq(p2pAds.status, 'ACTIVE'))
+      .orderBy(desc(p2pAds.createdAt))
+      .all();
   }
 
-  const formattedAds = ads.map(a => ({
-    ...a,
-    paymentMethods: JSON.parse(a.paymentMethods)
-  }));
+  const formattedAds = adsWithUsers.map(({ ad, user }) => {
+    return {
+      ...ad,
+      paymentMethods: JSON.parse(ad.paymentMethods),
+      merchant: {
+        id: ad.userId,
+        displayName: user?.displayName || `User_${ad.userId.substring(0,4)}`,
+        username: user?.email ? user.email.split('@')[0] : `user_${ad.userId.substring(0,4)}`,
+        verified: user?.status === 'ACTIVE',
+        completionRate: 98,
+        totalOrders: 150,
+        averageReleaseTime: 5,
+        online: true,
+        positiveFeedback: 148,
+        negativeFeedback: 2,
+        joinedAt: user?.createdAt || new Date().toISOString(),
+        supportedPaymentMethods: ["Bank Transfer"], // mocked for now until merchant profile table is built
+      }
+    };
+  });
 
   return c.json({ success: true, data: formattedAds });
 });
@@ -156,6 +187,61 @@ p2pRoutes.post('/orders', async (c) => {
   });
 
   return c.json({ success: true, orderId });
+});
+
+p2pRoutes.get('/orders/:id', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const orderId = c.req.param('id');
+  
+  const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
+  if (!order) return c.json({ success: false, error: 'Order not found.' }, 404);
+  
+  if (order.buyerId !== user.id && order.sellerId !== user.id) {
+    return c.json({ success: false, error: 'Unauthorized.' }, 403);
+  }
+  
+  return c.json({ success: true, data: order });
+});
+
+p2pRoutes.get('/orders/:id/messages', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const orderId = c.req.param('id');
+  
+  const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
+  if (!order || (order.buyerId !== user.id && order.sellerId !== user.id)) {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+  
+  const msgs = await db.select().from(p2pMessages)
+    .where(eq(p2pMessages.orderId, orderId))
+    .orderBy(p2pMessages.createdAt).all();
+    
+  return c.json({ success: true, data: msgs });
+});
+
+p2pRoutes.post('/orders/:id/messages', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const orderId = c.req.param('id');
+  const body = await c.req.json();
+  
+  const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
+  if (!order || (order.buyerId !== user.id && order.sellerId !== user.id)) {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+  
+  const msgId = `msg_${Date.now()}`;
+  await db.insert(p2pMessages).values({
+    id: msgId,
+    orderId,
+    senderId: user.id,
+    content: body.content,
+    createdAt: new Date(),
+  });
+  
+  return c.json({ success: true, messageId: msgId });
 });
 
 p2pRoutes.post('/orders/:id/pay', async (c) => {

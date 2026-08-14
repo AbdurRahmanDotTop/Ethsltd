@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { P2POrder, P2PMessage, P2PMerchant } from "@/lib/p2p/types";
+import { apiClient } from "@ethsltd/api-client";
 import { useP2PStore } from "@/stores/p2p-store";
 import { Send, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,26 +25,55 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
   };
 
   useEffect(() => {
-    // Initial system messages if chat is empty
-    if (messages.length === 0) {
-      addMessage({
-        id: `msg_sys_${Date.now()}`,
-        orderId: order.id,
-        sender: "system",
-        message: "P2P order created. The merchant has been notified.",
-        createdAt: new Date().toISOString(),
-        read: true,
-      });
-      addMessage({
-        id: `msg_sys_${Date.now()+1}`,
-        orderId: order.id,
-        sender: "system",
-        message: "Simulated escrow has been locked.",
-        createdAt: new Date().toISOString(),
-        read: true,
-      });
-    }
-  }, [order.id, messages.length]);
+    // Initial system messages if chat is empty, and fetch from API
+    const loadMessages = async () => {
+      try {
+        const res = await apiClient.getP2pMessages(order.id);
+        if (res.success && res.data) {
+          const formattedMsgs: P2PMessage[] = res.data.map((m: any) => ({
+            id: m.id,
+            orderId: m.orderId,
+            sender: (m.senderId === "SYSTEM" ? "system" : (m.senderId === merchant.id ? "merchant" : "user")) as "system" | "merchant" | "user",
+            message: m.content,
+            createdAt: m.createdAt,
+            read: !!m.isRead,
+          }));
+          
+          if (formattedMsgs.length === 0) {
+            // Seed local system messages for UX
+            setMessages([
+              {
+                id: `msg_sys_${Date.now()}`,
+                orderId: order.id,
+                sender: "system",
+                message: "P2P order created. The merchant has been notified.",
+                createdAt: new Date().toISOString(),
+                read: true,
+              },
+              {
+                id: `msg_sys_${Date.now()+1}`,
+                orderId: order.id,
+                sender: "system",
+                message: "Simulated escrow has been locked.",
+                createdAt: new Date().toISOString(),
+                read: true,
+              }
+            ]);
+          } else {
+            setMessages(formattedMsgs);
+          }
+        }
+      } catch(e) {
+        console.error("Failed to load messages", e);
+      }
+    };
+    
+    loadMessages();
+    
+    // Poll for new messages
+    const interval = setInterval(loadMessages, 5000);
+    return () => clearInterval(interval);
+  }, [order.id, merchant.id]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -51,32 +81,28 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
     }
   }, [messages.length]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || !isChatActive) return;
 
+    const messageText = inputValue.trim().slice(0, 1000);
+    setInputValue("");
+    
+    // Optimistic update
     addMessage({
-      id: `msg_user_${Date.now()}`,
+      id: `msg_user_temp_${Date.now()}`,
       orderId: order.id,
       sender: "user",
-      message: inputValue.trim().slice(0, 1000), // Max 1000 chars
+      message: messageText,
       createdAt: new Date().toISOString(),
       read: true,
     });
-    setInputValue("");
 
-    // Simulate merchant reply after a short delay
-    if (order.status === "CREATED" || order.status === "AWAITING_PAYMENT") {
-      setTimeout(() => {
-        addMessage({
-          id: `msg_merchant_${Date.now()}`,
-          orderId: order.id,
-          sender: "merchant",
-          message: "Hello! Please send the payment according to the instructions. Let me know when you're done.",
-          createdAt: new Date().toISOString(),
-          read: false,
-        });
-      }, 2000);
+    try {
+      await apiClient.sendP2pMessage(order.id, messageText);
+    } catch(e) {
+      console.error("Failed to send message", e);
+      // In a real app we might show a retry button or error state
     }
   };
 

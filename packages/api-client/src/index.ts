@@ -188,6 +188,21 @@ export class EthsltdClient {
     });
   }
 
+  async getP2pOrder(orderId: string) {
+    return this.request<any>(`/api/v1/p2p/orders/${orderId}`);
+  }
+
+  async getP2pMessages(orderId: string) {
+    return this.request<any[]>(`/api/v1/p2p/orders/${orderId}/messages`);
+  }
+
+  async sendP2pMessage(orderId: string, content: string) {
+    return this.request<any>(`/api/v1/p2p/orders/${orderId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
   // Admin API Methods
   async getAdminStats() {
     return this.request<any>('/api/v1/admin/stats');

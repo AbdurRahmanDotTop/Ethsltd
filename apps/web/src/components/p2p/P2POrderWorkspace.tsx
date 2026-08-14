@@ -22,29 +22,28 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   useEffect(() => {
     const fetchOrderData = async () => {
       try {
-        const res = await apiClient.getP2pOrders();
+        const res = await apiClient.getP2pOrder(orderId);
         if (res.success && res.data) {
-          const found = res.data.find((o: any) => o.id === orderId);
-          if (found) {
-            setOrder(found);
-            // In a real app we fetch merchant by sellerId/buyerId
-            // Here we just make a mock one based on the order
-            setMerchant({
-              id: found.sellerId,
-              username: `user_${found.sellerId.substring(0,4)}`,
-              displayName: `User_${found.sellerId.substring(0,4)}`,
-              verified: true,
-              completionRate: 99,
-              totalOrders: 100,
-              averageReleaseTime: 5,
-              online: true,
-              positiveFeedback: 99,
-              negativeFeedback: 1,
-              joinedAt: new Date().toISOString(),
-              supportedPaymentMethods: ["Bank Transfer"],
-            } as any);
-          }
+          setOrder(res.data);
+          // In a real app we fetch merchant by sellerId/buyerId
+          // Here we just make a mock one based on the order
+          setMerchant({
+            id: res.data.sellerId,
+            username: `user_${res.data.sellerId.substring(0,4)}`,
+            displayName: `User_${res.data.sellerId.substring(0,4)}`,
+            verified: true,
+            completionRate: 99,
+            totalOrders: 100,
+            averageReleaseTime: 5,
+            online: true,
+            positiveFeedback: 99,
+            negativeFeedback: 1,
+            joinedAt: new Date().toISOString(),
+            supportedPaymentMethods: ["Bank Transfer"],
+          } as any);
         }
+      } catch(e) {
+        console.error("Failed to load order", e);
       } finally {
         setIsLoading(false);
       }

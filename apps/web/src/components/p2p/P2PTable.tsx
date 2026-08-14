@@ -28,23 +28,9 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
           );
           setAds(filteredAds);
           
-          // Generate mock merchants since backend doesn't return full merchant details yet
           const newMerchants: Record<string, P2PMerchant> = {};
           for (const ad of filteredAds) {
-            newMerchants[ad.userId] = {
-              id: ad.userId,
-              displayName: `User_${ad.userId.substring(0,4)}`,
-              username: `user_${ad.userId.substring(0,4)}`,
-              verified: true,
-              completionRate: 98,
-              totalOrders: 150,
-              averageReleaseTime: 5,
-              online: true,
-              positiveFeedback: 148,
-              negativeFeedback: 2,
-              joinedAt: new Date().toISOString(),
-              supportedPaymentMethods: ["Bank Transfer"],
-            };
+            newMerchants[ad.userId] = ad.merchant;
           }
           setMerchants(newMerchants);
         }
