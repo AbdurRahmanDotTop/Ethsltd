@@ -264,11 +264,7 @@ tradingRoutes.post('/orders', async (c) => {
     });
     
     // Release lock and finalize transfer
-    // 1. Remove locked balance
-    await db.update(wallets).set({ 
-      lockedBalance: (parseFloat(spendWallet.lockedBalance)).toString(), // In real scenario, subtract spendAmount here, but we already added it above. Let's just deduct it.
-    }).where(eq(wallets.id, spendWallet.id));
-    
+    // 1. Remove locked balance (which was just added)
     const finalSpendWallet = await db.select().from(wallets).where(eq(wallets.id, spendWallet.id)).get();
     if(finalSpendWallet) {
        const finalLocked = (parseFloat(finalSpendWallet.lockedBalance) - spendAmount).toString();
