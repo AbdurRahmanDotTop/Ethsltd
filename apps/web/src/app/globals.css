@@ -13,6 +13,8 @@
   --color-brand-700: #002C55;
   --color-brand-800: #001F3D;
   --color-brand-900: #00152B;
+  --color-brand-primary: var(--primary);
+  --color-brand-primary-foreground: var(--primary-foreground);
 
   --color-slate: #89AEC8;
   --color-brass: #7B6727;

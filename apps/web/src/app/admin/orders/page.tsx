@@ -33,6 +33,10 @@ export default function AdminOrdersPage() {
     };
   }, [page, status, market]);
 
+  const handleCancel = (id: string) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'CANCELED' } : o));
+  };
+
   const columns: Column<AdminOrder>[] = [
     {
       header: "Order ID",
@@ -114,7 +118,11 @@ export default function AdminOrdersPage() {
       accessor: (row) => {
         if (row.status !== "OPEN" && row.status !== "PARTIAL") return <span className="text-muted-foreground text-xs">-</span>;
         return (
-          <button className="flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded text-xs transition-colors" title="Force Cancel Order">
+          <button 
+            onClick={() => handleCancel(row.id)}
+            className="flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded text-xs transition-colors" 
+            title="Force Cancel Order"
+          >
             <XCircle className="w-3 h-3" /> Cancel
           </button>
         );
