@@ -6,14 +6,16 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useWalletStore } from "@/stores/wallet-store";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, User, ShieldCheck, Wallet } from "lucide-react";
+import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export default function AccountOverviewPage() {
   const { user } = useAuthStore();
   const { balances, fetchBalances } = useWalletStore();
+  const { mode } = useTradingModeStore();
   
   useEffect(() => {
-    fetchBalances();
-  }, [fetchBalances]);
+    fetchBalances(mode);
+  }, [fetchBalances, mode]);
 
   // Combine USDT and USDC for display
   const usdtBal = balances.find(b => b.symbol === 'USDT')?.total || 0;

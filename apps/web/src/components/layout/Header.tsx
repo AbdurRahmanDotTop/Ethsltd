@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, Search, X, User, ChevronDown, LogOut, LayoutDashboard, Shield, Settings, Bell, Info } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
+import { useTradingModeStore } from "@/stores/trading-mode-store"
 import { apiClient } from "@ethsltd/api-client"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -18,6 +19,7 @@ export function Header() {
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false)
   const pathname = usePathname()
   const { user, status, logout } = useAuthStore()
+  const { mode, toggleMode } = useTradingModeStore()
 
   const handleLogout = async () => {
     await apiClient.logout()
@@ -104,6 +106,18 @@ export function Header() {
             </button>
             <ThemeToggle />
             
+            {/* Paper Trading Toggle */}
+            <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-border">
+              <span className={`text-xs font-medium ${mode === 'REAL' ? 'text-green-500' : 'text-muted-foreground'}`}>Real</span>
+              <button 
+                onClick={toggleMode}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${mode === 'PAPER' ? 'bg-orange-500' : 'bg-muted-foreground/30'}`}
+              >
+                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${mode === 'PAPER' ? 'translate-x-4.5' : 'translate-x-1'}`} />
+              </button>
+              <span className={`text-xs font-medium ${mode === 'PAPER' ? 'text-orange-500' : 'text-muted-foreground'}`}>Paper</span>
+            </div>
+
             {status === "authenticated" && user ? (
               <>
                 <NotificationBell />
@@ -159,6 +173,13 @@ export function Header() {
           </div>
 
           <div className="lg:hidden flex items-center gap-4">
+            {/* Paper Trading Toggle Mobile */}
+            <button 
+              onClick={toggleMode}
+              className={`text-xs px-2 py-1 rounded-md font-medium ${mode === 'PAPER' ? 'bg-orange-500/20 text-orange-500' : 'bg-green-500/10 text-green-500'}`}
+            >
+              {mode}
+            </button>
             <ThemeToggle />
             <button className="text-foreground">
               <Search className="h-5 w-5" />

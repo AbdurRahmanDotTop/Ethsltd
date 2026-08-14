@@ -12,6 +12,8 @@ import { parseMarketSymbol } from "@/lib/trading/calculations"
 import { OrderSide, OrderType } from "@/lib/trading/types"
 import { cn } from "@/lib/utils"
 
+import { useTradingModeStore } from "@/stores/trading-mode-store"
+
 // Schema dynamically updated based on order type
 const getOrderSchema = (type: OrderType) => z.object({
   price: type === 'limit' 
@@ -23,14 +25,15 @@ const getOrderSchema = (type: OrderType) => z.object({
 export function OrderEntry({ market }: { market: Market }) {
   const { selectedSide, setSide, selectedOrderType, setOrderType, orderFormPrice, orderFormQuantity, setOrderFormPrice, setOrderFormQuantity } = useTradingUIStore()
   const { balances, fetchBalances } = useWalletStore()
+  const { mode } = useTradingModeStore()
   const { base, quote } = parseMarketSymbol(market.symbol)
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null)
 
   useEffect(() => {
-    fetchBalances();
-  }, [fetchBalances]);
+    fetchBalances(mode);
+  }, [fetchBalances, mode]);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm({
     resolver: zodResolver(getOrderSchema(selectedOrderType)),
@@ -94,12 +97,13 @@ export function OrderEntry({ market }: { market: Market }) {
         side: selectedSide === 'buy' ? 'BUY' : 'SELL',
         type: selectedOrderType === 'market' ? 'MARKET' : 'LIMIT',
         price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
-        amount: parseFloat(data.quantity)
+        amount: parseFloat(data.quantity),
+        mode: mode
       })
       
       setMessage({ type: 'success', text: 'Order placed successfully' })
       setValue("quantity", "") // Reset quantity on success
-      fetchBalances() // Refresh balances
+      fetchBalances(mode) // Refresh balances
       setTimeout(() => setMessage(null), 3000)
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Failed to place order' })

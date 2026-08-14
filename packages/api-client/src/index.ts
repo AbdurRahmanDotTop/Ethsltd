@@ -108,33 +108,57 @@ export class EthsltdClient {
     });
   }
 
+  async submitKYC(data: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    country: string;
+    documentType: string;
+    documentNumber: string;
+    documentFrontBase64?: string;
+    documentBackBase64?: string;
+    selfieBase64?: string;
+  }) {
+    return this.request<any>('/api/v1/settings/kyc', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+
   async getWallets(userId: string) {
     return this.request<any[]>(`/api/v1/wallets?userId=${userId}`);
   }
 
-  async getWalletBalances() {
-    return this.request<any[]>('/api/v1/wallets/balances');
+  async getWalletBalances(mode: string = 'REAL') {
+    return this.request<any[]>(`/api/v1/wallets/balances?mode=${mode}`);
   }
 
-  async getWalletPortfolio() {
-    return this.request<any>('/api/v1/wallets/portfolio');
+  async getWalletPortfolio(mode: string = 'REAL') {
+    return this.request<any>(`/api/v1/wallets/portfolio?mode=${mode}`);
   }
 
-  async getWalletTransactions(params?: any) {
-    return this.request<any[]>('/api/v1/wallets/transactions');
+  async getWalletTransactions(mode: string = 'REAL') {
+    return this.request<any[]>(`/api/v1/wallets/transactions?mode=${mode}`);
   }
 
-  async deposit(data: { assetSymbol: string; amount: number; network?: string; destination?: string }) {
+  async deposit(data: { assetSymbol: string; amount: number; network?: string; destination?: string; mode?: string }) {
     return this.request<any>('/api/v1/wallets/deposit', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async withdraw(data: { assetSymbol: string; amount: number; network?: string; destination?: string }) {
+  async withdraw(data: { assetSymbol: string; amount: number; network?: string; destination?: string; mode?: string }) {
     return this.request<any>('/api/v1/wallets/withdraw', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  async topUpPaperWallet() {
+    return this.request<any>('/api/v1/wallets/top-up-paper', {
+      method: 'POST',
     });
   }
 
@@ -156,18 +180,18 @@ export class EthsltdClient {
   }
 
   // Trading Execution API Methods
-  async getOrders(params?: any) {
-    return this.request<any[]>('/api/v1/trading/orders');
+  async getOrders(mode: string = 'REAL') {
+    return this.request<any[]>(`/api/v1/trading/orders?mode=${mode}`);
   }
 
-  async getTrades(params?: any) {
-    return this.request<any[]>('/api/v1/trading/trades');
+  async getTrades(mode: string = 'REAL') {
+    return this.request<any[]>(`/api/v1/trading/trades?mode=${mode}`);
   }
 
   async createOrder(data: any) {
     return this.request<any>('/api/v1/trading/orders', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, mode: data.mode || 'REAL' }),
     });
   }
 
@@ -240,6 +264,17 @@ export class EthsltdClient {
     return this.request<any>(`/api/v1/admin/users/${userId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    });
+  }
+
+  async getAdminPendingKYC() {
+    return this.request<any[]>('/api/v1/admin/kyc');
+  }
+
+  async updateAdminKYCStatus(kycId: string, status: string, rejectionReason?: string) {
+    return this.request<any>(`/api/v1/admin/kyc/${kycId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status, rejectionReason }),
     });
   }
 

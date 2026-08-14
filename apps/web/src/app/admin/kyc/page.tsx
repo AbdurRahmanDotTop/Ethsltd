@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
 import { KycApplication } from "@/lib/admin/types";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
+import { apiClient } from "@ethsltd/api-client";
 import { Filter } from "lucide-react";
 
 export default function AdminKycPage() {
@@ -19,20 +20,20 @@ export default function AdminKycPage() {
     let isMounted = true;
     setLoading(true);
 
-    MockAdminProvider.getKycApplications({ page, limit, status }).then((res) => {
+    apiClient.getAdminPendingKYC().then((res: any) => {
       if (isMounted) {
-        setKycApps(res.items);
-        setTotal(res.total);
+        setKycApps(res.data || []);
+        setTotal(res.data?.length || 0);
         setLoading(false);
       }
-    });
+    }).catch(console.error);
 
     return () => {
       isMounted = false;
     };
-  }, [page, status]);
+  }, []);
 
-  const columns: Column<KycApplication>[] = [
+  const columns: Column<any>[] = [
     {
       header: "Application ID",
       accessor: "id",
@@ -42,7 +43,7 @@ export default function AdminKycPage() {
       header: "User",
       accessor: (row) => (
         <div className="flex flex-col">
-          <span className="font-medium">{row.name}</span>
+          <span className="font-medium">{row.firstName} {row.lastName}</span>
           <span className="text-xs text-muted-foreground font-mono">{row.userId}</span>
         </div>
       )
@@ -56,24 +57,12 @@ export default function AdminKycPage() {
       accessor: "country"
     },
     {
-      header: "Risk",
-      accessor: (row) => {
-        const colors: Record<string, string> = {
-          LOW: "text-green-500",
-          MEDIUM: "text-yellow-500",
-          HIGH: "text-red-500 font-bold",
-        };
-        return <span className={`text-xs ${colors[row.riskLevel] || ""}`}>{row.riskLevel}</span>;
-      }
-    },
-    {
       header: "Status",
       accessor: (row) => {
         const colors: Record<string, string> = {
-          VERIFIED: "bg-green-500/10 text-green-500 border-green-500/20",
+          APPROVED: "bg-green-500/10 text-green-500 border-green-500/20",
           PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
           REJECTED: "bg-red-500/10 text-red-500 border-red-500/20",
-          UNDER_REVIEW: "bg-blue-500/10 text-blue-500 border-blue-500/20",
         };
         const color = colors[row.status] || "bg-muted text-foreground border-border";
         return (
@@ -85,13 +74,35 @@ export default function AdminKycPage() {
     },
     {
       header: "Submitted",
-      accessor: (row) => new Date(row.submittedAt).toLocaleDateString()
+      accessor: (row) => new Date(row.createdAt).toLocaleDateString()
     },
     {
       header: "Actions",
       accessor: (row) => (
         <div className="flex gap-2">
-          <button className="text-xs font-medium text-brand-primary hover:underline">Review</button>
+          <button 
+            className="text-xs font-medium text-green-600 hover:underline"
+            onClick={async () => {
+              if (confirm('Approve KYC?')) {
+                await apiClient.updateAdminKYCStatus(row.id, 'APPROVED');
+                window.location.reload();
+              }
+            }}
+          >
+            Approve
+          </button>
+          <button 
+            className="text-xs font-medium text-red-600 hover:underline"
+            onClick={async () => {
+              const reason = prompt('Rejection reason:');
+              if (reason !== null) {
+                await apiClient.updateAdminKYCStatus(row.id, 'REJECTED', reason);
+                window.location.reload();
+              }
+            }}
+          >
+            Reject
+          </button>
         </div>
       )
     }

@@ -7,22 +7,24 @@ import { apiClient } from "@ethsltd/api-client";
 import { Loader2, ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export default function WalletHistoryPage() {
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { mode } = useTradingModeStore();
 
   useEffect(() => {
     async function loadData() {
       try {
-        const response = await apiClient.getWalletTransactions({ limit: 100 });
+        const response = await apiClient.getWalletTransactions(mode);
         setTransactions(response.data || []);
       } finally {
         setIsLoading(false);
       }
     }
     loadData();
-  }, []);
+  }, [mode]);
 
   const handleExportCSV = () => {
     const headers = ["Transaction ID", "Date", "Type", "Asset", "Amount", "Fee", "Status"];

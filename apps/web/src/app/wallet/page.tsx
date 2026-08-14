@@ -12,6 +12,7 @@ import { useWalletStore } from "@/stores/wallet-store";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export default function WalletPage() {
   const [balances, setBalances] = useState<AssetBalance[]>([]);
@@ -19,31 +20,42 @@ export default function WalletPage() {
   const [allocations, setAllocations] = useState<AssetAllocation[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const { mode } = useTradingModeStore();
 
   // Subscribe to wallet store balances to trigger re-fetch when they change globally
   const storeBalances = useWalletStore(state => state.balances);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const balanceData = await apiClient.getWalletBalances();
-        setBalances(balanceData.data || []);
-        
-        const portfolioData = await apiClient.getWalletPortfolio();
-        if (portfolioData.success && portfolioData.data) {
-          setSummary(portfolioData.data.summary);
-          setAllocations(portfolioData.data.allocations);
-        }
-
-        const txs = await apiClient.getWalletTransactions({ limit: 5 });
-        setRecentTransactions(txs.data || []);
-      } finally {
-        setIsLoading(false);
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const balanceData = await apiClient.getWalletBalances(mode);
+      setBalances(balanceData.data || []);
+      
+      const portfolioData = await apiClient.getWalletPortfolio(mode);
+      if (portfolioData.success && portfolioData.data) {
+        setSummary(portfolioData.data.summary);
+        setAllocations(portfolioData.data.allocations);
       }
+
+      const txs = await apiClient.getWalletTransactions(mode);
+      setRecentTransactions(txs.data?.slice(0, 5) || []);
+    } finally {
+      setIsLoading(false);
     }
-    
+  }
+
+  useEffect(() => {
     loadData();
-  }, [storeBalances]);
+  }, [storeBalances, mode]);
+
+  const handleTopUp = async () => {
+    if (confirm("Are you sure you want to top up your paper trading balance with $100,000 USDT?")) {
+      setIsLoading(true);
+      await apiClient.topUpPaperWallet();
+      await loadData();
+    }
+  };
 
   if (isLoading || !summary) {
     return (
@@ -55,7 +67,23 @@ export default function WalletPage() {
 
   return (
     <div className="space-y-6">
-      <WalletHeader />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            {mode === 'PAPER' ? 'Paper Trading Wallet' : 'Spot Wallet'}
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            {mode === 'PAPER' 
+              ? 'Manage your simulated balances and test strategies risk-free.' 
+              : 'Manage your real digital assets and balances.'}
+          </p>
+        </div>
+        {mode === 'PAPER' && (
+          <Button onClick={handleTopUp} className="bg-orange-500 hover:bg-orange-600 text-white font-medium shadow shadow-orange-500/20">
+            Top Up Paper Balance (100k USDT)
+          </Button>
+        )}
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8">

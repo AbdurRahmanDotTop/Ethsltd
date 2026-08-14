@@ -9,6 +9,7 @@ const navigation = [
   { name: "Overview", href: "/account", icon: LayoutDashboard },
   { name: "Profile", href: "/account/profile", icon: User },
   { name: "Security", href: "/account/security", icon: Shield },
+  { name: "KYC Verification", href: "/account/kyc", icon: Shield },
   { name: "Sessions", href: "/account/sessions", icon: KeyRound },
   { name: "Notifications", href: "/account/preferences/notifications", icon: Bell },
   { name: "API Keys", href: "/account/api-keys", icon: Code },

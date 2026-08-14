@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useWalletStore } from "@/stores/wallet-store";
+import { useTradingModeStore } from "@/stores/trading-mode-store";
 import { apiClient } from "@ethsltd/api-client";
 import { AssetBalance } from "@/lib/wallet/types";
 import { Button } from "@/components/ui/button";
@@ -39,9 +40,10 @@ export function WithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: string }
   const selectedAsset = form.watch("asset");
   const amount = form.watch("amount");
 
+  const { mode } = useTradingModeStore();
   useEffect(() => {
-    apiClient.getWalletBalances().then(res => setBalances(res.data || []));
-  }, []);
+    apiClient.getWalletBalances(mode).then(res => setBalances(res.data || []));
+  }, [mode]);
 
   const activeBalance = balances.find((b) => b.symbol === selectedAsset);
   const availableAmount = activeBalance?.available || 0;
@@ -65,7 +67,7 @@ export function WithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: string }
     const values = form.getValues();
     setIsSubmitting(true);
     try {
-      await simulateWithdrawal(values.asset, values.amount, values.destination, "Simulated Network", fee);
+      await simulateWithdrawal(values.asset, values.amount, values.destination, "Simulated Network", fee, mode);
       router.push("/wallet");
     } catch (error) {
       console.error("Withdrawal failed", error);

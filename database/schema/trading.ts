@@ -21,6 +21,7 @@ export const orders = sqliteTable('orders', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
   marketSymbol: text('market_symbol').notNull().references(() => markets.symbol),
+  mode: text('mode', { enum: ['REAL', 'PAPER'] }).notNull().default('REAL'),
   side: text('side', { enum: ['BUY', 'SELL'] }).notNull(),
   type: text('type', { enum: ['MARKET', 'LIMIT'] }).notNull(),
   status: text('status', { enum: ['OPEN', 'FILLED', 'CANCELED', 'REJECTED'] }).notNull().default('OPEN'),
@@ -35,6 +36,7 @@ export const orders = sqliteTable('orders', {
 export const trades = sqliteTable('trades', {
   id: text('id').primaryKey(),
   marketSymbol: text('market_symbol').notNull().references(() => markets.symbol),
+  mode: text('mode', { enum: ['REAL', 'PAPER'] }).notNull().default('REAL'),
   makerOrderId: text('maker_order_id').notNull().references(() => orders.id),
   takerOrderId: text('taker_order_id').notNull().references(() => orders.id),
   price: text('price').notNull(),

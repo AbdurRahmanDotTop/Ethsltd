@@ -132,9 +132,10 @@ tradingRoutes.use('*', jwtMiddleware);
 tradingRoutes.get('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
+  const mode = c.req.query('mode') || 'REAL';
   
   const userOrders = await db.select().from(orders)
-    .where(eq(orders.userId, user.id))
+    .where(and(eq(orders.userId, user.id), eq(orders.mode, mode)))
     .orderBy(desc(orders.createdAt))
     .all();
     
@@ -158,9 +159,10 @@ tradingRoutes.get('/orders', async (c) => {
 tradingRoutes.get('/trades', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
+  const mode = c.req.query('mode') || 'REAL';
   
   // Fetch user's orders first to match trades
-  const userOrders = await db.select().from(orders).where(eq(orders.userId, user.id)).all();
+  const userOrders = await db.select().from(orders).where(and(eq(orders.userId, user.id), eq(orders.mode, mode))).all();
   const orderIds = userOrders.map(o => o.id);
   
   if (orderIds.length === 0) {
@@ -195,7 +197,7 @@ tradingRoutes.post('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const { market, side, type, amount, price } = body;
+  const { market, side, type, amount, price, mode = 'REAL' } = body;
   
   const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
   if (!marketInfo) {
@@ -215,7 +217,7 @@ tradingRoutes.post('/orders', async (c) => {
   const spendAmount = side === 'BUY' ? totalValue : parsedAmount;
   
   // Wallet Check
-  let spendWallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset))).get();
+  let spendWallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset), eq(wallets.type, mode))).get();
   if (!spendWallet || parseFloat(spendWallet.balance) < spendAmount) {
     return c.json({ success: false, error: 'Insufficient balance' }, 400);
   }
@@ -237,6 +239,7 @@ tradingRoutes.post('/orders', async (c) => {
     id: orderId,
     userId: user.id,
     marketSymbol: market,
+    mode,
     side,
     type,
     price: type === 'LIMIT' ? price.toString() : orderPrice.toString(),
@@ -254,6 +257,7 @@ tradingRoutes.post('/orders', async (c) => {
     await db.insert(trades).values({
       id: tradeId,
       marketSymbol: market,
+      mode,
       makerOrderId: 'mock-maker-order',
       takerOrderId: orderId,
       price: orderPrice.toString(),
@@ -275,13 +279,14 @@ tradingRoutes.post('/orders', async (c) => {
     const feeAmount = side === 'BUY' ? parsedAmount * parseFloat(marketInfo.takerFee) : totalValue * parseFloat(marketInfo.takerFee);
     const receiveAmountFinal = (side === 'BUY' ? parsedAmount : totalValue) - feeAmount;
     
-    let receiveWallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, receiveAsset))).get();
+    let receiveWallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, receiveAsset), eq(wallets.type, mode))).get();
     if (!receiveWallet) {
       const walletId = crypto.randomUUID();
       await db.insert(wallets).values({
         id: walletId,
         userId: user.id,
         assetSymbol: receiveAsset,
+        type: mode,
         balance: receiveAmountFinal.toString(),
         lockedBalance: '0',
         createdAt: now,
@@ -322,7 +327,7 @@ tradingRoutes.delete('/orders/:id', async (c) => {
   const refundAsset = order.side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
   const refundAmount = order.side === 'BUY' ? remainingValue : parseFloat(order.remainingAmount);
   
-  let refundWallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, refundAsset))).get();
+  let refundWallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, refundAsset), eq(wallets.type, order.mode))).get();
   if (refundWallet) {
     const newBalance = (parseFloat(refundWallet.balance) + refundAmount).toString();
     const newLocked = (parseFloat(refundWallet.lockedBalance) - refundAmount).toString();

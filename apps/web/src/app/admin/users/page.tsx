@@ -25,10 +25,22 @@ export default function AdminUsersPage() {
     // Debounce search slightly
     const timer = setTimeout(async () => {
       try {
-        const res = await apiClient.getAdminUsers({ page, limit, status, search });
+        const res = await apiClient.getAdminUsers({ page, limit, search, status });
         if (isMounted && res.success) {
-          setUsers(res.data.items);
-          setTotal(res.data.total);
+          let items = res.data || [];
+          if (status !== 'ALL') {
+            items = items.filter((u: any) => u.status === status);
+          }
+          if (search) {
+            const lowSearch = search.toLowerCase();
+            items = items.filter((u: any) => 
+              u.email?.toLowerCase().includes(lowSearch) || 
+              u.displayName?.toLowerCase().includes(lowSearch) ||
+              u.id.toLowerCase().includes(lowSearch)
+            );
+          }
+          setUsers(items);
+          setTotal(items.length);
         }
       } catch (err) {
         console.error("Failed to load users", err);
@@ -43,7 +55,7 @@ export default function AdminUsersPage() {
     };
   }, [page, status, search]);
 
-  const columns: Column<AdminUser>[] = [
+  const columns: Column<any>[] = [
     {
       header: "User ID",
       accessor: "id",
@@ -53,7 +65,7 @@ export default function AdminUsersPage() {
       header: "Name / Email",
       accessor: (row) => (
         <div className="flex flex-col">
-          <span className="font-medium text-foreground">{row.name}</span>
+          <span className="font-medium text-foreground">{row.displayName || 'N/A'}</span>
           <span className="text-xs text-muted-foreground">{row.email}</span>
         </div>
       )
@@ -64,8 +76,7 @@ export default function AdminUsersPage() {
         const colors: Record<string, string> = {
           ACTIVE: "bg-green-500/10 text-green-500 border-green-500/20",
           FROZEN: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-          SUSPENDED: "bg-red-500/10 text-red-500 border-red-500/20",
-          PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+          BANNED: "bg-red-500/10 text-red-500 border-red-500/20",
         };
         const color = colors[row.status] || "bg-muted text-foreground border-border";
         return (
@@ -76,35 +87,28 @@ export default function AdminUsersPage() {
       }
     },
     {
-      header: "KYC",
-      accessor: (row) => {
-        const colors: Record<string, string> = {
-          VERIFIED: "text-green-500",
-          PENDING: "text-yellow-500",
-          REJECTED: "text-red-500",
-          UNVERIFIED: "text-muted-foreground",
-        };
-        return <span className={`text-xs font-medium ${colors[row.kycStatus] || ""}`}>{row.kycStatus}</span>;
-      }
+      header: "Role",
+      accessor: "role"
     },
     {
-      header: "Risk",
-      accessor: (row) => {
-        const colors: Record<string, string> = {
-          LOW: "text-green-500",
-          MEDIUM: "text-yellow-500",
-          HIGH: "text-orange-500",
-          CRITICAL: "text-red-500 font-bold",
-        };
-        return <span className={`text-xs ${colors[row.riskLevel] || ""}`}>{row.riskLevel}</span>;
-      }
+      header: "Joined",
+      accessor: (row) => new Date(row.createdAt).toLocaleDateString()
     },
     {
-      header: "Balance",
+      header: "Actions",
       accessor: (row) => (
-        <span className="font-medium">
-          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(row.balanceUsd)}
-        </span>
+        <select 
+          className="text-xs bg-muted border border-border rounded p-1"
+          value={row.status}
+          onChange={async (e) => {
+            await apiClient.updateAdminUserStatus(row.id, e.target.value);
+            window.location.reload();
+          }}
+        >
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="FROZEN">FROZEN</option>
+          <option value="BANNED">BANNED</option>
+        </select>
       )
     }
   ];

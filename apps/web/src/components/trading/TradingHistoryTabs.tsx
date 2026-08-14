@@ -4,17 +4,21 @@ import { formatPrice } from "@/lib/trading/calculations"
 import { Button } from "@/components/ui/button"
 import { apiClient } from "@ethsltd/api-client"
 
+import { useTradingModeStore } from "@/stores/trading-mode-store"
+
 export function TradingHistoryTabs() {
   const [activeTab, setActiveTab] = useState<'open'|'history'|'trades'>('open')
   const [orders, setOrders] = useState<any[]>([])
   const [trades, setTrades] = useState<any[]>([])
   
+  const { mode } = useTradingModeStore()
+
   const loadData = async () => {
     try {
-      const oRes = await apiClient.getOrders()
+      const oRes = await apiClient.getOrders(mode)
       if(oRes.success) setOrders(oRes.data || [])
       
-      const tRes = await apiClient.getTrades()
+      const tRes = await apiClient.getTrades(mode)
       if(tRes.success) setTrades(tRes.data || [])
     } catch(e) {
       console.error(e)
@@ -25,7 +29,7 @@ export function TradingHistoryTabs() {
     loadData()
     const interval = setInterval(loadData, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [mode])
   
   const openOrders = orders.filter(o => o.status === 'OPEN')
   

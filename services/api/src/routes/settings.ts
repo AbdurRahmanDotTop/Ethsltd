@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { eq, ne } from 'drizzle-orm';
 // @ts-ignore
-import otplib from 'otplib';
-const authenticator = otplib?.authenticator || (otplib as any)?.default?.authenticator;
+import * as otplib from 'otplib';
+const authenticator = (otplib as any).authenticator || (otplib as any).default?.authenticator;
 import * as QRCode from 'qrcode';
 import { Bindings, Variables } from '../db';
 import { users, sessions } from 'database';
@@ -233,5 +233,65 @@ settingsRoutes.delete('/sessions/all-except-current', async (c) => {
   } catch (error: any) {
     console.error('Error deleting all sessions:', error);
     return c.json({ success: false, error: 'Failed to revoke sessions' }, 500);
+  }
+});
+
+// =======================
+// KYC Verification
+// =======================
+
+import { kycProfiles } from 'database';
+
+settingsRoutes.post('/kyc', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const body = await c.req.json();
+  
+  try {
+    const existing = await db.select().from(kycProfiles).where(eq(kycProfiles.userId, user.id)).get();
+    
+    if (existing && existing.status === 'APPROVED') {
+      return c.json({ success: false, error: 'KYC is already approved' }, 400);
+    }
+    
+    const now = new Date();
+    
+    if (existing) {
+      await db.update(kycProfiles).set({
+        firstName: body.firstName,
+        lastName: body.lastName,
+        dateOfBirth: body.dateOfBirth,
+        country: body.country,
+        documentType: body.documentType,
+        documentNumber: body.documentNumber,
+        documentFrontUrl: body.documentFrontBase64 || existing.documentFrontUrl,
+        documentBackUrl: body.documentBackBase64 || existing.documentBackUrl,
+        selfieUrl: body.selfieBase64 || existing.selfieUrl,
+        status: 'PENDING',
+        updatedAt: now
+      }).where(eq(kycProfiles.id, existing.id));
+    } else {
+      await db.insert(kycProfiles).values({
+        id: `KYC-${Date.now()}`,
+        userId: user.id,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        dateOfBirth: body.dateOfBirth,
+        country: body.country,
+        documentType: body.documentType,
+        documentNumber: body.documentNumber,
+        documentFrontUrl: body.documentFrontBase64 || '',
+        documentBackUrl: body.documentBackBase64,
+        selfieUrl: body.selfieBase64 || '',
+        status: 'PENDING',
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+    
+    return c.json({ success: true, message: 'KYC documents submitted successfully' });
+  } catch (error: any) {
+    console.error('Error submitting KYC:', error);
+    return c.json({ success: false, error: 'Failed to submit KYC documents' }, 500);
   }
 });

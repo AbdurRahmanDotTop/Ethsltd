@@ -12,21 +12,69 @@ walletRoutes.use('*', jwtMiddleware);
 // Helper function to get mock prices for simulation
 const getMockPrice = (symbol: string) => {
   const prices: Record<string, number> = {
+    'BTC-USD': 104250.00,
+    'ETH-USD': 3500.00,
+    'SOL-USD': 140.00,
     'BTC': 104250.00,
     'ETH': 3500.00,
+    'SOL': 140.00,
     'USDT': 1.00,
     'USDC': 1.00,
-    'SOL': 140.00,
     'USD': 1.00,
   };
   return prices[symbol] || 0;
 };
 
-walletRoutes.get('/balances', async (c) => {
+walletRoutes.post('/top-up-paper', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   
-  const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
+  // We'll give 100,000 USDT in paper mode
+  const assetSymbol = 'USDT';
+  const amount = '100000';
+  const now = new Date();
+  
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, 'PAPER'))).get();
+  
+  if (!wallet) {
+    await db.insert(wallets).values({
+      id: crypto.randomUUID(),
+      userId: user.id,
+      assetSymbol,
+      type: 'PAPER',
+      balance: amount,
+      lockedBalance: '0',
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    // If they already have a wallet, top it up to 100k if it's below 10k, else just add 100k
+    const newBalance = (parseFloat(wallet.balance) + parseFloat(amount)).toString();
+    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+  }
+  
+  await db.insert(walletTransactions).values({
+    id: `TX-PAPER-${Date.now()}`,
+    userId: user.id,
+    type: 'DEPOSIT',
+    mode: 'PAPER',
+    assetSymbol,
+    amount,
+    status: 'COMPLETED',
+    network: 'System',
+    createdAt: now,
+    updatedAt: now,
+  });
+  
+  return c.json({ success: true });
+});
+
+walletRoutes.get('/balances', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const mode = c.req.query('mode') || 'REAL';
+  
+  const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
   
   // Format to AssetBalance structure
   const formattedBalances = userWallets.map(w => {
@@ -54,8 +102,9 @@ walletRoutes.get('/balances', async (c) => {
 walletRoutes.get('/portfolio', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
+  const mode = c.req.query('mode') || 'REAL';
   
-  const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
+  const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
   
   let totalValueUsd = 0;
   let availableBalanceUsd = 0;
@@ -96,9 +145,10 @@ walletRoutes.get('/portfolio', async (c) => {
 walletRoutes.get('/transactions', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
+  const mode = c.req.query('mode') || 'REAL';
   
   const transactions = await db.select().from(walletTransactions)
-    .where(eq(walletTransactions.userId, user.id))
+    .where(and(eq(walletTransactions.userId, user.id), eq(walletTransactions.mode, mode)))
     .orderBy(desc(walletTransactions.createdAt))
     .all();
     
@@ -123,13 +173,13 @@ walletRoutes.post('/deposit', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const { assetSymbol, amount, network, destination } = body;
+  const { assetSymbol, amount, network, destination, mode = 'REAL' } = body;
 
   const transactionId = `TX-${Date.now()}`;
   const now = new Date();
   
   // Check if wallet exists
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol))).get();
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, mode))).get();
   
   if (!wallet) {
     const walletId = crypto.randomUUID();
@@ -137,6 +187,7 @@ walletRoutes.post('/deposit', async (c) => {
       id: walletId,
       userId: user.id,
       assetSymbol,
+      type: mode,
       balance: amount.toString(),
       lockedBalance: '0',
       createdAt: now,
@@ -152,6 +203,7 @@ walletRoutes.post('/deposit', async (c) => {
     id: transactionId,
     userId: user.id,
     type: 'DEPOSIT',
+    mode: mode,
     assetSymbol,
     amount: amount.toString(),
     status: 'COMPLETED', // Simulated paper trading completes instantly
@@ -168,11 +220,11 @@ walletRoutes.post('/withdraw', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const { assetSymbol, amount, destination, network } = body;
+  const { assetSymbol, amount, destination, network, mode = 'REAL' } = body;
   
   const parsedAmount = parseFloat(amount);
 
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol))).get();
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, mode))).get();
   
   if (!wallet || parseFloat(wallet.balance) < parsedAmount) {
     return c.json({ success: false, error: 'Insufficient balance' }, 400);
@@ -190,6 +242,7 @@ walletRoutes.post('/withdraw', async (c) => {
     id: transactionId,
     userId: user.id,
     type: 'WITHDRAWAL',
+    mode: mode,
     assetSymbol,
     amount: amount.toString(),
     status: 'COMPLETED', // Simulated paper trading completes instantly

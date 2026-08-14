@@ -9,6 +9,7 @@ import { useWalletStore } from "@/stores/wallet-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Info, ArrowDownToLine, Copy, Check } from "lucide-react";
+import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 const SUPPORTED_ASSETS = ["USD", "USDT", "USDC", "BTC", "ETH", "SOL"];
 
@@ -31,12 +32,13 @@ export function DepositForm({ defaultAsset = "USD" }: { defaultAsset?: string })
     },
   });
 
+  const { mode } = useTradingModeStore();
   const selectedAsset = form.watch("asset");
 
   const onSubmit = async (values: z.infer<typeof depositSchema>) => {
     setIsSubmitting(true);
     try {
-      await simulateDeposit(values.asset, values.amount);
+      await simulateDeposit(values.asset, values.amount, mode);
       router.push("/wallet");
     } catch (error) {
       console.error("Deposit failed", error);
