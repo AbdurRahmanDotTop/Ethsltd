@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../../db';
-import { bankAccounts, paymentMethods, real_manual_deposits, bankTransfers, wallets, walletTransactions, ledgerEntries, ledgerTransactions } from 'database';
+import { bank_accounts as bankAccounts, payment_methods as paymentMethods, real_manual_deposits as realManualDeposits, bankTransfers, wallets, walletTransactions, ledgerEntries, ledgerTransactions } from 'database';
 import { jwtMiddleware } from '../../middleware/jwt';
 
 export const adminPaymentRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -50,7 +50,7 @@ adminPaymentRoutes.put('/banks/:id', async (c) => {
 // Get pending deposits (manual + bank)
 adminPaymentRoutes.get('/pending-deposits', async (c) => {
   const db = c.get('db');
-  const manual = await db.select().from(real_manual_deposits).where(eq(real_manual_deposits.status, 'PENDING')).all();
+  const manual = await db.select().from(realManualDeposits).where(eq(realManualDeposits.status, 'PENDING')).all();
   const bank = await db.select().from(bankTransfers).where(eq(bankTransfers.status, 'PENDING')).all();
   
   return c.json({ success: true, manualDeposits: manual, bankDeposits: bank });
@@ -63,11 +63,11 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   const user = c.get('user');
   const now = new Date();
   
-  const deposit = await db.select().from(real_manual_deposits).where(eq(real_manual_deposits.id, id)).get();
+  const deposit = await db.select().from(realManualDeposits).where(eq(realManualDeposits.id, id)).get();
   if (!deposit || deposit.status !== 'PENDING') return c.json({ success: false, error: 'Invalid deposit' }, 400);
   
   // Atomic approval
-  await db.update(real_manual_deposits).set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now }).where(eq(real_manual_deposits.id, id));
+  await db.update(realManualDeposits).set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now }).where(eq(realManualDeposits.id, id));
   
   // Find or create REAL wallet
   let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, deposit.asset), eq(wallets.type, 'REAL'))).get();
@@ -84,7 +84,15 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
   
   // Ledger
-  await db.insert(ledgerTransactions).values({ id: deposit.deposit_id, type: 'DEPOSIT', environment: 'REAL', status: 'COMPLETED', createdAt: now, updatedAt: now });
+  await db.insert(ledgerTransactions).values({ 
+    id: crypto.randomUUID(),
+    idempotencyKey: `MANUAL_DEP_APPROVE_${deposit.id}_${now.getTime()}`,
+    referenceType: 'DEPOSIT', 
+    referenceId: deposit.id,
+    environment: 'REAL', 
+    status: 'COMMITTED', 
+    createdAt: now
+  });
   
   return c.json({ success: true });
 });
@@ -117,7 +125,15 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
   
   // Ledger
-  await db.insert(ledgerTransactions).values({ id: crypto.randomUUID(), type: 'DEPOSIT', environment: 'REAL', status: 'COMPLETED', createdAt: now, updatedAt: now });
+  await db.insert(ledgerTransactions).values({ 
+    id: crypto.randomUUID(), 
+    idempotencyKey: `BANK_TRANS_APPROVE_${deposit.id}_${now.getTime()}`,
+    referenceType: 'DEPOSIT', 
+    referenceId: deposit.id,
+    environment: 'REAL', 
+    status: 'COMMITTED', 
+    createdAt: now 
+  });
   
   return c.json({ success: true });
 });

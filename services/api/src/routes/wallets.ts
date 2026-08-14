@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { wallets, walletTransactions, bankTransfers, real_manual_deposits } from 'database';
+import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
 
@@ -9,6 +9,24 @@ export const walletRoutes = new Hono<{ Bindings: Bindings; Variables: Variables 
 
 // Add JWT Middleware to all routes in this router
 walletRoutes.use('*', jwtMiddleware);
+
+walletRoutes.get('/deposit-settings', async (c) => {
+  const db = c.get('db');
+  
+  // Get active MANUAL payment method
+  const manualMethod = await db.select().from(payment_methods).where(and(eq(payment_methods.method, 'MANUAL'), eq(payment_methods.enabled, true))).get();
+  
+  let manualAddresses: Record<string, string> = {};
+  if (manualMethod?.instructions) {
+    try {
+      manualAddresses = JSON.parse(manualMethod.instructions);
+    } catch(e) {
+      console.error('Failed to parse manual deposit instructions as JSON', e);
+    }
+  }
+  
+  return c.json({ success: true, manualAddresses });
+});
 
 // Helper function to get mock prices for simulation
 const getMockPrice = (symbol: string) => {
@@ -241,6 +259,28 @@ walletRoutes.post('/deposit', async (c) => {
         return c.json({ success: false, error: 'Valid amount required for checkout' }, 400);
       }
     } else if (depositMethod === 'BANK') {
+      const amountNum = Number(amount) || 0;
+      if (amountNum <= 0) {
+        // Fetch active bank details
+        const activeBank = await db.select().from(bank_accounts).where(eq(bank_accounts.active, true)).get();
+        if (!activeBank) {
+          return c.json({ success: false, error: 'No active bank account available for deposits.' }, 400);
+        }
+        return c.json({ 
+          success: true, 
+          bankDetails: {
+            accountName: activeBank.account_holder,
+            accountNumber: activeBank.account_number,
+            bankName: activeBank.bank_name,
+            swift: activeBank.swift || '',
+            ifsc: activeBank.ifsc || '',
+            branch: activeBank.branch || '',
+            country: activeBank.country || '',
+            instructions: activeBank.instructions || 'Please ensure you include your tracking reference when submitting your proof of payment. International payments may take 2-5 business days to process.'
+          }
+        });
+      }
+
       await db.insert(bankTransfers).values({
         id: crypto.randomUUID(),
         userId: user.id,

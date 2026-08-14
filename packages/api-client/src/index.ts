@@ -154,6 +154,10 @@ export class EthsltdClient {
     return this.request<any[]>(`/api/v1/wallets/transactions?mode=${mode}`);
   }
 
+  async getDepositSettings() {
+    return this.request<any>('/api/v1/wallets/deposit-settings');
+  }
+
   async deposit(data: { 
     assetSymbol: string; 
     amount: number; 
