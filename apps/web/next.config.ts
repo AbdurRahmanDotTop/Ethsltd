@@ -11,6 +11,7 @@ const nextConfig: any = {
     ignoreDuringBuilds: true,
   },
   transpilePackages: ["@ethsltd/api-client", "@ethsltd/types"],
+  serverExternalPackages: ["sharp"],
 };
 
 export default nextConfig;
