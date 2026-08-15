@@ -39,5 +39,20 @@ If Cregis refuses to adjust their firewall and strictly requires a static, non-C
 
 ---
 
+## 🕵️‍♂️ Why Did It "Reach" Cregis Yesterday? (The `CPAY...` Mystery)
+
+You mentioned: *"kal isi project se maine try kiya thaa to hua thaa lekin success nahi ho paya tha... kal wale code mein aisa kya thaa ki cregis auto deposit method se wahaan par pahunch gaya thaa."*
+
+Here is exactly what happened yesterday:
+
+1. **The Code Yesterday:** Yesterday, the codebase did **not** actually make any API call to the Cregis server (`t-tkqzeuxf.cregis.io`). Instead, the code was written to generate a **completely fake, random Order ID (`mockCid`)** on the spot, and it forcefully redirected your browser to `https://pay.cregis.io/?cid=<FAKE_RANDOM_ID>`.
+2. **Why it "Reached" Cregis:** Because `pay.cregis.io` is a public website, your browser successfully opened it. However, when the Cregis website checked its database for the `<FAKE_RANDOM_ID>`, it couldn't find it. That is why it showed you "Order Not Found" or "Link Expired" and failed halfway.
+3. **Where did the `CPAY...` records with `505.00 USD` come from?** 
+   Since our code *never* sent an API request to Cregis yesterday, those records in your dashboard screenshot were **NOT** created by this project's code. They might have been created if you clicked a "Test" or "Create Order" button manually inside the Cregis Dashboard, or if you used Postman/another tool. The amount `505.00` matches because you likely typed the exact same amount you saw on the frontend to test it.
+   
+**Conclusion:** Yesterday's code was just a "UI Dummy Redirect". It was never actually connected to the Cregis backend. Today, we implemented the **Real, Production-Level API Connection**, which is correctly trying to talk to the backend, but is getting blocked by Cregis's Cloudflare WAF (as explained in the sections above).
+
+---
+
 **Current App Behavior (Fail-Safe):**
-To ensure your app remains **Production Level** and users never see a broken page, we have implemented a fallback. While you are resolving this with Cregis, any failed Auto Deposit attempt will gracefully show a professional Service Notice modal and automatically seamlessly transfer the user to the **Manual Deposit** flow with their exact amount saved.
+To ensure your app remains **Production Level** and users never see a broken page, we have implemented a fallback. While you are resolving the Cloudflare WAF issue with Cregis Support, any failed Auto Deposit attempt will gracefully show a professional Service Notice modal and automatically seamlessly transfer the user to the **Manual Deposit** flow with their exact amount saved.
