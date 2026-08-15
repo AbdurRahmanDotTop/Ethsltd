@@ -101,14 +101,21 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Accept: application/json, text/plain, */*',
     'Accept-Language: en-US,en;q=0.9',
     'Connection: keep-alive',
+    'Sec-Fetch-Dest: empty',
+    'Sec-Fetch-Mode: cors',
+    'Sec-Fetch-Site: cross-site',
     'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 curl_setopt($ch, CURLOPT_ENCODING, ""); // Handle gzip/deflate
+
+// Maximum Stealth: Force HTTP/2 and spoof TLS Ciphers to bypass Cloudflare Bot Fight Mode
 if (defined('CURL_HTTP_VERSION_2_0')) {
     curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
 }
+// Spoof Chrome's cipher list to change the JA3 fingerprint
+curl_setopt($ch, CURLOPT_SSL_CIPHER_LIST, 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384');
 curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
 $response = curl_exec($ch);
