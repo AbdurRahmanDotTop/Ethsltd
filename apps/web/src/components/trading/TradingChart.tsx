@@ -19,6 +19,7 @@ export function TradingChart({ data }: { data: Candle[] }) {
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
+        attributionLogo: false,
       },
       grid: {
         vertLines: { color: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' },
@@ -96,7 +97,19 @@ export function TradingChart({ data }: { data: Candle[] }) {
     return <div className="w-full h-full min-h-[300px] bg-muted/20 animate-pulse flex items-center justify-center text-muted-foreground text-sm">Loading Chart...</div>
   }
 
+  const currentPrice = data[data.length - 1]?.close;
+  const prevPrice = data.length > 1 ? data[data.length - 2]?.close : currentPrice;
+  const isUp = currentPrice >= prevPrice;
+
   return (
-    <div ref={chartContainerRef} className="w-full h-full min-h-[400px]" />
+    <div className="relative w-full h-full min-h-[400px]">
+      <div ref={chartContainerRef} className="absolute inset-0" />
+      <div className="absolute bottom-6 left-4 z-10 pointer-events-none bg-background/60 backdrop-blur-sm px-3 py-1.5 rounded-md border border-border">
+        <span className="text-xs text-muted-foreground mr-2">Live Price:</span>
+        <span className={`font-mono font-bold ${isUp ? 'text-success' : 'text-danger'}`}>
+          {currentPrice?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+        </span>
+      </div>
+    </div>
   )
 }
