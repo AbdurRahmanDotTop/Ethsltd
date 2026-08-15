@@ -21,22 +21,40 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   const [cryptoAssets, setCryptoAssets] = useState<string[]>(CRYPTO_ASSETS);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
+  const [activeMethods, setActiveMethods] = useState<string[]>(['MANUAL', 'AUTO', 'BANK_TRANSFER']);
+
   useEffect(() => {
-    if (method === 'MANUAL') {
-      fetchDepositSettings();
-    }
-  }, [method]);
+    fetchDepositSettings();
+  }, []);
 
   const fetchDepositSettings = async () => {
     setLoadingAddresses(true);
     try {
       const res: any = await apiClient.getDepositSettings();
-      if (res.success && res.manualAddresses) {
-        setManualAddresses(res.manualAddresses);
-        const assets = Object.keys(res.manualAddresses);
-        if (assets.length > 0) {
-          setCryptoAssets(assets);
-          if (!assets.includes(selectedAsset)) setSelectedAsset(assets[0]);
+      if (res.success) {
+        if (res.activeMethods && res.activeMethods.length > 0) {
+          const methods = res.activeMethods.map((m: any) => m.method);
+          setActiveMethods(methods);
+          
+          // Auto-switch tab if current is not enabled
+          let mappedMethod = method;
+          if (method === 'CRYPTO') mappedMethod = 'AUTO' as any;
+          if (method === 'BANK') mappedMethod = 'BANK_TRANSFER' as any;
+          
+          if (!methods.includes(mappedMethod)) {
+             if (methods.includes('AUTO')) setMethod('CRYPTO');
+             else if (methods.includes('MANUAL')) setMethod('MANUAL');
+             else if (methods.includes('BANK_TRANSFER')) setMethod('BANK');
+          }
+        }
+        
+        if (res.manualAddresses) {
+          setManualAddresses(res.manualAddresses);
+          const assets = Object.keys(res.manualAddresses);
+          if (assets.length > 0) {
+            setCryptoAssets(assets);
+            if (!assets.includes(selectedAsset)) setSelectedAsset(assets[0]);
+          }
         }
       }
     } catch (e) {
@@ -204,42 +222,50 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Select Payment Method</label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleTabChange('MANUAL')}
-              className={`py-3 px-2 text-sm font-medium rounded-md border flex flex-col items-center justify-center gap-2 transition-colors break-words text-center h-auto min-h-[80px] ${
-                method === 'MANUAL'
-                  ? "bg-brand-900 text-white border-brand-900"
-                  : "bg-background text-muted-foreground border-border hover:bg-muted"
-              }`}
-            >
-              <FileText className="w-5 h-5 shrink-0" />
-              <span className="leading-tight">Manual Deposit</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('CRYPTO')}
-              className={`py-3 px-2 text-sm font-medium rounded-md border flex flex-col items-center justify-center gap-2 transition-colors break-words text-center h-auto min-h-[80px] ${
-                method === 'CRYPTO'
-                  ? "bg-brand-900 text-white border-brand-900"
-                  : "bg-background text-muted-foreground border-border hover:bg-muted"
-              }`}
-            >
-              <Wallet className="w-5 h-5 shrink-0" />
-              <span className="leading-tight">Auto Deposit</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('BANK')}
-              className={`py-3 px-2 text-sm font-medium rounded-md border flex flex-col items-center justify-center gap-2 transition-colors break-words text-center h-auto min-h-[80px] ${
-                method === 'BANK'
-                  ? "bg-brand-900 text-white border-brand-900"
-                  : "bg-background text-muted-foreground border-border hover:bg-muted"
-              }`}
-            >
-              <Building2 className="w-5 h-5 shrink-0" />
-              <span className="leading-tight">Bank Transfer</span>
-            </button>
+            {activeMethods.includes('MANUAL') && (
+              <button
+                type="button"
+                onClick={() => handleTabChange('MANUAL')}
+                className={`py-3 px-2 text-sm font-medium rounded-md border flex flex-col items-center justify-center gap-2 transition-colors break-words text-center h-auto min-h-[80px] ${
+                  method === 'MANUAL'
+                    ? "bg-brand-900 text-white border-brand-900"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                <FileText className="w-5 h-5 shrink-0" />
+                <span className="leading-tight">Manual Deposit</span>
+              </button>
+            )}
+            
+            {activeMethods.includes('AUTO') && (
+              <button
+                type="button"
+                onClick={() => handleTabChange('CRYPTO')}
+                className={`py-3 px-2 text-sm font-medium rounded-md border flex flex-col items-center justify-center gap-2 transition-colors break-words text-center h-auto min-h-[80px] ${
+                  method === 'CRYPTO'
+                    ? "bg-brand-900 text-white border-brand-900"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                <Wallet className="w-5 h-5 shrink-0" />
+                <span className="leading-tight">Auto Deposit</span>
+              </button>
+            )}
+            
+            {activeMethods.includes('BANK_TRANSFER') && (
+              <button
+                type="button"
+                onClick={() => handleTabChange('BANK')}
+                className={`py-3 px-2 text-sm font-medium rounded-md border flex flex-col items-center justify-center gap-2 transition-colors break-words text-center h-auto min-h-[80px] ${
+                  method === 'BANK'
+                    ? "bg-brand-900 text-white border-brand-900"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                <Building2 className="w-5 h-5 shrink-0" />
+                <span className="leading-tight">Bank Transfer</span>
+              </button>
+            )}
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../../db';
-import { bank_accounts as bankAccounts, payment_methods as paymentMethods, real_manual_deposits as realManualDeposits, bankTransfers, wallets, walletTransactions, ledgerEntries, ledgerTransactions } from 'database';
+import { bank_accounts as bankAccounts, payment_methods as paymentMethods, real_manual_deposits as realManualDeposits, bankTransfers, wallets, walletTransactions, ledgerEntries, ledgerTransactions, cregisDeposits } from 'database';
 import { jwtMiddleware, adminMiddleware } from '../../middleware/jwt';
 
 export const adminPaymentRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -89,13 +89,16 @@ adminPaymentRoutes.delete('/banks/:id', async (c) => {
   return c.json({ success: true });
 });
 
-// Get pending deposits (manual + bank)
+// Get pending deposits (manual + bank) and history for Cregis
 adminPaymentRoutes.get('/pending-deposits', async (c) => {
   const db = c.get('db');
   const manual = await db.select().from(realManualDeposits).where(eq(realManualDeposits.status, 'PENDING')).all();
   const bank = await db.select().from(bankTransfers).where(eq(bankTransfers.status, 'PENDING')).all();
   
-  return c.json({ success: true, manualDeposits: manual, bankDeposits: bank });
+  // For Cregis, we just want to see recent deposits regardless of status
+  const cregis = await db.select().from(cregisDeposits).orderBy(cregisDeposits.createdAt).limit(100).all();
+  
+  return c.json({ success: true, manualDeposits: manual, bankDeposits: bank, cregisDeposits: cregis });
 });
 
 // Approve manual deposit

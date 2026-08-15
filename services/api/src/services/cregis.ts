@@ -69,7 +69,15 @@ export class CregisClient {
         body: JSON.stringify(payload)
       });
       
-      const data: any = await response.json();
+      const responseText = await response.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Cregis API returned non-JSON response:", response.status, responseText);
+        // Do not throw here. Allow it to fall through to the mock fallback.
+        data = { success: false, code: response.status, error: 'Invalid JSON response' };
+      }
       
       if (data.code === '00000' || data.code === 200 || data.success) {
         // Cregis usually returns the URL in data.url or data.data.url or just returns the cid to construct it

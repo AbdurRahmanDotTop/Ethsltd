@@ -118,7 +118,11 @@ export default function AdminPaymentSettingsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ instructions: finalInstructions })
+        body: JSON.stringify({ 
+          instructions: finalInstructions,
+          enabled: editingMethod.enabled,
+          min_amount: editingMethod.min_amount
+        })
       }).then(r => r.json());
 
       if (res.success) {
@@ -351,6 +355,26 @@ export default function AdminPaymentSettingsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                id="edit-enabled"
+                checked={editingMethod?.enabled || false}
+                onChange={e => setEditingMethod({...editingMethod, enabled: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="edit-enabled">Enabled (Show to users)</Label>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Minimum Deposit Amount (USD)</Label>
+              <Input 
+                type="number"
+                value={editingMethod?.min_amount || 0}
+                onChange={e => setEditingMethod({...editingMethod, min_amount: parseFloat(e.target.value) || 0})}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>{editingMethod?.method === 'MANUAL' ? "Crypto Wallets / Deposit Addresses" : "Instructions"}</Label>
               {editingMethod?.method === 'MANUAL' ? (

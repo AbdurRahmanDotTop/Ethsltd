@@ -13,13 +13,15 @@ walletRoutes.use('*', jwtMiddleware);
 walletRoutes.get('/deposit-settings', async (c) => {
   const db = c.get('db');
   
-  // Get active MANUAL payment method (fetch most recently updated to handle duplicates gracefully)
-  const manualMethod = await db.select()
+  // Get all active payment methods
+  const activeMethods = await db.select()
     .from(payment_methods)
-    .where(and(eq(payment_methods.method, 'MANUAL'), eq(payment_methods.enabled, true)))
+    .where(eq(payment_methods.enabled, true))
     .orderBy(desc(payment_methods.updated_at))
-    .get();
-  
+    .all();
+    
+  // Support legacy manualAddresses format for backward compatibility
+  const manualMethod = activeMethods.find(m => m.method === 'MANUAL');
   let manualAddresses: Record<string, string> = {};
   if (manualMethod?.instructions) {
     try {
@@ -29,7 +31,7 @@ walletRoutes.get('/deposit-settings', async (c) => {
     }
   }
   
-  return c.json({ success: true, manualAddresses });
+  return c.json({ success: true, activeMethods, manualAddresses });
 });
 
 // Helper function to get mock prices for simulation
@@ -255,10 +257,14 @@ walletRoutes.post('/deposit', async (c) => {
         // Log transaction to DB with PENDING status (simplified here for demo)
         const paymentReference = `ORD-${Date.now()}`;
         
-        // Call Payment Engine API
-        const checkoutUrl = await cregis.createPaymentOrder(totalAmount, 'USD', user.id);
-        
-        return c.json({ success: true, checkoutUrl, message: 'Checkout URL generated' });
+        try {
+          // Call Payment Engine API
+          const checkoutUrl = await cregis.createPaymentOrder(totalAmount, 'USD', user.id);
+          return c.json({ success: true, checkoutUrl, message: 'Checkout URL generated' });
+        } catch (error: any) {
+          console.error("Payment Order generation failed:", error);
+          return c.json({ success: false, error: error.message || 'Failed to generate checkout link' }, 400);
+        }
       } else {
         return c.json({ success: false, error: 'Valid amount required for checkout' }, 400);
       }

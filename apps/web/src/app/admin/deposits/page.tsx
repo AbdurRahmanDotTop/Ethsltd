@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 export default function AdminDepositsPage() {
   const [manualDeposits, setManualDeposits] = useState<any[]>([]);
   const [bankDeposits, setBankDeposits] = useState<any[]>([]);
+  const [cregisDeposits, setCregisDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"MANUAL" | "BANK">("MANUAL");
+  const [activeTab, setActiveTab] = useState<"MANUAL" | "BANK" | "AUTO">("MANUAL");
 
   const fetchPending = async () => {
     setLoading(true);
@@ -22,6 +23,7 @@ export default function AdminDepositsPage() {
         const data = res as any;
         setManualDeposits(data.manualDeposits || []);
         setBankDeposits(data.bankDeposits || []);
+        setCregisDeposits(data.cregisDeposits || []);
       }
     } catch (e) {
       console.error(e);
@@ -81,6 +83,26 @@ export default function AdminDepositsPage() {
     }
   ];
 
+  const cregisColumns: Column<any>[] = [
+    { header: "ID (CID)", accessor: "cid", className: "font-mono text-xs max-w-[150px] truncate" },
+    { header: "User", accessor: "userId", className: "font-mono text-xs max-w-[150px] truncate" },
+    { header: "Asset", accessor: (row) => <span className="font-bold text-green-500">{row.assetSymbol}</span> },
+    { header: "Amount", accessor: "amount" },
+    { header: "Tx Hash", accessor: "txid", className: "font-mono text-xs max-w-[150px] truncate" },
+    { 
+      header: "Status", 
+      accessor: (row) => (
+        <span className={`px-2 py-1 rounded text-xs ${
+          row.status === 'CONFIRMED' ? 'bg-green-500/10 text-green-500' :
+          row.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-500' :
+          'bg-red-500/10 text-red-500'
+        }`}>
+          {row.status}
+        </span>
+      ) 
+    }
+  ];
+
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -90,18 +112,24 @@ export default function AdminDepositsPage() {
         </div>
       </div>
 
-      <div className="flex space-x-2 border-b border-border">
+      <div className="flex space-x-2 border-b border-border overflow-x-auto">
         <button 
           onClick={() => setActiveTab("MANUAL")} 
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "MANUAL" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === "MANUAL" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
         >
           Manual Crypto Deposits ({manualDeposits.length})
         </button>
         <button 
           onClick={() => setActiveTab("BANK")} 
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "BANK" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === "BANK" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
         >
           Bank Transfers ({bankDeposits.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab("AUTO")} 
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === "AUTO" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
+        >
+          Auto Deposits (Cregis) ({cregisDeposits.length})
         </button>
       </div>
 
@@ -112,7 +140,7 @@ export default function AdminDepositsPage() {
           </div>
         )}
         
-        {activeTab === "MANUAL" ? (
+        {activeTab === "MANUAL" && (
           <AdminDataTable 
             columns={manualColumns} 
             data={manualDeposits} 
@@ -120,10 +148,20 @@ export default function AdminDepositsPage() {
             totalPages={1}
             onPageChange={() => {}}
           />
-        ) : (
+        )}
+        {activeTab === "BANK" && (
           <AdminDataTable 
             columns={bankColumns} 
             data={bankDeposits} 
+            page={1}
+            totalPages={1}
+            onPageChange={() => {}}
+          />
+        )}
+        {activeTab === "AUTO" && (
+          <AdminDataTable 
+            columns={cregisColumns} 
+            data={cregisDeposits} 
             page={1}
             totalPages={1}
             onPageChange={() => {}}
