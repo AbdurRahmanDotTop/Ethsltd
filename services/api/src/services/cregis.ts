@@ -26,133 +26,91 @@ export class CregisClient {
     // Standard mock for MVP
     if (assetSymbol.toUpperCase() === 'BTC') return `bc1qmock${userId.substring(0,8)}cregisbtc`;
     if (assetSymbol.toUpperCase() === 'ETH') return `0xmock${userId.substring(0,8)}cregiseth`;
-    if (assetSymbol.toUpperCase() === 'USDT') return `0xmock${userId.substring(0,8)}cregisusdt`;
-    return `mock_${assetSymbol}_${userId.substring(0,8)}`;
+  // Internal helper to call the PHP Proxy
+  private async callProxy(service: 'PE' | 'WAAS', endpoint: string, payload: any): Promise<any> {
+    if (!this.proxyUrl) {
+      throw new Error("CREGIS_PROXY_URL is required to bypass Cloudflare IP restrictions.");
+    }
+
+    const proxyBody = {
+      _proxy: {
+        service,
+        endpoint
+      },
+      payload
+    };
+
+    const response = await fetch(this.proxyUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Proxy-Secret': this.proxySecret || ''
+      },
+      body: JSON.stringify(proxyBody)
+    });
+
+    const responseText = await response.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      throw new Error(`PHP Proxy Error (Status ${response.status}): ${responseText.substring(0, 100)}`);
+    }
+
+    if (response.status !== 200 || data.error) {
+       throw new Error(`PHP Proxy returned error: ${data.error || 'Unknown error'}`);
+    }
+
+    return data;
   }
 
   // Create Payment Order for Cregis Payment Engine
   async createPaymentOrder(amount: number, currency: string, userId: string): Promise<string> {
-    
-    // If Proxy is configured, use the Proxy Gateway to avoid IP Whitelist issues
-    if (this.proxyUrl) {
-      const payload = {
-        amount,
-        currency,
-        third_party_id: userId
-      };
-
-      try {
-        const response = await fetch(this.proxyUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Proxy-Secret': this.proxySecret || ''
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const responseText = await response.text();
-        let data: any = {};
-        try {
-          data = JSON.parse(responseText);
-        } catch (e) {
-          throw new Error(`PHP Proxy Error (Status ${response.status}): ${responseText.substring(0, 100)}`);
-        }
-
-        if (response.status !== 200 || data.error) {
-           throw new Error(`PHP Proxy returned error: ${data.error || 'Unknown error'}`);
-        }
-
-        if (data.code === '00000' || data.code === 200 || data.success) {
-          if (data.data && data.data.url) return data.data.url;
-          if (data.url) return data.url;
-          if (data.data && data.data.cid) return `https://pay.cregis.io/?cid=${data.data.cid}&language=en-US`;
-        }
-
-        throw new Error(`Cregis Error via Proxy [Code: ${data.code}]: ${data.msg || data.message || 'API rejected the request'}. Full Response: ${JSON.stringify(data)}`);
-      } catch (error: any) {
-        console.error("Cregis Proxy Fetch Error:", error);
-        throw error;
-      }
-    }
-
-    // --- FALLBACK TO DIRECT CLOUDFLARE REQUEST (Legacy) ---
-    const timestamp = Date.now().toString();
-    const nonce = Math.random().toString(36).substring(2, 8); // 6 char random string
-    
-    const params: Record<string, string> = {
-      pid: this.peProjectId,
-      timestamp,
-      nonce,
-      amount: amount.toString(),
+    const payload = {
+      amount,
       currency,
-      third_party_id: userId,
+      third_party_id: userId
     };
 
-    // 1. Sort parameters lexicographically by key
-    const sortedKeys = Object.keys(params).sort();
-    
-    // 2. Concatenate key-value pairs
-    let paramString = '';
-    for (const key of sortedKeys) {
-      if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-        paramString += `${key}${params[key]}`;
-      }
-    }
-    
-    // 3. Prepend API Key and Hash with MD5
-    const stringToSign = this.peApiKey + paramString;
-    const sign = crypto.createHash('md5').update(stringToSign).digest('hex').toLowerCase();
-    
-    // 4. Construct final payload
-    const payload = { ...params, sign };
-
-    // 5. Make the API Call to Cregis Payment Engine
     try {
-      // If no valid API keys are provided, return a mock URL for demo purposes
-      if (!this.peApiKey || !this.peProjectId) {
-         console.warn("Missing Cregis API Keys, returning mock checkout URL");
-         return `/wallet/mock-checkout?amount=${amount}&currency=${currency}`;
-      }
+      const data = await this.callProxy('PE', '/api/v1/payment/create', payload);
 
-      // NOTE: If the exact endpoint is different (e.g. /v1/order/create), adjust the path here
-      // The official Cregis Payment Engine endpoint is /api/v1/payment/create
-      const response = await fetch(`${this.baseUrl}/api/v1/payment/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0'
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      const responseText = await response.text();
-      let data: any = {};
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("Cregis API returned non-JSON response:", response.status, responseText);
-        let detailedError = `HTTP Error ${response.status} from Cregis. `;
-        if (response.status === 403 || response.status === 401) {
-          detailedError += `Firewall/Auth Block! Cregis firewall is blocking our server IP. Please ensure our server IP is whitelisted, or contact Cregis support to whitelist Cloudflare Worker traffic. (Raw: ${responseText.substring(0, 50)})`;
-        } else {
-          detailedError += `Invalid JSON. Response preview: ${responseText.substring(0, 100)}`;
-        }
-        throw new Error(detailedError);
-      }
-      
       if (data.code === '00000' || data.code === 200 || data.success) {
-        // Cregis usually returns the URL in data.url or data.data.url or just returns the cid to construct it
         if (data.data && data.data.url) return data.data.url;
         if (data.url) return data.url;
         if (data.data && data.data.cid) return `https://pay.cregis.io/?cid=${data.data.cid}&language=en-US`;
       }
-      
-      console.error("Cregis API Error:", JSON.stringify(data));
-      throw new Error(`Cregis Error [Code: ${data.code}]: ${data.msg || data.message || 'API rejected the request'}. Full Response: ${JSON.stringify(data)}`);
-      
+
+      throw new Error(`Cregis Error via Proxy [Code: ${data.code}]: ${data.msg || data.message || 'API rejected the request'}. Full Response: ${JSON.stringify(data)}`);
     } catch (error: any) {
-      console.error("Cregis Fetch Error:", error);
+      console.error("Cregis Proxy Fetch Error:", error);
+      throw error;
+    }
+  }
+
+  // Create Payout (Withdrawal) via Cregis WaaS
+  async createPayout(amount: number, currency: string, address: string, userId: string): Promise<string> {
+    const payload = {
+      currency,
+      amount,
+      address,
+      // Provide a unique client order ID for the payout
+      order_id: `PO-${userId.substring(0,5)}-${Date.now()}` 
+    };
+
+    try {
+      // NOTE: Verify the exact payout endpoint from Cregis WaaS docs
+      // Usually it's something like /v1/payout/create or /api/v1/payout/create
+      const data = await this.callProxy('WAAS', '/v1/payout/create', payload);
+
+      if (data.code === '00000' || data.code === 200 || data.success) {
+        // Return the Cregis payout internal ID
+        return data.data?.payout_id || data.data?.order_id || payload.order_id;
+      }
+
+      throw new Error(`Cregis Payout Error [Code: ${data.code}]: ${data.msg || data.message || 'Rejected'}. Full Response: ${JSON.stringify(data)}`);
+    } catch (error: any) {
+      console.error("Cregis Payout Fetch Error:", error);
       throw error;
     }
   }

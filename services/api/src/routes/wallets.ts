@@ -346,24 +346,64 @@ walletRoutes.post('/withdraw', async (c) => {
   const now = new Date();
   const transactionId = `TX-${Date.now()}`;
   
-  // Deduct balance
-  const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
-  await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
-  
-  // Record transaction
-  await db.insert(walletTransactions).values({
-    id: transactionId,
-    userId: user.id,
-    type: 'WITHDRAWAL',
-    mode: mode,
-    assetSymbol,
-    amount: amount.toString(),
-    status: 'COMPLETED', // Simulated demo trading completes instantly
-    destination,
-    network: network || 'Internal',
-    createdAt: now,
-    updatedAt: now,
-  });
+  if (mode === 'DEMO') {
+    // Deduct balance instantly for DEMO
+    const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
+    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+    
+    // Record transaction
+    await db.insert(walletTransactions).values({
+      id: transactionId,
+      userId: user.id,
+      type: 'WITHDRAWAL',
+      mode: mode,
+      assetSymbol,
+      amount: amount.toString(),
+      status: 'COMPLETED', // Simulated demo trading completes instantly
+      destination,
+      network: network || 'Internal',
+      createdAt: now,
+      updatedAt: now,
+    });
 
-  return c.json({ success: true, transactionId });
+    return c.json({ success: true, transactionId });
+  } else {
+    // --- REAL MODE WITHDRAWAL (CREGIS WAAS) ---
+    try {
+      const cregis = new CregisClient(c.env);
+      
+      // Step 1: Call Cregis Payout API via PHP Proxy
+      const payoutId = await cregis.createPayout(parsedAmount, assetSymbol, destination, user.id);
+      
+      // Step 2: Deduct balance (or move to locked_balance if your system prefers)
+      const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
+      await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+      
+      // Step 3: Record transaction as PENDING (Wait for Cregis Webhook to mark COMPLETED)
+      await db.insert(walletTransactions).values({
+        id: transactionId,
+        userId: user.id,
+        type: 'WITHDRAWAL',
+        mode: mode,
+        assetSymbol,
+        amount: amount.toString(),
+        status: 'PENDING',
+        destination,
+        network: network || 'External',
+        reference: payoutId, // Store Cregis payout ID for webhook matching
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      return c.json({ 
+        success: true, 
+        transactionId,
+        message: 'Withdrawal initiated successfully. It will be processed by the network shortly.'
+      });
+      
+    } catch (error: any) {
+      console.error("Real Withdrawal Error:", error);
+      return c.json({ success: false, error: error.message || 'Failed to process withdrawal.' }, 400);
+    }
+  }
 });

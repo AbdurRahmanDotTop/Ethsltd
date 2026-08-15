@@ -1,16 +1,22 @@
 <?php
 /**
- * Cregis Payment Engine Proxy
- * Deploy this on your Shared Web Hosting to use its static IP.
+ * Cregis Dynamic Multi-Service Proxy
+ * Handles both Payment Engine (Deposits) and WaaS (Withdrawals/Addresses)
  */
 
 // ==========================================
-// CONFIGURATION - EDIT THESE VALUES
+// CONFIGURATION - CREDENTIALS
 // ==========================================
+$PROXY_SECRET = "ETHSLTD_CREGIS_PROXY_SECURE_TOKEN_2026";
+$CREGIS_BASE_URL = "https://t-tkqzeuxf.cregis.io";
+
+// Payment Engine (PE) - For Auto Deposits
 $CREGIS_PE_API_KEY = "7953f2a93d624526bba56bf3743477a7";
 $CREGIS_PE_PROJECT_ID = "1446672836255744";
-$PROXY_SECRET = "ETHSLTD_CREGIS_PROXY_SECURE_TOKEN_2026"; // Must match process.env.CREGIS_PROXY_SECRET in Cloudflare
-$CREGIS_BASE_URL = "https://t-tkqzeuxf.cregis.io";
+
+// Wallet-as-a-Service (WAAS) - For Payouts/Withdrawals
+$CREGIS_WAAS_API_KEY = "fcd3beae37bf4ce5bb8c624b80f810d0";
+$CREGIS_WAAS_PROJECT_ID = "1446671650562048";
 // ==========================================
 
 header('Content-Type: application/json');
@@ -25,31 +31,41 @@ if ($authHeader !== $PROXY_SECRET) {
     exit;
 }
 
-// 2. Read Input Payload
+// 2. Read Input
 $input = file_get_contents('php://input');
-$payload = json_decode($input, true);
+$request = json_decode($input, true);
 
-if (!$payload || !isset($payload['amount']) || !isset($payload['currency']) || !isset($payload['third_party_id'])) {
+if (!$request || !isset($request['_proxy']) || !isset($request['payload'])) {
     http_response_code(400);
-    echo json_encode(["error" => "Invalid payload"]);
+    echo json_encode(["error" => "Invalid proxy structure. Expected _proxy and payload objects."]);
     exit;
 }
+
+$service = $request['_proxy']['service'] ?? 'PE'; // 'PE' or 'WAAS'
+$endpoint = $request['_proxy']['endpoint'] ?? '/api/v1/payment/create';
+$payload = $request['payload'];
+
+// Determine keys based on service
+$apiKey = ($service === 'WAAS') ? $CREGIS_WAAS_API_KEY : $CREGIS_PE_API_KEY;
+$projectId = ($service === 'WAAS') ? $CREGIS_WAAS_PROJECT_ID : $CREGIS_PE_PROJECT_ID;
 
 // 3. Construct Cregis Parameters
 $timestamp = (string)(time() * 1000);
 $nonce = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyz"), 0, 6);
 
+// Initialize params with project ID, timestamp, and nonce
 $params = [
-    'pid' => $CREGIS_PE_PROJECT_ID,
+    'pid' => $projectId,
     'timestamp' => $timestamp,
     'nonce' => $nonce,
-    'amount' => (string)$payload['amount'],
-    'currency' => $payload['currency'],
-    'third_party_id' => $payload['third_party_id'],
 ];
 
-if (isset($payload['callback_url'])) {
-    $params['callback_url'] = $payload['callback_url'];
+// Merge the user's payload (excluding pid, timestamp, nonce, sign if accidentally passed)
+foreach ($payload as $k => $v) {
+    if (!in_array($k, ['pid', 'timestamp', 'nonce', 'sign'])) {
+        // Cregis expects stringified numbers usually, but we keep it as passed
+        $params[$k] = (string)$v;
+    }
 }
 
 // 4. Generate MD5 Signature
@@ -61,19 +77,18 @@ foreach ($params as $key => $value) {
     }
 }
 
-$stringToSign = $CREGIS_PE_API_KEY . $paramString;
+$stringToSign = $apiKey . $paramString;
 $sign = strtolower(md5($stringToSign));
-
 $params['sign'] = $sign;
 
 // 5. Make the Request to Cregis
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $CREGIS_BASE_URL . "/api/v1/payment/create");
+curl_setopt($ch, CURLOPT_URL, $CREGIS_BASE_URL . $endpoint);
 curl_setopt($ch, CURLOPT_POST, 1);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Content-Type: application/json',
-    'User-Agent: CregisProxy/1.0'
+    'User-Agent: CregisProxy/2.0'
 ]);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
