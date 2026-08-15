@@ -65,7 +65,7 @@ export class CregisClient {
       // If no valid API keys are provided, return a mock URL for demo purposes
       if (!this.peApiKey || !this.peProjectId) {
          console.warn("Missing Cregis API Keys, returning mock checkout URL");
-         return `https://pay.cregis.io/?cid=mock_${nonce}&language=en-US`;
+         return `/wallet/mock-checkout?amount=${amount}&currency=${currency}`;
       }
 
       // NOTE: If the exact endpoint is different (e.g. /v1/order/create), adjust the path here
@@ -81,8 +81,8 @@ export class CregisClient {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error("Cregis API returned non-JSON response:", response.status, responseText);
-        // Fallback to mock URL on 429 or other non-JSON errors
-        return `https://pay.cregis.io/?cid=mock_fallback_${nonce}&language=en-US`;
+        // Fallback to local mock checkout on 429/403 or other non-JSON errors
+        return `/wallet/mock-checkout?amount=${amount}&currency=${currency}`;
       }
       
       if (data.code === '00000' || data.code === 200 || data.success) {
@@ -94,12 +94,12 @@ export class CregisClient {
       
       console.error("Cregis API Error Payload:", JSON.stringify(data));
       // Fallback on API failure
-      return `https://pay.cregis.io/?cid=mock_api_error_${nonce}&language=en-US`;
+      return `/wallet/mock-checkout?amount=${amount}&currency=${currency}&error=api_failed`;
       
     } catch (error: any) {
       console.error("Cregis Fetch Error:", error);
       // Fallback on network failure
-      return `https://pay.cregis.io/?cid=mock_network_error_${nonce}&language=en-US`;
+      return `/wallet/mock-checkout?amount=${amount}&currency=${currency}&error=network_failed`;
     }
   }
 
