@@ -195,10 +195,11 @@ walletRoutes.get('/transactions', async (c) => {
 });
 
 walletRoutes.post('/deposit', async (c) => {
-  const db = c.get('db');
-  const user = c.get('user');
-  const body = await c.req.json();
-  const { assetSymbol, amount, network, destination, mode = 'REAL', depositMethod } = body;
+  try {
+    const db = c.get('db');
+    const user = c.get('user');
+    const body = await c.req.json();
+    const { assetSymbol, amount, network, destination, mode = 'REAL', depositMethod } = body;
 
   const transactionId = `TX-${Date.now()}`;
   const now = new Date();
@@ -321,6 +322,10 @@ walletRoutes.post('/deposit', async (c) => {
     } else {
       return c.json({ success: false, error: 'Invalid deposit method for REAL mode' }, 400);
     }
+  }
+  } catch (globalError: any) {
+    console.error("FATAL DEPOSIT ROUTE ERROR:", globalError);
+    return c.json({ success: false, error: `Server Crash: ${globalError?.message || String(globalError)}` }, 500);
   }
 });
 
