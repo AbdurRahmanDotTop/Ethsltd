@@ -57,11 +57,11 @@ export class CregisClient {
     try {
       data = JSON.parse(responseText);
     } catch (e) {
-      throw new Error(`PHP Proxy Error (Status ${response.status}): ${responseText.substring(0, 100)}`);
+      throw new Error(`PHP Proxy Error (Status ${response.status}): ${responseText || 'Empty response'}`);
     }
 
     if (response.status !== 200 || data.error) {
-       throw new Error(`PHP Proxy returned error: ${data.error || 'Unknown error'}`);
+       throw new Error(`PHP Proxy returned error: ${data.error || 'Unknown error'} | Details: ${data.details || ''}`);
     }
 
     return data;

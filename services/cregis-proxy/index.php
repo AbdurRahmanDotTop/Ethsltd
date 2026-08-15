@@ -110,8 +110,12 @@ curl_close($ch);
 
 // 6. Return response to Cloudflare
 http_response_code($httpcode);
-if ($response === false) {
-    echo json_encode(["error" => "cURL failed: " . $curlError]);
+if ($response === false || trim($response) === '') {
+    echo json_encode([
+        "error" => "Cregis API Error (Status: $httpcode)",
+        "details" => "Cregis returned an empty response. This usually means the Cregis WAF blocked the request because the IP (145.79.58.207) is not whitelisted properly.",
+        "curl_error" => $curlError
+    ]);
 } else {
     echo $response;
 }
