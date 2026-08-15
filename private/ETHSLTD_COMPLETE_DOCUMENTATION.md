@@ -99,6 +99,77 @@ The platform encompasses the following modules and applications:
 
 ---
 
+## 3.5 Design System & UI/UX Guidelines (A to Z)
+
+The platform follows a premium, institutional-grade visual identity. The design relies heavily on modern glassmorphism, dynamic gradients, deep dark themes, and sophisticated typography. Tailwind CSS (v4) handles styling across the frontend.
+
+### A. Color Palette (Hex Codes)
+
+**Brand Colors (Primary Identity):**
+*   `--color-brand-50`: `#F4F8FB`
+*   `--color-brand-100`: `#E8F1F7`
+*   `--color-brand-200`: `#C9DDEB`
+*   `--color-brand-300`: `#89AEC8`
+*   `--color-brand-400`: `#3E789F`
+*   `--color-brand-500` (Primary): `#145B8C`
+*   `--color-brand-600`: `#0C4772`
+*   `--color-brand-700`: `#002C55`
+*   `--color-brand-800`: `#001F3D`
+*   `--color-brand-900`: `#00152B`
+
+**Dark Mode Backgrounds (Deep Blues/Blacks):**
+*   `--background` (Dark): `#070A12` (Almost pitch black with a hint of blue)
+*   `--card` / Popovers: `#141A38`
+*   `--muted` / Inputs: `#1A2144` to `#222A4D`
+*   `--border`: `rgba(255, 255, 255, 0.08)` for subtle separations
+
+**Light Mode Backgrounds (Crisp Whites):**
+*   `--background` (Light): `#F8FAFC`
+*   `--card` / Popovers: `#FFFFFF`
+*   `--muted` / Inputs: `#F1F5F9`
+*   `--border`: `#E2E8F0`
+
+**Functional Colors:**
+*   **Success (Up):** `#16A34A` (Used for profit, positive price change, buy buttons)
+*   **Danger/Destructive (Down):** `#DC2626` (Used for loss, negative price change, sell buttons)
+*   **Warning:** `#D97706`
+*   **Info:** `#2563EB`
+*   **Chart Up Candle:** `#16c784`
+*   **Chart Down Candle:** `#ea3943`
+
+### B. Typography & Fonts
+
+The application leverages Next.js optimized Google Fonts.
+*   **Sans-Serif (Default text, UI elements):** `Inter` (`--font-inter`). Used for readability in tables, body text, and small labels.
+*   **Display (Headings, Hero sections):** `Space Grotesk` (`--font-space-grotesk`). Used for `h1`, `h2`, `h3` to give a modern, tech-forward, and bold appearance.
+*   **Monospace (Numbers, Tickers, Code, Prices):** `JetBrains Mono` (`--font-jetbrains-mono`). Mandatory for all financial figures, price tickers, and wallet addresses to ensure character widths align perfectly vertically in order books and tables.
+
+### C. Gradients & Visual Effects
+
+The application heavily utilizes dynamic gradients to break the monotony of solid dark colors.
+*   **Radial Glows (Hero & Backgrounds):**
+    *   Cyan glow: `bg-[radial-gradient(circle_at_center,rgba(0,255,194,0.10)_0%,transparent_50%)]`
+    *   Purple/Blue glow: `bg-[radial-gradient(circle_at_center,rgba(87,92,255,0.08)_0%,transparent_50%)]`
+*   **Linear Fades (Overlays):**
+    *   Bottom-to-Top fades: `bg-gradient-to-t from-[#05070A] to-transparent` used to blend UI elements smoothly into the background.
+*   **Glassmorphism (Frosted Glass):**
+    *   Cards and floating headers use `backdrop-blur-sm` or `backdrop-blur-md` coupled with semi-transparent backgrounds like `bg-background/60` to create depth.
+*   **Borders:**
+    *   Extremely subtle borders (`border-white/5` or `border-border`) are used around glass cards to define edges without adding visual weight.
+
+### D. UI Components (shadcn/ui overrides)
+
+*   **Buttons:** Fully rounded or slightly rounded depending on context (`--radius-md: 8px`). Primary buttons use the core brand blue (`#145B8C`) with solid contrast text.
+*   **Inputs & Forms:** Subtly tinted backgrounds (`#222A4D` in dark mode) with high-contrast active rings (`ring-[#145B8C]`).
+*   **Animations:** Smooth, easing transitions (`--animate-accordion-down: accordion-down 0.2s ease-out`). Hover states gently lift components or brighten colors by 10%.
+
+### E. Theme Strategy
+
+*   The default and heavily optimized theme is **Dark Mode**. Light mode is supported but dark mode is the primary identity representing premium financial technology.
+*   All styles rely on CSS variables declared in `globals.css` (e.g., `text-foreground`, `bg-background`) ensuring a single source of truth for all components.
+
+---
+
 ## 4. System Architecture
 
 ### High-Level Request Flow
