@@ -5,7 +5,7 @@ export class EthsltdClient {
   private token: string | null = null;
   private mode: 'REAL' | 'DEMO' = 'REAL';
 
-  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || 'https://api.ethsltd-api.workers.dev') {
+  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') {
     this.baseUrl = baseUrl;
     // Attempt to load token from localStorage if in browser environment
     if (typeof window !== 'undefined') {

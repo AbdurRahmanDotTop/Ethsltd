@@ -17,6 +17,9 @@ export default function AdminPaymentSettingsPage() {
   const [editingMethod, setEditingMethod] = useState<any | null>(null);
   const [editInstructions, setEditInstructions] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Crypto Addresses Builder State (for both Add and Edit)
+  const [cryptoAddresses, setCryptoAddresses] = useState<{asset: string, address: string}[]>([{ asset: "USDT", address: "" }]);
 
   // Add Method State
   const [isAddMethodModalOpen, setIsAddMethodModalOpen] = useState(false);
@@ -47,8 +50,9 @@ export default function AdminPaymentSettingsPage() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
+      const token = localStorage.getItem("ethsltd_auth_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      console.log("fetchSettings using API URL:", apiUrl);
       const res = await fetch(`${apiUrl}/api/v1/admin/payments/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       }).then(r => r.json());
@@ -66,13 +70,18 @@ export default function AdminPaymentSettingsPage() {
 
   const handleEditMethod = (method: any) => {
     setEditingMethod(method);
-    // Format JSON if it is MANUAL to make it readable
+    // Format JSON if it is MANUAL to map to dynamic inputs
     if (method.method === 'MANUAL' && method.instructions) {
       try {
         const parsed = JSON.parse(method.instructions);
-        setEditInstructions(JSON.stringify(parsed, null, 2));
+        const entries = Object.entries(parsed).map(([asset, address]) => ({ asset, address: address as string }));
+        if (entries.length > 0) {
+          setCryptoAddresses(entries);
+        } else {
+          setCryptoAddresses([{ asset: "USDT", address: "" }]);
+        }
       } catch (e) {
-        setEditInstructions(method.instructions || "");
+        setCryptoAddresses([{ asset: "USDT", address: "" }]);
       }
     } else {
       setEditInstructions(method.instructions || "");
@@ -83,21 +92,26 @@ export default function AdminPaymentSettingsPage() {
     if (!editingMethod) return;
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("ethsltd_auth_token");
       let finalInstructions = editInstructions;
       
-      // If MANUAL, ensure it's valid JSON
-      if (editingMethod.method === 'MANUAL' && editInstructions.trim() !== '') {
-        try {
-          JSON.parse(editInstructions); // Validate
-        } catch (e) {
-          toast.error("Invalid JSON format for crypto addresses.");
+      // If MANUAL, build the JSON object from the dynamic inputs
+      if (editingMethod.method === 'MANUAL') {
+        const obj: Record<string, string> = {};
+        cryptoAddresses.forEach(item => {
+          if (item.asset.trim() && item.address.trim()) {
+            obj[item.asset.trim()] = item.address.trim();
+          }
+        });
+        if (Object.keys(obj).length === 0) {
+          toast.error("Please add at least one valid crypto asset and address.");
           setIsSaving(false);
           return;
         }
+        finalInstructions = JSON.stringify(obj);
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const res = await fetch(`${apiUrl}/api/v1/admin/payments/methods/${editingMethod.id}`, {
         method: "PUT",
         headers: { 
@@ -121,23 +135,54 @@ export default function AdminPaymentSettingsPage() {
     }
   };
 
+  const handleDeleteMethod = async (methodId: string) => {
+    if (!confirm("Are you sure you want to delete this payment method?")) return;
+    try {
+      const token = localStorage.getItem("ethsltd_auth_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${apiUrl}/api/v1/admin/payments/methods/${methodId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json());
+
+      if (res.success) {
+        toast.success("Payment method deleted");
+        fetchSettings();
+      } else {
+        toast.error(res.error || "Failed to delete");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Error deleting");
+    }
+  };
+
   const handleAddMethod = async () => {
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("ethsltd_auth_token");
+      
+      let finalAddMethodForm = { ...addMethodForm };
       
       if (addMethodForm.method === 'MANUAL') {
-        try { JSON.parse(addMethodForm.instructions); } catch(e) {
-          toast.error("Invalid JSON format for crypto addresses.");
-          setIsSaving(false); return;
+        const obj: Record<string, string> = {};
+        cryptoAddresses.forEach(item => {
+          if (item.asset.trim() && item.address.trim()) {
+            obj[item.asset.trim()] = item.address.trim();
+          }
+        });
+        if (Object.keys(obj).length === 0) {
+          toast.error("Please add at least one valid crypto asset and address.");
+          setIsSaving(false);
+          return;
         }
+        finalAddMethodForm.instructions = JSON.stringify(obj);
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const res = await fetch(`${apiUrl}/api/v1/admin/payments/methods`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(addMethodForm)
+        body: JSON.stringify(finalAddMethodForm)
       }).then(r => r.json());
 
       if (res.success) {
@@ -179,9 +224,10 @@ export default function AdminPaymentSettingsPage() {
   const handleSaveBank = async () => {
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("ethsltd_auth_token");
       const isEdit = !!editingBank;
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      console.log("handleSaveBank using API URL:", apiUrl);
       const endpoint = isEdit 
         ? `${apiUrl}/api/v1/admin/payments/banks/${editingBank.id}`
         : `${apiUrl}/api/v1/admin/payments/banks`;
@@ -209,6 +255,27 @@ export default function AdminPaymentSettingsPage() {
     }
   };
 
+  const handleDeleteBank = async (bankId: string) => {
+    if (!confirm("Are you sure you want to delete this bank account?")) return;
+    try {
+      const token = localStorage.getItem("ethsltd_auth_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${apiUrl}/api/v1/admin/payments/banks/${bankId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json());
+
+      if (res.success) {
+        toast.success("Bank account deleted");
+        fetchSettings();
+      } else {
+        toast.error(res.error || "Failed to delete");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Error deleting");
+    }
+  };
+
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -223,7 +290,11 @@ export default function AdminPaymentSettingsPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold">Payment Methods</h3>
-          <Button onClick={() => setIsAddMethodModalOpen(true)}>Add Method</Button>
+          <Button onClick={() => {
+            setCryptoAddresses([{ asset: "USDT", address: "" }]);
+            setAddMethodForm({ ...addMethodForm, method: "MANUAL", instructions: "" });
+            setIsAddMethodModalOpen(true);
+          }}>Add Method</Button>
         </div>
         {loading ? <p>Loading...</p> : methods.map(method => (
           <div key={method.id} className="p-4 border border-border rounded-lg bg-card flex justify-between items-center">
@@ -231,7 +302,10 @@ export default function AdminPaymentSettingsPage() {
               <h4 className="font-semibold">{method.method}</h4>
               <p className="text-sm text-muted-foreground">Status: {method.enabled ? "Enabled" : "Disabled"}</p>
             </div>
-            <Button variant="outline" onClick={() => handleEditMethod(method)}>Edit</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => handleEditMethod(method)}>Edit</Button>
+              <Button variant="destructive" onClick={() => handleDeleteMethod(method.id)}>Delete</Button>
+            </div>
           </div>
         ))}
         {methods.length === 0 && !loading && (
@@ -252,7 +326,10 @@ export default function AdminPaymentSettingsPage() {
               <h4 className="font-semibold">{bank.bank_name}</h4>
               <p className="text-sm text-muted-foreground">{bank.account_holder} - {bank.currency}</p>
             </div>
-            <Button variant="outline" onClick={() => handleOpenBankModal(bank)}>Edit</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => handleOpenBankModal(bank)}>Edit</Button>
+              <Button variant="destructive" onClick={() => handleDeleteBank(bank.id)}>Delete</Button>
+            </div>
           </div>
         ))}
         {banks.length === 0 && !loading && (
@@ -275,14 +352,57 @@ export default function AdminPaymentSettingsPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Instructions / Addresses (JSON for MANUAL)</Label>
-              <textarea 
-                value={editInstructions}
-                onChange={e => setEditInstructions(e.target.value)}
-                rows={8}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
-                placeholder={editingMethod?.method === 'MANUAL' ? '{\n  "USDT": "0x...",\n  "BTC": "bc1..."\n}' : "Instructions here..."}
-              />
+              <Label>{editingMethod?.method === 'MANUAL' ? "Crypto Wallets / Deposit Addresses" : "Instructions"}</Label>
+              {editingMethod?.method === 'MANUAL' ? (
+                <div className="space-y-4 bg-muted/50 p-4 rounded-lg border border-border">
+                  <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
+                    {cryptoAddresses.map((item, idx) => (
+                      <div key={idx} className="flex gap-2 items-center bg-background p-2 rounded-md border border-border">
+                        <Input 
+                          placeholder="Asset (e.g. USDT TRC20)" 
+                          value={item.asset} 
+                          onChange={e => {
+                            const newAddresses = [...cryptoAddresses];
+                            newAddresses[idx].asset = e.target.value.toUpperCase();
+                            setCryptoAddresses(newAddresses);
+                          }}
+                          className="w-1/3"
+                        />
+                        <Input 
+                          placeholder="Wallet Address" 
+                          value={item.address} 
+                          onChange={e => {
+                            const newAddresses = [...cryptoAddresses];
+                            newAddresses[idx].address = e.target.value;
+                            setCryptoAddresses(newAddresses);
+                          }}
+                          className="flex-1 font-mono text-sm"
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
+                          onClick={() => setCryptoAddresses(cryptoAddresses.filter((_, i) => i !== idx))}
+                          disabled={cryptoAddresses.length === 1}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button type="button" variant="outline" className="w-full border-dashed" onClick={() => setCryptoAddresses([...cryptoAddresses, { asset: "", address: "" }])}>
+                    + Add Another Asset
+                  </Button>
+                </div>
+              ) : (
+                <textarea 
+                  value={editInstructions}
+                  onChange={e => setEditInstructions(e.target.value)}
+                  rows={8}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
+                  placeholder="Instructions here..."
+                />
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -322,13 +442,56 @@ export default function AdminPaymentSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Instructions (JSON for MANUAL)</Label>
-              <textarea 
-                value={addMethodForm.instructions} 
-                onChange={e => setAddMethodForm({...addMethodForm, instructions: e.target.value})}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono min-h-[100px]"
-                placeholder={addMethodForm.method === 'MANUAL' ? '{\n  "USDT": "0x...",\n  "BTC": "bc1..."\n}' : "Instructions"}
-              />
+              <Label>{addMethodForm.method === 'MANUAL' ? "Crypto Wallets / Deposit Addresses" : "Instructions"}</Label>
+              {addMethodForm.method === 'MANUAL' ? (
+                <div className="space-y-4 bg-muted/50 p-4 rounded-lg border border-border">
+                  <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
+                    {cryptoAddresses.map((item, idx) => (
+                      <div key={idx} className="flex gap-2 items-center bg-background p-2 rounded-md border border-border">
+                        <Input 
+                          placeholder="Asset (e.g. USDT TRC20)" 
+                          value={item.asset} 
+                          onChange={e => {
+                            const newAddresses = [...cryptoAddresses];
+                            newAddresses[idx].asset = e.target.value.toUpperCase();
+                            setCryptoAddresses(newAddresses);
+                          }}
+                          className="w-1/3"
+                        />
+                        <Input 
+                          placeholder="Wallet Address" 
+                          value={item.address} 
+                          onChange={e => {
+                            const newAddresses = [...cryptoAddresses];
+                            newAddresses[idx].address = e.target.value;
+                            setCryptoAddresses(newAddresses);
+                          }}
+                          className="flex-1 font-mono text-sm"
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
+                          onClick={() => setCryptoAddresses(cryptoAddresses.filter((_, i) => i !== idx))}
+                          disabled={cryptoAddresses.length === 1}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button type="button" variant="outline" className="w-full border-dashed" onClick={() => setCryptoAddresses([...cryptoAddresses, { asset: "", address: "" }])}>
+                    + Add Another Asset
+                  </Button>
+                </div>
+              ) : (
+                <textarea 
+                  value={addMethodForm.instructions} 
+                  onChange={e => setAddMethodForm({...addMethodForm, instructions: e.target.value})}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[100px]"
+                  placeholder="Instructions"
+                />
+              )}
             </div>
           </div>
           <DialogFooter>

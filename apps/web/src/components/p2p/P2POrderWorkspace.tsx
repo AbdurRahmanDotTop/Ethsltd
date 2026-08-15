@@ -7,6 +7,7 @@ import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
 import { P2PChat } from "@/components/p2p/P2PChat";
 import { Loader2, AlertCircle, Copy, CheckCircle2, Clock, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 interface P2POrderWorkspaceProps {
   orderId: string;
@@ -14,6 +15,7 @@ interface P2POrderWorkspaceProps {
 
 export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   const router = useRouter();
+  const { mode } = useTradingModeStore();
   const [order, setOrder] = useState<any>(null);
   const [merchant, setMerchant] = useState<P2PMerchant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,11 +110,13 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
         setOrder({ ...order, status: "PAID" });
         alert("Payment marked as complete.");
         
-        // Simulate Merchant releasing crypto after a delay for demo
-        setTimeout(async () => {
-          await apiClient.updateP2pOrderStatus(order.id, "release");
-          setOrder({ ...order, status: "RELEASED" });
-        }, 4000);
+        if (mode === 'DEMO') {
+          // Simulate Merchant releasing crypto after a delay for demo
+          setTimeout(async () => {
+            await apiClient.updateP2pOrderStatus(order.id, "release");
+            setOrder({ ...order, status: "RELEASED" });
+          }, 4000);
+        }
       } else {
         alert(res.error || "Failed to mark paid.");
       }
@@ -122,7 +126,10 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   };
 
   const handleCancel = async () => {
-    if (confirm("Are you sure you want to cancel this order? This will release the simulated escrow.")) {
+    const confirmMessage = mode === 'DEMO' 
+      ? "Are you sure you want to cancel this order? This will release the simulated escrow."
+      : "Are you sure you want to cancel this order? This will release the escrow.";
+    if (confirm(confirmMessage)) {
       try {
         const res = await apiClient.updateP2pOrderStatus(order.id, "cancel");
         if (res.success) {
@@ -203,10 +210,12 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
 
             <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border">
               <h4 className="font-semibold text-sm flex items-center gap-2 text-brand-600 dark:text-brand-400">
-                <Info className="w-4 h-4" /> SIMULATED PAYMENT DETAILS
+                <Info className="w-4 h-4" /> {mode === 'DEMO' ? 'SIMULATED ' : ''}PAYMENT DETAILS
               </h4>
               <p className="text-xs text-muted-foreground mb-4">
-                Please simulate transferring funds to the merchant using the details below. This is a demo environment.
+                {mode === 'DEMO' 
+                  ? 'Please simulate transferring funds to the merchant using the details below. This is a demo environment.'
+                  : 'Please transfer funds to the merchant using the details below. Ensure you use the correct reference number.'}
               </p>
               
               <div className="space-y-3">
@@ -226,10 +235,12 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                 </div>
 
                 <div>
-                  <span className="text-xs text-muted-foreground block mb-1">Simulated Account / ID</span>
+                  <span className="text-xs text-muted-foreground block mb-1">{mode === 'DEMO' ? 'Simulated Account / ID' : 'Account / ID'}</span>
                   <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
-                    <span className="font-mono text-sm">{merchant.username.toLowerCase()}@ethsltd.demo</span>
-                    <button onClick={() => copyToClipboard(`${merchant.username.toLowerCase()}@ethsltd.demo`, "account")} className="text-muted-foreground hover:text-foreground">
+                    <span className="font-mono text-sm">
+                      {mode === 'DEMO' ? `${merchant.username.toLowerCase()}@ethsltd.demo` : `${merchant.username.toLowerCase()}@bank.local`}
+                    </span>
+                    <button onClick={() => copyToClipboard(mode === 'DEMO' ? `${merchant.username.toLowerCase()}@ethsltd.demo` : `${merchant.username.toLowerCase()}@bank.local`, "account")} className="text-muted-foreground hover:text-foreground">
                       {copiedField === "account" ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                     </button>
                   </div>
@@ -267,7 +278,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
               <p className="text-sm text-blue-800/80 dark:text-blue-400/80 max-w-md">
                 You have marked the payment as complete. The merchant is verifying the funds and will release the crypto shortly.
               </p>
-              <Button variant="outline" className="mt-6" size="sm">Open Dispute (Simulation)</Button>
+              <Button variant="outline" className="mt-6" size="sm">Open Dispute {mode === 'DEMO' ? '(Simulation)' : ''}</Button>
             </div>
           )}
 

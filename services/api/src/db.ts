@@ -6,6 +6,8 @@ export type Bindings = {
   CREGIS_WAAS_API_KEY: string;
   CREGIS_WAAS_PROJECT_ID: string;
   CREGIS_BASE_URL: string;
+  CREGIS_PE_API_KEY: string;
+  CREGIS_PE_PROJECT_ID: string;
 };
 
 export type Variables = {

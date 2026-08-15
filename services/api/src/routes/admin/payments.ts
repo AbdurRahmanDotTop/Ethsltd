@@ -2,19 +2,13 @@ import { Hono } from 'hono';
 import { eq, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../../db';
 import { bank_accounts as bankAccounts, payment_methods as paymentMethods, real_manual_deposits as realManualDeposits, bankTransfers, wallets, walletTransactions, ledgerEntries, ledgerTransactions } from 'database';
-import { jwtMiddleware } from '../../middleware/jwt';
+import { jwtMiddleware, adminMiddleware } from '../../middleware/jwt';
 
 export const adminPaymentRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Ensure user is admin
 adminPaymentRoutes.use('*', jwtMiddleware);
-adminPaymentRoutes.use('*', async (c, next) => {
-  const user = c.get('user');
-  if (user.role !== 'ADMIN') {
-    return c.json({ success: false, error: 'Unauthorized' }, 403);
-  }
-  await next();
-});
+adminPaymentRoutes.use('*', adminMiddleware);
 
 // Get payment settings
 adminPaymentRoutes.get('/settings', async (c) => {
@@ -51,6 +45,15 @@ adminPaymentRoutes.put('/methods/:id', async (c) => {
   return c.json({ success: true });
 });
 
+// Delete payment method
+adminPaymentRoutes.delete('/methods/:id', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  
+  await db.delete(paymentMethods).where(eq(paymentMethods.id, id));
+  return c.json({ success: true });
+});
+
 // Create bank account
 adminPaymentRoutes.post('/banks', async (c) => {
   const db = c.get('db');
@@ -74,6 +77,15 @@ adminPaymentRoutes.put('/banks/:id', async (c) => {
   const now = new Date();
   
   await db.update(bankAccounts).set({ ...body, updated_at: now }).where(eq(bankAccounts.id, id));
+  return c.json({ success: true });
+});
+
+// Delete bank account
+adminPaymentRoutes.delete('/banks/:id', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  
+  await db.delete(bankAccounts).where(eq(bankAccounts.id, id));
   return c.json({ success: true });
 });
 

@@ -13,8 +13,12 @@ walletRoutes.use('*', jwtMiddleware);
 walletRoutes.get('/deposit-settings', async (c) => {
   const db = c.get('db');
   
-  // Get active MANUAL payment method
-  const manualMethod = await db.select().from(payment_methods).where(and(eq(payment_methods.method, 'MANUAL'), eq(payment_methods.enabled, true))).get();
+  // Get active MANUAL payment method (fetch most recently updated to handle duplicates gracefully)
+  const manualMethod = await db.select()
+    .from(payment_methods)
+    .where(and(eq(payment_methods.method, 'MANUAL'), eq(payment_methods.enabled, true)))
+    .orderBy(desc(payment_methods.updated_at))
+    .get();
   
   let manualAddresses: Record<string, string> = {};
   if (manualMethod?.instructions) {

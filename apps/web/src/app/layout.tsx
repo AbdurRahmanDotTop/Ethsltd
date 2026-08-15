@@ -19,10 +19,13 @@ const jetbrainsMono = JetBrains_Mono({
 
 import { BackToTop } from "@/components/layout/BackToTop";
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || process.env.CF_PAGES_URL;
+const metadataBaseUrl = appUrl ? new URL(appUrl.startsWith('http') ? appUrl : `https://${appUrl}`) : undefined;
+
 export const metadata: Metadata = {
   title: "ETHSLTD Crypto - Trade Crypto With Clarity",
   description: "The modern digital asset platform. Trade crypto with clarity and confidence.",
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: metadataBaseUrl,
   openGraph: {
     title: "ETHSLTD Crypto",
     description: "The modern digital asset platform. Trade crypto with clarity and confidence.",

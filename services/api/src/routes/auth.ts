@@ -32,13 +32,17 @@ authRoutes.post('/register', async (c) => {
   const sessionId = crypto.randomUUID();
   const now = new Date();
 
+  // Check if this is the first user
+  const userCount = await db.select().from(users).all();
+  const isFirstUser = userCount.length === 0;
+
   await db.insert(users).values({
     id: userId,
     email: body.email,
     passwordHash: hashedPassword,
     createdAt: now,
     updatedAt: now,
-    role: 'USER',
+    role: isFirstUser ? 'SUPER_ADMIN' : 'USER',
     status: 'ACTIVE'
   });
 

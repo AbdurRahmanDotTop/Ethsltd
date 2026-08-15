@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'http://localhost:3000'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || process.env.CF_PAGES_URL || '';
+  const baseUrl = appUrl ? (appUrl.startsWith('http') ? appUrl : `https://${appUrl}`) : '';
   
   // Public routes only
   const routes = [

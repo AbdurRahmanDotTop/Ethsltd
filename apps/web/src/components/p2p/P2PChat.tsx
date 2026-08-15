@@ -7,6 +7,7 @@ import { useP2PStore } from "@/stores/p2p-store";
 import { Send, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 interface P2PChatProps {
   order: P2POrder;
@@ -14,6 +15,7 @@ interface P2PChatProps {
 }
 
 export function P2PChat({ order, merchant }: P2PChatProps) {
+  const { mode } = useTradingModeStore();
   const [messages, setMessages] = useState<P2PMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -54,7 +56,7 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
                 id: `msg_sys_${Date.now()+1}`,
                 orderId: order.id,
                 sender: "system",
-                message: "Simulated escrow has been locked.",
+                message: mode === 'DEMO' ? "Simulated escrow has been locked." : "Escrow has been locked.",
                 createdAt: new Date().toISOString(),
                 read: true,
               }
