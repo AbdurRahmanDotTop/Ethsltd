@@ -26,6 +26,9 @@ export class CregisClient {
     // Standard mock for MVP
     if (assetSymbol.toUpperCase() === 'BTC') return `bc1qmock${userId.substring(0,8)}cregisbtc`;
     if (assetSymbol.toUpperCase() === 'ETH') return `0xmock${userId.substring(0,8)}cregiseth`;
+    if (assetSymbol.toUpperCase() === 'USDT') return `0xmock${userId.substring(0,8)}cregisusdt`;
+    return `mock_${assetSymbol}_${userId.substring(0,8)}`;
+  }
   // Internal helper to call the PHP Proxy
   private async callProxy(service: 'PE' | 'WAAS', endpoint: string, payload: any): Promise<any> {
     if (!this.proxyUrl) {
