@@ -98,10 +98,17 @@ curl_setopt($ch, CURLOPT_POST, 1);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Content-Type: application/json',
+    'Accept: application/json, text/plain, */*',
+    'Accept-Language: en-US,en;q=0.9',
+    'Connection: keep-alive',
     'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+curl_setopt($ch, CURLOPT_ENCODING, ""); // Handle gzip/deflate
+if (defined('CURL_HTTP_VERSION_2_0')) {
+    curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
+}
 curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
 $response = curl_exec($ch);
