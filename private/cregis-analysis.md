@@ -54,6 +54,23 @@ If you have a home or office WiFi connection, you can run a proxy on your own co
 *(Note: Your computer must remain turned on 24/7. If your power cuts or ISP changes your IP, the whitelist will need updating).*
 
 > ⚠️ **CRITICAL PRODUCTION WARNING**: "Production Ready" and "Completely Free / No Credit Card" are fundamentally incompatible when it comes to Static IP infrastructure. Static IPv4 addresses physically cost money (~$3 to $5/month) worldwide. Free cloud providers enforce shared, rotating IPs to save money. For a system handling thousands of dollars in crypto payments, using a sleeping free-tier proxy or a home PC is highly risky. We strongly urge pursuing **Option A** (asking Cregis Support to whitelist Cloudflare ranges) as the only reliable *free* production solution.
+
+---
+
+## 🛡️ Best Practice: Webhook Security (Cloudflare WAF)
+
+If Cregis is only calling your webhook endpoint (e.g., `https://api.ethsltd.workers.dev/api/cregis/webhook`), the safest production configuration is to restrict the IP exception to **only** that specific path. 
+
+Rather than allowing the Cregis IP to access your entire domain, use a targeted Cloudflare WAF (Web Application Firewall) rule:
+
+```text
+(ip.src eq 18.143.53.174 and http.request.uri.path eq "/api/cregis/webhook")
+```
+
+**What this means:** Only traffic coming from Cregis's IP (`18.143.53.174`) **AND** hitting the exact webhook endpoint gets allowed. This prevents attackers or unauthorized services from probing your API through that whitelisted IP.
+
+**Action Item Before Deployment:** If you know the exact Cregis webhook/API URL path that will be used in production, please provide it so we can configure this exact WAF rule.
+
 ---
 
 ## 🕵️‍♂️ Why Did It "Reach" Cregis Yesterday?

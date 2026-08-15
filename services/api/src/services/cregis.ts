@@ -85,7 +85,13 @@ export class CregisClient {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error("Cregis API returned non-JSON response:", response.status, responseText);
-        throw new Error(`Cloudflare WAF Block (Status: ${response.status}). Please check Cregis IP Whitelist.`);
+        let detailedError = `HTTP Error ${response.status} from Cregis. `;
+        if (response.status === 403 || response.status === 401) {
+          detailedError += `Firewall/Auth Block! Cregis firewall is blocking our server IP. Please ensure our server IP is whitelisted, or contact Cregis support to whitelist Cloudflare Worker traffic. (Raw: ${responseText.substring(0, 50)})`;
+        } else {
+          detailedError += `Invalid JSON. Response preview: ${responseText.substring(0, 100)}`;
+        }
+        throw new Error(detailedError);
       }
       
       if (data.code === '00000' || data.code === 200 || data.success) {
@@ -96,7 +102,7 @@ export class CregisClient {
       }
       
       console.error("Cregis API Error:", JSON.stringify(data));
-      throw new Error(data.msg || data.message || 'Cregis API rejected the request.');
+      throw new Error(`Cregis Error [Code: ${data.code}]: ${data.msg || data.message || 'API rejected the request'}. Full Response: ${JSON.stringify(data)}`);
       
     } catch (error: any) {
       console.error("Cregis Fetch Error:", error);
