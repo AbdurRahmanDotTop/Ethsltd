@@ -1,6 +1,6 @@
 # Hostinger Shared Hosting - Cregis Proxy Deployment Guide
 
-Ye guide step-by-step explain karti hai ki aap apne Hostinger account (`ethsltd.techilyfly.com`) par **Cregis PHP Proxy** ko kaise manually host aur configure kar sakte hain taaki Cloudflare Workers ki dynamic IP bypass ho sake aur real deposits & withdrawals securely kaam karein.
+Ye guide step-by-step explain karti hai ki aap apne Hostinger account (`techilyfly.com`) par **Cregis PHP Proxy** ko kaise manually host aur configure kar sakte hain taaki Cloudflare Workers ki dynamic IP bypass ho sake aur real deposits & withdrawals securely kaam karein.
 
 ---
 
@@ -18,11 +18,10 @@ Ye guide step-by-step explain karti hai ki aap apne Hostinger account (`ethsltd.
 ## Step 2: Hostinger hPanel Par File Upload Karein
 
 1. Apne Hostinger account (hPanel) mein login karein.
-2. Apni hosting profile/website (`ethsltd.techilyfly.com`) par click karein aur uske **Dashboard** mein jayein.
+2. Apni hosting profile/website (`techilyfly.com`) par click karein aur uske **Dashboard** mein jayein.
 3. Left-side menu mein **"Files"** section dhoondein aur **"File Manager"** par click karein.
-4. File Manager khulne ke baad, `public_html` folder par double-click karke use open karein. 
-   *(Ye wo folder hota hai jahan aapki website ki main files hoti hain).*
-5. `public_html` folder ke andar rehte hue, upar right side mein **"Upload"** icon (Upar ki taraf arrow bana hoga) par click karein aur **"File"** choose karein.
+4. File Manager khulne ke baad, `public_html` folder par double-click karke use open karein. Phir uske andar agar `ethsltd` naam ka folder nahi hai to banayein aur use open karein.
+5. `public_html/ethsltd` folder ke andar rehte hue, upar right side mein **"Upload"** icon (Upar ki taraf arrow bana hoga) par click karein aur **"File"** choose karein.
 6. Apne computer se wo `cregis-proxy.php` file select karein jo aapne Step 1 mein banayi thi aur upload hone dein.
 
 ---
@@ -30,7 +29,7 @@ Ye guide step-by-step explain karti hai ki aap apne Hostinger account (`ethsltd.
 ## Step 3: Deployment Verify Karein
 
 1. Apne web browser mein ek naya tab kholein.
-2. URL bar mein ye address type karein: `https://ethsltd.techilyfly.com/cregis-proxy.php` aur Enter press karein.
+2. URL bar mein ye address type karein: `https://techilyfly.com/ethsltd/cregis-proxy.php` aur Enter press karein.
 3. Agar file sahi se upload hui hai, toh aapko browser screen par kuch aisi error JSON message dikhegi:
    ```json
    {"error":"Unauthorized access to proxy"}
@@ -55,7 +54,7 @@ Cregis Proxy successfully host ho chuka hai. Ab bas Cloudflare ko batana hai ki 
 1. Agar aap **Local Development** kar rahe hain:
    `apps/api/.dev.vars` (aur backend ke `.dev.vars`) mein check karein ki ye dono lines mojud hain:
    ```env
-   CREGIS_PROXY_URL="https://ethsltd.techilyfly.com/cregis-proxy.php"
+   CREGIS_PROXY_URL="https://techilyfly.com/ethsltd/cregis-proxy.php"
    CREGIS_PROXY_SECRET="ETHSLTD_CREGIS_PROXY_SECURE_TOKEN_2026"
    ```
 
@@ -63,7 +62,7 @@ Cregis Proxy successfully host ho chuka hai. Ab bas Cloudflare ko batana hai ki 
    - Cloudflare dashboard mein login karein -> **Workers & Pages** -> Apne Backend Worker ko select karein.
    - **Settings** -> **Variables and Secrets** mein jayein.
    - Naye variables add karein:
-     - **Name:** `CREGIS_PROXY_URL` | **Value:** `https://ethsltd.techilyfly.com/cregis-proxy.php`
+     - **Name:** `CREGIS_PROXY_URL` | **Value:** `https://techilyfly.com/ethsltd/cregis-proxy.php`
      - **Name:** `CREGIS_PROXY_SECRET` | **Value:** `ETHSLTD_CREGIS_PROXY_SECURE_TOKEN_2026`
    - Save karke deploy kar dein.
 

@@ -11,7 +11,7 @@ This shared hosting environment possesses a stable public IPv4 address (`145.79.
 ### 2.1 The Request Flow (Dynamic Multi-Service)
 1. **Frontend (User):** Requests a crypto deposit (Payment Engine) or withdrawal (WaaS).
 2. **Backend (Cloudflare Worker):** Constructs a payload wrapping the proxy control instructions (`_proxy.service = PE` or `WAAS`, `_proxy.endpoint`) and the actual Cregis `payload`.
-3. **Internal Hop:** Cloudflare Worker sends the JSON wrapper to `https://ethsltd.techilyfly.com/cregis-proxy.php` instead of calling Cregis directly.
+3. **Internal Hop:** Cloudflare Worker sends the JSON wrapper to `https://techilyfly.com/ethsltd/cregis-proxy.php` instead of calling Cregis directly.
 4. **Proxy (Shared Hosting):** The PHP script validates the `X-Proxy-Secret`. It then determines the correct API Key and Project ID based on the requested `service` (PE vs WaaS).
 5. **Signing:** The Proxy strips out the `_proxy` wrapper, appends `timestamp` and `nonce`, and calculates the MD5 `sign` using the strictly isolated Cregis API keys embedded in the PHP script.
 6. **Cregis:** The PHP script sends the signed payload to Cregis. Cregis sees the request coming from `145.79.58.207` (whitelisted).
