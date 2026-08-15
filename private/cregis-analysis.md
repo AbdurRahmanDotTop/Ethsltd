@@ -8,7 +8,7 @@ We performed a deep analysis of the Cregis Auto Deposit failure. After removing 
 Your API Keys and Base URL are **100% correct**. The exact issue is how Cregis's Firewall handles IP Whitelisting:
 
 1. **`0.0.0.0` is not a Wildcard:** You set the Payment Engine IP Whitelist to `0.0.0.0` hoping it would accept all traffic. However, Cregis's Cloudflare Firewall literally interprets this as "Only allow the specific IP `0.0.0.0`". Since no internet traffic comes from `0.0.0.0`, **every single request is blocked and returned a 403 Error.**
-2. **Cloudflare Workers (Your Server):** Your Next.js backend API is deployed on Cloudflare Workers (`ethsltd-api.workers.dev`). Cloudflare Workers run on an edge network and their IP addresses change dynamically. They do not have a single static IP.
+2. **Cloudflare Workers (Your Server):** Your Next.js backend API is deployed on Cloudflare Workers (`api.ethsltd.workers.dev`). Cloudflare Workers run on an edge network and their IP addresses change dynamically. They do not have a single static IP.
 
 ---
 
