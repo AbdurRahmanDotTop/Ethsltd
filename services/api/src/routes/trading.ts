@@ -221,11 +221,101 @@ tradingRoutes.get('/markets/:symbol/trades', async (c) => {
 // Secure all other routes
 tradingRoutes.use('*', jwtMiddleware);
 
+const processOpenLimitOrders = async (db: any, userId: string, mode: 'REAL' | 'DEMO') => {
+  const openOrders = await db.select().from(orders).where(and(eq(orders.userId, userId), eq(orders.mode, mode), eq(orders.status, 'OPEN'))).all();
+  if (!openOrders.length) return;
+
+  const marketCache: Record<string, number> = {};
+  const marketInfoCache: Record<string, any> = {};
+
+  const now = new Date();
+
+  for (const order of openOrders) {
+    if (order.type !== 'LIMIT' || !order.price) continue;
+    
+    if (!marketCache[order.marketSymbol]) {
+      marketCache[order.marketSymbol] = await getRealPrice(order.marketSymbol);
+      marketInfoCache[order.marketSymbol] = await db.select().from(markets).where(eq(markets.symbol, order.marketSymbol)).get();
+    }
+    
+    const currentPrice = marketCache[order.marketSymbol];
+    const marketInfo = marketInfoCache[order.marketSymbol];
+    
+    if (!currentPrice || !marketInfo) continue;
+    
+    const limitPrice = parseFloat(order.price);
+    const isCrossed = order.side === 'BUY' ? currentPrice <= limitPrice : currentPrice >= limitPrice;
+    
+    if (isCrossed) {
+      const executionPrice = limitPrice;
+      const parsedAmount = parseFloat(order.remainingAmount);
+      const totalValue = parsedAmount * executionPrice;
+      
+      const spendAsset = order.side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
+      const receiveAsset = order.side === 'BUY' ? marketInfo.baseAsset : marketInfo.quoteAsset;
+      const spendAmount = order.side === 'BUY' ? totalValue : parsedAmount;
+      
+      let spendWallet = await db.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, spendAsset), eq(wallets.type, mode))).get();
+      if (!spendWallet) continue;
+      
+      // Unlock the balance
+      const newLocked = (parseFloat(spendWallet.lockedBalance) - spendAmount).toString();
+      await db.update(wallets).set({ lockedBalance: newLocked, updatedAt: now }).where(eq(wallets.id, spendWallet.id));
+      
+      // Deduct fee and add received asset
+      const feeAmount = order.side === 'BUY' ? parsedAmount * parseFloat(marketInfo.makerFee) : totalValue * parseFloat(marketInfo.makerFee);
+      const receiveAmountFinal = (order.side === 'BUY' ? parsedAmount : totalValue) - feeAmount;
+      
+      let receiveWallet = await db.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, receiveAsset), eq(wallets.type, mode))).get();
+      if (!receiveWallet) {
+        await db.insert(wallets).values({
+          id: crypto.randomUUID(),
+          userId: userId,
+          assetSymbol: receiveAsset,
+          type: mode,
+          balance: receiveAmountFinal.toString(),
+          lockedBalance: '0',
+          createdAt: now,
+          updatedAt: now,
+        });
+      } else {
+        const newReceiveBalance = (parseFloat(receiveWallet.balance) + receiveAmountFinal).toString();
+        await db.update(wallets).set({ balance: newReceiveBalance, updatedAt: now }).where(eq(wallets.id, receiveWallet.id));
+      }
+      
+      // Update order status
+      await db.update(orders).set({
+        status: 'FILLED',
+        filledAmount: order.amount,
+        remainingAmount: '0',
+        updatedAt: now,
+      }).where(eq(orders.id, order.id));
+      
+      // Create trade record
+      await db.insert(trades).values({
+        id: `TRD-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        marketSymbol: order.marketSymbol,
+        mode: mode,
+        makerOrderId: order.id,
+        takerOrderId: 'mock-taker-order',
+        price: executionPrice.toString(),
+        amount: parsedAmount.toString(),
+        makerFee: feeAmount.toString(),
+        takerFee: '0',
+        createdAt: now,
+      });
+    }
+  }
+};
+
 tradingRoutes.get('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
+  // Process lazy matching first
+  await processOpenLimitOrders(db, user.id, mode);
+
   const userOrders = await db.select().from(orders)
     .where(and(eq(orders.userId, user.id), eq(orders.mode, mode)))
     .orderBy(desc(orders.createdAt))
