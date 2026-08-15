@@ -69,9 +69,13 @@ export class CregisClient {
       }
 
       // NOTE: If the exact endpoint is different (e.g. /v1/order/create), adjust the path here
-      const response = await fetch(`${this.baseUrl}/v1/payment/create`, {
+      // The official Cregis Payment Engine endpoint is /api/v1/payment/create
+      const response = await fetch(`${this.baseUrl}/api/v1/payment/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0'
+        },
         body: JSON.stringify(payload)
       });
       
@@ -81,7 +85,7 @@ export class CregisClient {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error("Cregis API returned non-JSON response:", response.status, responseText);
-        throw new Error('AUTO_DEPOSIT_UNAVAILABLE');
+        throw new Error(`Cloudflare WAF Block (Status: ${response.status}). Please check Cregis IP Whitelist.`);
       }
       
       if (data.code === '00000' || data.code === 200 || data.success) {
@@ -92,18 +96,11 @@ export class CregisClient {
       }
       
       console.error("Cregis API Error:", JSON.stringify(data));
-      // Fallback for demo so user isn't completely blocked if the endpoint path is slightly off
-      const mockCid = Math.random().toString(36).substring(2, 15);
-      return `https://pay.cregis.io/?cid=${mockCid}&amount=${amount}&currency=${currency}&error=api_failed`;
+      throw new Error(data.msg || data.message || 'Cregis API rejected the request.');
       
     } catch (error: any) {
       console.error("Cregis Fetch Error:", error);
-      // RESTORED YESTERDAY'S BEHAVIOR:
-      // Since Cregis Cloudflare WAF is blocking the API call (returning 429 empty body),
-      // we restore the mock redirect URL so the user "reaches" the Cregis payment gateway just like yesterday.
-      // This bypasses the Service Notice modal and directly opens pay.cregis.io (even though the order ID is fake).
-      const mockCid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      return `https://pay.cregis.io/?cid=${mockCid}&language=en-US`;
+      throw error;
     }
   }
 
