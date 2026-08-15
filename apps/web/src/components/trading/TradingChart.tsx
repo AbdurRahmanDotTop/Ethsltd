@@ -26,10 +26,17 @@ export function TradingChart({ data }: { data: Candle[] }) {
       },
       rightPriceScale: {
         borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        autoScale: true,
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
       },
       timeScale: {
         borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
         timeVisible: true,
+        fixLeftEdge: true,
+        fixRightEdge: true,
       },
       crosshair: {
         mode: 0,
@@ -50,16 +57,16 @@ export function TradingChart({ data }: { data: Candle[] }) {
     chartRef.current = chart;
     seriesRef.current = series;
 
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth, height: chartContainerRef.current.clientHeight });
-      }
-    };
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (entries.length === 0 || entries[0].target !== chartContainerRef.current) return;
+      const newRect = entries[0].contentRect;
+      chart.applyOptions({ height: newRect.height, width: newRect.width });
+    });
 
-    window.addEventListener('resize', handleResize);
+    resizeObserver.observe(chartContainerRef.current);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
@@ -79,6 +86,10 @@ export function TradingChart({ data }: { data: Candle[] }) {
     }));
 
     seriesRef.current.setData(formattedData);
+    
+    if (chartRef.current) {
+      chartRef.current.timeScale().fitContent();
+    }
   }, [data]);
 
   if (!data || data.length === 0) {
