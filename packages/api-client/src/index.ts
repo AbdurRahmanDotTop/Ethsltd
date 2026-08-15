@@ -47,10 +47,26 @@ export class EthsltdClient {
         headers,
       });
       
-      const data = await res.json();
+      const contentType = res.headers.get('content-type');
+      let data: any;
       
-      if (!res.ok) {
-        return { success: false, error: data.error || data.message || 'API Error' };
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          try {
+            data = JSON.parse(text);
+          } catch(e) {
+            data = { success: false, error: `Server returned non-JSON (${res.status}): ${text.substring(0, 200)}` };
+          }
+        }
+      } catch (err: any) {
+        return { success: false, error: `Failed to parse response: ${err.message}` };
+      }
+
+      if (!res.ok && !data?.error) {
+        return { success: false, data, error: `HTTP Error ${res.status}` };
       }
       
       return data;

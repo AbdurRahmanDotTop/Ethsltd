@@ -75,8 +75,7 @@ export class CregisClient {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error("Cregis API returned non-JSON response:", response.status, responseText);
-        // Do not throw here. Allow it to fall through to the mock fallback.
-        data = { success: false, code: response.status, error: 'Invalid JSON response' };
+        throw new Error(`Cregis API Error (Status ${response.status}): ${responseText.substring(0, 100)}`);
       }
       
       if (data.code === '00000' || data.code === 200 || data.success) {
@@ -86,14 +85,12 @@ export class CregisClient {
         if (data.data && data.data.cid) return `https://pay.cregis.io/?cid=${data.data.cid}&language=en-US`;
       }
       
-      console.error("Cregis API Error:", JSON.stringify(data));
-      // Fallback for demo so user isn't completely blocked if the endpoint path is slightly off
-      const mockCid = Math.random().toString(36).substring(2, 15);
-      return `https://pay.cregis.io/?cid=${mockCid}&amount=${amount}&currency=${currency}&error=api_failed`;
+      console.error("Cregis API Error Payload:", JSON.stringify(data));
+      throw new Error(`Cregis API Failed: ${data.msg || data.message || JSON.stringify(data)}`);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Cregis Fetch Error:", error);
-      throw new Error("Failed to create Cregis Payment Order");
+      throw new Error(error.message || "Failed to create Cregis Payment Order");
     }
   }
 
