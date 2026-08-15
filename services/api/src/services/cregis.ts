@@ -9,11 +9,11 @@ export class CregisClient {
   private baseUrl: string;
 
   constructor(env: Bindings) {
-    this.waasApiKey = env.CREGIS_WAAS_API_KEY;
-    this.waasProjectId = env.CREGIS_WAAS_PROJECT_ID;
-    this.peApiKey = env.CREGIS_PE_API_KEY;
-    this.peProjectId = env.CREGIS_PE_PROJECT_ID;
-    this.baseUrl = env.CREGIS_BASE_URL;
+    this.waasApiKey = env.CREGIS_WAAS_API_KEY || '';
+    this.waasProjectId = env.CREGIS_WAAS_PROJECT_ID || '';
+    this.peApiKey = env.CREGIS_PE_API_KEY || '';
+    this.peProjectId = env.CREGIS_PE_PROJECT_ID || '';
+    this.baseUrl = env.CREGIS_BASE_URL || 'https://t-tkqzeuxf.cregis.io';
   }
 
   // Very basic address generator for mock/demo purposes until full WaaS API specs are used
