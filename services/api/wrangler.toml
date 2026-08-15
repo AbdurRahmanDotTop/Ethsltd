@@ -8,3 +8,4 @@ binding = "DB"
 database_name = "ethsltd_db"
 database_id = "3e91dec1-5e94-434a-9697-7a9217592afe"
 migrations_dir = "../../database/migrations"
+

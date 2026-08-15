@@ -8,18 +8,18 @@
 ⚠ Invalid next.config.ts options detected: 
 ⚠     Unrecognized key(s) in object: 'eslint'
 ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
-✓ Running next.config.ts took 62ms
+✓ Running next.config.ts took 39ms
 
   Creating an optimized production build ...
-✓ Compiled successfully in 22.4s
+✓ Compiled successfully in 2.0s
   Skipping validation of types
-  Finished TypeScript config validation in 113ms ...
+  Finished TypeScript config validation in 9ms ...
   Collecting page data using 7 workers ...
-  Generating static pages using 7 workers (0/71) ...
-  Generating static pages using 7 workers (17/71) 
-  Generating static pages using 7 workers (35/71) 
-  Generating static pages using 7 workers (53/71) 
-✓ Generating static pages using 7 workers (71/71) in 3.2s
+  Generating static pages using 7 workers (0/72) ...
+  Generating static pages using 7 workers (18/72) 
+  Generating static pages using 7 workers (36/72) 
+  Generating static pages using 7 workers (54/72) 
+✓ Generating static pages using 7 workers (72/72) in 1319ms
   Finalizing page optimization ...
 
 Route (app)
@@ -48,6 +48,7 @@ Route (app)
 ├ ○ /admin/p2p/orders
 ├ ○ /admin/risk
 ├ ○ /admin/settings
+├ ○ /admin/settings/payments
 ├ ○ /admin/support
 ├ ƒ /admin/support/tickets/[id]
 ├ ○ /admin/system
