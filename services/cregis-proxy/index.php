@@ -7,9 +7,9 @@
 // ==========================================
 // CONFIGURATION - EDIT THESE VALUES
 // ==========================================
-$CREGIS_PE_API_KEY = "YOUR_CREGIS_PE_API_KEY_HERE";
-$CREGIS_PE_PROJECT_ID = "YOUR_CREGIS_PE_PROJECT_ID_HERE";
-$PROXY_SECRET = "CHANGE_ME_TO_A_LONG_RANDOM_STRING"; // Must match process.env.CREGIS_PROXY_SECRET in Cloudflare
+$CREGIS_PE_API_KEY = "7953f2a93d624526bba56bf3743477a7";
+$CREGIS_PE_PROJECT_ID = "1446672836255744";
+$PROXY_SECRET = "ETHSLTD_CREGIS_PROXY_SECURE_TOKEN_2026"; // Must match process.env.CREGIS_PROXY_SECRET in Cloudflare
 $CREGIS_BASE_URL = "https://t-tkqzeuxf.cregis.io";
 // ==========================================
 
