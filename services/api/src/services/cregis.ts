@@ -81,8 +81,7 @@ export class CregisClient {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error("Cregis API returned non-JSON response:", response.status, responseText);
-        // Fallback to local mock checkout on 429/403 or other non-JSON errors
-        return `/wallet/mock-checkout?amount=${amount}&currency=${currency}`;
+        throw new Error('AUTO_DEPOSIT_UNAVAILABLE');
       }
       
       if (data.code === '00000' || data.code === 200 || data.success) {
@@ -93,13 +92,12 @@ export class CregisClient {
       }
       
       console.error("Cregis API Error Payload:", JSON.stringify(data));
-      // Fallback on API failure
-      return `/wallet/mock-checkout?amount=${amount}&currency=${currency}&error=api_failed`;
+      throw new Error('AUTO_DEPOSIT_UNAVAILABLE');
       
     } catch (error: any) {
       console.error("Cregis Fetch Error:", error);
-      // Fallback on network failure
-      return `/wallet/mock-checkout?amount=${amount}&currency=${currency}&error=network_failed`;
+      if (error.message === 'AUTO_DEPOSIT_UNAVAILABLE') throw error;
+      throw new Error('AUTO_DEPOSIT_UNAVAILABLE');
     }
   }
 

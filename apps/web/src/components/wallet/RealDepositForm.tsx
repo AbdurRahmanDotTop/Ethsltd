@@ -133,6 +133,8 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
     }
   };
 
+  const [showAutoDepositError, setShowAutoDepositError] = useState(false);
+
   const handleCheckoutConfirm = async () => {
     setIsSubmitting(true);
     setShowConfirmModal(false);
@@ -148,10 +150,18 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
         // Redirect to Cregis Payment Engine
         window.location.href = res.checkoutUrl;
       } else {
-        toast.error(res.error || "Failed to create payment order");
+        if (res.error === 'AUTO_DEPOSIT_UNAVAILABLE') {
+          setShowAutoDepositError(true);
+        } else {
+          toast.error(res.error || "Failed to create payment order");
+        }
       }
     } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+      if (error?.message === 'AUTO_DEPOSIT_UNAVAILABLE' || error?.response?.data?.error === 'AUTO_DEPOSIT_UNAVAILABLE') {
+        setShowAutoDepositError(true);
+      } else {
+        toast.error(error.message || "An error occurred");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -505,12 +515,41 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Proceed to Payment
             </Button>
-            <Button className="flex-1 bg-slate-500 hover:bg-slate-600 text-white" variant="secondary" onClick={() => setShowConfirmModal(false)}>
+            <Button className="flex-1" variant="secondary" onClick={() => setShowConfirmModal(false)} disabled={isSubmitting}>
               Cancel
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showAutoDepositError} onOpenChange={setShowAutoDepositError}>
+        <DialogContent className="sm:max-w-md text-center flex flex-col items-center p-8">
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2">
+            <AlertCircle className="w-8 h-8 text-blue-500" />
+          </div>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center w-full mb-2">Service Notice</DialogTitle>
+            <DialogDescription className="text-center w-full text-brand-700 dark:text-brand-300">
+              The automated payment gateway is temporarily unavailable. 
+              <br /><br />
+              To ensure your funds are deposited securely, please use the Manual Deposit method. We have transferred your requested amount to the manual flow.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex w-full gap-3 mt-4">
+            <Button 
+              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-6" 
+              onClick={() => {
+                setShowAutoDepositError(false);
+                handleTabChange('MANUAL');
+              }}
+            >
+              Continue with Manual Deposit
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
