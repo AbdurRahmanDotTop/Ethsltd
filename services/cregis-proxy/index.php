@@ -41,9 +41,19 @@ if (!$request || !isset($request['_proxy']) || !isset($request['payload'])) {
     exit;
 }
 
-$service = $request['_proxy']['service'] ?? 'PE'; // 'PE' or 'WAAS'
+$service = $request['_proxy']['service'] ?? 'PE'; // 'PE' or 'WAAS' or 'DEBUG_IP'
 $endpoint = $request['_proxy']['endpoint'] ?? '/api/v1/payment/create';
 $payload = $request['payload'];
+
+// Debug Outbound IP
+if ($service === 'DEBUG_IP') {
+    $ch = curl_init('https://api.ipify.org?format=json');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $ip = curl_exec($ch);
+    curl_close($ch);
+    echo $ip;
+    exit;
+}
 
 // Determine keys based on service
 $apiKey = ($service === 'WAAS') ? $CREGIS_WAAS_API_KEY : $CREGIS_PE_API_KEY;
