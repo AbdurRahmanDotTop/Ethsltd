@@ -31,9 +31,29 @@ Because your live app runs on Cloudflare Workers (which don't have static IPs), 
 Open a support ticket with Cregis and send them this message:
 > *"Hello, we are integrating the Cregis Payment Engine API. Our backend is hosted on Cloudflare Workers, meaning our outbound API requests come from dynamic Cloudflare IP addresses. Because of this, we cannot use a static IP in the Whitelist. How can we disable the IP Whitelist restriction for our project, or how can we whitelist Cloudflare Worker traffic so our server-to-server requests to `/api/v1/payment/create` are not blocked with a 403 Forbidden error?"*
 
-**Option B (Use a Proxy Server):**
-If Cregis strictly requires a static IP, you will need to set up a lightweight Proxy Server (e.g., an AWS EC2 instance or VPS with a Static IP). We can then route all Cregis API calls through that proxy, and you will put that proxy's Static IP into the Cregis Whitelist.
+**Option B (Free Replit Proxy - Shared Static IP):**
+*Cost: Free | Credit Card Required: No*
+Platforms like **Replit** do not require a credit card for their free tier. Replit's outbound traffic usually comes from a fixed pool of IPs.
+**Steps:**
+1. Create a free account on [Replit.com](https://replit.com).
+2. Create a new "Node.js" Repl and set up a tiny Express proxy server.
+3. Make a request from your Replit app to an IP checker like `api.ipify.org` to see its outbound IP address.
+4. Go to Cregis Dashboard and add that Replit IP to the **IP Whitelist**.
+5. Update your Cloudflare Worker environment variables to send Cregis API requests through your Replit Proxy URL instead of directly to Cregis.
+*(Note: Replit free apps sleep after inactivity. You can use a free ping service like `cron-job.org` to keep it awake. Replit's IP might change occasionally, requiring you to update the Cregis Whitelist).*
 
+**Option C (Home Network Proxy - Sticky IP):**
+*Cost: Free | Credit Card Required: No*
+If you have a home or office WiFi connection, you can run a proxy on your own computer. Most ISPs provide a "Sticky IP" that rarely changes.
+**Steps:**
+1. Open Google on your computer and search **"What is my IP"**.
+2. Add this IP address to the Cregis Dashboard **IP Whitelist**.
+3. Create a simple Node.js Proxy server on your computer running on port `3000`.
+4. Log into your WiFi Router and set up **Port Forwarding** (forward port 80 or 443 to your computer's local network IP).
+5. Use your public home IP (or a free Dynamic DNS domain like DuckDNS) as your Proxy URL in your Cloudflare worker.
+*(Note: Your computer must remain turned on 24/7. If your power cuts or ISP changes your IP, the whitelist will need updating).*
+
+> ⚠️ **CRITICAL PRODUCTION WARNING**: "Production Ready" and "Completely Free / No Credit Card" are fundamentally incompatible when it comes to Static IP infrastructure. Static IPv4 addresses physically cost money (~$3 to $5/month) worldwide. Free cloud providers enforce shared, rotating IPs to save money. For a system handling thousands of dollars in crypto payments, using a sleeping free-tier proxy or a home PC is highly risky. We strongly urge pursuing **Option A** (asking Cregis Support to whitelist Cloudflare ranges) as the only reliable *free* production solution.
 ---
 
 ## 🕵️‍♂️ Why Did It "Reach" Cregis Yesterday?
