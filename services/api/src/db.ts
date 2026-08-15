@@ -8,6 +8,8 @@ export type Bindings = {
   CREGIS_BASE_URL: string;
   CREGIS_PE_API_KEY: string;
   CREGIS_PE_PROJECT_ID: string;
+  CREGIS_PROXY_URL?: string;
+  CREGIS_PROXY_SECRET?: string;
 };
 
 export type Variables = {

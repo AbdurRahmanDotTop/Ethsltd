@@ -7,6 +7,8 @@ export class CregisClient {
   private peApiKey: string;
   private peProjectId: string;
   private baseUrl: string;
+  private proxyUrl?: string;
+  private proxySecret?: string;
 
   constructor(env: Bindings) {
     this.waasApiKey = env.CREGIS_WAAS_API_KEY || '';
@@ -14,6 +16,8 @@ export class CregisClient {
     this.peApiKey = env.CREGIS_PE_API_KEY || '';
     this.peProjectId = env.CREGIS_PE_PROJECT_ID || '';
     this.baseUrl = env.CREGIS_BASE_URL || 'https://t-tkqzeuxf.cregis.io';
+    this.proxyUrl = env.CREGIS_PROXY_URL;
+    this.proxySecret = env.CREGIS_PROXY_SECRET;
   }
 
   // Very basic address generator for mock/demo purposes until full WaaS API specs are used
@@ -28,6 +32,51 @@ export class CregisClient {
 
   // Create Payment Order for Cregis Payment Engine
   async createPaymentOrder(amount: number, currency: string, userId: string): Promise<string> {
+    
+    // If Proxy is configured, use the Proxy Gateway to avoid IP Whitelist issues
+    if (this.proxyUrl) {
+      const payload = {
+        amount,
+        currency,
+        third_party_id: userId
+      };
+
+      try {
+        const response = await fetch(this.proxyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Proxy-Secret': this.proxySecret || ''
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const responseText = await response.text();
+        let data: any = {};
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          throw new Error(`PHP Proxy Error (Status ${response.status}): ${responseText.substring(0, 100)}`);
+        }
+
+        if (response.status !== 200 || data.error) {
+           throw new Error(`PHP Proxy returned error: ${data.error || 'Unknown error'}`);
+        }
+
+        if (data.code === '00000' || data.code === 200 || data.success) {
+          if (data.data && data.data.url) return data.data.url;
+          if (data.url) return data.url;
+          if (data.data && data.data.cid) return `https://pay.cregis.io/?cid=${data.data.cid}&language=en-US`;
+        }
+
+        throw new Error(`Cregis Error via Proxy [Code: ${data.code}]: ${data.msg || data.message || 'API rejected the request'}. Full Response: ${JSON.stringify(data)}`);
+      } catch (error: any) {
+        console.error("Cregis Proxy Fetch Error:", error);
+        throw error;
+      }
+    }
+
+    // --- FALLBACK TO DIRECT CLOUDFLARE REQUEST (Legacy) ---
     const timestamp = Date.now().toString();
     const nonce = Math.random().toString(36).substring(2, 8); // 6 char random string
     
@@ -38,8 +87,6 @@ export class CregisClient {
       amount: amount.toString(),
       currency,
       third_party_id: userId,
-      // You may need to customize these based on exact Cregis endpoint docs
-      // e.g. callback_url: "https://yourdomain.com/api/v1/webhooks/cregis"
     };
 
     // 1. Sort parameters lexicographically by key
