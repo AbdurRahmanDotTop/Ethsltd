@@ -10,6 +10,7 @@ const nextConfig: any = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  transpilePackages: ["@ethsltd/api-client", "@ethsltd/types"],
 };
 
 export default nextConfig;
