@@ -21,7 +21,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   const [cryptoAssets, setCryptoAssets] = useState<string[]>(CRYPTO_ASSETS);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
-  const [activeMethods, setActiveMethods] = useState<string[]>(['MANUAL', 'BANK_TRANSFER']);
+  const [activeMethods, setActiveMethods] = useState<string[]>([]);
 
   useEffect(() => {
     fetchDepositSettings();
@@ -33,7 +33,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
       const res: any = await apiClient.getDepositSettings();
       if (res.success) {
         if (res.activeMethods && res.activeMethods.length > 0) {
-          const methods = res.activeMethods.map((m: any) => m.method).filter((m: string) => m !== 'AUTO');
+          const methods = res.activeMethods.map((m: any) => m.method);
           setActiveMethods(methods);
           
           // Auto-switch tab if current is not enabled

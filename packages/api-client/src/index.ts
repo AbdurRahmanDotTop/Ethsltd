@@ -487,6 +487,18 @@ export class EthsltdClient {
       method: 'DELETE',
     });
   }
+
+  // Admin Deposit Settings
+  async adminGetDepositSettings() {
+    return this.request<any>('/api/v1/admin/deposit-settings');
+  }
+
+  async adminUpdateDepositSettings(id: string, data: { enabled?: boolean; instructions?: string }) {
+    return this.request<any>(`/api/v1/admin/deposit-settings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiClient = new EthsltdClient();

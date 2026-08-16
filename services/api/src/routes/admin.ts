@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { users, kycProfiles, markets } from 'database';
+import { users, kycProfiles, markets, payment_methods } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const adminRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -202,3 +202,42 @@ adminRoutes.post('/kyc/:id/status', async (c) => {
     return c.json({ success: false, error: 'Failed to update KYC status' }, 500);
   }
 });
+
+// GET /api/v1/admin/deposit-settings
+adminRoutes.get('/deposit-settings', async (c) => {
+  const db = c.get('db');
+  try {
+    const methods = await db.select().from(payment_methods).all();
+    return c.json({ success: true, data: methods });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch deposit settings' }, 500);
+  }
+});
+
+// PUT /api/v1/admin/deposit-settings/:id
+adminRoutes.put('/deposit-settings/:id', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const id = c.req.param('id');
+  const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can manage deposit settings' }, 403);
+  }
+
+  try {
+    await db.update(payment_methods)
+      .set({
+        enabled: body.enabled,
+        instructions: body.instructions !== undefined ? body.instructions : undefined,
+        updated_at: new Date(),
+        updated_by: admin.id
+      })
+      .where(eq(payment_methods.id, id));
+      
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update deposit setting' }, 500);
+  }
+});
+
