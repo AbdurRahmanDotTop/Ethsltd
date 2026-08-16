@@ -98,12 +98,17 @@ export function PortfolioAllocation({ allocations }: { allocations: AssetAllocat
                 />
                 <span className="font-semibold text-foreground">{alloc.asset}</span>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-foreground">
-                  {formatValue(alloc.usdValue)}
-                </span>
-                <span className="text-sm text-muted-foreground w-12 text-right">
-                  {alloc.percentage.toFixed(1)}%
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-foreground">
+                    {alloc.usdValue.toLocaleString(undefined, { maximumFractionDigits: 0 })} USDT
+                  </span>
+                  <span className="text-sm text-muted-foreground w-12 text-right">
+                    {alloc.percentage.toFixed(1)}%
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground mt-0.5">
+                  ≈ {formatValue(alloc.usdValue)}
                 </span>
               </div>
             </div>

@@ -17,12 +17,15 @@ export function WalletSummary({ summary }: { summary: PortfolioSummary }) {
       
       <div className="mb-6">
         <div className="text-4xl sm:text-5xl font-bold font-display text-foreground tracking-tight">
-          {symbol}{(summary.totalValueUsd * exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {summary.totalValueUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-2xl sm:text-3xl text-muted-foreground">USDT</span>
+        </div>
+        <div className="text-muted-foreground font-medium mt-1">
+          ≈ {symbol}{(summary.totalValueUsd * exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
         <div className={`flex items-center gap-2 mt-2 text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
           {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
           <span>
-            {isPositive ? '+' : ''}{symbol}{(Math.abs(summary.change24hUsd) * exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {isPositive ? '+' : ''}{summary.change24hUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </span>
           <span className="px-1.5 py-0.5 rounded-md bg-background/50 border border-border">
             {isPositive ? '+' : ''}{summary.change24hPercent.toFixed(2)}%
@@ -35,13 +38,19 @@ export function WalletSummary({ summary }: { summary: PortfolioSummary }) {
         <div>
           <div className="text-sm text-muted-foreground mb-1">Available Balance</div>
           <div className="text-lg font-semibold text-foreground">
-            {symbol}{(summary.availableBalanceUsd * exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {summary.availableBalanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-sm text-muted-foreground">USDT</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            ≈ {symbol}{(summary.availableBalanceUsd * exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
         <div>
           <div className="text-sm text-muted-foreground mb-1">Locked Funds</div>
           <div className="text-lg font-semibold text-foreground">
-            {symbol}{(summary.lockedBalanceUsd * exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {summary.lockedBalanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-sm text-muted-foreground">USDT</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            ≈ {symbol}{(summary.lockedBalanceUsd * exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
       </div>
