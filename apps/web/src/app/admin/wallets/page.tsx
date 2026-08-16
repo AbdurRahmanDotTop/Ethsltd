@@ -1,257 +1,259 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Wallet, Network, ArrowRightLeft, ShieldCheck, 
   AlertTriangle, RefreshCw, Lock, Unlock, HardDrive, 
-  ArrowDownToLine, ArrowUpFromLine, Activity
+  ArrowDownToLine, ArrowUpFromLine, Activity, Search, Edit2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// Types
-type NetworkStatus = 'operational' | 'congested' | 'suspended';
-type WalletType = 'hot' | 'cold';
-type WalletHealth = 'healthy' | 'low_balance';
-
-interface BlockchainNetwork {
-  id: string;
-  name: string;
-  symbol: string;
-  status: NetworkStatus;
-  gasFee: string;
-  lastBlock: string;
-}
-
-interface PlatformWallet {
-  id: string;
-  asset: string;
-  type: WalletType;
-  address: string;
-  balance: number;
-  targetBalance: number;
-  health: WalletHealth;
-}
-
-// Mock Data
-const MOCK_NETWORKS: BlockchainNetwork[] = [
-  { id: "net-1", name: "Bitcoin", symbol: "BTC", status: "operational", gasFee: "15 sat/vB", lastBlock: "834,192" },
-  { id: "net-2", name: "Ethereum", symbol: "ETH", status: "congested", gasFee: "45 Gwei", lastBlock: "19,203,115" },
-  { id: "net-3", name: "Tron", symbol: "TRX", status: "operational", gasFee: "0.1 TRX", lastBlock: "59,201,440" },
-  { id: "net-4", name: "Solana", symbol: "SOL", status: "suspended", gasFee: "0.000005 SOL", lastBlock: "245,102,991" },
-];
-
-const MOCK_WALLETS: PlatformWallet[] = [
-  { id: "w-1", asset: "USDT", type: "hot", address: "0x7a...9b21", balance: 450000, targetBalance: 2000000, health: "low_balance" },
-  { id: "w-2", asset: "USDT", type: "cold", address: "0x8f...3c44", balance: 15500000, targetBalance: 10000000, health: "healthy" },
-  { id: "w-3", asset: "BTC", type: "hot", address: "bc1q...x89p", balance: 45.5, targetBalance: 50.0, health: "healthy" },
-  { id: "w-4", asset: "BTC", type: "cold", address: "3FZb...m92L", balance: 1250.0, targetBalance: 1000.0, health: "healthy" },
-  { id: "w-5", asset: "ETH", type: "hot", address: "0x2e...11a9", balance: 120.5, targetBalance: 500.0, health: "low_balance" },
-];
+import { apiClient } from "@ethsltd/api-client";
 
 export default function AdminWalletsPage() {
-  const [networks, setNetworks] = useState<BlockchainNetwork[]>(MOCK_NETWORKS);
-  const [wallets, setWallets] = useState<PlatformWallet[]>(MOCK_WALLETS);
-  const [isProcessingNetwork, setIsProcessingNetwork] = useState<string | null>(null);
-  const [isProcessingWallet, setIsProcessingWallet] = useState<string | null>(null);
+  const [overview, setOverview] = useState<Record<string, any>>({});
+  const [networks, setNetworks] = useState<any[]>([]);
+  const [userWallets, setUserWallets] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [adjustingUser, setAdjustingUser] = useState<any>(null);
 
-  const toggleNetworkStatus = (id: string, currentStatus: NetworkStatus) => {
-    setIsProcessingNetwork(id);
-    setTimeout(() => {
-      setNetworks(prev => prev.map(n => 
-        n.id === id ? { ...n, status: currentStatus === 'suspended' ? 'operational' : 'suspended' } : n
-      ));
-      setIsProcessingNetwork(null);
-    }, 1500);
-  };
+  // Adjustment Modal State
+  const [adjustAsset, setAdjustAsset] = useState("USDT");
+  const [adjustType, setAdjustType] = useState<"REAL"|"DEMO">("REAL");
+  const [adjustAction, setAdjustAction] = useState<"CREDIT"|"DEBIT">("CREDIT");
+  const [targetField, setTargetField] = useState<"balance"|"lockedBalance"|"escrowBalance">("balance");
+  const [adjustAmount, setAdjustAmount] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleWalletAction = (id: string) => {
-    setIsProcessingWallet(id);
-    setTimeout(() => {
-      setWallets(prev => prev.map(w => 
-        w.id === id ? { ...w, health: 'healthy', balance: w.targetBalance } : w
-      ));
-      setIsProcessingWallet(null);
-    }, 2000);
-  };
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [overviewRes, usersRes] = await Promise.all([
+        apiClient.getAdminWalletsOverview(),
+        apiClient.getAdminUserWalletsList(searchQuery)
+      ]);
 
-  const getNetworkBadge = (status: NetworkStatus) => {
-    switch(status) {
-      case 'operational': return <span className="flex items-center gap-1 text-xs font-medium text-green-500 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20"><ShieldCheck className="w-3 h-3"/> Operational</span>;
-      case 'congested': return <span className="flex items-center gap-1 text-xs font-medium text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded-full border border-yellow-500/20"><Activity className="w-3 h-3"/> Congested</span>;
-      case 'suspended': return <span className="flex items-center gap-1 text-xs font-medium text-red-500 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20"><Lock className="w-3 h-3"/> Suspended</span>;
+      if (overviewRes.success) {
+        setOverview(overviewRes.data.overview);
+        setNetworks(overviewRes.data.networks);
+      }
+      if (usersRes.success) {
+        setUserWallets(usersRes.data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadData();
+  };
+
+  const handleAdjustSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustingUser) return;
+    setIsSubmitting(true);
+    try {
+      const res = await apiClient.adjustAdminUserWallet(adjustingUser.id, adjustAsset, adjustAmount, adjustType, adjustAction, targetField);
+      if (res.success) {
+        alert("Balance adjusted successfully!");
+        setAdjustingUser(null);
+        setAdjustAmount("");
+        loadData();
+      } else {
+        alert("Error: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Failed to adjust: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading && Object.keys(overview).length === 0) {
+    return <div className="p-8 flex justify-center items-center min-h-[400px]"><RefreshCw className="w-8 h-8 animate-spin text-brand-primary" /></div>;
+  }
+
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
-      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Wallet className="w-6 h-6 text-brand-primary" /> Wallets & Treasury
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">Monitor platform liquidity, network status, and hot/cold storage.</p>
+          <p className="text-muted-foreground mt-1 text-sm">Monitor platform liquidity and manage user wallets.</p>
         </div>
-        <Button variant="outline">
+        <Button variant="outline" onClick={loadData}>
           <RefreshCw className="w-4 h-4 mr-2" /> Refresh Balances
         </Button>
       </div>
 
-      {/* Treasury KPIs */}
+      {/* Treasury KPIs (Real Data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-sm font-medium text-muted-foreground">Total Assets Held</span>
-            <div className="p-2 rounded-md bg-green-500/10">
-              <HardDrive className="w-4 h-4 text-green-500" />
+        {Object.entries(overview).map(([symbol, data]: [string, any]) => (
+          <div key={symbol} className="bg-card border border-border rounded-xl p-5 shadow-sm">
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-medium text-muted-foreground">Total {symbol} Held</span>
+              <div className="p-2 rounded-md bg-brand-500/10">
+                <HardDrive className="w-4 h-4 text-brand-500" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-2xl font-bold">{data.total.toLocaleString(undefined, {maximumFractionDigits: 4})}</h3>
+              <div className="text-xs text-muted-foreground font-medium mt-1 flex flex-col gap-0.5">
+                <span>Avail: {data.balance.toLocaleString(undefined, {maximumFractionDigits: 4})}</span>
+                <span>Lock: {data.locked.toLocaleString(undefined, {maximumFractionDigits: 4})}</span>
+                <span>P2P: {data.escrow.toLocaleString(undefined, {maximumFractionDigits: 4})}</span>
+              </div>
             </div>
           </div>
-          <div className="mt-4">
-            <h3 className="text-2xl font-bold">$125.4M</h3>
-            <span className="text-xs text-muted-foreground font-medium">Hot + Cold Storage</span>
+        ))}
+        {Object.keys(overview).length === 0 && (
+          <div className="col-span-full p-8 text-center text-muted-foreground border border-dashed rounded-xl">
+            No active balances found on the platform yet.
           </div>
-        </div>
-
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-sm font-medium text-muted-foreground">Hot Wallet Ratio</span>
-            <div className="p-2 rounded-md bg-blue-500/10">
-              <Activity className="w-4 h-4 text-blue-500" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl font-bold text-brand-primary">8.2%</h3>
-            <span className="text-xs text-green-500 font-medium">Healthy (Target: 5-10%)</span>
-          </div>
-        </div>
-
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-sm font-medium text-muted-foreground">Pending Withdrawals</span>
-            <div className="p-2 rounded-md bg-yellow-500/10">
-              <ArrowUpFromLine className="w-4 h-4 text-yellow-500" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl font-bold">$452K</h3>
-            <span className="text-xs text-muted-foreground">Across 124 transactions</span>
-          </div>
-        </div>
-
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-sm font-medium text-muted-foreground">24h Net Flow</span>
-            <div className="p-2 rounded-md bg-purple-500/10">
-              <ArrowRightLeft className="w-4 h-4 text-purple-500" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <h3 className="text-2xl font-bold text-green-500">+$1.2M</h3>
-            <span className="text-xs text-muted-foreground font-medium">Deposits &gt; Withdrawals</span>
-          </div>
-        </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
+        {/* User Wallets Management */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <Wallet className="w-4 h-4" /> User Wallets Directory
+            </h3>
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <input 
+                type="text" 
+                placeholder="Search by Email or ID..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="bg-background border border-border rounded-md px-3 py-1.5 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-brand-primary"
+              />
+              <Button type="submit" size="sm" variant="secondary"><Search className="w-4 h-4" /></Button>
+            </form>
+          </div>
+          
+          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden divide-y divide-border">
+            {userWallets.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">No users found.</div>
+            ) : (
+              userWallets.map(user => (
+                <div key={user.id} className="p-4 flex flex-col sm:flex-row justify-between gap-4 hover:bg-muted/30 transition-colors">
+                  <div>
+                    <h4 className="font-semibold text-foreground">{user.displayName || 'Unknown User'}</h4>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground font-mono mt-1 opacity-70">ID: {user.id}</p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {user.wallets && user.wallets.length > 0 ? (
+                      user.wallets.map((w: any) => (
+                        <div key={w.id} className="flex items-center justify-end gap-3 text-sm">
+                          <span className="font-bold text-brand-primary w-12 text-right">{w.assetSymbol}</span>
+                          <span className="w-24 text-right">{parseFloat(w.balance).toFixed(2)}</span>
+                          <span className="text-xs text-muted-foreground w-16 text-right">(Lock: {parseFloat(w.lockedBalance).toFixed(1)})</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground text-right italic">No active wallets</div>
+                    )}
+                    <div className="flex justify-end mt-2">
+                       <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAdjustingUser(user)}>
+                         <Edit2 className="w-3 h-3 mr-1" /> Manage Balances
+                       </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         {/* Network & Node Status */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <Network className="w-4 h-4" /> Network & Node Status
+            <Network className="w-4 h-4" /> Deposit Networks
           </h3>
           <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden divide-y divide-border">
             {networks.map((net) => (
-              <div key={net.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 font-bold text-foreground">
-                    {net.symbol}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground">{net.name}</h4>
-                    <p className="text-xs text-muted-foreground mt-0.5">Gas: {net.gasFee} • Block: {net.lastBlock}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-                  {getNetworkBadge(net.status)}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    disabled={isProcessingNetwork === net.id}
-                    onClick={() => toggleNetworkStatus(net.id, net.status)}
-                    className={net.status === 'suspended' ? 'text-green-500 hover:text-green-600 hover:bg-green-500/10' : 'text-red-500 hover:text-red-600 hover:bg-red-500/10'}
-                  >
-                    {isProcessingNetwork === net.id ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : net.status === 'suspended' ? (
-                      <><Unlock className="w-3 h-3 mr-2" /> Resume</>
-                    ) : (
-                      <><Lock className="w-3 h-3 mr-2" /> Suspend</>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Hot & Cold Wallets */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <Wallet className="w-4 h-4" /> Platform Wallets
-          </h3>
-          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden divide-y divide-border">
-            {wallets.map((wallet) => (
-              <div key={wallet.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
+              <div key={net.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${wallet.type === 'hot' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'}`}>
-                      {wallet.type}
-                    </span>
-                    <h4 className="text-sm font-semibold text-foreground">{wallet.asset}</h4>
-                    {wallet.health === 'low_balance' && (
-                      <AlertTriangle className="w-4 h-4 text-yellow-500 ml-1" />
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground font-mono mt-1.5">{wallet.address}</p>
+                  <h4 className="text-sm font-semibold text-foreground">{net.name}</h4>
+                  <p className="text-xs text-muted-foreground uppercase mt-0.5">{net.currency} • {net.type}</p>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
-                  <div className="text-right">
-                    <p className={`text-sm font-bold ${wallet.health === 'low_balance' ? 'text-yellow-500' : 'text-foreground'}`}>
-                      {wallet.balance.toLocaleString()} {wallet.asset}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Target: {wallet.targetBalance.toLocaleString()}</p>
-                  </div>
-                  
-                  {wallet.type === 'hot' && wallet.health === 'low_balance' && (
-                    <Button 
-                      size="sm"
-                      disabled={isProcessingWallet === wallet.id}
-                      onClick={() => handleWalletAction(wallet.id)}
-                      className="bg-brand-primary text-primary-foreground hover:bg-brand-primary/90"
-                    >
-                      {isProcessingWallet === wallet.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-3 h-3 mr-2" />}
-                      Top Up
-                    </Button>
-                  )}
-                  {wallet.type === 'hot' && wallet.health === 'healthy' && (
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      disabled={isProcessingWallet === wallet.id}
-                      onClick={() => handleWalletAction(wallet.id)}
-                    >
-                      {isProcessingWallet === wallet.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowUpFromLine className="w-3 h-3 mr-2" />}
-                      Sweep
-                    </Button>
+                <div>
+                  {net.enabled ? (
+                    <span className="flex items-center gap-1 text-xs font-medium text-green-500 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20"><ShieldCheck className="w-3 h-3"/> Active</span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs font-medium text-red-500 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20"><Lock className="w-3 h-3"/> Disabled</span>
                   )}
                 </div>
               </div>
             ))}
+            {networks.length === 0 && <div className="p-4 text-sm text-center text-muted-foreground">No networks configured.</div>}
           </div>
         </div>
-
       </div>
+
+      {/* Adjust Modal */}
+      {adjustingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md p-6 relative">
+            <button onClick={() => setAdjustingUser(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">✕</button>
+            <h2 className="text-xl font-bold mb-1">Adjust Wallet Balance</h2>
+            <p className="text-sm text-muted-foreground mb-6">User: {adjustingUser.email}</p>
+            
+            <form onSubmit={handleAdjustSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Asset</label>
+                  <input type="text" value={adjustAsset} onChange={e => setAdjustAsset(e.target.value.toUpperCase())} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="USDT" required />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Wallet Type</label>
+                  <select value={adjustType} onChange={e => setAdjustType(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
+                    <option value="REAL">REAL</option>
+                    <option value="DEMO">DEMO</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Target Field</label>
+                  <select value={targetField} onChange={e => setTargetField(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
+                    <option value="balance">Available Balance</option>
+                    <option value="lockedBalance">Locked (Spot)</option>
+                    <option value="escrowBalance">Escrow (P2P)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Action</label>
+                  <select value={adjustAction} onChange={e => setAdjustAction(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
+                    <option value="CREDIT">CREDIT (+)</option>
+                    <option value="DEBIT">DEBIT (-)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Amount</label>
+                <input type="number" min="0" step="0.000001" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="100.00" required />
+              </div>
+              <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
+                {isSubmitting ? 'Processing...' : 'Confirm Adjustment'}
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -110,6 +110,85 @@ adminRoutes.put('/users/:id/role', async (c) => {
   }
 });
 
+// GET /api/v1/admin/wallets/overview
+adminRoutes.get('/wallets/overview', async (c) => {
+  const db = c.get('db');
+  try {
+    const { eq } = require('drizzle-orm');
+    const { wallets, payment_methods } = require('database');
+    
+    const allRealWallets = await db.select().from(wallets).where(eq(wallets.type, 'REAL')).all();
+    const overview: Record<string, { balance: number, locked: number, escrow: number, total: number }> = {};
+    
+    for (const w of allRealWallets) {
+      const sym = w.assetSymbol;
+      if (!overview[sym]) {
+        overview[sym] = { balance: 0, locked: 0, escrow: 0, total: 0 };
+      }
+      const b = parseFloat(w.balance || '0');
+      const l = parseFloat(w.lockedBalance || '0');
+      const e = parseFloat(w.escrowBalance || '0');
+      
+      overview[sym].balance += b;
+      overview[sym].locked += l;
+      overview[sym].escrow += e;
+      overview[sym].total += (b + l + e);
+    }
+    
+    const methods = await db.select().from(payment_methods).all();
+    const networks = methods.map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      currency: m.currency,
+      type: m.type,
+      enabled: m.enabled
+    }));
+    
+    return c.json({ success: true, data: { overview, networks } });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch wallets overview' }, 500);
+  }
+});
+
+// GET /api/v1/admin/wallets/users
+adminRoutes.get('/wallets/users', async (c) => {
+  const db = c.get('db');
+  try {
+    const search = c.req.query('search');
+    const { eq, like, or, and, inArray } = require('drizzle-orm');
+    const { wallets, users } = require('database');
+    
+    let userQuery = db.select({
+      id: users.id,
+      email: users.email,
+      displayName: users.displayName,
+    }).from(users);
+    
+    if (search) {
+      userQuery = userQuery.where(or(like(users.email, `%${search}%`), like(users.id, `%${search}%`)));
+    }
+    
+    const usersList = await userQuery.limit(50).all();
+    const userIds = usersList.map((u: any) => u.id);
+    
+    let walletsList: any[] = [];
+    if (userIds.length > 0) {
+      walletsList = await db.select().from(wallets).where(
+        and(eq(wallets.type, 'REAL'), inArray(wallets.userId, userIds))
+      ).all();
+    }
+    
+    const result = usersList.map((u: any) => ({
+      ...u,
+      wallets: walletsList.filter((w: any) => w.userId === u.id)
+    }));
+    
+    return c.json({ success: true, data: result });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch user wallets' }, 500);
+  }
+});
+
 // POST /api/v1/admin/users/:id/wallets/adjust
 adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
   const db = c.get('db');

@@ -379,6 +379,15 @@ export class EthsltdClient {
     return this.request<any[]>('/api/v1/admin/transactions');
   }
 
+  async getAdminWalletsOverview() {
+    return this.request<any>('/api/v1/admin/wallets/overview');
+  }
+
+  async getAdminUserWalletsList(search?: string) {
+    const query = search ? `?search=${encodeURIComponent(search)}` : '';
+    return this.request<any>(`/api/v1/admin/wallets/users${query}`);
+  }
+
   // Admin Deposits & Payments Methods
   async adminGetPendingDeposits() {
     return this.request<any>('/api/v1/admin/payments/pending-deposits');

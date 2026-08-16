@@ -8,18 +8,18 @@
 ⚠ Invalid next.config.ts options detected: 
 ⚠     Unrecognized key(s) in object: 'eslint'
 ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
-✓ Running next.config.ts took 201ms
+✓ Running next.config.ts took 94ms
 
   Creating an optimized production build ...
-✓ Compiled successfully in 3.5s
+✓ Compiled successfully in 2.8s
   Skipping validation of types
-  Finished TypeScript config validation in 28ms ...
+  Finished TypeScript config validation in 16ms ...
   Collecting page data using 7 workers ...
   Generating static pages using 7 workers (0/73) ...
   Generating static pages using 7 workers (18/73) 
   Generating static pages using 7 workers (36/73) 
   Generating static pages using 7 workers (54/73) 
-✓ Generating static pages using 7 workers (73/73) in 2.5s
+✓ Generating static pages using 7 workers (73/73) in 2.3s
   Finalizing page optimization ...
 
 Route (app)
