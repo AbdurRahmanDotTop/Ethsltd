@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button"
 import { apiClient } from "@ethsltd/api-client"
 
 import { useTradingModeStore } from "@/stores/trading-mode-store"
+import { useTradingUIStore } from "@/stores/trading-ui-store"
 
 export function TradingHistoryTabs() {
-  const [activeTab, setActiveTab] = useState<'open'|'history'|'trades'>('open')
+  const [activeTab, setActiveTab] = useState<'open'|'history'|'trades'|'positions'>('open')
   const [orders, setOrders] = useState<any[]>([])
   const [trades, setTrades] = useState<any[]>([])
+  const [positions, setPositions] = useState<any[]>([])
   
   const { mode } = useTradingModeStore()
+  const { marketType } = useTradingUIStore()
 
   const loadData = async () => {
     try {
@@ -20,16 +23,33 @@ export function TradingHistoryTabs() {
       
       const tRes = await apiClient.getTrades(mode)
       if(tRes.success) setTrades(tRes.data || [])
+
+      if (marketType === 'FUTURES') {
+        const pRes = await apiClient.getFuturesPositions(mode)
+        if (pRes.success) setPositions(pRes.data || [])
+      } else if (marketType === 'OPTIONS') {
+        const oRes = await apiClient.getOptionsPositions(mode)
+        if (oRes.success) setPositions(oRes.data || [])
+      }
     } catch(e) {
       console.error(e)
     }
   }
 
+  // Effect to handle tab switches automatically
+  useEffect(() => {
+    if ((marketType === 'FUTURES' || marketType === 'OPTIONS') && activeTab === 'open') {
+      setActiveTab('positions')
+    } else if (marketType === 'SPOT' && activeTab === 'positions') {
+      setActiveTab('open')
+    }
+  }, [marketType])
+
   useEffect(() => {
     loadData()
     const interval = setInterval(loadData, 5000)
     return () => clearInterval(interval)
-  }, [mode])
+  }, [mode, marketType])
   
   const openOrders = orders.filter(o => o.status === 'OPEN')
   
@@ -47,20 +67,37 @@ export function TradingHistoryTabs() {
     } catch(e) { console.error(e) }
   }
 
+  const handleClosePosition = async (id: string) => {
+    try {
+      await apiClient.closeFuturesPosition(id);
+      loadData();
+    } catch(e) { console.error(e) }
+  }
+
   return (
     <div className="flex flex-col h-full bg-background border-t border-border mt-4">
       <div className="flex border-b border-border overflow-x-auto no-scrollbar">
-        <button 
-          className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'open' ? 'border-brand-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-          onClick={() => setActiveTab('open')}
-        >
-          Open Orders ({openOrders.length})
-        </button>
+        {marketType === 'SPOT' && (
+          <button 
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'open' ? 'border-brand-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setActiveTab('open')}
+          >
+            Open Orders ({openOrders.length})
+          </button>
+        )}
+        {(marketType === 'FUTURES' || marketType === 'OPTIONS') && (
+          <button 
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'positions' ? 'border-brand-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setActiveTab('positions')}
+          >
+            Open Positions ({positions.filter(p => p.status === 'OPEN' || p.status === 'PENDING').length})
+          </button>
+        )}
         <button 
           className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'history' ? 'border-brand-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
           onClick={() => setActiveTab('history')}
         >
-          Order History
+          {marketType === 'SPOT' ? 'Order History' : 'History'}
         </button>
         <button 
           className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'trades' ? 'border-brand-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
@@ -160,6 +197,76 @@ export function TradingHistoryTabs() {
                   <td className="py-3 font-mono text-xs">{trade.amount}</td>
                   <td className="py-3 font-mono text-xs text-muted-foreground hidden sm:table-cell">{trade.fee.toFixed(4)} {trade.feeAsset}</td>
                   <td className="py-3 pr-4 text-right font-mono text-xs font-medium">{trade.total.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {activeTab === 'positions' && marketType === 'FUTURES' && (
+          <table className="w-full text-left text-sm">
+            <thead className="text-muted-foreground border-b border-border text-xs sticky top-0 bg-background z-10">
+              <tr>
+                <th className="py-3 pl-4 font-medium">Pair</th>
+                <th className="py-3 font-medium">Size</th>
+                <th className="py-3 font-medium">Entry Price</th>
+                <th className="py-3 font-medium">Mark Price</th>
+                <th className="py-3 font-medium">Liq. Price</th>
+                <th className="py-3 font-medium">Margin</th>
+                <th className="py-3 font-medium">uPnL</th>
+                <th className="py-3 pr-4 text-right font-medium">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {positions.filter(p => p.status === 'OPEN').length === 0 ? (
+                <tr><td colSpan={8} className="py-12 text-center text-muted-foreground">No open positions.</td></tr>
+              ) : positions.filter(p => p.status === 'OPEN').map(pos => (
+                <tr key={pos.id} className="hover:bg-muted/30">
+                  <td className="py-3 pl-4 font-semibold text-xs">
+                    <span className={pos.side === 'LONG' ? 'text-success' : 'text-danger'}>{pos.side}</span>
+                    <span className="ml-2">{pos.marketSymbol}</span>
+                    <span className="ml-2 text-muted-foreground">{pos.leverage}x</span>
+                  </td>
+                  <td className="py-3 font-mono text-xs">{pos.amount}</td>
+                  <td className="py-3 font-mono text-xs">{formatPrice(pos.entryPrice)}</td>
+                  <td className="py-3 font-mono text-xs">{formatPrice(pos.markPrice)}</td>
+                  <td className="py-3 font-mono text-xs text-warning">{formatPrice(pos.liquidationPrice)}</td>
+                  <td className="py-3 font-mono text-xs">{parseFloat(pos.marginAmount).toFixed(2)}</td>
+                  <td className={`py-3 font-mono text-xs font-semibold ${pos.unrealizedPnl >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {pos.unrealizedPnl > 0 ? '+' : ''}{pos.unrealizedPnl.toFixed(2)} ({pos.marginRatio.toFixed(2)}%)
+                  </td>
+                  <td className="py-3 pr-4 text-right">
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => handleClosePosition(pos.id)}>Close</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {activeTab === 'positions' && marketType === 'OPTIONS' && (
+          <table className="w-full text-left text-sm">
+            <thead className="text-muted-foreground border-b border-border text-xs sticky top-0 bg-background z-10">
+              <tr>
+                <th className="py-3 pl-4 font-medium">Time</th>
+                <th className="py-3 font-medium">Pair</th>
+                <th className="py-3 font-medium">Direction</th>
+                <th className="py-3 font-medium">Entry Price</th>
+                <th className="py-3 font-medium">Wager</th>
+                <th className="py-3 pr-4 text-right font-medium">Expires At</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {positions.filter(p => p.status === 'PENDING').length === 0 ? (
+                <tr><td colSpan={6} className="py-12 text-center text-muted-foreground">No open options contracts.</td></tr>
+              ) : positions.filter(p => p.status === 'PENDING').map(opt => (
+                <tr key={opt.id} className="hover:bg-muted/30">
+                  <td className="py-3 pl-4 font-mono text-xs text-muted-foreground">{fmtDate(opt.createdAt)}</td>
+                  <td className="py-3 font-semibold text-xs">{opt.marketSymbol}</td>
+                  <td className={`py-3 capitalize text-xs font-semibold ${opt.direction === 'UP' ? 'text-success' : 'text-danger'}`}>{opt.direction}</td>
+                  <td className="py-3 font-mono text-xs">{formatPrice(opt.entryPrice)}</td>
+                  <td className="py-3 font-mono text-xs">{parseFloat(opt.amount).toFixed(2)} USDT</td>
+                  <td className="py-3 pr-4 text-right font-mono text-xs">{fmtDate(opt.expiresAt)}</td>
                 </tr>
               ))}
             </tbody>

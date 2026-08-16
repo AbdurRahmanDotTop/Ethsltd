@@ -11,6 +11,7 @@ import { TradingHistoryTabs } from "./TradingHistoryTabs"
 import { apiClient } from "@ethsltd/api-client"
 import { Market } from "@/lib/market-data/types"
 import { useTradingModeStore } from "@/stores/trading-mode-store"
+import { useTradingUIStore, MarketType } from "@/stores/trading-ui-store"
 
 export function TradingTerminal({ symbol }: { symbol: string }) {
   const [market, setMarket] = useState<any>(null)
@@ -20,6 +21,7 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
   const [loading, setLoading] = useState(true)
   const [headerHeight, setHeaderHeight] = useState(64)
   const { mode } = useTradingModeStore()
+  const { marketType, setMarketType } = useTradingUIStore()
 
   useEffect(() => {
     // Dynamically measure main header height to stick this bar exactly below it
@@ -102,10 +104,44 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
         <div className="flex items-center gap-4">
           <MarketSelector currentSymbol={market.symbol} />
           {mode === 'DEMO' && <TradingModeBadge />}
+          <div className="hidden sm:flex bg-muted p-1 rounded-md">
+            {(['SPOT', 'FUTURES', 'OPTIONS'] as MarketType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => setMarketType(type)}
+                className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${
+                  marketType === type 
+                    ? 'bg-background shadow-sm text-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {type === 'FUTURES' ? 'PERPETUAL' : type}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="mt-2 md:mt-0 overflow-x-auto no-scrollbar">
           <MarketSummary market={market} />
         </div>
+      </div>
+      
+      {/* Mobile Market Type Selector */}
+      <div className="sm:hidden flex bg-background px-4 py-2 border-b border-border">
+         <div className="flex bg-muted p-1 rounded-md w-full">
+            {(['SPOT', 'FUTURES', 'OPTIONS'] as MarketType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => setMarketType(type)}
+                className={`flex-1 py-1 text-xs font-medium rounded-sm transition-colors ${
+                  marketType === type 
+                    ? 'bg-background shadow-sm text-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {type === 'FUTURES' ? 'PERPETUAL' : type}
+              </button>
+            ))}
+         </div>
       </div>
 
       {/* Main Grid */}

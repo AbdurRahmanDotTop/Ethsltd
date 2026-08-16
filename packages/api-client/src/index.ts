@@ -242,6 +242,37 @@ export class EthsltdClient {
       method: 'DELETE',
     });
   }
+  
+  // Futures API Methods
+  async getFuturesPositions(mode: string = 'REAL') {
+    return this.request<any[]>(`/api/v1/trading/futures/positions?mode=${mode}`);
+  }
+
+  async createFuturesOrder(data: any) {
+    return this.request<any>('/api/v1/trading/futures/order', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async closeFuturesPosition(positionId: string) {
+    return this.request<any>('/api/v1/trading/futures/close', {
+      method: 'POST',
+      body: JSON.stringify({ positionId }),
+    });
+  }
+
+  // Options API Methods
+  async getOptionsPositions(mode: string = 'REAL') {
+    return this.request<any[]>(`/api/v1/trading/options/positions?mode=${mode}`);
+  }
+
+  async createOptionsOrder(data: any) {
+    return this.request<any>('/api/v1/trading/options/order', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 
   // P2P API Methods
   async getP2pAds(params?: any) {

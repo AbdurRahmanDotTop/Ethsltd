@@ -23,7 +23,7 @@ const getOrderSchema = (type: OrderType) => z.object({
 });
 
 export function OrderEntry({ market }: { market: Market }) {
-  const { selectedSide, setSide, selectedOrderType, setOrderType, orderFormPrice, orderFormQuantity, setOrderFormPrice, setOrderFormQuantity } = useTradingUIStore()
+  const { selectedSide, setSide, selectedOrderType, setOrderType, orderFormPrice, orderFormQuantity, setOrderFormPrice, setOrderFormQuantity, marketType, leverage, setLeverage } = useTradingUIStore()
   const { balances, fetchBalances } = useWalletStore()
   const { mode } = useTradingModeStore()
   const { base, quote } = parseMarketSymbol(market.symbol)
@@ -64,8 +64,12 @@ export function OrderEntry({ market }: { market: Market }) {
   const parsedPrice = parseFloat(formPrice || "0")
   const parsedQty = parseFloat(formQuantity || "0")
   const currentPrice = selectedOrderType === 'limit' ? parsedPrice : market.price
-  const total = currentPrice * parsedQty
-  const fee = total * 0.001 // 0.1% fee
+  
+  // Calculate Notional Value
+  const notionalValue = currentPrice * parsedQty
+  const fee = notionalValue * 0.001 // 0.1% taker fee
+  const requiredMargin = marketType === 'FUTURES' ? notionalValue / leverage : notionalValue
+  const total = requiredMargin + fee
   
   const quoteBalance = balances.find(b => b.symbol === quote)?.available || 0
   const baseBalance = balances.find(b => b.symbol === base)?.available || 0
@@ -75,19 +79,42 @@ export function OrderEntry({ market }: { market: Market }) {
     if (!currentPrice || currentPrice <= 0) return;
 
     if (selectedSide === 'buy') {
-      const targetQuote = quoteBalance * pct;
-      const qty = targetQuote / currentPrice;
-      if (qty > 0) {
-        const qtyStr = qty.toFixed(6);
-        setValue("quantity", qtyStr, { shouldValidate: true, shouldDirty: true });
-        setOrderFormQuantity(qtyStr); // Sync directly to global store
+      let targetQuote = quoteBalance * pct;
+      if (marketType === 'FUTURES') {
+        // Calculate max notional based on leverage
+        const maxNotional = targetQuote * leverage;
+        const qty = maxNotional / currentPrice;
+        if (qty > 0) {
+          const qtyStr = qty.toFixed(6);
+          setValue("quantity", qtyStr, { shouldValidate: true, shouldDirty: true });
+          setOrderFormQuantity(qtyStr); 
+        }
+      } else {
+        const qty = targetQuote / currentPrice;
+        if (qty > 0) {
+          const qtyStr = qty.toFixed(6);
+          setValue("quantity", qtyStr, { shouldValidate: true, shouldDirty: true });
+          setOrderFormQuantity(qtyStr);
+        }
       }
     } else {
-      const targetBase = baseBalance * pct;
-      if (targetBase > 0) {
-        const qtyStr = targetBase.toFixed(6);
-        setValue("quantity", qtyStr, { shouldValidate: true, shouldDirty: true });
-        setOrderFormQuantity(qtyStr); // Sync directly to global store
+      if (marketType === 'FUTURES') {
+         // For shorting in futures, we also use quote balance as margin
+        let targetQuote = quoteBalance * pct;
+        const maxNotional = targetQuote * leverage;
+        const qty = maxNotional / currentPrice;
+        if (qty > 0) {
+          const qtyStr = qty.toFixed(6);
+          setValue("quantity", qtyStr, { shouldValidate: true, shouldDirty: true });
+          setOrderFormQuantity(qtyStr);
+        }
+      } else {
+        const targetBase = baseBalance * pct;
+        if (targetBase > 0) {
+          const qtyStr = targetBase.toFixed(6);
+          setValue("quantity", qtyStr, { shouldValidate: true, shouldDirty: true });
+          setOrderFormQuantity(qtyStr);
+        }
       }
     }
   }
@@ -100,28 +127,53 @@ export function OrderEntry({ market }: { market: Market }) {
     const reqPrice = selectedOrderType === 'limit' ? parseFloat(data.price) : currentPrice;
     const reqTotal = reqAmount * reqPrice;
 
-    if (selectedSide === 'buy' && reqTotal > quoteBalance) {
-      setMessage({ type: 'error', text: `Insufficient ${quote} balance.` });
-      setIsSubmitting(false);
-      return;
-    } else if (selectedSide === 'sell' && reqAmount > baseBalance) {
-      setMessage({ type: 'error', text: `Insufficient ${base} balance.` });
-      setIsSubmitting(false);
-      return;
+    if (marketType === 'SPOT') {
+      if (selectedSide === 'buy' && total > quoteBalance) {
+        setMessage({ type: 'error', text: `Insufficient ${quote} balance.` });
+        setIsSubmitting(false);
+        return;
+      } else if (selectedSide === 'sell' && reqAmount > baseBalance) {
+        setMessage({ type: 'error', text: `Insufficient ${base} balance.` });
+        setIsSubmitting(false);
+        return;
+      }
+    } else if (marketType === 'FUTURES') {
+      if (total > quoteBalance) {
+        setMessage({ type: 'error', text: `Insufficient Margin (${quote}) balance.` });
+        setIsSubmitting(false);
+        return;
+      }
     }
     
     try {
-      const res = await apiClient.createOrder({
-        market: market.id,
-        side: selectedSide === 'buy' ? 'BUY' : 'SELL',
-        type: selectedOrderType === 'market' ? 'MARKET' : 'LIMIT',
-        price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
-        amount: parseFloat(data.quantity),
-        mode: mode
-      })
+      let res;
+      if (marketType === 'SPOT') {
+        res = await apiClient.createOrder({
+          market: market.id,
+          side: selectedSide === 'buy' ? 'BUY' : 'SELL',
+          type: selectedOrderType === 'market' ? 'MARKET' : 'LIMIT',
+          price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
+          amount: parseFloat(data.quantity),
+          mode: mode
+        });
+      } else if (marketType === 'FUTURES') {
+        res = await apiClient.createFuturesOrder({
+          market: market.id,
+          side: selectedSide === 'buy' ? 'LONG' : 'SHORT',
+          amount: parseFloat(data.quantity),
+          leverage: leverage.toString(),
+        });
+      } else if (marketType === 'OPTIONS') {
+        res = await apiClient.createOptionsOrder({
+          market: market.id,
+          direction: selectedSide === 'buy' ? 'UP' : 'DOWN',
+          amount: parseFloat(data.quantity),
+          timeframeMinutes: '5', // Default 5m for now
+        });
+      }
       
-      if (!res.success) {
-        throw new Error(res.error || 'Failed to place order')
+      if (!res || !res.success) {
+        throw new Error(res?.error || 'Failed to place order')
       }
       
       setMessage({ type: 'success', text: 'Order placed successfully' })
@@ -148,39 +200,62 @@ export function OrderEntry({ market }: { market: Market }) {
           onClick={() => setSide('buy')}
           type="button"
         >
-          Buy
+          {marketType === 'FUTURES' ? 'Long' : marketType === 'OPTIONS' ? 'Call (Up)' : 'Buy'}
         </button>
         <button 
           className={cn("flex-1 py-1.5 text-sm font-semibold z-10 transition-colors", selectedSide === 'sell' ? 'text-danger' : 'text-muted-foreground')}
           onClick={() => setSide('sell')}
           type="button"
         >
-          Sell
+          {marketType === 'FUTURES' ? 'Short' : marketType === 'OPTIONS' ? 'Put (Down)' : 'Sell'}
         </button>
       </div>
 
-      {/* Order Type */}
-      <div className="flex gap-4 mb-4 border-b border-border text-sm">
-        <button 
-          className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'limit' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
-          onClick={() => setOrderType('limit')}
-          type="button"
-        >
-          Limit
-        </button>
-        <button 
-          className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'market' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
-          onClick={() => setOrderType('market')}
-          type="button"
-        >
-          Market
-        </button>
-      </div>
+      {/* Order Type (Hidden for Options) */}
+      {marketType !== 'OPTIONS' && (
+        <div className="flex gap-4 mb-4 border-b border-border text-sm">
+          <button 
+            className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'limit' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
+            onClick={() => setOrderType('limit')}
+            type="button"
+          >
+            Limit
+          </button>
+          <button 
+            className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'market' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
+            onClick={() => setOrderType('market')}
+            type="button"
+          >
+            Market
+          </button>
+        </div>
+      )}
+
+      {/* Leverage Slider (Futures only) */}
+      {marketType === 'FUTURES' && (
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs text-muted-foreground">Leverage</span>
+            <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{leverage}x</span>
+          </div>
+          <input 
+            type="range" 
+            min="1" 
+            max="100" 
+            value={leverage}
+            onChange={(e) => setLeverage(parseInt(e.target.value))}
+            className="w-full accent-brand-foreground"
+          />
+        </div>
+      )}
 
       <div className="flex justify-between items-center mb-4 text-xs">
         <span className="text-muted-foreground">Available</span>
         <span className="font-mono font-medium">
-          {selectedSide === 'buy' ? `${quoteBalance.toLocaleString()} ${quote}` : `${baseBalance.toLocaleString()} ${base}`}
+          {marketType === 'SPOT' 
+            ? (selectedSide === 'buy' ? `${quoteBalance.toLocaleString()} ${quote}` : `${baseBalance.toLocaleString()} ${base}`)
+            : `${quoteBalance.toLocaleString()} ${quote}` // Futures & Options use Quote balance as margin
+          }
         </span>
       </div>
 
@@ -204,7 +279,9 @@ export function OrderEntry({ market }: { market: Market }) {
 
         {/* Quantity Input */}
         <div className="relative mt-2">
-          <label className="text-xs text-muted-foreground mb-1 block">Amount ({base})</label>
+          <label className="text-xs text-muted-foreground mb-1 block">
+            {marketType === 'OPTIONS' ? `Wager (${quote})` : `Amount (${base})`}
+          </label>
           <div className="relative flex items-center">
             <input 
               {...register("quantity")}
@@ -233,14 +310,22 @@ export function OrderEntry({ market }: { market: Market }) {
 
         {/* Summary */}
         <div className="mt-4 pt-4 border-t border-border space-y-2 text-sm">
+          {marketType === 'FUTURES' && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground text-xs">Position Value</span>
+              <span className="font-mono">{notionalValue > 0 ? notionalValue.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "0.00"} {quote}</span>
+            </div>
+          )}
           <div className="flex justify-between">
-            <span className="text-muted-foreground text-xs">Est. Total</span>
-            <span className="font-mono">{total > 0 ? total.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "0.00"} {quote}</span>
+            <span className="text-muted-foreground text-xs">{marketType === 'FUTURES' ? 'Required Margin' : 'Est. Total'}</span>
+            <span className="font-mono">{requiredMargin > 0 ? requiredMargin.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "0.00"} {quote}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground text-xs">Est. Fee</span>
-            <span className="font-mono">{fee > 0 ? fee.toLocaleString(undefined, { maximumFractionDigits: 4 }) : "0.00"} {quote}</span>
-          </div>
+          {marketType !== 'OPTIONS' && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground text-xs">Est. Fee</span>
+              <span className="font-mono">{fee > 0 ? fee.toLocaleString(undefined, { maximumFractionDigits: 4 }) : "0.00"} {quote}</span>
+            </div>
+          )}
         </div>
 
         {/* Messages */}
@@ -256,7 +341,12 @@ export function OrderEntry({ market }: { market: Market }) {
           disabled={isSubmitting}
           className={cn("w-full mt-2 font-bold", selectedSide === 'buy' ? "bg-success hover:bg-success/90 text-white" : "bg-danger hover:bg-danger/90 text-white")}
         >
-          {isSubmitting ? "Placing..." : `${selectedSide === 'buy' ? 'Buy' : 'Sell'} ${base}`}
+          {isSubmitting ? "Placing..." : marketType === 'FUTURES' 
+            ? `${selectedSide === 'buy' ? 'Open Long' : 'Open Short'} ${base}`
+            : marketType === 'OPTIONS'
+              ? `Place ${selectedSide === 'buy' ? 'Call' : 'Put'}`
+              : `${selectedSide === 'buy' ? 'Buy' : 'Sell'} ${base}`
+          }
         </Button>
 
       </form>
