@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowDownToLine, Copy, Check, Building2, Wallet, FileText, Upload, AlertCircle } from "lucide-react";
+import { Loader2, ArrowDownToLine, Copy, Check, Building2, Wallet, FileText, Upload, AlertCircle, MessageCircle } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   const [cryptoAssets, setCryptoAssets] = useState<string[]>(CRYPTO_ASSETS);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
-  const [activeMethods, setActiveMethods] = useState<string[]>(['MANUAL', 'AUTO', 'BANK_TRANSFER']);
+  const [activeMethods, setActiveMethods] = useState<string[]>(['MANUAL', 'BANK_TRANSFER']);
 
   useEffect(() => {
     fetchDepositSettings();
@@ -33,7 +33,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
       const res: any = await apiClient.getDepositSettings();
       if (res.success) {
         if (res.activeMethods && res.activeMethods.length > 0) {
-          const methods = res.activeMethods.map((m: any) => m.method);
+          const methods = res.activeMethods.map((m: any) => m.method).filter((m: string) => m !== 'AUTO');
           setActiveMethods(methods);
           
           // Auto-switch tab if current is not enabled
@@ -364,119 +364,18 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
         )}
 
         {method === 'BANK' && (
-          <div className="space-y-4">
-            {!bankDetails ? (
-              <Button type="button" onClick={handleGenerate} className="w-full h-12 text-base" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Building2 className="w-5 h-5 mr-2" />}
-                View Bank Instructions
-              </Button>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-4 p-4 border border-brand-500/30 bg-brand-500/5 rounded-lg">
-                  <h4 className="font-semibold flex flex-wrap items-center justify-between gap-2">
-                    Bank Details
-                    <span className="text-xs font-normal text-muted-foreground bg-brand-500/10 px-2 py-1 rounded">International transfers accepted</span>
-                  </h4>
-                  {bankDetails.instructions && (
-                    <div className="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-3 rounded-md text-sm">
-                      {bankDetails.instructions}
-                    </div>
-                  )}
-                  <div className="space-y-2 text-sm mt-4">
-                    {bankDetails.accountName && (
-                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-border pb-2 gap-1 sm:gap-4 group">
-                        <span className="text-muted-foreground shrink-0">Account Name</span>
-                        <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="font-medium break-words">{bankDetails.accountName}</span>
-                          <button type="button" onClick={() => copyToClipboard(bankDetails.accountName, 'Account Name')} className="text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                    {bankDetails.accountNumber && (
-                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-border pb-2 gap-1 sm:gap-4 group">
-                        <span className="text-muted-foreground shrink-0">Account Number</span>
-                        <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="font-medium break-words">{bankDetails.accountNumber}</span>
-                          <button type="button" onClick={() => copyToClipboard(bankDetails.accountNumber, 'Account Number')} className="text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                    {bankDetails.bankName && (
-                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-border pb-2 gap-1 sm:gap-4 group">
-                        <span className="text-muted-foreground shrink-0">Bank Name</span>
-                        <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="font-medium break-words">{bankDetails.bankName}</span>
-                          <button type="button" onClick={() => copyToClipboard(bankDetails.bankName, 'Bank Name')} className="text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                    {bankDetails.swift && (
-                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-border pb-2 gap-1 sm:gap-4 group">
-                        <span className="text-muted-foreground shrink-0">SWIFT / BIC</span>
-                        <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="font-medium break-words">{bankDetails.swift}</span>
-                          <button type="button" onClick={() => copyToClipboard(bankDetails.swift, 'SWIFT')} className="text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                    {bankDetails.ifsc && (
-                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-border pb-2 gap-1 sm:gap-4 group">
-                        <span className="text-muted-foreground shrink-0">Routing / IFSC</span>
-                        <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="font-medium break-words">{bankDetails.ifsc}</span>
-                          <button type="button" onClick={() => copyToClipboard(bankDetails.ifsc, 'Routing / IFSC')} className="text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                    {bankDetails.branch && (
-                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-border pb-2 gap-1 sm:gap-4 group">
-                        <span className="text-muted-foreground shrink-0">Branch</span>
-                        <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="font-medium break-words">{bankDetails.branch}</span>
-                          <button type="button" onClick={() => copyToClipboard(bankDetails.branch, 'Branch')} className="text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                    {bankDetails.country && (
-                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-border pb-2 gap-1 sm:gap-4 group">
-                        <span className="text-muted-foreground shrink-0">Country</span>
-                        <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="font-medium break-words">{bankDetails.country}</span>
-                          <button type="button" onClick={() => copyToClipboard(bankDetails.country, 'Country')} className="text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="space-y-4 p-4 border border-brand-500/30 bg-brand-500/5 rounded-lg">
-                  <h4 className="font-semibold">Submit Transfer Details</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">Currency</label>
-                      <Input type="text" value={bankCurrency} onChange={e => setBankCurrency(e.target.value.toUpperCase())} placeholder="USD" required />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">Amount Transferred</label>
-                      <Input type="number" step="any" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">Bank Reference / UTR</label>
-                      <Input type="text" value={paymentReference} onChange={e => setPaymentReference(e.target.value)} placeholder="Enter UTR" required />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">Payment Receipt (Optional)</label>
-                      <Input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" />
-                    </div>
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full h-12 text-base whitespace-normal h-auto py-3" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="w-5 h-5 animate-spin mr-2 shrink-0" />}
-                  <span>Submit Bank Transfer</span>
-                </Button>
-              </form>
-            )}
+          <div className="space-y-4 p-6 border border-brand-500/30 bg-brand-500/5 rounded-lg text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-brand-500/10 rounded-full flex items-center justify-center mb-2">
+              <Building2 className="w-8 h-8 text-brand-600 dark:text-brand-400" />
+            </div>
+            <h4 className="font-semibold text-xl mb-2 text-foreground">Direct Bank Transfer</h4>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Agar aap direct bank transfer se deposit karna chahte hain to hamse contact kjiye ham aap ko Bank Details bhejenge Direct bank transfer ke liye.
+            </p>
+            <Button onClick={() => router.push('/support')} className="w-full sm:w-auto px-8 py-6 text-base bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-500/20">
+              <MessageCircle className="w-5 h-5 mr-2" />
+              Contact Support for Bank Details
+            </Button>
           </div>
         )}
 

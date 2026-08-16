@@ -13,6 +13,8 @@ interface WalletState {
   fetchTransactions: (mode: string) => Promise<void>;
   simulateDeposit: (asset: string, amount: number, mode: string) => Promise<any>;
   simulateWithdrawal: (asset: string, amount: number, destination: string, network: string, fee: number, mode: string) => Promise<any>;
+  fiatCurrency: string;
+  setFiatCurrency: (fiat: string) => void;
 }
 
 export const useWalletStore = create<WalletState>()(
@@ -21,6 +23,9 @@ export const useWalletStore = create<WalletState>()(
     transactions: [],
     isLoading: false,
     error: null,
+    fiatCurrency: 'INR',
+
+    setFiatCurrency: (fiat) => set({ fiatCurrency: fiat }),
 
     fetchBalances: async (mode) => {
       // Clear balances before fetching to prevent flickering from old mode

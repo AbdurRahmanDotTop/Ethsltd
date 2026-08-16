@@ -10,16 +10,18 @@ export const ASSETS: P2PAsset[] = [
 
 export const FIAT_CURRENCIES = [
   { code: "USD", name: "US Dollar", symbol: "$" },
+  { code: "INR", name: "Indian Rupee", symbol: "₹" },
   { code: "EUR", name: "Euro", symbol: "€" },
   { code: "GBP", name: "British Pound", symbol: "£" },
   { code: "AED", name: "UAE Dirham", symbol: "د.إ" },
 ];
 
 export const PAYMENT_METHODS: PaymentMethodInfo[] = [
-  { id: "bank_transfer", name: "Bank Transfer", icon: "🏦", currency: ["USD", "EUR", "GBP"], enabled: true },
+  { id: "bank_transfer", name: "Bank Transfer", icon: "🏦", currency: ["USD", "EUR", "GBP", "INR"], enabled: true },
+  { id: "upi", name: "UPI", icon: "📱", currency: ["INR"], enabled: true },
   { id: "zelle", name: "Zelle", icon: "💸", currency: ["USD"], enabled: true },
-  { id: "paypal", name: "PayPal", icon: "🅿️", currency: ["USD", "EUR", "GBP"], enabled: true },
-  { id: "wise", name: "Wise", icon: "🦉", currency: ["USD", "EUR", "GBP", "AED"], enabled: true },
+  { id: "paypal", name: "PayPal", icon: "🅿️", currency: ["USD", "EUR", "GBP", "INR"], enabled: true },
+  { id: "wise", name: "Wise", icon: "🦉", currency: ["USD", "EUR", "GBP", "AED", "INR"], enabled: true },
   { id: "revolut", name: "Revolut", icon: "💳", currency: ["USD", "EUR", "GBP"], enabled: true },
   { id: "cash_app", name: "Cash App", icon: "💵", currency: ["USD", "GBP"], enabled: true },
   { id: "sepa", name: "SEPA", icon: "🇪🇺", currency: ["EUR"], enabled: true },

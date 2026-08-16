@@ -3,8 +3,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowDownToLine, ArrowUpFromLine, History } from "lucide-react";
 import { useTradingModeStore } from "@/stores/trading-mode-store";
 
+import { useWalletStore } from "@/stores/wallet-store";
+
 export function WalletHeader() {
   const { mode } = useTradingModeStore();
+  const { fiatCurrency, setFiatCurrency } = useWalletStore();
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
       <div>
@@ -23,6 +26,14 @@ export function WalletHeader() {
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={fiatCurrency}
+          onChange={(e) => setFiatCurrency(e.target.value)}
+          className="flex h-10 w-24 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <option value="INR">INR (₹)</option>
+          <option value="USD">USD ($)</option>
+        </select>
         <Link href="/wallet/history">
           <Button variant="outline" className="h-10">
             <History className="w-4 h-4 mr-2" />

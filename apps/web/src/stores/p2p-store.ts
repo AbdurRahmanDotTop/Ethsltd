@@ -12,7 +12,7 @@ interface P2PState {
 const defaultQuery: P2PAdvertisementQuery = {
   side: "buy",
   asset: "USDT",
-  fiat: "USD",
+  fiat: "INR",
   paymentMethod: "all",
   amount: undefined,
   sortBy: "Best Price",
