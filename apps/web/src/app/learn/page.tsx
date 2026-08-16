@@ -35,7 +35,7 @@ export default function LearnHome() {
           <h3 className="text-lg font-bold text-foreground mb-1">Ready to practice?</h3>
           <p className="text-sm text-muted-foreground">Try our simulated trading environment.</p>
         </div>
-        <Button asChild>
+        <Button className="w-full sm:w-auto" asChild>
           <Link href="/trade">Start Demo Trading</Link>
         </Button>
       </div>

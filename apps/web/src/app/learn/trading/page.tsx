@@ -45,11 +45,11 @@ export default function TradingGuide() {
         </section>
       </div>
 
-      <div className="mt-12 pt-8 border-t border-border flex justify-between items-center">
-        <Button variant="outline" asChild>
+      <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
+        <Button variant="outline" className="w-full sm:w-auto" asChild>
           <Link href="/learn/crypto-basics">&larr; Previous: Crypto Basics</Link>
         </Button>
-        <Button asChild>
+        <Button className="w-full sm:w-auto" asChild>
           <Link href="/learn/demo-trading">Next: Demo Trading &rarr;</Link>
         </Button>
       </div>

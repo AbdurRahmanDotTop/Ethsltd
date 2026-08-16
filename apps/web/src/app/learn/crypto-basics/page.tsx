@@ -40,11 +40,11 @@ export default function CryptoBasics() {
         </section>
       </div>
 
-      <div className="mt-12 pt-8 border-t border-border flex justify-between items-center">
-        <Button variant="outline" asChild>
+      <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
+        <Button variant="outline" className="w-full sm:w-auto" asChild>
           <Link href="/learn">&larr; Back to Learn</Link>
         </Button>
-        <Button asChild>
+        <Button className="w-full sm:w-auto" asChild>
           <Link href="/learn/trading">Next: Trading Guide &rarr;</Link>
         </Button>
       </div>
