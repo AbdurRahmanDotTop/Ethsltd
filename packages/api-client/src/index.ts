@@ -69,6 +69,14 @@ export class EthsltdClient {
         return { success: false, data, error: `HTTP Error ${res.status}` };
       }
       
+      // Handle 401 globally
+      if (res.status === 401 && (data?.error?.toLowerCase().includes('token') || data?.error?.toLowerCase().includes('unauthorized'))) {
+        this.setToken(null);
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+
       return data;
     } catch (e: any) {
       return { success: false, error: e.message || 'Network Error' };

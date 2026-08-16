@@ -31,10 +31,12 @@ export async function jwtMiddleware(c: Context, next: Next) {
     c.set('user', user);
     c.set('jwtPayload', payload);
 
-    await next();
   } catch (error) {
     return c.json({ success: false, error: 'Invalid or expired token' }, 401);
   }
+
+  // Await next outside try...catch so we don't hide downstream errors
+  await next();
 }
 
 export async function adminMiddleware(c: Context, next: Next) {
