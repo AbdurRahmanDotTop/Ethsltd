@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Info, History } from "lucide-react";
+import { ArrowRight, Info, History, Zap } from "lucide-react";
 import { useP2PStore } from "@/stores/p2p-store";
 import Link from "next/link";
+import { useState } from "react";
+import { ExpressP2PModal } from "./ExpressP2PModal";
 
 export function P2PHero() {
   const { query, setQuery } = useP2PStore();
+  const [expressOpen, setExpressOpen] = useState(false);
 
   return (
     <div className="bg-background border-b border-border">
@@ -35,6 +38,9 @@ export function P2PHero() {
             >
               Sell Crypto
             </Button>
+            <Button variant="secondary" size="lg" className="gap-2 bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20 hover:text-yellow-700 dark:text-yellow-500" onClick={() => setExpressOpen(true)}>
+              <Zap className="w-4 h-4 fill-current" /> Express P2P
+            </Button>
             <Button variant="ghost" size="lg" asChild className="gap-2 text-muted-foreground hover:text-foreground">
               <Link href="/p2p/orders">
                 <History className="w-4 h-4" /> My Orders
@@ -43,6 +49,8 @@ export function P2PHero() {
           </div>
         </div>
       </div>
+      
+      <ExpressP2PModal isOpen={expressOpen} onClose={() => setExpressOpen(false)} />
     </div>
   );
 }

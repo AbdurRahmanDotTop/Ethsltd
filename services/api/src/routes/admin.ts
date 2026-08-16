@@ -121,11 +121,12 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
     return c.json({ success: false, error: 'Unauthorized: Only Super Admins can adjust balances' }, 403);
   }
 
-  const { assetSymbol, amount, type, action } = body;
+  // targetField can be 'balance', 'lockedBalance', or 'escrowBalance'
+  const { assetSymbol, amount, type, action, targetField = 'balance' } = body;
 
   try {
     const { and, eq } = require('drizzle-orm');
-    const { wallets } = require('database');
+    const { wallets, ledgerTransactions } = require('database');
     
     let wallet = await db.select().from(wallets).where(
       and(eq(wallets.userId, userId), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, type))
@@ -140,13 +141,14 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
         userId,
         assetSymbol,
         type,
-        balance: amount.toString(),
-        lockedBalance: '0',
+        balance: targetField === 'balance' ? amount.toString() : '0',
+        lockedBalance: targetField === 'lockedBalance' ? amount.toString() : '0',
+        escrowBalance: targetField === 'escrowBalance' ? amount.toString() : '0',
         createdAt: new Date(),
         updatedAt: new Date()
       });
     } else {
-      let currentBalance = parseFloat(wallet.balance);
+      let currentBalance = parseFloat(wallet[targetField as keyof typeof wallet] as string || '0');
       let adjustment = parseFloat(amount);
       if (action === 'DEBIT') {
         if (currentBalance < adjustment) {
@@ -156,8 +158,23 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
       } else {
         currentBalance += adjustment;
       }
-      await db.update(wallets).set({ balance: currentBalance.toString(), updatedAt: new Date() }).where(eq(wallets.id, wallet.id));
+      
+      const updateData: any = { updatedAt: new Date() };
+      updateData[targetField] = currentBalance.toString();
+      
+      await db.update(wallets).set(updateData).where(eq(wallets.id, wallet.id));
     }
+
+    // Ledger Entry for Admin Override
+    await db.insert(ledgerTransactions).values({
+      id: crypto.randomUUID(),
+      idempotencyKey: `admin-adjust-${Date.now()}-${userId}`,
+      environment: type,
+      referenceType: 'ADJUSTMENT',
+      referenceId: userId,
+      status: 'COMMITTED',
+      createdAt: new Date(),
+    });
 
     return c.json({ success: true });
   } catch (error) {
@@ -240,4 +257,88 @@ adminRoutes.put('/deposit-settings/:id', async (c) => {
     return c.json({ success: false, error: 'Failed to update deposit setting' }, 500);
   }
 });
+
+// POST /api/v1/admin/p2p/disputes/:id/resolve
+adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const disputeId = c.req.param('id');
+  const body = await c.req.json();
+  const { resolution, notes } = body; // resolution: 'RELEASE_TO_BUYER' or 'REFUND_TO_SELLER'
+
+  if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'SUPPORT_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    const { and, eq } = require('drizzle-orm');
+    const { p2pDisputes, p2pOrders, wallets, p2pMessages, p2pAds, ledgerTransactions } = require('database');
+    
+    const dispute = await db.select().from(p2pDisputes).where(eq(p2pDisputes.id, disputeId)).get();
+    if (!dispute || !['OPEN', 'UNDER_REVIEW'].includes(dispute.status)) {
+      return c.json({ success: false, error: 'Invalid dispute state' }, 400);
+    }
+    
+    const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, dispute.orderId)).get();
+    const ad = await db.select().from(p2pAds).where(eq(p2pAds.id, order.adId)).get();
+    const cryptoNum = parseFloat(order.cryptoAmount);
+    const now = new Date();
+
+    if (resolution === 'RELEASE_TO_BUYER') {
+      // Deduct from Seller's escrow balance
+      const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+      if (sellerWallet) {
+        const finalEscrow = (parseFloat(sellerWallet.escrowBalance) - cryptoNum).toString();
+        await db.update(wallets).set({ escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+      }
+      // Add to Buyer's available balance
+      const buyerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.buyerId), eq(wallets.assetSymbol, ad.asset))).get();
+      if (buyerWallet) {
+        const finalBalance = (parseFloat(buyerWallet.balance) + cryptoNum).toString();
+        await db.update(wallets).set({ balance: finalBalance, updatedAt: now }).where(eq(wallets.id, buyerWallet.id));
+      } else {
+        await db.insert(wallets).values({
+          id: crypto.randomUUID(), userId: order.buyerId, assetSymbol: ad.asset,
+          balance: cryptoNum.toString(), lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now,
+        });
+      }
+      
+      await db.update(p2pOrders).set({ status: 'COMPLETED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
+      await db.update(p2pDisputes).set({ status: 'RESOLVED_BUYER', adminNotes: notes, assignedAdminId: admin.id, updatedAt: now }).where(eq(p2pDisputes.id, disputeId));
+
+    } else if (resolution === 'REFUND_TO_SELLER') {
+      // Return crypto to Seller's available balance from Escrow
+      const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+      if (sellerWallet) {
+        const finalBalance = (parseFloat(sellerWallet.balance) + cryptoNum).toString();
+        const finalEscrow = (parseFloat(sellerWallet.escrowBalance) - cryptoNum).toString();
+        await db.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+      }
+      
+      await db.update(p2pOrders).set({ status: 'CANCELLED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
+      await db.update(p2pDisputes).set({ status: 'RESOLVED_SELLER', adminNotes: notes, assignedAdminId: admin.id, updatedAt: now }).where(eq(p2pDisputes.id, disputeId));
+    }
+    
+    // Ledger Entry for Admin resolution
+    await db.insert(ledgerTransactions).values({
+      id: crypto.randomUUID(),
+      idempotencyKey: `p2p-admin-resolve-${order.id}`,
+      environment: order.mode,
+      referenceType: 'P2P_ESCROW',
+      referenceId: order.id,
+      status: 'COMMITTED',
+      createdAt: now,
+    });
+
+    await db.insert(p2pMessages).values({
+      id: `sysmsg_${Date.now()}`, orderId: order.id, senderId: admin.id, mode: order.mode,
+      content: `Dispute Resolved by Admin. Action: ${resolution}. Notes: ${notes || ''}`, type: 'SYSTEM', createdAt: now,
+    });
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to resolve dispute' }, 500);
+  }
+});
+
 

@@ -7,7 +7,8 @@ export const wallets = sqliteTable('wallets', {
   assetSymbol: text('asset_symbol').notNull(),
   type: text('type', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   balance: text('balance').notNull().default('0'), // stored as string to maintain precision
-  lockedBalance: text('locked_balance').notNull().default('0'),
+  lockedBalance: text('locked_balance').notNull().default('0'), // locked for spot/margin trading
+  escrowBalance: text('escrow_balance').notNull().default('0'), // locked exclusively for P2P and escrows
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });

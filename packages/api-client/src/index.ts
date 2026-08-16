@@ -305,8 +305,10 @@ export class EthsltdClient {
     });
   }
 
-  async updateP2pOrderStatus(orderId: string, action: 'pay' | 'release' | 'cancel') {
-    return this.request<any>(`/api/v1/p2p/orders/${orderId}/${action}`, {
+  async updateP2pOrderStatus(orderId: string, action: 'pay' | 'release' | 'cancel' | 'dispute') {
+    let endpointAction = action;
+    if (action === 'pay') endpointAction = 'mark-paid';
+    return this.request<any>(`/api/v1/p2p/orders/${orderId}/${endpointAction}`, {
       method: 'POST',
     });
   }

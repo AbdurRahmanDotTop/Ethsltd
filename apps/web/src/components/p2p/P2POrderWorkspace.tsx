@@ -107,14 +107,14 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
     try {
       const res = await apiClient.updateP2pOrderStatus(order.id, "pay");
       if (res.success) {
-        setOrder({ ...order, status: "PAID" });
+        setOrder({ ...order, status: "BUYER_MARKED_PAID" });
         alert("Payment marked as complete.");
         
         if (mode === 'DEMO') {
           // Simulate Merchant releasing crypto after a delay for demo
           setTimeout(async () => {
             await apiClient.updateP2pOrderStatus(order.id, "release");
-            setOrder({ ...order, status: "RELEASED" });
+            setOrder({ ...order, status: "COMPLETED" });
           }, 4000);
         }
       } else {
@@ -144,6 +144,22 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
     }
   };
 
+  const handleDispute = async () => {
+    if (confirm("Are you sure you want to open a dispute? An admin will review this trade.")) {
+      try {
+        const res = await apiClient.updateP2pOrderStatus(order.id, "dispute");
+        if (res.success) {
+          setOrder({ ...order, status: "DISPUTED" });
+          alert("Dispute opened. Support will contact you shortly.");
+        } else {
+          alert(res.error || "Failed to open dispute.");
+        }
+      } catch(e) {
+        alert("Error opening dispute.");
+      }
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
@@ -158,21 +174,21 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
             </h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                order.status === "RELEASED" ? "bg-green-100 text-green-700" :
-                order.status === "CANCELLED" || order.status === "EXPIRED" ? "bg-red-100 text-red-700" :
-                "bg-yellow-100 text-yellow-800"
+                order.status === "COMPLETED" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                order.status === "CANCELLED" || order.status === "EXPIRED" || order.status === "DISPUTED" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
               }`}>
-                {order.status.replace("_", " ")}
+                {order.status.replace(/_/g, " ")}
               </span>
               <span>•</span>
               <span>{isBuy ? "Buy" : "Sell"} {order.asset}</span>
             </p>
           </div>
           
-          {(order.status === "PENDING" || order.status === "AWAITING_PAYMENT") && (
+          {(order.status === "CREATED" || order.status === "PAYMENT_PENDING") && (
             <div className="text-right">
               <p className="text-sm text-muted-foreground mb-1">Time remaining to pay</p>
-              <div className="text-2xl font-mono font-bold text-orange-600 flex items-center justify-end gap-2">
+              <div className="text-2xl font-mono font-bold text-orange-600 dark:text-orange-400 flex items-center justify-end gap-2">
                 <Clock className="w-5 h-5" />
                 {formatTime(timeLeft)}
               </div>
@@ -260,7 +276,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
           </div>
 
           {/* Action Buttons */}
-          {(order.status === "PENDING" || order.status === "AWAITING_PAYMENT") && (
+          {(order.status === "CREATED" || order.status === "PAYMENT_PENDING") && (
             <div className="p-6 bg-muted/10 border-t border-border flex flex-col sm:flex-row gap-4 items-center justify-end">
               <Button variant="outline" onClick={handleCancel}>
                 Cancel Order
@@ -271,18 +287,20 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
             </div>
           )}
 
-          {order.status === "PAID" && (
+          {(order.status === "BUYER_MARKED_PAID" || order.status === "SELLER_PAYMENT_REVIEW") && (
             <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border-t border-blue-100 dark:border-blue-900/50 flex flex-col items-center justify-center text-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400 mb-4" />
               <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Awaiting Merchant Release</h3>
               <p className="text-sm text-blue-800/80 dark:text-blue-400/80 max-w-md">
                 You have marked the payment as complete. The merchant is verifying the funds and will release the crypto shortly.
               </p>
-              <Button variant="outline" className="mt-6" size="sm">Open Dispute {mode === 'DEMO' ? '(Simulation)' : ''}</Button>
+              <Button variant="outline" className="mt-6" size="sm" onClick={handleDispute}>
+                Open Dispute {mode === 'DEMO' ? '(Simulation)' : ''}
+              </Button>
             </div>
           )}
 
-          {order.status === "RELEASED" && (
+          {order.status === "COMPLETED" && (
             <div className="p-6 bg-green-50 dark:bg-green-900/10 border-t border-green-200 dark:border-green-900/50 flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
                 <Check className="w-8 h-8 text-green-600 dark:text-green-500" />
@@ -290,6 +308,18 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
               <h3 className="text-xl font-bold text-green-900 dark:text-green-300 mb-2">Order Completed Successfully</h3>
               <p className="text-green-800/80 dark:text-green-400/80 max-w-md">
                 The crypto has been transferred to your wallet. Thank you for trading on ETHSLTD!
+              </p>
+            </div>
+          )}
+
+          {order.status === "DISPUTED" && (
+            <div className="p-6 bg-red-50 dark:bg-red-900/10 border-t border-red-200 dark:border-red-900/50 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-red-900 dark:text-red-300 mb-2">Order is under Dispute</h3>
+              <p className="text-red-800/80 dark:text-red-400/80 max-w-md">
+                An administrator is reviewing this transaction and will resolve it shortly. Please check the chat or your email for updates.
               </p>
             </div>
           )}

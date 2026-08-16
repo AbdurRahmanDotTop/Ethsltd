@@ -24,11 +24,15 @@ export default function PostAdPage() {
     asset: "USDT",
     fiat: "USD",
     price: "",
+    isFloating: false,
+    priceMargin: "",
     totalAmount: "",
     minLimit: "",
     maxLimit: "",
+    paymentWindow: "15",
     paymentMethods: "Bank Transfer",
-    terms: ""
+    terms: "",
+    autoReply: ""
   });
 
   useEffect(() => {
@@ -62,10 +66,12 @@ export default function PostAdPage() {
     try {
       const payload = {
         ...formData,
-        price: parseFloat(formData.price),
+        price: formData.price ? parseFloat(formData.price) : 0,
+        priceMargin: formData.isFloating ? parseFloat(formData.priceMargin) : null,
         totalAmount: parseFloat(formData.totalAmount),
         minLimit: parseFloat(formData.minLimit),
         maxLimit: parseFloat(formData.maxLimit),
+        paymentWindow: parseInt(formData.paymentWindow, 10),
         paymentMethods: formData.paymentMethods.split(',').map(m => m.trim())
       };
 
@@ -172,45 +178,80 @@ export default function PostAdPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="price">Fixed Price</Label>
+              <Label>Pricing Type</Label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, isFloating: false }))}
+                  className={`py-2 px-4 text-sm font-medium rounded-md transition-all ${!formData.isFloating ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Fixed
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, isFloating: true }))}
+                  className={`py-2 px-4 text-sm font-medium rounded-md transition-all ${formData.isFloating ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Floating
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price">{formData.isFloating ? 'Price Margin (%)' : 'Fixed Price'}</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-muted-foreground text-sm">{fiatSymbol}</span>
+                  <span className="text-muted-foreground text-sm">{formData.isFloating ? '%' : fiatSymbol}</span>
                 </div>
                 <Input
-                  id="price"
-                  name="price"
+                  id={formData.isFloating ? "priceMargin" : "price"}
+                  name={formData.isFloating ? "priceMargin" : "price"}
                   type="number"
                   step="0.01"
                   required
-                  min="0.01"
                   placeholder="0.00"
                   className="pl-7"
-                  value={formData.price}
+                  value={formData.isFloating ? formData.priceMargin : formData.price}
                   onChange={handleChange}
                 />
               </div>
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="totalAmount">Total Trading Amount</Label>
-            <div className="relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="totalAmount">Total Trading Amount</Label>
+              <div className="relative">
+                <Input
+                  id="totalAmount"
+                  name="totalAmount"
+                  type="number"
+                  step="0.000001"
+                  required
+                  min="0.000001"
+                  placeholder="0.00"
+                  className="pr-16"
+                  value={formData.totalAmount}
+                  onChange={handleChange}
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-muted-foreground text-sm font-medium">{formData.asset}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="paymentWindow">Payment Window (Minutes)</Label>
               <Input
-                id="totalAmount"
-                name="totalAmount"
+                id="paymentWindow"
+                name="paymentWindow"
                 type="number"
-                step="0.000001"
                 required
-                min="0.000001"
-                placeholder="0.00"
-                className="pr-16"
-                value={formData.totalAmount}
+                min="15"
+                max="360"
+                value={formData.paymentWindow}
                 onChange={handleChange}
               />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-muted-foreground text-sm font-medium">{formData.asset}</span>
-              </div>
             </div>
           </div>
 
@@ -271,11 +312,24 @@ export default function PostAdPage() {
             <textarea
               id="terms"
               name="terms"
-              rows={4}
+              rows={3}
               placeholder="Enter any specific requirements for traders..."
               value={formData.terms}
               onChange={handleChange}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="autoReply">Auto Reply Message (Optional)</Label>
+            <textarea
+              id="autoReply"
+              name="autoReply"
+              rows={2}
+              placeholder="Sent automatically to the chat when a trade starts..."
+              value={formData.autoReply}
+              onChange={handleChange}
+              className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
             />
           </div>
 

@@ -16,6 +16,12 @@ export const users = sqliteTable('users', {
   mfaEnabled: integer('mfa_enabled', { mode: 'boolean' }).notNull().default(false),
   mfaSecret: text('mfa_secret'),
   role: text('role', { enum: ['USER', 'SUPER_ADMIN', 'COMPLIANCE_ADMIN', 'SUPPORT_ADMIN'] }).notNull().default('USER'),
+  // P2P Profile
+  isMerchant: integer('is_merchant', { mode: 'boolean' }).notNull().default(false),
+  p2pTotalOrders: integer('p2p_total_orders').notNull().default(0),
+  p2pCompletionRate: text('p2p_completion_rate').notNull().default('0'), // stored as string percentage to prevent floating point issues
+  p2pPositiveFeedback: integer('p2p_positive_feedback').notNull().default(0),
+  p2pNegativeFeedback: integer('p2p_negative_feedback').notNull().default(0),
 });
 
 export const sessions = sqliteTable('sessions', {
