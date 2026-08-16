@@ -1,4 +1,5 @@
 import { AssetAllocation } from "@/lib/wallet/types";
+import { useWalletStore } from "@/stores/wallet-store";
 
 export function PortfolioAllocation({ allocations }: { allocations: AssetAllocation[] }) {
   if (allocations.length === 0) {
@@ -39,6 +40,15 @@ export function PortfolioAllocation({ allocations }: { allocations: AssetAllocat
   };
 
   let currentAngle = -90; // Start at top
+
+  const fiatCurrency = useWalletStore(state => state.fiatCurrency);
+  const INR_RATE = 84.5;
+  const formatValue = (usd: number) => {
+    if (fiatCurrency === 'INR') {
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(usd * INR_RATE);
+    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(usd);
+  };
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 shadow-sm h-full">
@@ -90,7 +100,7 @@ export function PortfolioAllocation({ allocations }: { allocations: AssetAllocat
               </div>
               <div className="flex items-center gap-4">
                 <span className="text-sm font-medium text-foreground">
-                  ${alloc.usdValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  {formatValue(alloc.usdValue)}
                 </span>
                 <span className="text-sm text-muted-foreground w-12 text-right">
                   {alloc.percentage.toFixed(1)}%

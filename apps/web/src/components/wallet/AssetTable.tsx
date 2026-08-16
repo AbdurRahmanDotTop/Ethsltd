@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useWalletStore } from "@/stores/wallet-store";
 
 export function AssetTable({ balances }: { balances: AssetBalance[] }) {
   const [search, setSearch] = useState("");
@@ -16,6 +17,26 @@ export function AssetTable({ balances }: { balances: AssetBalance[] }) {
     if (search && !b.symbol.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const fiatCurrency = useWalletStore(state => state.fiatCurrency);
+  const INR_RATE = 84.5;
+  const formatFiat = (usdAmount: number, isPrice = false) => {
+    const maxDecimals = isPrice ? (usdAmount < 1 ? 4 : 2) : 2;
+    if (fiatCurrency === 'INR') {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: maxDecimals
+      }).format(usdAmount * INR_RATE);
+    }
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: maxDecimals
+    }).format(usdAmount);
+  };
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
@@ -50,7 +71,7 @@ export function AssetTable({ balances }: { balances: AssetBalance[] }) {
               <th className="px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Asset</th>
               <th className="px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Price / 24h</th>
               <th className="px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Balance</th>
-              <th className="px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-right">USD Value</th>
+              <th className="px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-right">{fiatCurrency} Value</th>
               <th className="px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-right">Action</th>
             </tr>
           </thead>
@@ -74,7 +95,7 @@ export function AssetTable({ balances }: { balances: AssetBalance[] }) {
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-foreground">
-                      ${b.usdPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: b.usdPrice < 1 ? 4 : 2 })}
+                      {formatFiat(b.usdPrice, true)}
                     </div>
                     {b.symbol !== 'USD' && b.symbol !== 'USDT' && b.symbol !== 'USDC' && (
                       <div className={`text-xs ${b.change24hPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
@@ -94,7 +115,7 @@ export function AssetTable({ balances }: { balances: AssetBalance[] }) {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="font-medium text-foreground">
-                      ${b.usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {formatFiat(b.usdValue)}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
