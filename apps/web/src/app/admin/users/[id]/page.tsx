@@ -18,6 +18,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   const [assetSymbol, setAssetSymbol] = useState("USDT");
   const [walletType, setWalletType] = useState<"REAL"|"DEMO">("REAL");
   const [adjustAction, setAdjustAction] = useState<"CREDIT"|"DEBIT">("CREDIT");
+  const [targetField, setTargetField] = useState<"balance"|"lockedBalance"|"escrowBalance">("balance");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [isAdjusting, setIsAdjusting] = useState(false);
 
@@ -245,7 +246,15 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                         </select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Target Field</label>
+                        <select value={targetField} onChange={e => setTargetField(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
+                          <option value="balance">Available Balance</option>
+                          <option value="lockedBalance">Locked (Spot)</option>
+                          <option value="escrowBalance">Escrow (P2P)</option>
+                        </select>
+                      </div>
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">Action</label>
                         <select value={adjustAction} onChange={e => setAdjustAction(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
@@ -253,17 +262,17 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                           <option value="DEBIT">DEBIT (-)</option>
                         </select>
                       </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Amount</label>
-                        <input type="number" min="0" step="0.000001" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="100.00" />
-                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <label className="text-xs text-muted-foreground mb-1 block">Amount</label>
+                      <input type="number" min="0" step="0.000001" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="100.00" />
                     </div>
                     <button 
                       disabled={isAdjusting || !adjustAmount || parseFloat(adjustAmount) <= 0}
                       onClick={async () => {
                         setIsAdjusting(true);
                         try {
-                          const res = await apiClient.adjustAdminUserWallet(user.id, assetSymbol, adjustAmount, walletType, adjustAction);
+                          const res = await apiClient.adjustAdminUserWallet(user.id, assetSymbol, adjustAmount, walletType, adjustAction, targetField);
                           if (res.success) {
                             alert("Balance adjusted successfully!");
                             setAdjustAmount("");

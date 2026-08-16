@@ -148,13 +148,13 @@ export function DemoWithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: stri
               Available: <span className="font-mono font-medium text-foreground">{availableAmount.toLocaleString()} {selectedAsset}</span>
             </span>
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <div className="flex flex-wrap gap-2">
             {SUPPORTED_ASSETS.map((asset) => (
               <button
                 key={asset}
                 type="button"
                 onClick={() => form.setValue("asset", asset)}
-                className={`py-2 text-sm font-medium rounded-md border transition-colors ${
+                className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors whitespace-nowrap flex-grow sm:flex-grow-0 text-center ${
                   selectedAsset === asset
                     ? "bg-brand-500 text-white border-brand-500"
                     : "bg-background text-muted-foreground border-border hover:bg-muted"

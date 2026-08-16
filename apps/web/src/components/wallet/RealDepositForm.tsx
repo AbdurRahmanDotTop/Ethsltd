@@ -305,13 +305,13 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
               <div className="space-y-3">
                 <div className="space-y-1">
                   <label className="text-sm font-medium">Asset</label>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {cryptoAssets.map((asset) => (
                       <button
                         key={asset}
                         type="button"
                         onClick={() => setSelectedAsset(asset)}
-                        className={`py-2 text-sm font-medium rounded-md border transition-colors ${
+                        className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors whitespace-nowrap flex-grow sm:flex-grow-0 text-center ${
                           selectedAsset === asset
                             ? "bg-brand-500 text-white border-brand-500"
                             : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -369,8 +369,12 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
               <Building2 className="w-8 h-8 text-brand-600 dark:text-brand-400" />
             </div>
             <h4 className="font-semibold text-xl mb-2 text-foreground">Direct Bank Transfer</h4>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Agar aap direct bank transfer se deposit karna chahte hain to hamse contact kjiye ham aap ko Bank Details bhejenge Direct bank transfer ke liye.
+            <p className="text-muted-foreground mb-4 max-w-md mx-auto text-sm">
+              If you want to deposit via direct bank transfer, please contact our support team. We will provide you with the necessary bank details for the transfer.
+            </p>
+            <div className="w-full max-w-md h-px bg-border my-4"></div>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm italic">
+              Agar aap direct bank transfer se deposit karna chahte hain to hamse contact kijiye, ham aap ko Direct bank transfer ke liye Bank Details bhejenge.
             </p>
             <Button onClick={() => router.push('/support')} className="w-full sm:w-auto px-8 py-6 text-base bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-500/20">
               <MessageCircle className="w-5 h-5 mr-2" />

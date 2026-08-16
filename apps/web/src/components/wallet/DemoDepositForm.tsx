@@ -71,13 +71,13 @@ export function DemoDepositForm({ defaultAsset = "USD" }: { defaultAsset?: strin
       <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Choose Asset</label>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <div className="flex flex-wrap gap-2">
             {SUPPORTED_ASSETS.map((asset) => (
               <button
                 key={asset}
                 type="button"
                 onClick={() => form.setValue("asset", asset)}
-                className={`py-2 text-sm font-medium rounded-md border transition-colors ${
+                className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors whitespace-nowrap flex-grow sm:flex-grow-0 text-center ${
                   selectedAsset === asset
                     ? "bg-brand-500 text-white border-brand-500"
                     : "bg-background text-muted-foreground border-border hover:bg-muted"
