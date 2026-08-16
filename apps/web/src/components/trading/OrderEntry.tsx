@@ -71,18 +71,23 @@ export function OrderEntry({ market }: { market: Market }) {
   const baseBalance = balances.find(b => b.symbol === base)?.available || 0
 
   const handlePercentageClick = (pct: number) => {
+    // If the price is zero (still loading), we can't calculate amount
+    if (!currentPrice || currentPrice <= 0) return;
+
     if (selectedSide === 'buy') {
       const targetQuote = quoteBalance * pct;
       const qty = targetQuote / currentPrice;
-      if (qty > 0 && currentPrice > 0) {
-        setValue("quantity", qty.toFixed(6));
-        trigger("quantity");
+      if (qty > 0) {
+        const qtyStr = qty.toFixed(6);
+        setValue("quantity", qtyStr, { shouldValidate: true, shouldDirty: true });
+        setOrderFormQuantity(qtyStr); // Sync directly to global store
       }
     } else {
       const targetBase = baseBalance * pct;
       if (targetBase > 0) {
-        setValue("quantity", targetBase.toFixed(6));
-        trigger("quantity");
+        const qtyStr = targetBase.toFixed(6);
+        setValue("quantity", qtyStr, { shouldValidate: true, shouldDirty: true });
+        setOrderFormQuantity(qtyStr); // Sync directly to global store
       }
     }
   }
