@@ -23,6 +23,8 @@ export const useWalletStore = create<WalletState>()(
     error: null,
 
     fetchBalances: async (mode) => {
+      // Clear balances before fetching to prevent flickering from old mode
+      set({ balances: [] });
       try {
         const res = await apiClient.getWalletBalances(mode);
         if (res.success && res.data) {
@@ -34,7 +36,7 @@ export const useWalletStore = create<WalletState>()(
     },
 
     fetchTransactions: async (mode) => {
-      set({ isLoading: true, error: null });
+      set({ transactions: [], isLoading: true, error: null });
       try {
         const res = await apiClient.getWalletTransactions(mode);
         if (res.success && res.data) {

@@ -1,16 +1,19 @@
 import { formatPrice } from "@/lib/trading/calculations";
 
-export function RecentTrades({ trades }: { trades: any[] }) {
+export function RecentTrades({ data: trades }: { data: any[] }) {
   if (!trades) return <div className="p-4 text-center text-sm text-muted-foreground animate-pulse">Loading Trades...</div>;
   
   return (
     <div className="flex flex-col h-full text-sm">
-      <div className="flex justify-between px-3 py-2 text-xs text-muted-foreground border-b border-border">
+      <div className="flex justify-between px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/20">
+        <span className="font-semibold text-foreground">Market Trades</span>
+      </div>
+      <div className="flex justify-between px-3 py-1 text-xs text-muted-foreground border-b border-border">
         <span>Price</span>
         <span>Amount</span>
         <span>Time</span>
       </div>
-      <div className="flex flex-col overflow-y-auto py-1 no-scrollbar h-[350px]">
+      <div className="flex flex-col overflow-y-auto py-1 no-scrollbar flex-1">
         {trades.map((trade, i) => {
           // Fallback to trade.time if timestamp doesn't exist (mock provider mismatch)
           let time = trade.time;

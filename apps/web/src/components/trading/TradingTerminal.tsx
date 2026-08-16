@@ -109,32 +109,48 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       </div>
 
       {/* Main Grid */}
-      <div className="flex flex-col lg:flex-row flex-1 p-2 gap-2">
+      <div className="flex flex-col xl:flex-row flex-1 p-2 gap-2">
         
         {/* Left Col: Chart & Orders */}
         <div className="flex flex-col flex-1 gap-2 min-w-0">
-          <div className="bg-muted/10 border border-border rounded-lg flex-1 min-h-[350px] relative z-10 overflow-hidden">
-            {candles.length > 0 && <TradingChart data={candles} />}
+          <div className="bg-muted/10 border border-border rounded-lg flex-1 min-h-[400px] xl:min-h-[500px] relative z-10 overflow-hidden">
+            <TradingChart data={candles} />
           </div>
-          <div className="bg-muted/10 border border-border rounded-lg min-h-[250px] hidden md:block">
+          <div className="bg-muted/10 border border-border rounded-lg min-h-[280px] hidden xl:block">
             <TradingHistoryTabs />
           </div>
         </div>
 
-        {/* Right Col: Orderbook & Form */}
-        <div className="flex flex-col w-full lg:w-[320px] xl:w-[350px] shrink-0 gap-2">
-          
-          <div className="flex-1 bg-muted/10 border border-border rounded-lg h-[400px] flex flex-col overflow-hidden">
+        {/* Middle Col: Orderbook & Recent Trades */}
+        <div className="flex flex-col w-full xl:w-[300px] shrink-0 gap-2 hidden lg:flex">
+          <div className="flex-1 bg-muted/10 border border-border rounded-lg flex flex-col overflow-hidden min-h-[400px]">
             <OrderBook data={orderbook} />
           </div>
+          <div className="shrink-0 bg-muted/10 border border-border rounded-lg flex flex-col overflow-hidden h-[280px] hidden xl:flex">
+            <RecentTrades data={trades} />
+          </div>
+        </div>
+
+        {/* Right Col: Order Form */}
+        <div className="flex flex-col w-full lg:w-[320px] shrink-0 gap-2">
           
+          {/* Mobile/Tablet Orderbook */}
+          <div className="lg:hidden flex-1 bg-muted/10 border border-border rounded-lg flex flex-col overflow-hidden h-[300px]">
+            <OrderBook data={orderbook} />
+          </div>
+
           <div className="shrink-0 z-10 relative">
             <OrderEntry market={market} />
           </div>
           
-          {/* Mobile only history tabs */}
-          <div className="md:hidden mt-2 border border-border rounded-lg overflow-hidden">
-            <TradingHistoryTabs />
+          {/* Mobile/Tablet only history and trades */}
+          <div className="xl:hidden mt-2 flex flex-col gap-2">
+             <div className="bg-muted/10 border border-border rounded-lg overflow-hidden h-[300px]">
+               <RecentTrades data={trades} />
+             </div>
+             <div className="border border-border rounded-lg overflow-hidden">
+               <TradingHistoryTabs />
+             </div>
           </div>
         </div>
 
