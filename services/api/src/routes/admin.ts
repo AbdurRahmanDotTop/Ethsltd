@@ -158,7 +158,7 @@ adminRoutes.get('/wallets/users', async (c) => {
     const { eq, like, or, and, inArray } = require('drizzle-orm');
     const { wallets, users } = require('database');
     
-    let userQuery = db.select({
+    let userQuery: any = db.select({
       id: users.id,
       email: users.email,
       displayName: users.displayName,
@@ -227,7 +227,7 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
         updatedAt: new Date()
       });
     } else {
-      let currentBalance = parseFloat(wallet[targetField as keyof typeof wallet] as string || '0');
+      let currentBalance = parseFloat((wallet as any)[targetField] as string || '0');
       let adjustment = parseFloat(amount);
       if (action === 'DEBIT') {
         if (currentBalance < adjustment) {
@@ -359,7 +359,11 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
     }
     
     const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, dispute.orderId)).get();
+    if (!order) return c.json({ success: false, error: 'Order not found' }, 404);
+    
     const ad = await db.select().from(p2pAds).where(eq(p2pAds.id, order.adId)).get();
+    if (!ad) return c.json({ success: false, error: 'Ad not found' }, 404);
+    
     const cryptoNum = parseFloat(order.cryptoAmount);
     const now = new Date();
 

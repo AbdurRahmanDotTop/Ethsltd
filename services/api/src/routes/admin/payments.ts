@@ -119,9 +119,9 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   if (!wallet) {
     const walletId = crypto.randomUUID();
     await db.insert(wallets).values({
-      id: walletId, userId: deposit.user_id, assetSymbol: deposit.asset, type: 'REAL', balance: '0', lockedBalance: '0', createdAt: now, updatedAt: now
+      id: walletId, userId: deposit.user_id, assetSymbol: deposit.asset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
     });
-    wallet = { id: walletId, userId: deposit.user_id, assetSymbol: deposit.asset, type: 'REAL', balance: '0', lockedBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, userId: deposit.user_id, assetSymbol: deposit.asset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
   }
   
   // Update wallet
@@ -160,9 +160,9 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   if (!wallet) {
     const walletId = crypto.randomUUID();
     await db.insert(wallets).values({
-      id: walletId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', createdAt: now, updatedAt: now
+      id: walletId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
     });
-    wallet = { id: walletId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
   }
   
   // Update wallet

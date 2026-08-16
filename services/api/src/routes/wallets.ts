@@ -69,6 +69,7 @@ walletRoutes.post('/top-up-demo', async (c) => {
       type: 'DEMO',
       balance: amount,
       lockedBalance: '0',
+      escrowBalance: '0',
       createdAt: now,
       updatedAt: now,
     });
@@ -216,10 +217,11 @@ walletRoutes.post('/deposit', async (c) => {
       type: mode,
       balance: '0',
       lockedBalance: '0',
+      escrowBalance: '0',
       createdAt: now,
       updatedAt: now,
     });
-    wallet = { id: walletId, userId: user.id, assetSymbol, type: mode, balance: '0', lockedBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, userId: user.id, assetSymbol, type: mode, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
   }
   
   if (mode === 'DEMO') {
