@@ -38,9 +38,11 @@ expertRoutes.get('/', async (c) => {
 });
 
 // Get specific expert profile
-expertRoutes.get('/:id', async (c) => {
+expertRoutes.get('/:id', async (c, next) => {
   const db = c.get('db');
   const id = c.req.param('id');
+  
+  if (['dashboard', 'bookings', 'apply'].includes(id)) return next();
   
   try {
     const expert = await db.select({
@@ -86,9 +88,11 @@ expertRoutes.get('/:id', async (c) => {
 });
 
 // Get specific expert's services
-expertRoutes.get('/:id/services', async (c) => {
+expertRoutes.get('/:id/services', async (c, next) => {
   const db = c.get('db');
   const expertId = c.req.param('id');
+  
+  if (['dashboard', 'bookings', 'apply'].includes(expertId)) return next();
   
   try {
     const services = await db.select()
