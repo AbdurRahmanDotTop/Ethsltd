@@ -21,23 +21,75 @@ adminRoutes.use('*', async (c, next) => {
 // GET /api/v1/admin/stats
 adminRoutes.get('/stats', async (c) => {
   const db = c.get('db');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   try {
     const allUsers = await db.select().from(users).all();
     const allPendingKyc = await db.select().from(kycProfiles).where(eq(kycProfiles.status, 'PENDING')).all();
     const activeMarkets = await db.select().from(markets).where(eq(markets.status, 'ACTIVE')).all();
     
-    // Mock volume based on mode
-    const totalVolumeUsd = mode === 'REAL' ? 1250000 : 85000;
+    // Real Platform Balance (REAL wallets USDT/USD)
+    const allWallets = await db.select().from(wallets).where(eq(wallets.type, 'REAL')).all();
+    let totalPlatformBalance = 0;
+    for (const w of allWallets) {
+      if (w.assetSymbol === 'USDT' || w.assetSymbol === 'USD' || w.assetSymbol === 'USDC') {
+        totalPlatformBalance += parseFloat(w.balance || '0') + parseFloat(w.lockedBalance || '0') + parseFloat(w.escrowBalance || '0');
+      }
+    }
     
+    // Deposits (Mocking sum from manual deposits)
+    const allManualDeposits = await db.select().from(real_manual_deposits).all();
+    let depositsToday = 0;
+    const todayStart = new Date();
+    todayStart.setHours(0,0,0,0);
+    for (const d of allManualDeposits) {
+      if (d.status === 'COMPLETED' && new Date(d.createdAt).getTime() >= todayStart.getTime()) {
+        depositsToday += parseFloat(d.amount || '0');
+      }
+    }
+    
+    // Pending Withdrawals
+    const allBankTransfers = await db.select().from(bankTransfers).where(eq(bankTransfers.type, 'WITHDRAWAL')).all();
+    const pendingWithdrawals = allBankTransfers.filter(t => t.status === 'PENDING').length;
+    
+    // P2P Volume 24h
+    const allP2pOrders = await db.select().from(p2pOrders).where(eq(p2pOrders.mode, 'REAL')).all();
+    let p2pVolume24h = 0;
+    const now = Date.now();
+    for (const o of allP2pOrders) {
+       if (o.status === 'COMPLETED' && new Date(o.updatedAt).getTime() > now - 86400000) {
+           p2pVolume24h += parseFloat(o.fiatAmount || '0');
+       }
+    }
+    
+    // Pending Disputes
+    const allDisputes = await db.select().from(p2pDisputes).all();
+    const pendingDisputes = allDisputes.filter(d => d.status === 'OPEN').length;
+    
+    // Suspended users
+    const suspendedUsers = allUsers.filter(u => u.status === 'SUSPENDED' || u.status === 'BANNED').length;
+
+    // Trading Volume 24h
+    const allOrders = await db.select().from(orders).where(eq(orders.mode, 'REAL')).all();
+    let dailyVolumeUsd = 0;
+    for (const o of allOrders) {
+       if (o.status === 'FILLED' && new Date(o.createdAt).getTime() > now - 86400000) {
+           dailyVolumeUsd += parseFloat(o.total || '0');
+       }
+    }
+
     return c.json({
       success: true,
       data: {
         totalUsers: allUsers.length,
         pendingKyc: allPendingKyc.length,
         activeMarkets: activeMarkets.length,
-        totalVolumeUsd
+        totalPlatformBalance,
+        depositsToday,
+        pendingWithdrawals,
+        p2pVolume24h,
+        pendingDisputes,
+        suspendedUsers,
+        dailyVolumeUsd
       }
     });
   } catch (error) {

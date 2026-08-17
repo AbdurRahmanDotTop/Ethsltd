@@ -74,18 +74,18 @@ export default function AdminDashboardPage() {
     );
   }
 
-  // Map API stats to mock KPIs structure
+  // Map API stats to KPIs structure
   const kpis = {
-    totalUsers: stats.totalUsers,
-    activeUsers: Math.floor(stats.totalUsers * 0.8),
+    totalUsers: stats.totalUsers || 0,
+    activeUsers: Math.floor((stats.totalUsers || 0) * 0.8), // We don't track active explicitly, mock as 80%
     pendingKyc: stats.pendingKyc || 0,
-    suspendedUsers: 0,
+    suspendedUsers: stats.suspendedUsers || 0,
     volume24h: stats.dailyVolumeUsd || 0,
-    totalPlatformBalance: 4520000,
-    depositsToday: 125000,
-    pendingWithdrawals: 12,
-    p2pVolume24h: 45000,
-    pendingDisputes: 2,
+    totalPlatformBalance: stats.totalPlatformBalance || 0,
+    depositsToday: stats.depositsToday || 0,
+    pendingWithdrawals: stats.pendingWithdrawals || 0,
+    p2pVolume24h: stats.p2pVolume24h || 0,
+    pendingDisputes: stats.pendingDisputes || 0,
     apiStatus: "Operational",
     dbStatus: "Operational",
     errorRate: 0.1,
@@ -125,20 +125,6 @@ export default function AdminDashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Financials & Trading</h3>
-            <div className="flex bg-muted p-1 rounded-lg">
-              <button
-                onClick={() => setAdminMode("REAL")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "REAL" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Real
-              </button>
-              <button
-                onClick={() => setAdminMode("DEMO")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "DEMO" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Demo
-              </button>
-            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="24h Trading Volume" value={formatUSD(kpis.volume24h)} icon={Activity} colorClass="text-brand-primary" trend="+5.2%" />
