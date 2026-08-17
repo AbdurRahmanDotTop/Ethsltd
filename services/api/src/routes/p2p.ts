@@ -138,7 +138,7 @@ p2pRoutes.put('/ads/:id', async (c) => {
       type: type || existingAd.type,
       asset: asset || existingAd.asset,
       fiat: fiat || existingAd.fiat,
-      priceType: priceType || existingAd.priceType,
+      isFloating: priceType ? priceType === 'floating' : existingAd.isFloating,
       price: price ? String(price) : existingAd.price,
       minLimit: minLimit ? String(minLimit) : existingAd.minLimit,
       maxLimit: maxLimit ? String(maxLimit) : existingAd.maxLimit,
