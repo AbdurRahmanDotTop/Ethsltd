@@ -38,7 +38,7 @@ function StatCard({
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [activity, setActivity] = useState<any[]>([]);
-  const { adminMode } = useAdminEnvStore();
+  const { adminMode, setAdminMode } = useAdminEnvStore();
 
   useEffect(() => {
     async function fetchStats() {
@@ -123,7 +123,23 @@ export default function AdminDashboardPage() {
 
         {/* Financials & Trading */}
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Financials & Trading</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Financials & Trading</h3>
+            <div className="flex bg-muted p-1 rounded-lg">
+              <button
+                onClick={() => setAdminMode("REAL")}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "REAL" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Real
+              </button>
+              <button
+                onClick={() => setAdminMode("DEMO")}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "DEMO" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Demo
+              </button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="24h Trading Volume" value={formatUSD(kpis.volume24h)} icon={Activity} colorClass="text-brand-primary" trend="+5.2%" />
             <StatCard title="Total Platform Balance" value={formatUSD(kpis.totalPlatformBalance)} icon={Wallet} colorClass="text-brand-secondary" />

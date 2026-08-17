@@ -110,9 +110,9 @@ export default function AdminTicketDetailPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          {ticket.messages.map((msg) => {
-            const isUser = msg.sender === "USER";
-            const isInternal = msg.isInternalNote;
+          {ticket.messages.map((msg: any) => {
+            const isUser = !msg.isAdmin;
+            const isInternal = false; // Internal notes not supported in real schema yet
 
             return (
               <div key={msg.id} className={`flex gap-4 max-w-[85%] ${isUser ? 'mr-auto' : 'ml-auto flex-row-reverse'}`}>
@@ -136,7 +136,7 @@ export default function AdminTicketDetailPage() {
                     <span className="font-medium text-foreground">
                       {isUser ? `User (${ticket.userId})` : isInternal ? 'Internal Note' : 'Support Agent'}
                     </span>
-                    <span>{format(new Date(msg.timestamp), "MMM d, h:mm a")}</span>
+                    <span>{msg.createdAt ? format(new Date(msg.createdAt), "MMM d, h:mm a") : 'Unknown time'}</span>
                   </div>
                   <div className={`p-4 rounded-2xl whitespace-pre-wrap text-sm shadow-sm ${
                     isUser 
@@ -145,7 +145,7 @@ export default function AdminTicketDetailPage() {
                         ? 'bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 rounded-tr-none'
                         : 'bg-brand-primary text-brand-foreground rounded-tr-none'
                   }`}>
-                    {msg.text}
+                    {msg.content}
                   </div>
                 </div>
               </div>

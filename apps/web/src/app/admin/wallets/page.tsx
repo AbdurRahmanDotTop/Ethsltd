@@ -17,7 +17,7 @@ export default function AdminWalletsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [adjustingUser, setAdjustingUser] = useState<any>(null);
-  const { adminMode } = useAdminEnvStore();
+  const { adminMode, setAdminMode } = useAdminEnvStore();
 
   // Adjustment Modal State
   const [adjustAsset, setAdjustAsset] = useState("USDT");
@@ -96,9 +96,25 @@ export default function AdminWalletsPage() {
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">Monitor platform liquidity and manage user wallets.</p>
         </div>
-        <Button variant="outline" onClick={loadData}>
-          <RefreshCw className="w-4 h-4 mr-2" /> Refresh Balances
-        </Button>
+        <div className="flex gap-4">
+          <div className="flex bg-muted p-1 rounded-lg">
+            <button
+              onClick={() => setAdminMode("REAL")}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "REAL" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Real
+            </button>
+            <button
+              onClick={() => setAdminMode("DEMO")}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "DEMO" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Demo
+            </button>
+          </div>
+          <Button variant="outline" onClick={loadData}>
+            <RefreshCw className="w-4 h-4 mr-2" /> Refresh Balances
+          </Button>
+        </div>
       </div>
 
       {/* Treasury KPIs (Real Data) */}

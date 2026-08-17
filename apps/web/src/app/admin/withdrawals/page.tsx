@@ -14,7 +14,7 @@ export default function AdminWithdrawalsPage() {
   
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("ALL");
-  const { adminMode } = useAdminEnvStore();
+  const { adminMode, setAdminMode } = useAdminEnvStore();
   const limit = 50;
 
   useEffect(() => {
@@ -188,6 +188,20 @@ export default function AdminWithdrawalsPage() {
         </div>
         
         <div className="flex gap-3">
+          <div className="flex bg-muted p-1 rounded-lg mr-2">
+            <button
+              onClick={() => setAdminMode("REAL")}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "REAL" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Real
+            </button>
+            <button
+              onClick={() => setAdminMode("DEMO")}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "DEMO" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Demo
+            </button>
+          </div>
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <select 
