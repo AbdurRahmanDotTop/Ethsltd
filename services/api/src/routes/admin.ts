@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, bankTransfers, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions } from 'database';
+import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, ledgerEntries, bankTransfers, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const adminRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -77,9 +77,15 @@ adminRoutes.get('/users/:id', async (c) => {
     const userWallets = await db.select().from(wallets).where(eq(wallets.userId, userId)).all();
     
     let balanceUsd = 0;
+    let demoBalanceUsd = 0;
     for (const w of userWallets) {
       if (w.assetSymbol === 'USDT' || w.assetSymbol === 'USD') {
-        balanceUsd += parseFloat(w.balance || '0') + parseFloat(w.lockedBalance || '0') + parseFloat(w.escrowBalance || '0');
+        const total = parseFloat(w.balance || '0') + parseFloat(w.lockedBalance || '0') + parseFloat(w.escrowBalance || '0');
+        if (w.type === 'DEMO') {
+          demoBalanceUsd += total;
+        } else {
+          balanceUsd += total;
+        }
       }
     }
     
@@ -90,8 +96,9 @@ adminRoutes.get('/users/:id', async (c) => {
         kycStatus: kyc ? kyc.status : 'UNVERIFIED',
         riskLevel: 'LOW',
         balanceUsd,
-        tradingVolumeUsd: 0, // Implement real aggregation later
-        p2pVolumeUsd: 0, // Implement real aggregation later
+        demoBalanceUsd,
+        tradingVolumeUsd: 0,
+        p2pVolumeUsd: 0,
       }
     });
   } catch (error) {
@@ -189,10 +196,42 @@ adminRoutes.delete('/users/:id', async (c) => {
   }
 
   try {
-    const { eq, or } = require('drizzle-orm');
+    const { eq, or, inArray } = require('drizzle-orm');
 
     await db.transaction(async (tx: any) => {
-      // Auth & System
+      // Manual Cascades for P2P Ads -> P2P Orders -> Disputes/Feedback/Messages
+      if (p2pAds && p2pOrders && p2pDisputes) {
+        const uAds = await tx.select({ id: p2pAds.id }).from(p2pAds).where(eq(p2pAds.userId, userId));
+        const uAdIds = uAds.map((a: any) => a.id);
+        
+        // Find all orders where user is buyer/seller OR the order is for an ad owned by user
+        const uOrders = await tx.select({ id: p2pOrders.id }).from(p2pOrders).where(
+          or(
+            eq(p2pOrders.buyerId, userId), 
+            eq(p2pOrders.sellerId, userId),
+            uAdIds.length > 0 ? inArray(p2pOrders.adId, uAdIds) : eq(p2pOrders.buyerId, 'impossible_value')
+          )
+        );
+        const uOrderIds = uOrders.map((o: any) => o.id);
+
+        if (uOrderIds.length > 0) {
+          await tx.delete(p2pDisputes).where(inArray(p2pDisputes.orderId, uOrderIds));
+          await tx.delete(p2pFeedback).where(inArray(p2pFeedback.orderId, uOrderIds));
+          await tx.delete(p2pMessages).where(inArray(p2pMessages.orderId, uOrderIds));
+          await tx.delete(p2pOrders).where(inArray(p2pOrders.id, uOrderIds));
+        }
+      }
+
+      // Manual Cascades for Ledger Accounts -> Ledger Entries
+      if (ledgerAccounts && ledgerEntries) {
+        const uAccts = await tx.select({ id: ledgerAccounts.id }).from(ledgerAccounts).where(eq(ledgerAccounts.userId, userId));
+        const uAcctIds = uAccts.map((a: any) => a.id);
+        if (uAcctIds.length > 0) {
+          await tx.delete(ledgerEntries).where(inArray(ledgerEntries.accountId, uAcctIds));
+        }
+      }
+
+      // Remaining direct deletions
       if (sessions) await tx.delete(sessions).where(eq(sessions.userId, userId));
       if (notifications) await tx.delete(notifications).where(eq(notifications.userId, userId));
       if (kycProfiles) await tx.delete(kycProfiles).where(eq(kycProfiles.userId, userId));
@@ -220,7 +259,6 @@ adminRoutes.delete('/users/:id', async (c) => {
       if (p2pFeedback) await tx.delete(p2pFeedback).where(or(eq(p2pFeedback.fromUserId, userId), eq(p2pFeedback.toUserId, userId)));
       if (p2pMessages) await tx.delete(p2pMessages).where(eq(p2pMessages.senderId, userId));
       if (p2pDisputes) await tx.delete(p2pDisputes).where(or(eq(p2pDisputes.openerId, userId), eq(p2pDisputes.assignedAdminId, userId)));
-      if (p2pOrders) await tx.delete(p2pOrders).where(or(eq(p2pOrders.buyerId, userId), eq(p2pOrders.sellerId, userId)));
       if (p2pAds) await tx.delete(p2pAds).where(eq(p2pAds.userId, userId));
 
       // Finally User
@@ -229,8 +267,8 @@ adminRoutes.delete('/users/:id', async (c) => {
 
     return c.json({ success: true, message: 'User completely deleted' });
   } catch (error: any) {
-    console.error('Failed to delete user:', error);
-    return c.json({ success: false, error: error.message || 'Failed to delete user' }, 500);
+    console.error('Delete User Error:', error);
+    return c.json({ success: false, error: 'Failed to delete user: ' + error.message + ' ' + (error.cause?.message || '') }, 500);
   }
 });
 

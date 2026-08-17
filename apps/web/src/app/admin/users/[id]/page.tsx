@@ -195,15 +195,24 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
 
         {/* Right Column: Financials & Activity */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-card border border-border rounded-lg p-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-brand-background-lighter p-4 rounded-lg border border-white/5">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Wallet className="w-4 h-4" />
-                <span className="text-sm font-medium">Total Balance</span>
+                <span className="text-sm font-medium">Real Balance</span>
               </div>
               <div className="text-2xl font-bold">{formatUSD(user.balanceUsd)}</div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4">
+            
+            <div className="bg-brand-background-lighter p-4 rounded-lg border border-white/5">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Wallet className="w-4 h-4 text-brand-primary" />
+                <span className="text-sm font-medium text-brand-primary">Demo Balance</span>
+              </div>
+              <div className="text-2xl font-bold">{formatUSD(user.demoBalanceUsd)}</div>
+            </div>
+
+            <div className="bg-brand-background-lighter p-4 rounded-lg border border-white/5">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Activity className="w-4 h-4" />
                 <span className="text-sm font-medium">Trading Vol (30d)</span>
