@@ -5,6 +5,7 @@ import { apiClient } from "@ethsltd/api-client";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { Filter, Check, X, Trash2, Edit3 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
+import { useAdminEnvStore } from "@/stores/admin-env-store";
 
 export default function AdminWithdrawalsPage() {
   const { user } = useAuthStore();
@@ -13,7 +14,7 @@ export default function AdminWithdrawalsPage() {
   
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("ALL");
-  const [mode, setMode] = useState<"REAL" | "DEMO">("REAL");
+  const { adminMode } = useAdminEnvStore();
   const limit = 50;
 
   useEffect(() => {
@@ -21,7 +22,7 @@ export default function AdminWithdrawalsPage() {
     const fetchWithdrawals = async () => {
       setLoading(true);
       try {
-        const res = await apiClient.adminGetWithdrawals(status, mode);
+        const res = await apiClient.adminGetWithdrawals(status, adminMode);
         if (isMounted && res.success) {
           setWithdrawals(res.data || []);
         }
@@ -33,11 +34,11 @@ export default function AdminWithdrawalsPage() {
     };
     fetchWithdrawals();
     return () => { isMounted = false; };
-  }, [status, mode]);
+  }, [status, adminMode]);
 
   const fetchWithdrawalsCurrent = async () => {
     try {
-      const res = await apiClient.adminGetWithdrawals(status, mode);
+      const res = await apiClient.adminGetWithdrawals(status, adminMode);
       if (res.success) {
         setWithdrawals(res.data || []);
       }
@@ -202,21 +203,6 @@ export default function AdminWithdrawalsPage() {
             </select>
           </div>
         </div>
-      </div>
-
-      <div className="flex space-x-2 border-b border-border overflow-x-auto">
-        <button 
-          onClick={() => setMode("REAL")} 
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${mode === "REAL" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
-        >
-          REAL Withdrawals
-        </button>
-        <button 
-          onClick={() => setMode("DEMO")} 
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${mode === "DEMO" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
-        >
-          DEMO Withdrawals
-        </button>
       </div>
 
       <div className="relative min-h-[400px]">

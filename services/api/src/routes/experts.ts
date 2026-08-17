@@ -239,6 +239,10 @@ expertRoutes.get('/bookings/me', async (c) => {
     
     return c.json({ success: true, data: bookings });
   } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch bookings' }, 500);
+  }
+});
+
 // ==========================================
 // EXPERT DASHBOARD ROUTES
 // ==========================================
@@ -431,7 +435,7 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
         await db.insert(walletTransactions).values({
           id: `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
           userId: booking.userId,
-          type: 'REFUND',
+          type: 'ADJUSTMENT',
           mode: userWallet.type,
           assetSymbol: booking.currency,
           amount: refundAmt.toString(),
@@ -442,7 +446,7 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
         }).run();
       }
       
-      await db.update(expertBookings).set({ status: 'REJECTED', updatedAt: now }).where(eq(expertBookings.id, bookingId));
+      await db.update(expertBookings).set({ status: 'REFUNDED', updatedAt: now }).where(eq(expertBookings.id, bookingId));
       return c.json({ success: true });
     }
 
@@ -488,7 +492,7 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
       await db.insert(walletTransactions).values({
         id: expertTxId,
         userId: profile.userId,
-        type: 'EXPERT_EARNINGS',
+        type: 'EXPERT_SERVICE',
         mode: 'REAL',
         assetSymbol: booking.currency,
         amount: expertEarnings.toString(),
@@ -502,12 +506,11 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
       const ledgerTxId = `ltx_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
       await db.insert(ledgerTransactions).values({
         id: ledgerTxId,
-        type: 'FEE',
+        idempotencyKey: `comm_${bookingId}`,
         referenceId: bookingId,
         referenceType: 'EXPERT_SERVICE',
-        status: 'COMPLETED',
-        createdAt: now,
-        updatedAt: now
+        status: 'COMMITTED',
+        createdAt: now
       }).run();
       
       await db.insert(ledgerEntries).values({
@@ -516,9 +519,8 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
         accountId: 'SYSTEM_FEE',
         assetSymbol: booking.currency,
         amount: platformFee.toString(),
-        type: 'CREDIT',
-        createdAt: now,
-        updatedAt: now
+        direction: 'CREDIT',
+        createdAt: now
       }).run();
       
       // 3. Update Booking

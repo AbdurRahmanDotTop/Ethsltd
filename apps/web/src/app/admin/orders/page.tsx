@@ -5,6 +5,7 @@ import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
 import { AdminOrder } from "@/lib/admin/types";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { Filter, XCircle } from "lucide-react";
+import { useAdminEnvStore } from "@/stores/admin-env-store";
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -14,13 +15,14 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("ALL");
   const [market, setMarket] = useState("ALL");
+  const { adminMode } = useAdminEnvStore();
   const limit = 20;
 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
-    MockAdminProvider.getOrders({ page, limit, status, market }).then((res) => {
+    MockAdminProvider.getOrders({ page, limit, status, market, mode: adminMode } as any).then((res) => {
       if (isMounted) {
         setOrders(res.items);
         setTotal(res.total);
@@ -31,7 +33,7 @@ export default function AdminOrdersPage() {
     return () => {
       isMounted = false;
     };
-  }, [page, status, market]);
+  }, [page, status, market, adminMode]);
 
   const handleCancel = (id: string) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'CANCELED' } : o));

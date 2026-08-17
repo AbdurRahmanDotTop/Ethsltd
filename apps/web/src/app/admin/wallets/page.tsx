@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@ethsltd/api-client";
+import { useAdminEnvStore } from "@/stores/admin-env-store";
 
 export default function AdminWalletsPage() {
   const [overview, setOverview] = useState<Record<string, any>>({});
@@ -16,10 +17,11 @@ export default function AdminWalletsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [adjustingUser, setAdjustingUser] = useState<any>(null);
+  const { adminMode } = useAdminEnvStore();
 
   // Adjustment Modal State
   const [adjustAsset, setAdjustAsset] = useState("USDT");
-  const [adjustType, setAdjustType] = useState<"REAL"|"DEMO">("REAL");
+  const [adjustType, setAdjustType] = useState<"REAL"|"DEMO">(adminMode);
   const [adjustAction, setAdjustAction] = useState<"CREDIT"|"DEBIT">("CREDIT");
   const [targetField, setTargetField] = useState<"balance"|"lockedBalance"|"escrowBalance">("balance");
   const [adjustAmount, setAdjustAmount] = useState("");
@@ -50,7 +52,8 @@ export default function AdminWalletsPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+    setAdjustType(adminMode);
+  }, [adminMode]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

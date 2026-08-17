@@ -6,9 +6,11 @@ import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { adminNavGroups } from "./AdminSidebar";
+import { useAdminEnvStore } from "@/stores/admin-env-store";
 
 export function AdminHeader() {
   const { user, logout } = useAuthStore();
+  const { adminMode, setAdminMode } = useAdminEnvStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -56,6 +58,22 @@ export function AdminHeader() {
       </div>
 
       <div className="flex items-center gap-6">
+        {/* Real / Demo Toggle */}
+        <div className="hidden sm:flex items-center bg-muted/50 p-1 rounded-lg border border-border">
+          <button 
+            onClick={() => setAdminMode("REAL")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "REAL" ? "bg-green-500/20 text-green-500 shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            REAL
+          </button>
+          <button 
+            onClick={() => setAdminMode("DEMO")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "DEMO" ? "bg-orange-500/20 text-orange-500 shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            DEMO
+          </button>
+        </div>
+
         {/* System Status */}
         <div className="hidden lg:flex items-center gap-2">
           <Activity className="w-4 h-4 text-green-500" />
