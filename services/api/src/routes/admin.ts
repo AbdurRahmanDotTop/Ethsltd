@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerTransactions, bankTransfers, real_manual_deposits, orders, trades, positions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, supportTickets, supportMessages, notifications, cregisWallets, cregisDepositHistory, authSessions, loginHistory } from 'database';
+import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, bankTransfers, real_manual_deposits, orders, positions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, sessions } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const adminRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -158,26 +158,25 @@ adminRoutes.delete('/users/:id', async (c) => {
 
     await db.transaction(async (tx: any) => {
       // Auth & System
-      if (authSessions) await tx.delete(authSessions).where(eq(authSessions.userId, userId));
-      if (loginHistory) await tx.delete(loginHistory).where(eq(loginHistory.userId, userId));
+      if (sessions) await tx.delete(sessions).where(eq(sessions.userId, userId));
       if (notifications) await tx.delete(notifications).where(eq(notifications.userId, userId));
       if (kycProfiles) await tx.delete(kycProfiles).where(eq(kycProfiles.userId, userId));
-      if (supportMessages) await tx.delete(supportMessages).where(eq(supportMessages.senderId, userId));
-      if (supportTickets) await tx.delete(supportTickets).where(eq(supportTickets.userId, userId));
+      
+      // Support
+      if (ticketMessages) await tx.delete(ticketMessages).where(eq(ticketMessages.senderId, userId));
+      if (tickets) await tx.delete(tickets).where(eq(tickets.userId, userId));
       
       // Financials
-      if (cregisDepositHistory) await tx.delete(cregisDepositHistory).where(eq(cregisDepositHistory.userId, userId));
-      if (cregisWallets) await tx.delete(cregisWallets).where(eq(cregisWallets.userId, userId));
+      if (cregisDeposits) await tx.delete(cregisDeposits).where(eq(cregisDeposits.userId, userId));
       if (real_manual_deposits) await tx.delete(real_manual_deposits).where(eq(real_manual_deposits.user_id, userId));
       if (bankTransfers) await tx.delete(bankTransfers).where(eq(bankTransfers.userId, userId));
       if (walletTransactions) await tx.delete(walletTransactions).where(eq(walletTransactions.userId, userId));
       if (wallets) await tx.delete(wallets).where(eq(wallets.userId, userId));
-      if (ledgerTransactions) await tx.delete(ledgerTransactions).where(eq(ledgerTransactions.userId, userId));
+      if (ledgerAccounts) await tx.delete(ledgerAccounts).where(eq(ledgerAccounts.userId, userId));
 
       // Trading
       if (positions) await tx.delete(positions).where(eq(positions.userId, userId));
       if (orders) await tx.delete(orders).where(eq(orders.userId, userId));
-      if (trades) await tx.delete(trades).where(or(eq(trades.makerId, userId), eq(trades.takerId, userId)));
       
       // P2P
       if (p2pPaymentMethods) await tx.delete(p2pPaymentMethods).where(eq(p2pPaymentMethods.userId, userId));
