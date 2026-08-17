@@ -27,7 +27,7 @@ export default function UserChatPage() {
   const [bookingStatus, setBookingStatus] = useState<string>("");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const pollingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentUser = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem("user") || "{}" : "{}");
 
   const fetchMessages = async () => {

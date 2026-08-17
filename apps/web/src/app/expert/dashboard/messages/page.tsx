@@ -30,7 +30,7 @@ export default function ExpertMessagesPage() {
   const [sending, setSending] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const pollingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentUser = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem("user") || "{}" : "{}");
 
   const fetchBookings = async () => {
