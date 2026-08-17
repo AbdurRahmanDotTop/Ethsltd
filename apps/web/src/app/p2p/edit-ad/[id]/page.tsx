@@ -24,7 +24,7 @@ import {
 
 export default function EditAdPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
   const { user, status, hasHydrated } = useAuthStore();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
