@@ -36,7 +36,7 @@ export default function ExpertMessagesPage() {
   const fetchBookings = async () => {
     try {
       const res = await apiClient.expertGetBookings();
-      if (res.success) {
+      if (res.success && res.data) {
         // Only show chats for accepted/completed or active bookings
         const valid = res.data.filter((b: Booking) => !['PENDING_PAYMENT', 'PENDING_EXPERT', 'CANCELLED', 'REFUNDED'].includes(b.status));
         setBookings(valid);
@@ -90,7 +90,7 @@ export default function ExpertMessagesPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || sending || isChatClosed) return;
+    if (!inputText.trim() || sending || isChatClosed || !selectedBooking) return;
     
     const text = inputText;
     setInputText(""); // optimistic clear
