@@ -229,6 +229,11 @@ export class EthsltdClient {
     return this.request<any[]>(`/api/v1/trading/markets/${symbol}/trades`);
   }
 
+  // Fiat Exchange Rates
+  async getExchangeRate(base: string = 'USDT', quote: string = 'INR') {
+    return this.request<any>(`/api/v1/trading/exchange-rate?base=${base}&quote=${quote}`);
+  }
+
   // Trading Execution API Methods
   async getOrders(mode: string = 'REAL') {
     return this.request<any[]>(`/api/v1/trading/orders?mode=${mode}`);

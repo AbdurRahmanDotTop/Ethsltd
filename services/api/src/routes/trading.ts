@@ -246,6 +246,44 @@ tradingRoutes.get('/markets/:symbol/trades', async (c) => {
   return c.json({ success: true, data: sortedTrades });
 });
 
+tradingRoutes.get('/exchange-rate', async (c) => {
+  const base = (c.req.query('base') || 'USDT').toUpperCase();
+  const quote = (c.req.query('quote') || 'INR').toUpperCase();
+
+  if (base === 'USDT' && quote === 'INR') {
+    // 1. Try WazirX for accurate Crypto INR rate
+    try {
+      const res = await fetch('https://api.wazirx.com/sapi/v1/ticker/24hr?symbol=usdtinr');
+      if (res.ok) {
+        const data = await res.json() as any;
+        if (data && data.lastPrice) {
+          return c.json({ success: true, data: { rate: parseFloat(data.lastPrice), source: 'WazirX' } });
+        }
+      }
+    } catch (e) {
+      console.warn('WazirX exchange rate fetch failed', e);
+    }
+
+    // 2. Fallback to Coinbase Forex rate
+    try {
+      const res = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=USDT');
+      if (res.ok) {
+        const data = await res.json() as any;
+        if (data && data.data && data.data.rates && data.data.rates.INR) {
+          return c.json({ success: true, data: { rate: parseFloat(data.data.rates.INR), source: 'Coinbase' } });
+        }
+      }
+    } catch (e) {
+      console.warn('Coinbase exchange rate fetch failed', e);
+    }
+    
+    // 3. Absolute Fallback
+    return c.json({ success: true, data: { rate: 90.00, source: 'Fallback' } });
+  }
+
+  return c.json({ success: false, error: 'Unsupported pair' }, 400);
+});
+
 
 // Secure all other routes
 tradingRoutes.use('*', jwtMiddleware);
