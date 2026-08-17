@@ -441,6 +441,25 @@ expertRoutes.use('/dashboard/*', async (c, next) => {
   const user = c.get('user');
   
   if (user.role === 'EXPERT' || user.role === 'SUPER_ADMIN') {
+    const db = c.get('db');
+    const existingProfile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    
+    if (!existingProfile) {
+      // Auto-create missing profile
+      await db.insert(expertProfiles).values({
+        id: `exp_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
+        userId: user.id,
+        bio: user.role === 'SUPER_ADMIN' ? 'Super Admin Expert Profile' : 'Expert Profile',
+        experienceYears: 0,
+        languages: ['English'],
+        categories: ['General'],
+        verificationStatus: 'VERIFIED',
+        availabilityStatus: 'AVAILABLE',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).run();
+    }
+    
     await next();
     return;
   }
