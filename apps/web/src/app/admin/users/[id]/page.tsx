@@ -23,6 +23,10 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   const [adjustNotes, setAdjustNotes] = useState("");
   const [isAdjusting, setIsAdjusting] = useState(false);
 
+  // Security State
+  const [newPassword, setNewPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+
   useEffect(() => {
     async function load() {
       try {
@@ -216,7 +220,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
 
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <div className="border-b border-border bg-muted/30 px-4 py-3 flex gap-6">
-              {["Activity", "Balances", "Orders", "Transfers"].map(tab => (
+              {["Activity", "Balances", "Orders", "Security"].map(tab => (
                 <button 
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -297,10 +301,51 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                     </button>
                   </div>
                 </div>
+              ) : activeTab === "Security" ? (
+                <div className="space-y-4 max-w-md">
+                  <h3 className="font-semibold text-lg text-red-500 flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5" /> Super Admin Control
+                  </h3>
+                  <p className="text-sm text-muted-foreground">Force reset user password without email verification.</p>
+                  
+                  <div className="space-y-3 p-4 border border-red-500/20 bg-red-500/5 rounded-lg">
+                    <label className="text-sm font-medium">New Password</label>
+                    <input 
+                      type="text" 
+                      value={newPassword} 
+                      onChange={e => setNewPassword(e.target.value)} 
+                      className="w-full bg-background border border-border rounded px-3 py-2 text-sm" 
+                      placeholder="Minimum 8 characters" 
+                    />
+                    <button 
+                      disabled={isResetting || newPassword.length < 8}
+                      onClick={async () => {
+                        if (!confirm("Are you sure you want to forcibly reset this user's password?")) return;
+                        setIsResetting(true);
+                        try {
+                          const res = await apiClient.adminResetUserPassword(user.id, newPassword);
+                          if (res.success) {
+                            alert("Password reset successfully!");
+                            setNewPassword("");
+                          } else {
+                            alert("Error: " + res.error);
+                          }
+                        } catch (err: any) {
+                          alert("Failed: " + err.message);
+                        } finally {
+                          setIsResetting(false);
+                        }
+                      }}
+                      className="w-full mt-4 bg-red-500 text-white hover:bg-red-600 py-2 rounded-md font-medium text-sm disabled:opacity-50"
+                    >
+                      {isResetting ? 'Resetting...' : 'Force Reset Password'}
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center text-muted-foreground flex flex-col items-center py-8">
                   <Info className="w-8 h-8 mb-3 opacity-50" />
-                  <p>Module will be connected to the Ledger Service in Phase 3.</p>
+                  <p>Module will be connected in the next phase.</p>
                 </div>
               )}
             </div>

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
-import { Filter, ExternalLink, CheckCircle, XCircle } from "lucide-react";
+import { Filter, ExternalLink, CheckCircle, XCircle, X, Trash2 } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function AdminDepositsPage() {
+  const { user } = useAuthStore();
   const [manualDeposits, setManualDeposits] = useState<any[]>([]);
   const [bankDeposits, setBankDeposits] = useState<any[]>([]);
   const [cregisDeposits, setCregisDeposits] = useState<any[]>([]);
@@ -53,17 +55,73 @@ export default function AdminDepositsPage() {
     }
   };
 
+  const handleReject = async (id: string, type: "MANUAL" | "BANK") => {
+    const notes = prompt("Enter rejection reason:");
+    if (notes === null) return;
+    try {
+      const res = type === "MANUAL"
+        ? await apiClient.adminRejectManualDeposit(id, notes)
+        : await apiClient.adminRejectBankDeposit(id, notes);
+      
+      if (res.success) {
+        toast.success(`${type} deposit rejected.`);
+        fetchPending();
+      } else {
+        toast.error(res.error || "Failed to reject deposit");
+      }
+    } catch (e) {
+      toast.error("An error occurred");
+    }
+  };
+
+  const handleDelete = async (id: string, type: "MANUAL" | "BANK") => {
+    if (!confirm("Are you sure you want to completely delete this deposit record? This cannot be undone.")) return;
+    try {
+      const res = type === "MANUAL"
+        ? await apiClient.adminDeleteManualDeposit(id)
+        : await apiClient.adminDeleteBankDeposit(id);
+      
+      if (res.success) {
+        toast.success(`${type} deposit deleted.`);
+        fetchPending();
+      } else {
+        toast.error(res.error || "Failed to delete deposit");
+      }
+    } catch (e) {
+      toast.error("An error occurred");
+    }
+  };
+
   const manualColumns: Column<any>[] = [
     { header: "ID", accessor: "id", className: "font-mono text-xs" },
     { header: "User", accessor: "user_id", className: "font-mono text-xs" },
     { header: "Amount", accessor: (row) => <span className="font-bold text-green-500">+{row.amount} {row.asset}</span> },
-    { header: "Tx Hash", accessor: "transaction_hash", className: "font-mono text-xs max-w-[100px] truncate" },
+    { header: "Ref / Notes", accessor: "payment_reference", className: "font-mono text-xs max-w-[150px] truncate" },
     { header: "Proof", accessor: (row) => row.proof_file_url ? <a href={row.proof_file_url} target="_blank" className="text-brand-500 underline text-xs">View Proof</a> : "No Proof" },
-    { header: "Status", accessor: (row) => <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 text-xs">{row.status}</span> },
+    { header: "Status", accessor: (row) => {
+        const isRejected = row.status === 'REJECTED';
+        const isApproved = row.status === 'APPROVED';
+        return <span className={`px-2 py-1 rounded text-xs ${isApproved ? 'bg-green-500/10 text-green-500' : isRejected ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'}`}>{row.status}</span>;
+      }
+    },
     { 
       header: "Action", 
       accessor: (row) => (
-        <Button size="sm" onClick={() => handleApprove(row.id, "MANUAL")} className="h-8">Approve</Button>
+        <div className="flex gap-2">
+          {row.status === 'PENDING' && (
+            <>
+              <Button size="sm" onClick={() => handleApprove(row.id, "MANUAL")} className="h-8 bg-green-500/20 text-green-500 hover:bg-green-500/30">Approve</Button>
+              <Button size="sm" variant="outline" onClick={() => handleReject(row.id, "MANUAL")} className="h-8 px-2 border-red-500/20 text-red-500 hover:bg-red-500/10">
+                <X className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+          {user?.role === 'SUPER_ADMIN' && (
+            <Button size="sm" variant="ghost" onClick={() => handleDelete(row.id, "MANUAL")} className="h-8 px-2 text-red-500 hover:bg-red-500/10">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       ) 
     }
   ];
@@ -72,13 +130,32 @@ export default function AdminDepositsPage() {
     { header: "ID", accessor: "id", className: "font-mono text-xs" },
     { header: "User", accessor: "userId", className: "font-mono text-xs" },
     { header: "Amount", accessor: (row) => <span className="font-bold text-green-500">+{row.amount} {row.currency}</span> },
-    { header: "Bank Ref", accessor: "bankReference", className: "font-mono text-xs" },
+    { header: "Ref / Notes", accessor: "bankReference", className: "font-mono text-xs max-w-[150px] truncate" },
     { header: "Proof", accessor: (row) => row.proofDocumentUrl ? <a href={row.proofDocumentUrl} target="_blank" className="text-brand-500 underline text-xs">View Proof</a> : "No Proof" },
-    { header: "Status", accessor: (row) => <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 text-xs">{row.status}</span> },
+    { header: "Status", accessor: (row) => {
+        const isRejected = row.status === 'REJECTED';
+        const isApproved = row.status === 'APPROVED';
+        return <span className={`px-2 py-1 rounded text-xs ${isApproved ? 'bg-green-500/10 text-green-500' : isRejected ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'}`}>{row.status}</span>;
+      }
+    },
     { 
       header: "Action", 
       accessor: (row) => (
-        <Button size="sm" onClick={() => handleApprove(row.id, "BANK")} className="h-8">Approve</Button>
+        <div className="flex gap-2">
+          {row.status === 'PENDING' && (
+            <>
+              <Button size="sm" onClick={() => handleApprove(row.id, "BANK")} className="h-8 bg-green-500/20 text-green-500 hover:bg-green-500/30">Approve</Button>
+              <Button size="sm" variant="outline" onClick={() => handleReject(row.id, "BANK")} className="h-8 px-2 border-red-500/20 text-red-500 hover:bg-red-500/10">
+                <X className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+          {user?.role === 'SUPER_ADMIN' && (
+            <Button size="sm" variant="ghost" onClick={() => handleDelete(row.id, "BANK")} className="h-8 px-2 text-red-500 hover:bg-red-500/10">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       ) 
     }
   ];

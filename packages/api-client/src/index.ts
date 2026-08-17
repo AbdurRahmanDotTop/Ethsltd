@@ -369,6 +369,13 @@ export class EthsltdClient {
     });
   }
 
+  async adminResetUserPassword(userId: string, newPassword: string) {
+    return this.request<any>(`/api/v1/admin/users/${userId}/password`, {
+      method: 'POST',
+      body: JSON.stringify({ newPassword }),
+    });
+  }
+
   async getAdminPendingKYC() {
     return this.request<any[]>('/api/v1/admin/kyc');
   }
@@ -404,9 +411,66 @@ export class EthsltdClient {
     });
   }
 
+  async adminRejectManualDeposit(id: string, notes?: string) {
+    return this.request<any>(`/api/v1/admin/payments/manual-deposits/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  async adminDeleteManualDeposit(id: string) {
+    return this.request<any>(`/api/v1/admin/payments/manual-deposits/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
   async adminApproveBankDeposit(id: string) {
     return this.request<any>(`/api/v1/admin/payments/bank-deposits/${id}/approve`, {
       method: 'POST'
+    });
+  }
+
+  async adminRejectBankDeposit(id: string, notes?: string) {
+    return this.request<any>(`/api/v1/admin/payments/bank-deposits/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  async adminDeleteBankDeposit(id: string) {
+    return this.request<any>(`/api/v1/admin/payments/bank-deposits/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Admin Withdrawals Methods
+  async adminGetWithdrawals(status: string = 'ALL', mode: string = 'REAL') {
+    return this.request<any[]>(`/api/v1/admin/withdrawals?status=${status}&mode=${mode}`);
+  }
+
+  async adminApproveWithdrawal(id: string) {
+    return this.request<any>(`/api/v1/admin/withdrawals/${id}/approve`, {
+      method: 'POST'
+    });
+  }
+
+  async adminRejectWithdrawal(id: string, notes?: string) {
+    return this.request<any>(`/api/v1/admin/withdrawals/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  async adminUpdateWithdrawalNotes(id: string, notes: string) {
+    return this.request<any>(`/api/v1/admin/withdrawals/${id}/notes`, {
+      method: 'PUT',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  async adminDeleteWithdrawal(id: string) {
+    return this.request<any>(`/api/v1/admin/withdrawals/${id}`, {
+      method: 'DELETE'
     });
   }
 

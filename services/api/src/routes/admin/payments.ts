@@ -142,6 +142,34 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   return c.json({ success: true });
 });
 
+// Reject manual deposit
+adminPaymentRoutes.post('/manual-deposits/:id/reject', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  const user = c.get('user');
+  const { notes } = await c.req.json();
+  const now = new Date();
+  
+  const deposit = await db.select().from(realManualDeposits).where(eq(realManualDeposits.id, id)).get();
+  if (!deposit || deposit.status !== 'PENDING') return c.json({ success: false, error: 'Invalid deposit' }, 400);
+  
+  const reason = notes ? `Rejected: ${notes}` : 'Rejected by Admin';
+  await db.update(realManualDeposits).set({ status: 'REJECTED', reviewed_by: user.id, reviewed_at: now, payment_reference: reason }).where(eq(realManualDeposits.id, id));
+  
+  return c.json({ success: true });
+});
+
+// Delete manual deposit
+adminPaymentRoutes.delete('/manual-deposits/:id', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  const admin = c.get('user');
+  if (admin.role !== 'SUPER_ADMIN') return c.json({ success: false, error: 'Unauthorized' }, 403);
+  
+  await db.delete(realManualDeposits).where(eq(realManualDeposits.id, id));
+  return c.json({ success: true });
+});
+
 // Approve bank deposit
 adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   const db = c.get('db');
@@ -180,5 +208,33 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
     createdAt: now 
   });
   
+  return c.json({ success: true });
+});
+
+// Reject bank deposit
+adminPaymentRoutes.post('/bank-deposits/:id/reject', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  const user = c.get('user');
+  const { notes } = await c.req.json();
+  const now = new Date();
+  
+  const deposit = await db.select().from(bankTransfers).where(eq(bankTransfers.id, id)).get();
+  if (!deposit || deposit.status !== 'PENDING') return c.json({ success: false, error: 'Invalid deposit' }, 400);
+  
+  const reason = notes ? `Rejected: ${notes}` : 'Rejected by Admin';
+  await db.update(bankTransfers).set({ status: 'REJECTED', reviewedBy: user.id, reviewedAt: now, bankReference: reason }).where(eq(bankTransfers.id, id));
+  
+  return c.json({ success: true });
+});
+
+// Delete bank deposit
+adminPaymentRoutes.delete('/bank-deposits/:id', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  const admin = c.get('user');
+  if (admin.role !== 'SUPER_ADMIN') return c.json({ success: false, error: 'Unauthorized' }, 403);
+  
+  await db.delete(bankTransfers).where(eq(bankTransfers.id, id));
   return c.json({ success: true });
 });

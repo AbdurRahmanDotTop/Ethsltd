@@ -110,6 +110,39 @@ adminRoutes.put('/users/:id/role', async (c) => {
   }
 });
 
+// Helper function to hash password
+async function hashPassword(password: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// POST /api/v1/admin/users/:id/password
+adminRoutes.post('/users/:id/password', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const userId = c.req.param('id');
+  const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can reset passwords' }, 403);
+  }
+
+  const { newPassword } = body;
+  if (!newPassword || newPassword.length < 8) {
+    return c.json({ success: false, error: 'Password must be at least 8 characters' }, 400);
+  }
+
+  try {
+    const hashedPassword = await hashPassword(newPassword);
+    await db.update(users).set({ passwordHash: hashedPassword, updatedAt: new Date() }).where(eq(users.id, userId));
+    return c.json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update user password' }, 500);
+  }
+});
+
 // GET /api/v1/admin/wallets/overview
 adminRoutes.get('/wallets/overview', async (c) => {
   const db = c.get('db');
@@ -440,6 +473,144 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
     return c.json({ success: true });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to resolve dispute' }, 500);
+  }
+});
+
+// ==========================
+// ADMIN WITHDRAWALS
+// ==========================
+
+// GET /api/v1/admin/withdrawals
+adminRoutes.get('/withdrawals', async (c) => {
+  const db = c.get('db');
+  const status = c.req.query('status') || 'ALL';
+  const mode = c.req.query('mode') || 'REAL';
+  
+  try {
+    const { eq, and, desc } = require('drizzle-orm');
+    const { walletTransactions, users } = require('database');
+    
+    let conditions = [
+      eq(walletTransactions.type, 'WITHDRAWAL'),
+      eq(walletTransactions.mode, mode)
+    ];
+    
+    if (status !== 'ALL') {
+      conditions.push(eq(walletTransactions.status, status));
+    }
+    
+    const query = db.select({
+      id: walletTransactions.id,
+      userId: walletTransactions.userId,
+      userName: users.displayName,
+      asset: walletTransactions.assetSymbol,
+      amount: walletTransactions.amount,
+      status: walletTransactions.status,
+      network: walletTransactions.network,
+      address: walletTransactions.destination,
+      reference: walletTransactions.reference,
+      createdAt: walletTransactions.createdAt,
+    })
+    .from(walletTransactions)
+    .leftJoin(users, eq(users.id, walletTransactions.userId))
+    .where(and(...conditions))
+    .orderBy(desc(walletTransactions.createdAt))
+    .limit(100);
+    
+    const results = await query.all();
+    
+    return c.json({ success: true, data: results });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch withdrawals' }, 500);
+  }
+});
+
+// POST /api/v1/admin/withdrawals/:id/approve
+adminRoutes.post('/withdrawals/:id/approve', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  
+  try {
+    const { eq } = require('drizzle-orm');
+    const { walletTransactions } = require('database');
+    
+    // In a real Cregis setup, approving here might trigger a webhook or second payout call
+    // For now, we just mark it as COMPLETED
+    await db.update(walletTransactions).set({ status: 'COMPLETED', updatedAt: new Date() }).where(eq(walletTransactions.id, id));
+    
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to approve withdrawal' }, 500);
+  }
+});
+
+// POST /api/v1/admin/withdrawals/:id/reject
+adminRoutes.post('/withdrawals/:id/reject', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  const { notes } = await c.req.json();
+  
+  try {
+    const { eq, and } = require('drizzle-orm');
+    const { walletTransactions, wallets } = require('database');
+    
+    const tx = await db.select().from(walletTransactions).where(eq(walletTransactions.id, id)).get();
+    if (!tx || tx.status !== 'PENDING') return c.json({ success: false, error: 'Invalid transaction' }, 400);
+    
+    // Refund the amount back to balance
+    const wallet = await db.select().from(wallets).where(and(
+      eq(wallets.userId, tx.userId),
+      eq(wallets.assetSymbol, tx.assetSymbol),
+      eq(wallets.type, tx.mode)
+    )).get();
+    
+    if (wallet) {
+      const newBalance = (parseFloat(wallet.balance) + parseFloat(tx.amount)).toString();
+      await db.update(wallets).set({ balance: newBalance, updatedAt: new Date() }).where(eq(wallets.id, wallet.id));
+    }
+    
+    const updatedNotes = notes ? `Rejected: ${notes}` : 'Rejected by Admin';
+    await db.update(walletTransactions).set({ status: 'REJECTED', reference: updatedNotes, updatedAt: new Date() }).where(eq(walletTransactions.id, id));
+    
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to reject withdrawal' }, 500);
+  }
+});
+
+// PUT /api/v1/admin/withdrawals/:id/notes
+adminRoutes.put('/withdrawals/:id/notes', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  const { notes } = await c.req.json();
+  
+  try {
+    const { eq } = require('drizzle-orm');
+    const { walletTransactions } = require('database');
+    await db.update(walletTransactions).set({ reference: notes, updatedAt: new Date() }).where(eq(walletTransactions.id, id));
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update notes' }, 500);
+  }
+});
+
+// DELETE /api/v1/admin/withdrawals/:id
+adminRoutes.delete('/withdrawals/:id', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  const admin = c.get('user');
+  
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Only Super Admins can delete financial records' }, 403);
+  }
+  
+  try {
+    const { eq } = require('drizzle-orm');
+    const { walletTransactions } = require('database');
+    await db.delete(walletTransactions).where(eq(walletTransactions.id, id));
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to delete withdrawal' }, 500);
   }
 });
 
