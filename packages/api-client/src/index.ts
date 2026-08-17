@@ -701,6 +701,25 @@ export class EthsltdClient {
       body: JSON.stringify({ action }),
     });
   }
+
+  // EXPERT MESSAGING
+  async getExpertMessages(bookingId: string) {
+    return this.request<any>(`/api/v1/experts/bookings/${bookingId}/messages`);
+  }
+
+  async sendExpertMessage(bookingId: string, content: string) {
+    return this.request<any>(`/api/v1/experts/bookings/${bookingId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async expertToggleChat(bookingId: string, chatEnabled: boolean) {
+    return this.request<any>(`/api/v1/experts/dashboard/bookings/${bookingId}/chat-toggle`, {
+      method: 'PUT',
+      body: JSON.stringify({ chatEnabled }),
+    });
+  }
 }
 
 export const apiClient = new EthsltdClient();

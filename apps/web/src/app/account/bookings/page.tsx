@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiClient } from "@ethsltd/api-client";
-import { Loader2, Calendar, CheckCircle2, Clock, XCircle, Star, MessageSquare } from "lucide-react";
+import { Loader2, Calendar, CheckCircle2, Clock, XCircle, Star, MessageSquare, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 
@@ -182,6 +182,16 @@ export default function UserBookingsPage() {
                         <span className="text-xs font-medium text-muted-foreground flex items-center justify-end gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Reviewed
                         </span>
+                      )}
+                      
+                      {!['CANCELLED', 'REFUNDED', 'PENDING_PAYMENT'].includes(b.status) && (
+                        <Link 
+                          href={`/account/bookings/${b.id}/chat`}
+                          className="mt-2 text-xs font-semibold text-brand-500 bg-brand-500/10 hover:bg-brand-500/20 px-3 py-1.5 rounded-md inline-flex items-center gap-1 transition-colors"
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          Chat
+                        </Link>
                       )}
                     </td>
                   </tr>

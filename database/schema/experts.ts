@@ -26,7 +26,7 @@ export const expertServices = sqliteTable('expert_services', {
   durationMinutes: integer('duration_minutes').notNull(),
   price: text('price').notNull(), // Stored as string to maintain precision
   currency: text('currency').notNull().default('USD'),
-  pricingType: text('pricing_type', { enum: ['FIXED', 'HOURLY'] }).notNull().default('FIXED'),
+  pricingType: text('pricing_type', { enum: ['FIXED', 'HOURLY', 'MONTHLY'] }).notNull().default('FIXED'),
   status: text('status', { enum: ['DRAFT', 'PENDING_APPROVAL', 'ACTIVE', 'PAUSED', 'REJECTED', 'ARCHIVED'] }).notNull().default('DRAFT'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
@@ -51,6 +51,8 @@ export const expertBookings = sqliteTable('expert_bookings', {
   platformFee: text('platform_fee').notNull().default('0'),
   expertEarnings: text('expert_earnings').notNull().default('0'),
   transactionId: text('transaction_id'), // Ledger/wallet transaction reference
+  expiresAt: integer('expires_at', { mode: 'timestamp' }), // For MONTHLY plans
+  chatEnabled: integer('chat_enabled', { mode: 'boolean' }).notNull().default(true), // Admin/Expert chat toggle
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
@@ -62,5 +64,14 @@ export const expertReviews = sqliteTable('expert_reviews', {
   expertId: text('expert_id').notNull().references(() => expertProfiles.id),
   rating: real('rating').notNull(),
   comment: text('comment'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+export const expertMessages = sqliteTable('expert_messages', {
+  id: text('id').primaryKey(),
+  bookingId: text('booking_id').notNull().references(() => expertBookings.id, { onDelete: 'cascade' }),
+  senderId: text('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  isRead: integer('is_read', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });

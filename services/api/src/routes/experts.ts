@@ -313,6 +313,126 @@ expertRoutes.post('/bookings/:id/review', async (c) => {
 });
 
 // ==========================================
+// EXPERT MESSAGING ROUTES (For Both Users and Experts)
+// ==========================================
+
+// Helper to verify if chat is active
+async function checkChatAccess(db: any, bookingId: string, userId: string) {
+  const { eq } = require('drizzle-orm');
+  const { expertBookings, expertProfiles } = require('database');
+  const booking = await db.select().from(expertBookings)
+    .leftJoin(expertProfiles, eq(expertBookings.expertId, expertProfiles.id))
+    .where(eq(expertBookings.id, bookingId))
+    .get();
+
+  if (!booking || !booking.expert_bookings) return null;
+
+  const isBuyer = booking.expert_bookings.userId === userId;
+  const isExpert = booking.expert_profiles && booking.expert_profiles.userId === userId;
+
+  if (!isBuyer && !isExpert) return null; // Unauthorized
+
+  const eb = booking.expert_bookings;
+  let isClosed = false;
+
+  if (!eb.chatEnabled) {
+    isClosed = true;
+  }
+  
+  if (eb.expiresAt && new Date(eb.expiresAt).getTime() < Date.now()) {
+    isClosed = true;
+  }
+  
+  if (['CANCELLED', 'REFUNDED', 'DISPUTED'].includes(eb.status)) {
+    isClosed = true;
+  }
+
+  return { booking: eb, isClosed, isBuyer, isExpert };
+}
+
+expertRoutes.get('/bookings/:id/messages', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const bookingId = c.req.param('id');
+  
+  try {
+    const { eq } = require('drizzle-orm');
+    const { expertMessages, users } = require('database');
+    const access = await checkChatAccess(db, bookingId, user.id);
+    if (!access) return c.json({ success: false, error: 'Unauthorized or not found' }, 403);
+    
+    const messages = await db.select({
+      id: expertMessages.id,
+      senderId: expertMessages.senderId,
+      content: expertMessages.content,
+      createdAt: expertMessages.createdAt,
+      isRead: expertMessages.isRead,
+      senderName: users.displayName
+    })
+    .from(expertMessages)
+    .innerJoin(users, eq(users.id, expertMessages.senderId))
+    .where(eq(expertMessages.bookingId, bookingId))
+    .orderBy(expertMessages.createdAt)
+    .all();
+    
+    // Mark as read if fetched by the other party
+    const unreadIds = messages.filter((m: any) => m.senderId !== user.id && !m.isRead).map((m: any) => m.id);
+    if (unreadIds.length > 0) {
+      const { inArray } = require('drizzle-orm');
+      await db.update(expertMessages).set({ isRead: true }).where(inArray(expertMessages.id, unreadIds));
+    }
+    
+    return c.json({ 
+      success: true, 
+      data: {
+        messages,
+        isChatClosed: access.isClosed,
+        bookingStatus: access.booking.status
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json({ success: false, error: 'Failed to fetch messages' }, 500);
+  }
+});
+
+expertRoutes.post('/bookings/:id/messages', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const bookingId = c.req.param('id');
+  const { content } = await c.req.json();
+  
+  if (!content || !content.trim()) {
+    return c.json({ success: false, error: 'Message cannot be empty' }, 400);
+  }
+  
+  try {
+    const { expertMessages } = require('database');
+    const access = await checkChatAccess(db, bookingId, user.id);
+    if (!access) return c.json({ success: false, error: 'Unauthorized or not found' }, 403);
+    
+    if (access.isClosed) {
+      return c.json({ success: false, error: 'Chat is currently closed or plan expired.' }, 403);
+    }
+    
+    const msgId = `msg_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+    await db.insert(expertMessages).values({
+      id: msgId,
+      bookingId,
+      senderId: user.id,
+      content,
+      isRead: false,
+      createdAt: new Date()
+    });
+    
+    return c.json({ success: true, data: { id: msgId } });
+  } catch (error) {
+    console.error(error);
+    return c.json({ success: false, error: 'Failed to send message' }, 500);
+  }
+});
+
+// ==========================================
 // EXPERT DASHBOARD ROUTES
 // ==========================================
 
@@ -498,7 +618,14 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
     const now = new Date();
 
     if (action === 'ACCEPT' && booking.status === 'PENDING_EXPERT') {
-      await db.update(expertBookings).set({ status: 'ACCEPTED', updatedAt: now }).where(eq(expertBookings.id, bookingId));
+      const service = await db.select().from(expertServices).where(eq(expertServices.id, booking.serviceId)).get();
+      let expiresAt = null;
+      if (service && service.pricingType === 'MONTHLY') {
+        const d = new Date(now);
+        d.setDate(d.getDate() + 30);
+        expiresAt = d;
+      }
+      await db.update(expertBookings).set({ status: 'ACCEPTED', expiresAt, updatedAt: now }).where(eq(expertBookings.id, bookingId));
       return c.json({ success: true });
     }
     
@@ -621,6 +748,28 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
   } catch (error: any) {
     console.error(error);
     return c.json({ success: false, error: 'Failed to process booking action' }, 500);
+  }
+});
+
+// PUT /api/v1/experts/dashboard/bookings/:id/chat-toggle
+expertRoutes.put('/dashboard/bookings/:id/chat-toggle', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const bookingId = c.req.param('id');
+  const { chatEnabled } = await c.req.json();
+  
+  try {
+    const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
+
+    const booking = await db.select().from(expertBookings).where(and(eq(expertBookings.id, bookingId), eq(expertBookings.expertId, profile.id))).get();
+    if (!booking) return c.json({ success: false, error: 'Booking not found' }, 404);
+    
+    await db.update(expertBookings).set({ chatEnabled, updatedAt: new Date() }).where(eq(expertBookings.id, bookingId));
+    
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to toggle chat' }, 500);
   }
 });
 
