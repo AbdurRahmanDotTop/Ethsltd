@@ -1,25 +1,57 @@
 "use client";
 
-import { useState, use } from "react";
-import { getMockExperts, getMockServices } from "@/lib/p2p/mock-data";
+import { useState, use, useEffect } from "react";
+import { apiClient } from "@ethsltd/api-client";
 import { P2PExpertService, P2PExpertProfile } from "@/lib/p2p/types";
 import { ExpertServiceCard } from "@/components/p2p/ExpertServiceCard";
 import { BookingModal } from "@/components/p2p/BookingModal";
-import { BadgeCheck, Star, Users, Clock, Globe, ArrowLeft, MessageSquare } from "lucide-react";
+import { BadgeCheck, Star, Users, Clock, Globe, ArrowLeft, MessageSquare, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export default function ExpertProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const expertId = resolvedParams.id;
   
-  const [selectedService, setSelectedService] = useState<P2PExpertService | null>(null);
-  const { mode } = useTradingModeStore();
+  const [selectedService, setSelectedService] = useState<any | null>(null);
+  const [expert, setExpert] = useState<any | null>(null);
+  const [services, setServices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const expert = getMockExperts(mode).find(e => e.id === expertId);
-  const services = getMockServices(mode).filter(s => s.expertId === expertId && s.status === "ACTIVE");
+  useEffect(() => {
+    const fetchExpertData = async () => {
+      try {
+        const [expertsRes, servicesRes] = await Promise.all([
+          apiClient.getExperts(),
+          apiClient.getExpertServices(expertId)
+        ]);
+        
+        if (expertsRes.success) {
+          const found = expertsRes.data?.find((e: any) => e.id === expertId);
+          setExpert(found || null);
+        }
+        
+        if (servicesRes.success) {
+          setServices(servicesRes.data || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch expert details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchExpertData();
+  }, [expertId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 pb-24">
+        <Loader2 className="w-8 h-8 animate-spin mb-4 text-brand-500" />
+        <p className="text-muted-foreground">Loading expert profile...</p>
+      </div>
+    );
+  }
 
   if (!expert) {
     return (
@@ -122,7 +154,7 @@ export default function ExpertProfilePage({ params }: { params: Promise<{ id: st
             <div className="bg-card border border-border rounded-xl p-6">
               <h3 className="font-semibold text-foreground mb-4">Specialties</h3>
               <div className="flex flex-wrap gap-2">
-                {expert.categories.map(cat => (
+                {expert.categories.map((cat: string) => (
                   <span key={cat} className="px-3 py-1 bg-muted text-muted-foreground text-sm font-medium rounded-full">
                     {cat}
                   </span>

@@ -2,19 +2,27 @@
 
 import { useState } from "react";
 import { P2PExpertService, P2PExpertProfile } from "@/lib/p2p/types";
-import { X, Calendar, Clock, Video, CheckCircle2 } from "lucide-react";
+import { X, Calendar, Clock, Video, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { apiClient } from "@ethsltd/api-client";
+import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useRouter } from "next/navigation";
 
 interface BookingModalProps {
-  expert: P2PExpertProfile;
-  service: P2PExpertService;
+  expert: any;
+  service: any;
   onClose: () => void;
 }
 
 export function BookingModal({ expert, service, onClose }: BookingModalProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 4 = Insufficient Balance
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [balanceData, setBalanceData] = useState<{ required: number, available: number, currency: string } | null>(null);
+
+  const requireAuth = useRequireAuth();
+  const router = useRouter();
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-IN', {
@@ -40,9 +48,34 @@ export function BookingModal({ expert, service, onClose }: BookingModalProps) {
   };
 
   const handleConfirm = () => {
-    setStep(3);
-    // In a real app, this would trigger an API call to create the booking
-    // and deduct from wallet/escrow.
+    requireAuth(async () => {
+      setIsProcessing(true);
+      try {
+        const scheduledAt = `${selectedDate}T${selectedTime}:00.000Z`;
+        const res: any = await apiClient.bookExpertService({
+          serviceId: service.id,
+          scheduledAt
+        });
+
+        if (res.success) {
+          setStep(3); // Success
+        } else if (res.error === 'INSUFFICIENT_BALANCE') {
+          setBalanceData({ required: res.required, available: res.available, currency: res.currency });
+          setStep(4); // Insufficient Balance State
+        } else {
+          console.error("Booking error:", res.error);
+        }
+      } catch (error) {
+        console.error("Booking failed:", error);
+      } finally {
+        setIsProcessing(false);
+      }
+    });
+  };
+
+  const handleDeposit = () => {
+    router.push('/wallet/deposit');
+    onClose();
   };
 
   return (
@@ -68,7 +101,7 @@ export function BookingModal({ expert, service, onClose }: BookingModalProps) {
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Clock className="w-4 h-4" />
-                    <span>{service.duration} mins</span>
+                    <span>{service.durationMinutes || service.duration} mins</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Video className="w-4 h-4" />
@@ -166,6 +199,34 @@ export function BookingModal({ expert, service, onClose }: BookingModalProps) {
               </p>
             </div>
           )}
+
+          {step === 4 && balanceData && (
+            <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-2">
+                <AlertTriangle className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground">Insufficient Wallet Balance</h3>
+              
+              <div className="w-full bg-muted p-4 rounded-lg border border-border text-sm text-left mt-4 mb-2 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Required Amount:</span>
+                  <span className="font-medium text-foreground">{formatCurrency(balanceData.required, balanceData.currency)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Available Balance:</span>
+                  <span className="font-medium text-red-500">{formatCurrency(balanceData.available, balanceData.currency)}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-border mt-2">
+                  <span className="text-muted-foreground">Shortfall:</span>
+                  <span className="font-bold text-foreground">{formatCurrency(balanceData.required - balanceData.available, balanceData.currency)}</span>
+                </div>
+              </div>
+              
+              <p className="text-muted-foreground text-sm">
+                You need to add funds to your wallet to complete this booking.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="p-4 border-t border-border flex justify-end gap-3 bg-muted/20">
@@ -177,12 +238,21 @@ export function BookingModal({ expert, service, onClose }: BookingModalProps) {
           )}
           {step === 2 && (
             <>
-              <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-              <Button onClick={handleConfirm}>Confirm & Pay</Button>
+              <Button variant="outline" onClick={() => setStep(1)} disabled={isProcessing}>Back</Button>
+              <Button onClick={handleConfirm} disabled={isProcessing}>
+                {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Confirm & Pay
+              </Button>
             </>
           )}
           {step === 3 && (
             <Button onClick={onClose} className="w-full">Done</Button>
+          )}
+          {step === 4 && (
+            <>
+              <Button variant="outline" onClick={() => setStep(2)}>Cancel</Button>
+              <Button onClick={handleDeposit}>Deposit Funds</Button>
+            </>
           )}
         </div>
         

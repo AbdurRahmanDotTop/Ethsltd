@@ -16,7 +16,7 @@ export const wallets = sqliteTable('wallets', {
 export const walletTransactions = sqliteTable('wallet_transactions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type', { enum: ['DEPOSIT', 'WITHDRAWAL', 'TRADE', 'P2P', 'TRANSFER', 'FEE', 'REWARD', 'ADJUSTMENT'] }).notNull(),
+  type: text('type', { enum: ['DEPOSIT', 'WITHDRAWAL', 'TRADE', 'P2P', 'TRANSFER', 'FEE', 'REWARD', 'ADJUSTMENT', 'EXPERT_SERVICE'] }).notNull(),
   mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   assetSymbol: text('asset_symbol').notNull(),
   amount: text('amount').notNull(),

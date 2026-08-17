@@ -1,29 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getMockExperts } from "@/lib/p2p/mock-data";
 import { ExpertCard } from "@/components/p2p/ExpertCard";
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import { useTradingModeStore } from "@/stores/trading-mode-store";
+import { apiClient } from "@ethsltd/api-client";
+import { Loader2 } from "lucide-react";
 
 export default function ExpertsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const { mode } = useTradingModeStore();
-  
-  const currentExperts = getMockExperts(mode);
+  const [experts, setExperts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Extract all unique categories
-  const allCategories = ["All", ...Array.from(new Set(currentExperts.flatMap(e => e.categories)))];
+  useEffect(() => {
+    const fetchExperts = async () => {
+      try {
+        const response = await apiClient.getExperts();
+        if (response.success) {
+          setExperts(response.data || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch experts:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchExperts();
+  }, []);
 
-  const filteredExperts = currentExperts.filter(expert => {
-    const matchesSearch = expert.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          expert.bio.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "All" || expert.categories.includes(categoryFilter);
-    return matchesSearch && matchesCategory;
+  const allCategories = ["All", ...Array.from(new Set(experts.flatMap(e => e.categories || [])))];
+
+  const filteredExperts = experts.filter(expert => {
+    const searchMatch = expert.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        expert.bio?.toLowerCase().includes(searchQuery.toLowerCase());
+    const catMatch = categoryFilter === "All" || (expert.categories && expert.categories.includes(categoryFilter));
+    return searchMatch && catMatch;
   });
 
   return (
@@ -65,7 +80,12 @@ export default function ExpertsPage() {
           </div>
         </div>
 
-        {filteredExperts.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+            <Loader2 className="w-8 h-8 animate-spin mb-4 text-brand-500" />
+            <p>Loading verified experts...</p>
+          </div>
+        ) : filteredExperts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredExperts.map(expert => (
               <ExpertCard key={expert.id} expert={expert} />

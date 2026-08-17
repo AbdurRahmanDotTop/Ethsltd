@@ -589,6 +589,36 @@ export class EthsltdClient {
       body: JSON.stringify(data),
     });
   }
+
+  // ==========================
+  // EXPERTS
+  // ==========================
+
+  async getExperts() {
+    return this.request<any[]>('/api/v1/experts');
+  }
+
+  async getExpertServices(expertId: string) {
+    return this.request<any[]>(`/api/v1/experts/${expertId}/services`);
+  }
+
+  async applyForExpert(data: { bio: string; experienceYears: number; languages: string[]; categories: string[] }) {
+    return this.request<any>('/api/v1/experts/apply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async bookExpertService(data: { serviceId: string; scheduledAt?: string }) {
+    return this.request<any>('/api/v1/experts/bookings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyExpertBookings() {
+    return this.request<any[]>('/api/v1/experts/bookings/me');
+  }
 }
 
 export const apiClient = new EthsltdClient();

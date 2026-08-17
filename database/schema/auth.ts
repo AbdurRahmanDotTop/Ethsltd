@@ -15,7 +15,7 @@ export const users = sqliteTable('users', {
   lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
   mfaEnabled: integer('mfa_enabled', { mode: 'boolean' }).notNull().default(false),
   mfaSecret: text('mfa_secret'),
-  role: text('role', { enum: ['USER', 'SUPER_ADMIN', 'COMPLIANCE_ADMIN', 'SUPPORT_ADMIN'] }).notNull().default('USER'),
+  role: text('role', { enum: ['USER', 'EXPERT', 'SUPER_ADMIN', 'COMPLIANCE_ADMIN', 'SUPPORT_ADMIN'] }).notNull().default('USER'),
   // P2P Profile
   isMerchant: integer('is_merchant', { mode: 'boolean' }).notNull().default(false),
   p2pTotalOrders: integer('p2p_total_orders').notNull().default(0),
