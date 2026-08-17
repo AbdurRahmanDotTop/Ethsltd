@@ -132,6 +132,11 @@ export function TransactionTable({ transactions }: { transactions: WalletTransac
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="font-mono text-xs text-muted-foreground">{tx.id}</div>
+                      {tx.reference && (
+                        <div className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate ml-auto" title={tx.reference}>
+                          {tx.reference}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

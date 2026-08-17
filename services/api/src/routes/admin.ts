@@ -201,11 +201,11 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
   }
 
   // targetField can be 'balance', 'lockedBalance', or 'escrowBalance'
-  const { assetSymbol, amount, type, action, targetField = 'balance' } = body;
+  const { assetSymbol, amount, type, action, targetField = 'balance', notes } = body;
 
   try {
     const { and, eq } = require('drizzle-orm');
-    const { wallets, ledgerTransactions } = require('database');
+    const { wallets, ledgerTransactions, walletTransactions } = require('database');
     
     let wallet = await db.select().from(wallets).where(
       and(eq(wallets.userId, userId), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, type))
@@ -253,6 +253,21 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
       referenceId: userId,
       status: 'COMMITTED',
       createdAt: new Date(),
+    });
+
+    // Wallet Transaction Entry for User History
+    await db.insert(walletTransactions).values({
+      id: crypto.randomUUID(),
+      userId,
+      type: 'ADJUSTMENT',
+      mode: type,
+      assetSymbol,
+      amount: action === 'DEBIT' ? `-${amount}` : amount,
+      fee: '0',
+      status: 'COMPLETED',
+      reference: notes || 'Admin Adjustment',
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
     return c.json({ success: true });

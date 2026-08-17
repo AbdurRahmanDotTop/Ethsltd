@@ -357,10 +357,10 @@ export class EthsltdClient {
     });
   }
 
-  async adjustAdminUserWallet(userId: string, assetSymbol: string, amount: string, type: 'REAL' | 'DEMO', action: 'CREDIT' | 'DEBIT', targetField: 'balance' | 'lockedBalance' | 'escrowBalance' = 'balance') {
+  async adjustAdminUserWallet(userId: string, assetSymbol: string, amount: string, type: 'REAL' | 'DEMO', action: 'CREDIT' | 'DEBIT', targetField: 'balance' | 'lockedBalance' | 'escrowBalance' = 'balance', notes?: string) {
     return this.request<any>(`/api/v1/admin/users/${userId}/wallets/adjust`, {
       method: 'POST',
-      body: JSON.stringify({ assetSymbol, amount, type, action, targetField }),
+      body: JSON.stringify({ assetSymbol, amount, type, action, targetField, notes }),
     });
   }
 

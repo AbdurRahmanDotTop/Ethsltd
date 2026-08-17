@@ -19,7 +19,9 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   const [walletType, setWalletType] = useState<"REAL"|"DEMO">("REAL");
   const [adjustAction, setAdjustAction] = useState<"CREDIT"|"DEBIT">("CREDIT");
   const [targetField, setTargetField] = useState<"balance"|"lockedBalance"|"escrowBalance">("balance");
+  const [targetField, setTargetField] = useState<"balance"|"lockedBalance"|"escrowBalance">("balance");
   const [adjustAmount, setAdjustAmount] = useState("");
+  const [adjustNotes, setAdjustNotes] = useState("");
   const [isAdjusting, setIsAdjusting] = useState(false);
 
   useEffect(() => {
@@ -267,15 +269,20 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                       <label className="text-xs text-muted-foreground mb-1 block">Amount</label>
                       <input type="number" min="0" step="0.000001" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="100.00" />
                     </div>
+                    <div className="mt-3">
+                      <label className="text-xs text-muted-foreground mb-1 block">Notes / Reason (Visible to user)</label>
+                      <input type="text" value={adjustNotes} onChange={e => setAdjustNotes(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="e.g. Dispute #123 resolution, Correction" required />
+                    </div>
                     <button 
                       disabled={isAdjusting || !adjustAmount || parseFloat(adjustAmount) <= 0}
                       onClick={async () => {
                         setIsAdjusting(true);
                         try {
-                          const res = await apiClient.adjustAdminUserWallet(user.id, assetSymbol, adjustAmount, walletType, adjustAction, targetField);
+                          const res = await apiClient.adjustAdminUserWallet(user.id, assetSymbol, adjustAmount, walletType, adjustAction, targetField, adjustNotes);
                           if (res.success) {
                             alert("Balance adjusted successfully!");
                             setAdjustAmount("");
+                            setAdjustNotes("");
                           } else {
                             alert("Error: " + res.error);
                           }

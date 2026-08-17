@@ -23,6 +23,7 @@ export default function AdminWalletsPage() {
   const [adjustAction, setAdjustAction] = useState<"CREDIT"|"DEBIT">("CREDIT");
   const [targetField, setTargetField] = useState<"balance"|"lockedBalance"|"escrowBalance">("balance");
   const [adjustAmount, setAdjustAmount] = useState("");
+  const [adjustNotes, setAdjustNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadData = async () => {
@@ -61,11 +62,12 @@ export default function AdminWalletsPage() {
     if (!adjustingUser) return;
     setIsSubmitting(true);
     try {
-      const res = await apiClient.adjustAdminUserWallet(adjustingUser.id, adjustAsset, adjustAmount, adjustType, adjustAction, targetField);
+      const res = await apiClient.adjustAdminUserWallet(adjustingUser.id, adjustAsset, adjustAmount, adjustType, adjustAction, targetField, adjustNotes);
       if (res.success) {
         alert("Balance adjusted successfully!");
         setAdjustingUser(null);
         setAdjustAmount("");
+        setAdjustNotes("");
         loadData();
       } else {
         alert("Error: " + res.error);
@@ -246,6 +248,10 @@ export default function AdminWalletsPage() {
               <div>
                 <label className="text-sm font-medium mb-1 block">Amount</label>
                 <input type="number" min="0" step="0.000001" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="100.00" required />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Notes / Reason (Visible to user)</label>
+                <input type="text" value={adjustNotes} onChange={e => setAdjustNotes(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="e.g. Dispute #123 resolution, Correction" required />
               </div>
               <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
                 {isSubmitting ? 'Processing...' : 'Confirm Adjustment'}
