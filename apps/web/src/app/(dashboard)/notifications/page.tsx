@@ -9,6 +9,8 @@ import {
 import { useNotificationStore } from "@/stores/notification-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { NotificationCategory } from "@/lib/notifications/types";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 const tabs: { label: string; value: NotificationCategory | "ALL" | "UNREAD" }[] = [
   { label: "All", value: "ALL" },
@@ -53,8 +55,11 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <>
+      <Header />
+      <main className="flex-1">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
           <p className="text-muted-foreground mt-1">Stay updated with your account activity.</p>
@@ -172,5 +177,8 @@ export default function NotificationsPage() {
         </div>
       </div>
     </div>
+      </main>
+      <Footer />
+    </>
   );
 }

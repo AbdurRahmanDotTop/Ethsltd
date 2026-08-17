@@ -200,7 +200,7 @@ p2pRoutes.post('/orders', async (c) => {
     id: `notif_${Date.now()}`,
     userId: ad.userId,
     title: 'New P2P Order',
-    message: `A user has taken your P2P ad for ${fiatAmount} ${ad.fiat}.`,
+    message: `A user has taken your P2P ad for ${fiatAmount} ${ad.fiat}. Order ${orderId} created.`,
     type: 'P2P',
     isRead: false,
     createdAt: now,

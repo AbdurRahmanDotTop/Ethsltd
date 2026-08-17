@@ -63,20 +63,30 @@ export const useNotificationStore = create<NotificationState>()(
           const res = await apiClient.getNotifications();
           if (res.success && res.data) {
             // Map backend data to frontend format
-            const items = res.data.map((n: any) => ({
-              id: n.id,
-              userId: n.userId,
-              title: n.title,
-              message: n.message,
-              category: n.type,
-              type: "SYSTEM_ANNOUNCEMENT" as any,
-              priority: "NORMAL" as any,
-              channels: ["IN_APP"] as any,
-              status: (n.isRead ? "READ" : "UNREAD") as any,
-              createdAt: n.createdAt,
-              actionUrl: "", // We can enhance backend to support actions later
-              actionText: ""
-            }));
+            const items = res.data.map((n: any) => {
+              let parsedActionUrl = "";
+              if (n.type === "P2P" && n.message.includes("Order P2P-ORD-")) {
+                const match = n.message.match(/(P2P-ORD-\d+)/);
+                if (match && match[1]) {
+                  parsedActionUrl = `/p2p/order/${match[1]}`;
+                }
+              }
+              
+              return {
+                id: n.id,
+                userId: n.userId,
+                title: n.title,
+                message: n.message,
+                category: n.type,
+                type: "SYSTEM_ANNOUNCEMENT" as any,
+                priority: "NORMAL" as any,
+                channels: ["IN_APP"] as any,
+                status: (n.isRead ? "READ" : "UNREAD") as any,
+                createdAt: n.createdAt,
+                actionUrl: parsedActionUrl,
+                actionText: parsedActionUrl ? "View Order" : ""
+              };
+            });
 
             // Filter if category is specified
             let filtered = items;
