@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, and, desc, or } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { p2pAds, p2pOrders, wallets, p2pMessages, users, ledgerAccounts, ledgerTransactions, ledgerEntries, p2pDisputes } from 'database';
+import { p2pAds, p2pOrders, wallets, p2pMessages, users, ledgerAccounts, ledgerTransactions, ledgerEntries, p2pDisputes, notifications } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const p2pRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -195,6 +195,17 @@ p2pRoutes.post('/orders', async (c) => {
     updatedAt: now,
   });
 
+  // Notify Ad Owner
+  await db.insert(notifications).values({
+    id: `notif_${Date.now()}`,
+    userId: ad.userId,
+    title: 'New P2P Order',
+    message: `A user has taken your P2P ad for ${fiatAmount} ${ad.fiat}.`,
+    type: 'P2P',
+    isRead: false,
+    createdAt: now,
+  });
+
   return c.json({ success: true, orderId });
 });
 
@@ -245,6 +256,7 @@ p2pRoutes.post('/orders/:id/messages', async (c) => {
   }
   
   const msgId = `msg_${Date.now()}`;
+  const now = new Date();
   await db.insert(p2pMessages).values({
     id: msgId,
     orderId,
@@ -253,7 +265,19 @@ p2pRoutes.post('/orders/:id/messages', async (c) => {
     content: body.content,
     type: body.type || 'TEXT',
     attachmentUrl: body.attachmentUrl,
-    createdAt: new Date(),
+    createdAt: now,
+  });
+  
+  // Notify Counterparty
+  const counterpartyId = order.buyerId === user.id ? order.sellerId : order.buyerId;
+  await db.insert(notifications).values({
+    id: `notif_${Date.now()}_msg`,
+    userId: counterpartyId,
+    title: 'New P2P Message',
+    message: `You have a new message regarding Order ${orderId}`,
+    type: 'P2P',
+    isRead: false,
+    createdAt: now,
   });
   
   return c.json({ success: true, messageId: msgId });
@@ -271,6 +295,7 @@ p2pRoutes.post('/orders/:id/mark-paid', async (c) => {
   await db.update(p2pOrders).set({ status: 'BUYER_MARKED_PAID', updatedAt: new Date() }).where(eq(p2pOrders.id, order.id));
   
   // System Message
+  const now = new Date();
   await db.insert(p2pMessages).values({
     id: `sysmsg_${Date.now()}`,
     orderId,
@@ -278,7 +303,18 @@ p2pRoutes.post('/orders/:id/mark-paid', async (c) => {
     mode: order.mode,
     content: "Buyer has marked the order as paid. Seller, please review the payment.",
     type: 'SYSTEM',
-    createdAt: new Date(),
+    createdAt: now,
+  });
+
+  // Notify Seller
+  await db.insert(notifications).values({
+    id: `notif_${Date.now()}`,
+    userId: order.sellerId,
+    title: 'P2P Payment Confirmed',
+    message: `Buyer has marked Order ${orderId} as paid. Please review the payment.`,
+    type: 'P2P',
+    isRead: false,
+    createdAt: now,
   });
 
   return c.json({ success: true });
@@ -342,6 +378,17 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
   await db.update(users).set({ p2pTotalOrders: user.p2pTotalOrders + 1 }).where(eq(users.id, order.sellerId));
   await db.update(users).set({ p2pTotalOrders: user.p2pTotalOrders + 1 }).where(eq(users.id, order.buyerId)); // Wait, need to fetch buyer user first. This is illustrative for MVP.
   
+  // Notify Buyer
+  await db.insert(notifications).values({
+    id: `notif_${Date.now()}`,
+    userId: order.buyerId,
+    title: 'P2P Order Completed',
+    message: `Seller has released the crypto for Order ${orderId}.`,
+    type: 'P2P',
+    isRead: false,
+    createdAt: now,
+  });
+
   return c.json({ success: true });
 });
 
@@ -388,6 +435,19 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
   });
 
   await db.update(p2pOrders).set({ status: 'CANCELLED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
+
+  // Notify Counterparty
+  const counterpartyId = order.buyerId === user.id ? order.sellerId : order.buyerId;
+  await db.insert(notifications).values({
+    id: `notif_${Date.now()}`,
+    userId: counterpartyId,
+    title: 'P2P Order Cancelled',
+    message: `Order ${orderId} has been cancelled by the counterparty.`,
+    type: 'P2P',
+    isRead: false,
+    createdAt: now,
+  });
+
   return c.json({ success: true });
 });
 
@@ -429,7 +489,19 @@ p2pRoutes.post('/orders/:id/dispute', async (c) => {
     mode: order.mode,
     content: "Order has been DISPUTED. An admin will review the trade shortly.",
     type: 'SYSTEM',
-    createdAt: new Date(),
+    createdAt: now,
+  });
+
+  // Notify Counterparty
+  const counterpartyId = order.buyerId === user.id ? order.sellerId : order.buyerId;
+  await db.insert(notifications).values({
+    id: `notif_${Date.now()}_disp`,
+    userId: counterpartyId,
+    title: 'P2P Order Disputed',
+    message: `A dispute has been opened for Order ${orderId}.`,
+    type: 'P2P',
+    isRead: false,
+    createdAt: now,
   });
 
   return c.json({ success: true, disputeId });

@@ -198,72 +198,77 @@ adminRoutes.delete('/users/:id', async (c) => {
   try {
     const { eq, or, inArray } = require('drizzle-orm');
 
-    await db.transaction(async (tx: any) => {
-      // Manual Cascades for P2P Ads -> P2P Orders -> Disputes/Feedback/Messages
-      if (p2pAds && p2pOrders && p2pDisputes) {
-        const uAds = await tx.select({ id: p2pAds.id }).from(p2pAds).where(eq(p2pAds.userId, userId));
-        const uAdIds = uAds.map((a: any) => a.id);
-        
-        // Find all orders where user is buyer/seller OR the order is for an ad owned by user
-        const uOrders = await tx.select({ id: p2pOrders.id }).from(p2pOrders).where(
-          or(
-            eq(p2pOrders.buyerId, userId), 
-            eq(p2pOrders.sellerId, userId),
-            uAdIds.length > 0 ? inArray(p2pOrders.adId, uAdIds) : eq(p2pOrders.buyerId, 'impossible_value')
-          )
-        );
-        const uOrderIds = uOrders.map((o: any) => o.id);
+    const queries: any[] = [];
 
-        if (uOrderIds.length > 0) {
-          await tx.delete(p2pDisputes).where(inArray(p2pDisputes.orderId, uOrderIds));
-          await tx.delete(p2pFeedback).where(inArray(p2pFeedback.orderId, uOrderIds));
-          await tx.delete(p2pMessages).where(inArray(p2pMessages.orderId, uOrderIds));
-          await tx.delete(p2pOrders).where(inArray(p2pOrders.id, uOrderIds));
-        }
+    // Manual Cascades for P2P Ads -> P2P Orders -> Disputes/Feedback/Messages
+    if (p2pAds && p2pOrders && p2pDisputes) {
+      const uAds = await db.select({ id: p2pAds.id }).from(p2pAds).where(eq(p2pAds.userId, userId));
+      const uAdIds = uAds.map((a: any) => a.id);
+      
+      // Find all orders where user is buyer/seller OR the order is for an ad owned by user
+      const uOrders = await db.select({ id: p2pOrders.id }).from(p2pOrders).where(
+        or(
+          eq(p2pOrders.buyerId, userId), 
+          eq(p2pOrders.sellerId, userId),
+          uAdIds.length > 0 ? inArray(p2pOrders.adId, uAdIds) : eq(p2pOrders.buyerId, 'impossible_value')
+        )
+      );
+      const uOrderIds = uOrders.map((o: any) => o.id);
+
+      if (uOrderIds.length > 0) {
+        queries.push(db.delete(p2pDisputes).where(inArray(p2pDisputes.orderId, uOrderIds)));
+        queries.push(db.delete(p2pFeedback).where(inArray(p2pFeedback.orderId, uOrderIds)));
+        queries.push(db.delete(p2pMessages).where(inArray(p2pMessages.orderId, uOrderIds)));
+        queries.push(db.delete(p2pOrders).where(inArray(p2pOrders.id, uOrderIds)));
       }
+    }
 
-      // Manual Cascades for Ledger Accounts -> Ledger Entries
-      if (ledgerAccounts && ledgerEntries) {
-        const uAccts = await tx.select({ id: ledgerAccounts.id }).from(ledgerAccounts).where(eq(ledgerAccounts.userId, userId));
-        const uAcctIds = uAccts.map((a: any) => a.id);
-        if (uAcctIds.length > 0) {
-          await tx.delete(ledgerEntries).where(inArray(ledgerEntries.accountId, uAcctIds));
-        }
+    // Manual Cascades for Ledger Accounts -> Ledger Entries
+    if (ledgerAccounts && ledgerEntries) {
+      const uAccts = await db.select({ id: ledgerAccounts.id }).from(ledgerAccounts).where(eq(ledgerAccounts.userId, userId));
+      const uAcctIds = uAccts.map((a: any) => a.id);
+      if (uAcctIds.length > 0) {
+        queries.push(db.delete(ledgerEntries).where(inArray(ledgerEntries.accountId, uAcctIds)));
       }
+    }
 
-      // Remaining direct deletions
-      if (sessions) await tx.delete(sessions).where(eq(sessions.userId, userId));
-      if (notifications) await tx.delete(notifications).where(eq(notifications.userId, userId));
-      if (kycProfiles) await tx.delete(kycProfiles).where(eq(kycProfiles.userId, userId));
-      
-      // Support
-      if (ticketMessages) await tx.delete(ticketMessages).where(eq(ticketMessages.senderId, userId));
-      if (tickets) await tx.delete(tickets).where(eq(tickets.userId, userId));
-      
-      // Financials
-      if (cregisDeposits) await tx.delete(cregisDeposits).where(eq(cregisDeposits.userId, userId));
-      if (cregisPayouts) await tx.delete(cregisPayouts).where(eq(cregisPayouts.userId, userId));
-      if (real_manual_deposits) await tx.delete(real_manual_deposits).where(eq(real_manual_deposits.user_id, userId));
-      if (bankTransfers) await tx.delete(bankTransfers).where(eq(bankTransfers.userId, userId));
-      if (walletTransactions) await tx.delete(walletTransactions).where(eq(walletTransactions.userId, userId));
-      if (wallets) await tx.delete(wallets).where(eq(wallets.userId, userId));
-      if (ledgerAccounts) await tx.delete(ledgerAccounts).where(eq(ledgerAccounts.userId, userId));
+    // Remaining direct deletions
+    if (sessions) queries.push(db.delete(sessions).where(eq(sessions.userId, userId)));
+    if (notifications) queries.push(db.delete(notifications).where(eq(notifications.userId, userId)));
+    if (kycProfiles) queries.push(db.delete(kycProfiles).where(eq(kycProfiles.userId, userId)));
+    
+    // Support
+    if (ticketMessages) queries.push(db.delete(ticketMessages).where(eq(ticketMessages.senderId, userId)));
+    if (tickets) queries.push(db.delete(tickets).where(eq(tickets.userId, userId)));
+    
+    // Financials
+    if (cregisDeposits) queries.push(db.delete(cregisDeposits).where(eq(cregisDeposits.userId, userId)));
+    if (cregisPayouts) queries.push(db.delete(cregisPayouts).where(eq(cregisPayouts.userId, userId)));
+    if (real_manual_deposits) queries.push(db.delete(real_manual_deposits).where(eq(real_manual_deposits.user_id, userId)));
+    if (bankTransfers) queries.push(db.delete(bankTransfers).where(eq(bankTransfers.userId, userId)));
+    if (walletTransactions) queries.push(db.delete(walletTransactions).where(eq(walletTransactions.userId, userId)));
+    if (wallets) queries.push(db.delete(wallets).where(eq(wallets.userId, userId)));
+    if (ledgerAccounts) queries.push(db.delete(ledgerAccounts).where(eq(ledgerAccounts.userId, userId)));
 
-      // Trading
-      if (positions) await tx.delete(positions).where(eq(positions.userId, userId));
-      if (orders) await tx.delete(orders).where(eq(orders.userId, userId));
-      if (binaryOptions) await tx.delete(binaryOptions).where(eq(binaryOptions.userId, userId));
-      
-      // P2P
-      if (p2pPaymentMethods) await tx.delete(p2pPaymentMethods).where(eq(p2pPaymentMethods.userId, userId));
-      if (p2pFeedback) await tx.delete(p2pFeedback).where(or(eq(p2pFeedback.fromUserId, userId), eq(p2pFeedback.toUserId, userId)));
-      if (p2pMessages) await tx.delete(p2pMessages).where(eq(p2pMessages.senderId, userId));
-      if (p2pDisputes) await tx.delete(p2pDisputes).where(or(eq(p2pDisputes.openerId, userId), eq(p2pDisputes.assignedAdminId, userId)));
-      if (p2pAds) await tx.delete(p2pAds).where(eq(p2pAds.userId, userId));
+    // Trading
+    if (positions) queries.push(db.delete(positions).where(eq(positions.userId, userId)));
+    if (orders) queries.push(db.delete(orders).where(eq(orders.userId, userId)));
+    if (binaryOptions) queries.push(db.delete(binaryOptions).where(eq(binaryOptions.userId, userId)));
+    
+    // P2P
+    if (p2pPaymentMethods) queries.push(db.delete(p2pPaymentMethods).where(eq(p2pPaymentMethods.userId, userId)));
+    if (p2pFeedback) queries.push(db.delete(p2pFeedback).where(or(eq(p2pFeedback.fromUserId, userId), eq(p2pFeedback.toUserId, userId))));
+    if (p2pMessages) queries.push(db.delete(p2pMessages).where(eq(p2pMessages.senderId, userId)));
+    if (p2pDisputes) queries.push(db.delete(p2pDisputes).where(or(eq(p2pDisputes.openerId, userId), eq(p2pDisputes.assignedAdminId, userId))));
+    if (p2pAds) queries.push(db.delete(p2pAds).where(eq(p2pAds.userId, userId)));
 
-      // Finally User
-      await tx.delete(users).where(eq(users.id, userId));
-    });
+    // Finally User
+    queries.push(db.delete(users).where(eq(users.id, userId)));
+
+    if (queries.length > 0) {
+      // @ts-ignore: db.batch expects a tuple type, casting to any works
+      await db.batch(queries as any);
+    }
 
     return c.json({ success: true, message: 'User completely deleted' });
   } catch (error: any) {
