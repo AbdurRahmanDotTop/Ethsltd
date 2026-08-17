@@ -581,6 +581,7 @@ expertRoutes.put('/dashboard/services/:id', async (c) => {
       durationMinutes: body.durationMinutes || service.durationMinutes,
       price: body.price ? String(body.price) : service.price,
       currency: body.currency || service.currency,
+      pricingType: body.pricingType || service.pricingType,
       status: body.status || service.status, // Allow toggling ACTIVE/PAUSED
       updatedAt: new Date()
     }).where(eq(expertServices.id, serviceId)).run();
@@ -588,6 +589,26 @@ expertRoutes.put('/dashboard/services/:id', async (c) => {
     return c.json({ success: true });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to update service' }, 500);
+  }
+});
+
+// DELETE /api/v1/experts/dashboard/services/:id
+expertRoutes.delete('/dashboard/services/:id', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const serviceId = c.req.param('id');
+  try {
+    const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
+
+    const service = await db.select().from(expertServices).where(and(eq(expertServices.id, serviceId), eq(expertServices.expertId, profile.id))).get();
+    if (!service) return c.json({ success: false, error: 'Service not found' }, 404);
+
+    await db.delete(expertServices).where(eq(expertServices.id, serviceId)).run();
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to delete service' }, 500);
   }
 });
 

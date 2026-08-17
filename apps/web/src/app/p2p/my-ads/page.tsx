@@ -17,6 +17,21 @@ export default function MyAdsPage() {
   const [ads, setAds] = useState<P2PAdvertisement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchMyAds = async () => {
+    setIsLoading(true);
+    try {
+      const res = await apiClient.getP2pAds();
+      if (res.success && res.data) {
+        const myAds = res.data.filter((ad: any) => ad.userId === user?.id || ad.merchant?.id === user?.id || ad.merchantId === user?.id);
+        setAds(myAds);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (hasHydrated && status === "unauthenticated") {
       router.push("/login?callbackUrl=/p2p/my-ads");
@@ -24,26 +39,23 @@ export default function MyAdsPage() {
     }
 
     if (status === "authenticated" && user) {
-      const fetchMyAds = async () => {
-        setIsLoading(true);
-        try {
-          const res = await apiClient.getP2pAds();
-          if (res.success && res.data) {
-            // Filter ads belonging to the logged in user
-            // In a real backend, we would call a specific endpoint or the backend would filter by JWT
-            const myAds = res.data.filter((ad: any) => ad.userId === user.id || ad.merchant?.id === user.id || ad.merchantId === user.id);
-            setAds(myAds);
-          }
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
       fetchMyAds();
     }
   }, [user, status, router, mode]);
+
+  const handleCloseAd = async (adId: string) => {
+    if (!confirm("Are you sure you want to close this ad?")) return;
+    try {
+      const res = await apiClient.closeP2pAd(adId);
+      if (res.success) {
+        fetchMyAds();
+      } else {
+        alert(res.error || "Failed to close ad");
+      }
+    } catch (e) {
+      alert("Error closing ad");
+    }
+  };
 
   if (!hasHydrated || status === "loading" || (status === "authenticated" && isLoading)) {
     return (
@@ -124,8 +136,15 @@ export default function MyAdsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 align-middle text-right">
-                          <Button variant="outline" size="sm" className="mr-2">Edit</Button>
-                          <Button variant="destructive" size="sm">Close</Button>
+                          {ad.status !== 'CLOSED' && (
+                            <>
+                              <Button variant="outline" size="sm" className="mr-2" onClick={() => router.push(`/p2p/edit-ad/${ad.id}`)}>Edit</Button>
+                              <Button variant="destructive" size="sm" onClick={() => handleCloseAd(ad.id)}>Close</Button>
+                            </>
+                          )}
+                          {ad.status === 'CLOSED' && (
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">CLOSED</span>
+                          )}
                         </td>
                       </tr>
                     );

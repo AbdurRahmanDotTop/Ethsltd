@@ -122,6 +122,57 @@ p2pRoutes.post('/ads', async (c) => {
   return c.json({ success: true, adId });
 });
 
+p2pRoutes.put('/ads/:id', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const adId = c.req.param('id');
+  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
+  const body = await c.req.json();
+  const { type, asset, fiat, priceType, price, minLimit, maxLimit, paymentWindow, paymentMethods, terms, autoReply, countryRestrictions } = body;
+
+  try {
+    const existingAd = await db.select().from(p2pAds).where(and(eq(p2pAds.id, adId), eq(p2pAds.userId, user.id))).get();
+    if (!existingAd) return c.json({ success: false, error: 'Ad not found' }, 404);
+
+    await db.update(p2pAds).set({
+      type: type || existingAd.type,
+      asset: asset || existingAd.asset,
+      fiat: fiat || existingAd.fiat,
+      priceType: priceType || existingAd.priceType,
+      price: price ? String(price) : existingAd.price,
+      minLimit: minLimit ? String(minLimit) : existingAd.minLimit,
+      maxLimit: maxLimit ? String(maxLimit) : existingAd.maxLimit,
+      paymentWindow: paymentWindow || existingAd.paymentWindow,
+      paymentMethods: paymentMethods ? JSON.stringify(paymentMethods) : existingAd.paymentMethods,
+      terms: terms !== undefined ? terms : existingAd.terms,
+      autoReply: autoReply !== undefined ? autoReply : existingAd.autoReply,
+      countryRestrictions: countryRestrictions ? JSON.stringify(countryRestrictions) : existingAd.countryRestrictions,
+      updatedAt: new Date()
+    }).where(eq(p2pAds.id, adId)).run();
+
+    return c.json({ success: true });
+  } catch (err) {
+    return c.json({ success: false, error: 'Failed to update ad' }, 500);
+  }
+});
+
+p2pRoutes.put('/ads/:id/status', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const adId = c.req.param('id');
+  const { status } = await c.req.json();
+
+  try {
+    const existingAd = await db.select().from(p2pAds).where(and(eq(p2pAds.id, adId), eq(p2pAds.userId, user.id))).get();
+    if (!existingAd) return c.json({ success: false, error: 'Ad not found' }, 404);
+
+    await db.update(p2pAds).set({ status, updatedAt: new Date() }).where(eq(p2pAds.id, adId)).run();
+    return c.json({ success: true });
+  } catch (err) {
+    return c.json({ success: false, error: 'Failed to update ad status' }, 500);
+  }
+});
+
 p2pRoutes.get('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');

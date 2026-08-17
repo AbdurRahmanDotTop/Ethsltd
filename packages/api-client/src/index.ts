@@ -299,6 +299,20 @@ export class EthsltdClient {
     });
   }
 
+  async updateP2pAd(adId: string, data: any) {
+    return this.request<any>(`/api/v1/p2p/ads/${adId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async closeP2pAd(adId: string) {
+    return this.request<any>(`/api/v1/p2p/ads/${adId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'CLOSED' }),
+    });
+  }
+
   async getP2pOrders(params?: any) {
     return this.request<any[]>('/api/v1/p2p/orders');
   }
@@ -688,6 +702,12 @@ export class EthsltdClient {
     return this.request<any>(`/api/v1/experts/dashboard/services/${serviceId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  }
+
+  async expertDeleteService(serviceId: string) {
+    return this.request<any>(`/api/v1/experts/dashboard/services/${serviceId}`, {
+      method: 'DELETE',
     });
   }
 

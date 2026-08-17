@@ -18,6 +18,7 @@ export default function ExpertServicesPage() {
     durationMinutes: 60,
     price: '',
     currency: 'INR',
+    pricingType: 'FIXED',
     status: 'ACTIVE'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,7 +41,7 @@ export default function ExpertServicesPage() {
   }, []);
 
   const openAddModal = () => {
-    setForm({ id: '', title: '', description: '', category: '', durationMinutes: 60, price: '', currency: 'INR', status: 'ACTIVE' });
+    setForm({ id: '', title: '', description: '', category: '', durationMinutes: 60, price: '', currency: 'INR', pricingType: 'FIXED', status: 'ACTIVE' });
     setIsModalOpen(true);
   };
 
@@ -53,6 +54,7 @@ export default function ExpertServicesPage() {
       durationMinutes: s.durationMinutes,
       price: s.price,
       currency: s.currency,
+      pricingType: s.pricingType || 'FIXED',
       status: s.status
     });
     setIsModalOpen(true);
@@ -97,6 +99,20 @@ export default function ExpertServicesPage() {
     }
   };
 
+  const deleteService = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this service?")) return;
+    try {
+      const res = await apiClient.expertDeleteService(id);
+      if (res.success) {
+        fetchServices();
+      } else {
+        alert(res.error || "Failed to delete service");
+      }
+    } catch (err) {
+      alert("Error deleting service");
+    }
+  };
+
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
@@ -120,6 +136,7 @@ export default function ExpertServicesPage() {
               <tr>
                 <th className="px-4 py-3">Service</th>
                 <th className="px-4 py-3">Price</th>
+                <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Duration</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
@@ -133,6 +150,7 @@ export default function ExpertServicesPage() {
                     <div className="text-xs text-muted-foreground">{s.category}</div>
                   </td>
                   <td className="px-4 py-3 font-medium">{s.price} {s.currency}</td>
+                  <td className="px-4 py-3 text-xs">{s.pricingType || 'FIXED'}</td>
                   <td className="px-4 py-3">{s.durationMinutes} mins</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
@@ -148,8 +166,11 @@ export default function ExpertServicesPage() {
                       <button onClick={() => toggleStatus(s)} className="text-xs font-medium text-muted-foreground hover:text-foreground">
                         {s.status === 'ACTIVE' ? 'Pause' : 'Activate'}
                       </button>
-                      <button onClick={() => openEditModal(s)} className="text-brand-primary hover:text-brand-primary/80">
+                      <button onClick={() => openEditModal(s)} className="text-brand-primary hover:text-brand-primary/80" title="Edit Service">
                         <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => deleteService(s.id)} className="text-red-500 hover:text-red-600" title="Delete Service">
+                        <Archive className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -197,6 +218,14 @@ export default function ExpertServicesPage() {
                   <option value="USDT">USDT</option>
                 </select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Pricing Type</label>
+              <select value={form.pricingType} onChange={e => setForm({...form, pricingType: e.target.value})} className="w-full border rounded-md px-3 py-2 text-sm bg-background">
+                <option value="FIXED">Fixed (One-time)</option>
+                <option value="HOURLY">Hourly (Meeting)</option>
+                <option value="MONTHLY">Monthly Subscription</option>
+              </select>
             </div>
             <DialogFooter className="pt-4">
               <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-md" disabled={isSubmitting}>Cancel</button>
