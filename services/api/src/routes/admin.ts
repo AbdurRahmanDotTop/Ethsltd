@@ -820,7 +820,21 @@ adminRoutes.put('/experts/:id/status', async (c) => {
   }
 
   try {
+    const { eq } = require('drizzle-orm');
+    const { expertProfiles, users } = require('database');
+    
     await db.update(expertProfiles).set({ verificationStatus: body.status, updatedAt: new Date() }).where(eq(expertProfiles.id, expertId));
+    
+    if (body.status === 'VERIFIED') {
+      const expert = await db.select().from(expertProfiles).where(eq(expertProfiles.id, expertId)).get();
+      if (expert) {
+        const targetUser = await db.select().from(users).where(eq(users.id, expert.userId)).get();
+        if (targetUser && targetUser.role === 'USER') {
+          await db.update(users).set({ role: 'EXPERT', updatedAt: new Date() }).where(eq(users.id, targetUser.id));
+        }
+      }
+    }
+    
     return c.json({ success: true });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to update expert status' }, 500);

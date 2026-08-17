@@ -78,7 +78,7 @@ export default function ExpertEarningsPage() {
                 </div>
               </div>
               <div className="text-3xl font-display font-bold text-foreground mb-6">
-                {parseFloat(wallet.availableBalance).toFixed(2)}
+                {parseFloat(wallet.available || wallet.balance || 0).toFixed(2)}
               </div>
               <Link 
                 href="/account/wallets" 

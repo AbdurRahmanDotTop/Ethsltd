@@ -316,13 +316,24 @@ expertRoutes.post('/bookings/:id/review', async (c) => {
 // EXPERT DASHBOARD ROUTES
 // ==========================================
 
-// Expert Middleware: Ensure user is an EXPERT
+// Expert Middleware: Ensure user is an EXPERT or has a verified profile
 expertRoutes.use('/dashboard/*', async (c, next) => {
   const user = c.get('user');
-  if (user.role !== 'EXPERT') {
-    return c.json({ success: false, error: 'Unauthorized: Expert access required' }, 403);
+  
+  if (user.role === 'EXPERT' || user.role === 'SUPER_ADMIN') {
+    await next();
+    return;
   }
-  await next();
+  
+  const db = c.get('db');
+  const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+  
+  if (profile && profile.verificationStatus === 'VERIFIED') {
+    await next();
+    return;
+  }
+
+  return c.json({ success: false, error: 'Unauthorized: Expert access required' }, 403);
 });
 
 // GET /api/v1/experts/dashboard/me
