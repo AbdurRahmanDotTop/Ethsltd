@@ -144,16 +144,22 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                     {/* Payment Column */}
                     <td className="px-6 py-5">
                       <div className="flex flex-wrap gap-1.5 max-w-[200px]">
-                        {pm.slice(0, 3).map((methodId: string) => {
+                        {pm.slice(0, 3).map((methodObj: any, idx: number) => {
+                          const methodName = typeof methodObj === 'string' 
+                            ? methodObj 
+                            : (methodObj?.type || 'Unknown');
+                            
+                          const methodKey = typeof methodObj === 'string' ? methodObj : (methodObj?.id || String(idx));
+                          
                           return (
-                            <span key={methodId} className="px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded-md border border-border">
-                              {String(methodId).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            <span key={methodKey} className="px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded-md border border-border">
+                              {String(methodName).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </span>
                           );
                         })}
                         {pm.length > 3 && (
                           <span className="px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded-md border border-border">
-                            +{ad.paymentMethods.length - 3}
+                            +{pm.length - 3}
                           </span>
                         )}
                       </div>
