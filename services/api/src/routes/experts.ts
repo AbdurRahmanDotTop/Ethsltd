@@ -550,7 +550,7 @@ expertRoutes.post('/dashboard/services', async (c) => {
       price: String(body.price),
       currency: body.currency || 'USD',
       pricingType: body.pricingType || 'FIXED',
-      status: 'PENDING_APPROVAL', // Admin must approve
+      status: 'ACTIVE', // Automatically active upon creation
       createdAt: new Date(),
       updatedAt: new Date()
     }).run();
