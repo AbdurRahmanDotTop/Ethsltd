@@ -12,7 +12,7 @@ import { ArrowLeft, Loader2, Info } from "lucide-react";
 import Link from "next/link";
 import { FIAT_CURRENCIES, ASSETS } from "@/lib/p2p/mock-data";
 import { P2PSide, PaymentMethodConfig } from "@/lib/p2p/types";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
