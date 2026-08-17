@@ -634,6 +634,29 @@ export class EthsltdClient {
     });
   }
 
+  // Admin Support Tickets
+  async adminGetSupportTickets() {
+    return this.request<any[]>('/api/v1/admin/support/tickets');
+  }
+
+  async adminGetSupportTicketDetails(ticketId: string) {
+    return this.request<any>(`/api/v1/admin/support/tickets/${ticketId}`);
+  }
+
+  async adminSendSupportMessage(ticketId: string, content: string) {
+    return this.request<any>(`/api/v1/admin/support/tickets/${ticketId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async adminUpdateSupportTicketStatus(ticketId: string, status: string) {
+    return this.request<any>(`/api/v1/admin/support/tickets/${ticketId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // ==========================
   // EXPERTS
   // ==========================
@@ -738,6 +761,23 @@ export class EthsltdClient {
     return this.request<any>(`/api/v1/experts/dashboard/bookings/${bookingId}/chat-toggle`, {
       method: 'PUT',
       body: JSON.stringify({ chatEnabled }),
+    });
+  }
+
+  // Notifications
+  async getNotifications() {
+    return this.request<any[]>('/api/v1/notifications');
+  }
+
+  async readNotification(id: string) {
+    return this.request<any>(`/api/v1/notifications/${id}/read`, {
+      method: 'PATCH'
+    });
+  }
+
+  async readAllNotifications() {
+    return this.request<any>('/api/v1/notifications/read-all', {
+      method: 'POST'
     });
   }
 }

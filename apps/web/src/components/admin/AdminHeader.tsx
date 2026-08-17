@@ -7,13 +7,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { adminNavGroups } from "./AdminSidebar";
 import { useAdminEnvStore } from "@/stores/admin-env-store";
+import { apiClient } from "@ethsltd/api-client";
+import { formatDistanceToNow } from "date-fns";
 
 export function AdminHeader() {
   const { user, logout } = useAuthStore();
   const { adminMode, setAdminMode } = useAdminEnvStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   const allHrefs = adminNavGroups.flatMap(g => g.items.map(i => i.href));
@@ -26,10 +31,38 @@ export function AdminHeader() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    
+    // Fetch notifications
+    const fetchNotifs = async () => {
+      try {
+        const res = await apiClient.getNotifications();
+        if (res.success && res.data) {
+          setNotifications(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications", err);
+      }
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 30000); // Polling every 30s
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      clearInterval(interval);
+    };
   }, []);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const handleMarkAsRead = async (id: string) => {
+    await apiClient.readNotification(id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-30">
@@ -81,10 +114,70 @@ export function AdminHeader() {
         </div>
 
         {/* Notifications */}
-        <button className="relative text-muted-foreground hover:text-foreground transition-colors">
-          <Bell className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card"></span>
-        </button>
+        <div className="relative" ref={notifRef}>
+          <button 
+            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+            className="relative text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[14px] h-[14px] bg-red-500 rounded-full border-2 border-card text-[8px] font-bold text-white px-0.5">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {isNotificationsOpen && (
+            <div className="absolute right-0 top-12 w-80 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="p-3 border-b border-border bg-muted/20 flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Notifications</h3>
+                {unreadCount > 0 && (
+                  <button 
+                    onClick={async () => {
+                      await apiClient.readAllNotifications();
+                      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                    }}
+                    className="text-xs text-brand-primary hover:text-brand-primary/80 font-medium"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+              <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                {notifications.length > 0 ? (
+                  <div className="divide-y divide-border">
+                    {notifications.map((n) => (
+                      <div 
+                        key={n.id} 
+                        className={`p-3 text-sm flex gap-3 hover:bg-muted/50 transition-colors ${!n.isRead ? 'bg-muted/20' : ''}`}
+                        onClick={() => {
+                          if (!n.isRead) handleMarkAsRead(n.id);
+                        }}
+                      >
+                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${!n.isRead ? 'bg-brand-primary' : 'bg-transparent'}`} />
+                        <div className="flex-1 min-w-0 cursor-pointer">
+                          <p className="font-medium text-foreground">{n.title}</p>
+                          <p className="text-muted-foreground text-xs mt-0.5 break-words">{n.message}</p>
+                          <p className="text-[10px] text-muted-foreground/70 mt-1">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                    <p className="text-sm">No notifications</p>
+                  </div>
+                )}
+              </div>
+              <div className="p-2 border-t border-border bg-muted/10 text-center">
+                <Link href="/admin/notifications" onClick={() => setIsNotificationsOpen(false)} className="text-xs text-muted-foreground hover:text-foreground font-medium block w-full py-1">
+                  View all notifications
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Admin Profile */}
         <div className="flex items-center gap-3 border-l border-border pl-6 relative" ref={dropdownRef}>

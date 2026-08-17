@@ -21,14 +21,15 @@ adminRoutes.use('*', async (c, next) => {
 // GET /api/v1/admin/stats
 adminRoutes.get('/stats', async (c) => {
   const db = c.get('db');
+  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   try {
     const allUsers = await db.select().from(users).all();
     const allPendingKyc = await db.select().from(kycProfiles).where(eq(kycProfiles.status, 'PENDING')).all();
     const activeMarkets = await db.select().from(markets).where(eq(markets.status, 'ACTIVE')).all();
     
-    // Mock volume
-    const totalVolumeUsd = 1250000;
+    // Mock volume based on mode
+    const totalVolumeUsd = mode === 'REAL' ? 1250000 : 85000;
     
     return c.json({
       success: true,
@@ -305,18 +306,19 @@ adminRoutes.delete('/users/:id', async (c) => {
 // GET /api/v1/admin/wallets/overview
 adminRoutes.get('/wallets/overview', async (c) => {
   const db = c.get('db');
+  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   try {
     const { eq } = require('drizzle-orm');
     const { wallets, payment_methods } = require('database');
     
-    const allRealWallets = await db.select().from(wallets).where(eq(wallets.type, 'REAL')).all();
+    const allWallets = await db.select().from(wallets).where(eq(wallets.type, mode)).all();
     const overview: Record<string, { balance: number, locked: number, escrow: number, total: number }> = {
       'USDT': { balance: 0, locked: 0, escrow: 0, total: 0 },
       'USD': { balance: 0, locked: 0, escrow: 0, total: 0 },
       'INR': { balance: 0, locked: 0, escrow: 0, total: 0 }
     };
     
-    for (const w of allRealWallets) {
+    for (const w of allWallets) {
       const sym = w.assetSymbol;
       if (!overview[sym]) {
         overview[sym] = { balance: 0, locked: 0, escrow: 0, total: 0 };
@@ -643,7 +645,7 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
 adminRoutes.get('/withdrawals', async (c) => {
   const db = c.get('db');
   const status = c.req.query('status') || 'ALL';
-  const mode = c.req.query('mode') || 'REAL';
+  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   try {
     const { eq, and, desc } = require('drizzle-orm');
@@ -1002,3 +1004,87 @@ adminRoutes.put('/experts/bookings/:id/chat-toggle', async (c) => {
     return c.json({ success: false, error: 'Failed to toggle chat' }, 500);
   }
 });
+
+ / /   = = = = = = = = = = = = = = = = = = = = = = = = = = 
+ / /   A D M I N   S U P P O R T   T I C K E T S 
+ / /   = = = = = = = = = = = = = = = = = = = = = = = = = = 
+ 
+ / /   G E T   / a p i / v 1 / a d m i n / s u p p o r t / t i c k e t s 
+ a d m i n R o u t e s . g e t ( ' / s u p p o r t / t i c k e t s ' ,   a s y n c   ( c )   = >   { 
+     c o n s t   d b   =   c . g e t ( ' d b ' ) ; 
+     
+     t r y   { 
+         c o n s t   a l l T i c k e t s   =   a w a i t   d b . s e l e c t ( ) . f r o m ( t i c k e t s ) . o r d e r B y ( d e s c ( t i c k e t s . u p d a t e d A t ) ) . a l l ( ) ; 
+         r e t u r n   c . j s o n ( {   s u c c e s s :   t r u e ,   d a t a :   a l l T i c k e t s   } ) ; 
+     }   c a t c h   ( e r r o r )   { 
+         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' F a i l e d   t o   f e t c h   t i c k e t s '   } ,   5 0 0 ) ; 
+     } 
+ } ) ; 
+ 
+ / /   G E T   / a p i / v 1 / a d m i n / s u p p o r t / t i c k e t s / : i d 
+ a d m i n R o u t e s . g e t ( ' / s u p p o r t / t i c k e t s / : i d ' ,   a s y n c   ( c )   = >   { 
+     c o n s t   d b   =   c . g e t ( ' d b ' ) ; 
+     c o n s t   t i c k e t I d   =   c . r e q . p a r a m ( ' i d ' ) ; 
+     
+     t r y   { 
+         c o n s t   t i c k e t   =   a w a i t   d b . s e l e c t ( ) . f r o m ( t i c k e t s ) . w h e r e ( e q ( t i c k e t s . i d ,   t i c k e t I d ) ) . g e t ( ) ; 
+         i f   ( ! t i c k e t )   r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' T i c k e t   n o t   f o u n d '   } ,   4 0 4 ) ; 
+         
+         c o n s t   m e s s a g e s   =   a w a i t   d b . s e l e c t ( ) . f r o m ( t i c k e t M e s s a g e s ) . w h e r e ( e q ( t i c k e t M e s s a g e s . t i c k e t I d ,   t i c k e t I d ) ) . o r d e r B y ( t i c k e t M e s s a g e s . c r e a t e d A t ) . a l l ( ) ; 
+         
+         r e t u r n   c . j s o n ( {   s u c c e s s :   t r u e ,   d a t a :   {   t i c k e t ,   m e s s a g e s   }   } ) ; 
+     }   c a t c h   ( e r r o r )   { 
+         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' F a i l e d   t o   f e t c h   t i c k e t '   } ,   5 0 0 ) ; 
+     } 
+ } ) ; 
+ 
+ / /   P O S T   / a p i / v 1 / a d m i n / s u p p o r t / t i c k e t s / : i d / m e s s a g e s 
+ a d m i n R o u t e s . p o s t ( ' / s u p p o r t / t i c k e t s / : i d / m e s s a g e s ' ,   a s y n c   ( c )   = >   { 
+     c o n s t   d b   =   c . g e t ( ' d b ' ) ; 
+     c o n s t   a d m i n   =   c . g e t ( ' u s e r ' ) ; 
+     c o n s t   t i c k e t I d   =   c . r e q . p a r a m ( ' i d ' ) ; 
+     c o n s t   b o d y   =   a w a i t   c . r e q . j s o n ( ) ; 
+ 
+     i f   ( ! b o d y . c o n t e n t )   r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' M e s s a g e   c o n t e n t   r e q u i r e d '   } ,   4 0 0 ) ; 
+ 
+     t r y   { 
+         c o n s t   n o w   =   n e w   D a t e ( ) ; 
+         a w a i t   d b . i n s e r t ( t i c k e t M e s s a g e s ) . v a l u e s ( { 
+             i d :   \ M S G - \ - \ \ , 
+             t i c k e t I d , 
+             s e n d e r I d :   a d m i n . i d , 
+             i s A d m i n :   t r u e , 
+             c o n t e n t :   b o d y . c o n t e n t , 
+             c r e a t e d A t :   n o w , 
+         } ) ; 
+ 
+         a w a i t   d b . u p d a t e ( t i c k e t s ) 
+             . s e t ( {   u p d a t e d A t :   n o w ,   s t a t u s :   ' W A I T I N G _ F O R _ U S E R '   } ) 
+             . w h e r e ( e q ( t i c k e t s . i d ,   t i c k e t I d ) ) ; 
+ 
+         r e t u r n   c . j s o n ( {   s u c c e s s :   t r u e   } ) ; 
+     }   c a t c h   ( e r r o r )   { 
+         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' F a i l e d   t o   a d d   m e s s a g e '   } ,   5 0 0 ) ; 
+     } 
+ } ) ; 
+ 
+ / /   P U T   / a p i / v 1 / a d m i n / s u p p o r t / t i c k e t s / : i d / s t a t u s 
+ a d m i n R o u t e s . p u t ( ' / s u p p o r t / t i c k e t s / : i d / s t a t u s ' ,   a s y n c   ( c )   = >   { 
+     c o n s t   d b   =   c . g e t ( ' d b ' ) ; 
+     c o n s t   t i c k e t I d   =   c . r e q . p a r a m ( ' i d ' ) ; 
+     c o n s t   b o d y   =   a w a i t   c . r e q . j s o n ( ) ; 
+ 
+     i f   ( ! b o d y . s t a t u s )   r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' S t a t u s   r e q u i r e d '   } ,   4 0 0 ) ; 
+ 
+     t r y   { 
+         a w a i t   d b . u p d a t e ( t i c k e t s ) 
+             . s e t ( {   s t a t u s :   b o d y . s t a t u s ,   u p d a t e d A t :   n e w   D a t e ( )   } ) 
+             . w h e r e ( e q ( t i c k e t s . i d ,   t i c k e t I d ) ) ; 
+ 
+         r e t u r n   c . j s o n ( {   s u c c e s s :   t r u e   } ) ; 
+     }   c a t c h   ( e r r o r )   { 
+         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' F a i l e d   t o   u p d a t e   s t a t u s '   } ,   5 0 0 ) ; 
+     } 
+ } ) ; 
+  
+ 

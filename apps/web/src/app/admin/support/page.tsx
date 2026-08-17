@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Search, Loader2, ChevronRight, MessageSquareWarning } from "lucide-react";
-import { MockSupportProvider } from "@/lib/support/mock-support-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { SupportTicket } from "@/lib/support/types";
 import { Button } from "@/components/ui/button";
 
@@ -16,10 +16,15 @@ export default function AdminSupportDashboard() {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const res = await MockSupportProvider.getAllTickets({});
-        setTickets(res.items);
+        const res = await apiClient.adminGetSupportTickets();
+        if (res.success && res.data) {
+          setTickets(res.data);
+        } else {
+          setTickets([]);
+        }
       } catch (error) {
         console.error(error);
+        setTickets([]);
       } finally {
         setIsLoading(false);
       }

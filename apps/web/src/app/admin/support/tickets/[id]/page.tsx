@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { 
   ArrowLeft, Loader2, Send, Lock, User, ShieldAlert, CheckCircle, Save
 } from "lucide-react";
-import { MockSupportProvider } from "@/lib/support/mock-support-provider";
+import { apiClient } from "@ethsltd/api-client";
 import { SupportTicket, TicketStatus } from "@/lib/support/types";
 import { Button } from "@/components/ui/button";
 
@@ -31,9 +31,13 @@ export default function AdminTicketDetailPage() {
 
   const fetchTicketData = async () => {
     try {
-      const data = await MockSupportProvider.getTicket(id);
-      setTicket(data);
-      if (data) setCurrentStatus(data.status);
+      const res = await apiClient.adminGetSupportTicketDetails(id);
+      if (res.success && res.data) {
+        setTicket({ ...res.data.ticket, messages: res.data.messages });
+        setCurrentStatus(res.data.ticket.status);
+      } else {
+        setTicket(null);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -53,8 +57,7 @@ export default function AdminTicketDetailPage() {
 
     setIsSending(true);
     try {
-      // Simulate sending via store/provider
-      await MockSupportProvider.addMessage(ticket.id, replyText, isInternalNote ? "SYSTEM" : "SUPPORT", isInternalNote);
+      await apiClient.adminSendSupportMessage(ticket.id, replyText);
       await fetchTicketData(); // re-fetch to see updates
       setReplyText("");
     } catch (error) {
@@ -67,7 +70,7 @@ export default function AdminTicketDetailPage() {
   const handleStatusChange = async (newStatus: TicketStatus) => {
     if (!ticket) return;
     try {
-      await MockSupportProvider.updateTicketStatus(ticket.id, newStatus);
+      await apiClient.adminUpdateSupportTicketStatus(ticket.id, newStatus);
       await fetchTicketData();
     } catch (error) {
       console.error(error);

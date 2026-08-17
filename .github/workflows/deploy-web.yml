@@ -25,6 +25,8 @@ jobs:
           version: 9.0.0
 
       - name: Install dependencies
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
         run: pnpm install --frozen-lockfile
 
       - name: Build and Deploy Next.js Web
