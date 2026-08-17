@@ -982,25 +982,23 @@ adminRoutes.put('/platform-settings/:key', async (c) => {
     return c.json({ success: false, error: 'Failed to update platform setting' }, 500);
   }
 });
+// PUT /api/v1/admin/experts/bookings/:id/chat-toggle
+adminRoutes.put('/experts/bookings/:id/chat-toggle', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const bookingId = c.req.param('id');
+  const { chatEnabled } = await c.req.json();
 
-/ /   P U T   / a p i / v 1 / a d m i n / e x p e r t s / b o o k i n g s / : i d / c h a t - t o g g l e 
- a d m i n R o u t e s . p u t ( ' / e x p e r t s / b o o k i n g s / : i d / c h a t - t o g g l e ' ,   a s y n c   ( c )   = >   { 
-     c o n s t   d b   =   c . g e t ( ' d b ' ) ; 
-     c o n s t   a d m i n   =   c . g e t ( ' u s e r ' ) ; 
-     c o n s t   b o o k i n g I d   =   c . r e q . p a r a m ( ' i d ' ) ; 
-     c o n s t   {   c h a t E n a b l e d   }   =   a w a i t   c . r e q . j s o n ( ) ; 
- 
-     i f   ( a d m i n . r o l e   ! = =   ' S U P E R _ A D M I N ' )   { 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' U n a u t h o r i z e d '   } ,   4 0 3 ) ; 
-     } 
- 
-     t r y   { 
-         c o n s t   {   e q   }   =   r e q u i r e ( ' d r i z z l e - o r m ' ) ; 
-         c o n s t   {   e x p e r t B o o k i n g s   }   =   r e q u i r e ( ' d a t a b a s e ' ) ; 
-         a w a i t   d b . u p d a t e ( e x p e r t B o o k i n g s ) . s e t ( {   c h a t E n a b l e d ,   u p d a t e d A t :   n e w   D a t e ( )   } ) . w h e r e ( e q ( e x p e r t B o o k i n g s . i d ,   b o o k i n g I d ) ) ; 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   t r u e   } ) ; 
-     }   c a t c h   ( e r r o r )   { 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' F a i l e d   t o   t o g g l e   c h a t '   } ,   5 0 0 ) ; 
-     } 
- } ) ;  
- 
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    const { eq } = require('drizzle-orm');
+    const { expertBookings } = require('database');
+    await db.update(expertBookings).set({ chatEnabled, updatedAt: new Date() }).where(eq(expertBookings.id, bookingId));
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to toggle chat' }, 500);
+  }
+});
