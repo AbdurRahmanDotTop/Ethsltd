@@ -94,7 +94,15 @@ export function P2PSection() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
-                      <p className="text-sm text-muted-foreground truncate" title={ad.paymentMethods}>{ad.paymentMethods}</p>
+                      <p className="text-sm text-muted-foreground truncate" title={
+                        Array.isArray(ad.paymentMethods) 
+                          ? ad.paymentMethods.map((m: any) => typeof m === 'string' ? m : (m?.type || 'Unknown')).join(', ')
+                          : String(ad.paymentMethods || '')
+                      }>
+                        {Array.isArray(ad.paymentMethods) 
+                          ? ad.paymentMethods.map((m: any) => typeof m === 'string' ? m : (m?.type || 'Unknown')).join(', ')
+                          : String(ad.paymentMethods || '')}
+                      </p>
                     </div>
                   </div>
                   
