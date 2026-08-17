@@ -19,8 +19,9 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
   const [messages, setMessages] = useState<P2PMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [isSending, setIsSending] = useState(false);
 
-  const isChatActive = order.status !== "COMPLETED" && order.status !== "CANCELLED";
+  const isChatActive = !["COMPLETED", "CANCELLED", "EXPIRED"].includes(order.status);
 
   const addMessage = (msg: P2PMessage) => {
     setMessages(prev => [...prev, msg]);
@@ -72,8 +73,8 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
     
     loadMessages();
     
-    // Poll for new messages
-    const interval = setInterval(loadMessages, 5000);
+    // Poll for new messages (Optimized to 3 seconds for better real-time feel)
+    const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, [order.id, merchant.id]);
 
@@ -89,10 +90,12 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
 
     const messageText = inputValue.trim().slice(0, 1000);
     setInputValue("");
+    setIsSending(true);
     
     // Optimistic update
+    const tempId = `msg_user_temp_${Date.now()}`;
     addMessage({
-      id: `msg_user_temp_${Date.now()}`,
+      id: tempId,
       orderId: order.id,
       sender: "user",
       message: messageText,
@@ -104,15 +107,21 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
       await apiClient.sendP2pMessage(order.id, messageText);
     } catch(e) {
       console.error("Failed to send message", e);
-      // In a real app we might show a retry button or error state
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+    } finally {
+      setIsSending(false);
     }
   };
 
   return (
     <div className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm overflow-hidden">
       <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
-        <h3 className="font-semibold">Trade Chat</h3>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div>
+          <h3 className="font-semibold">Trade Chat</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Order {order.id.substring(0, 12)}...</p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-background px-2 py-1 rounded-full border border-border">
           <span className="relative flex h-2.5 w-2.5">
             <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${merchant.online ? 'bg-green-400' : 'bg-gray-400'}`}></span>
             <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${merchant.online ? 'bg-green-500' : 'bg-gray-500'}`}></span>
@@ -166,7 +175,7 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
           className="flex-1"
           maxLength={1000}
         />
-        <Button type="submit" disabled={!isChatActive || !inputValue.trim()} size="icon">
+        <Button type="submit" disabled={!isChatActive || !inputValue.trim() || isSending} size="icon" className={isSending ? "opacity-50" : ""}>
           <Send className="w-4 h-4" />
         </Button>
       </form>

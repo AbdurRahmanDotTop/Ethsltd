@@ -18,9 +18,18 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   const { mode } = useTradingModeStore();
   const [order, setOrder] = useState<any>(null);
   const [merchant, setMerchant] = useState<P2PMerchant | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get current user to determine roles
+    const userStr = localStorage.getItem('ethsltd_auth_user');
+    if (userStr) {
+      setCurrentUser(JSON.parse(userStr));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchOrderData = async () => {
@@ -28,22 +37,9 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
         const res = await apiClient.getP2pOrder(orderId);
         if (res.success && res.data) {
           setOrder(res.data);
-          // In a real app we fetch merchant by sellerId/buyerId
-          // Here we just make a mock one based on the order
-          setMerchant({
-            id: res.data.sellerId,
-            username: `user_${res.data.sellerId.substring(0,4)}`,
-            displayName: `User_${res.data.sellerId.substring(0,4)}`,
-            verified: true,
-            completionRate: 99,
-            totalOrders: 100,
-            averageReleaseTime: 5,
-            online: true,
-            positiveFeedback: 99,
-            negativeFeedback: 1,
-            joinedAt: new Date().toISOString(),
-            supportedPaymentMethods: ["Bank Transfer"],
-          } as any);
+          if (res.merchant) {
+            setMerchant(res.merchant);
+          }
         }
       } catch(e) {
         console.error("Failed to load order", e);
@@ -56,12 +52,17 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
 
   // Countdown timer logic
   useEffect(() => {
-    if (order && (order.status === "PENDING")) {
+    if (order && (order.status === "CREATED" || order.status === "PAYMENT_PENDING")) {
       const updateTimer = () => {
         const expiry = new Date(order.expiresAt).getTime();
         const now = Date.now();
         const diff = Math.max(0, Math.floor((expiry - now) / 1000));
         setTimeLeft(diff);
+        
+        // Auto-refresh order if expired
+        if (diff === 0 && order.status !== "EXPIRED") {
+          window.location.reload();
+        }
       };
       
       updateTimer();
@@ -90,7 +91,9 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   }
 
   const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === "USD")?.symbol || "$";
-  const isBuy = true; // In our MVP we assume user is the buyer if they took a SELL ad
+  const isBuy = currentUser?.id === order.buyerId; 
+  const isActionableUser = currentUser?.id === order.buyerId; 
+  
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -276,7 +279,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
           </div>
 
           {/* Action Buttons */}
-          {(order.status === "CREATED" || order.status === "PAYMENT_PENDING") && (
+          {(order.status === "CREATED" || order.status === "PAYMENT_PENDING") && isBuy && (
             <div className="p-6 bg-muted/10 border-t border-border flex flex-col sm:flex-row gap-4 items-center justify-end">
               <Button variant="outline" onClick={handleCancel}>
                 Cancel Order
@@ -286,8 +289,14 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
               </Button>
             </div>
           )}
+          {(order.status === "CREATED" || order.status === "PAYMENT_PENDING") && !isBuy && (
+            <div className="p-6 bg-muted/10 border-t border-border flex flex-col items-center justify-center text-center">
+              <h3 className="font-semibold text-lg mb-1">Awaiting Buyer Payment</h3>
+              <p className="text-sm text-muted-foreground">The buyer has {formatTime(timeLeft)} to complete the payment.</p>
+            </div>
+          )}
 
-          {(order.status === "BUYER_MARKED_PAID" || order.status === "SELLER_PAYMENT_REVIEW") && (
+          {(order.status === "BUYER_MARKED_PAID" || order.status === "SELLER_PAYMENT_REVIEW") && isBuy && (
             <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border-t border-blue-100 dark:border-blue-900/50 flex flex-col items-center justify-center text-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400 mb-4" />
               <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Awaiting Merchant Release</h3>
@@ -297,6 +306,31 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
               <Button variant="outline" className="mt-6" size="sm" onClick={handleDispute}>
                 Open Dispute {mode === 'DEMO' ? '(Simulation)' : ''}
               </Button>
+            </div>
+          )}
+
+          {(order.status === "BUYER_MARKED_PAID" || order.status === "SELLER_PAYMENT_REVIEW") && !isBuy && (
+            <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border-t border-blue-100 dark:border-blue-900/50 flex flex-col items-center justify-center text-center">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Buyer Marked as Paid</h3>
+              <p className="text-sm text-blue-800/80 dark:text-blue-400/80 max-w-md mb-4">
+                Please verify that you have received the exact amount in your bank account before releasing the crypto.
+              </p>
+              <div className="flex gap-4">
+                <Button variant="outline" size="lg" onClick={handleDispute}>Open Dispute</Button>
+                <Button size="lg" onClick={async () => {
+                  try {
+                    const res = await apiClient.updateP2pOrderStatus(order.id, "release");
+                    if (res.success) {
+                      setOrder({ ...order, status: "COMPLETED" });
+                      alert("Crypto released successfully.");
+                    } else {
+                      alert(res.error || "Failed to release crypto.");
+                    }
+                  } catch(e) {
+                    alert("Error releasing crypto.");
+                  }
+                }}>Confirm Payment Received</Button>
+              </div>
             </div>
           )}
 
@@ -324,6 +358,17 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
             </div>
           )}
 
+          {order.status === "EXPIRED" && (
+            <div className="p-6 bg-gray-50 dark:bg-gray-900/10 border-t border-gray-200 dark:border-gray-900/50 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-900/30 rounded-full flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8 text-gray-600 dark:text-gray-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-300 mb-2">Order Expired</h3>
+              <p className="text-gray-800/80 dark:text-gray-400/80 max-w-md">
+                The payment time window has closed and the crypto has been returned to the seller.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

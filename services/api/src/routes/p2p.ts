@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and, desc, or } from 'drizzle-orm';
+import { eq, and, desc, or, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { p2pAds, p2pOrders, wallets, p2pMessages, users, ledgerAccounts, ledgerTransactions, ledgerEntries, p2pDisputes, notifications } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
@@ -215,14 +215,64 @@ p2pRoutes.get('/orders/:id', async (c) => {
   const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const orderId = c.req.param('id');
   
-  const order = await db.select().from(p2pOrders).where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode))).get();
+  let order = await db.select().from(p2pOrders).where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode))).get();
   if (!order) return c.json({ success: false, error: 'Order not found.' }, 404);
   
   if (order.buyerId !== user.id && order.sellerId !== user.id && user.role !== 'SUPER_ADMIN') {
     return c.json({ success: false, error: 'Unauthorized.' }, 403);
   }
+
+  const now = new Date();
+  // Lazy Expiry Enforcement
+  if (['CREATED', 'PAYMENT_PENDING'].includes(order.status) && now.getTime() > new Date(order.expiresAt).getTime()) {
+    const ad = await db.select().from(p2pAds).where(eq(p2pAds.id, order.adId)).get();
+    if (ad) {
+      const cryptoNum = parseFloat(order.cryptoAmount);
+      // Return crypto to Seller's available balance from Escrow
+      const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+      if (sellerWallet) {
+        const finalBalance = (parseFloat(sellerWallet.balance) + cryptoNum).toString();
+        const finalEscrow = (parseFloat(sellerWallet.escrowBalance) - cryptoNum).toString();
+        await db.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+      }
+      // Restore ad available amount
+      const newAvailable = (parseFloat(ad.availableAmount) + cryptoNum).toString();
+      await db.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
+    }
+    
+    await db.update(p2pOrders).set({ status: 'EXPIRED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
+    order.status = 'EXPIRED';
+    
+    const counterpartyId = order.buyerId === user.id ? order.sellerId : order.buyerId;
+    await db.insert(notifications).values({
+      id: `notif_${Date.now()}_exp`,
+      userId: counterpartyId,
+      title: 'P2P Order Expired',
+      message: `Order ${orderId} has expired.`,
+      type: 'P2P',
+      isRead: false,
+      createdAt: now,
+    });
+  }
   
-  return c.json({ success: true, data: order });
+  // Fetch counterparty for UI
+  const counterpartyId = order.buyerId === user.id ? order.sellerId : order.buyerId;
+  const cp = await db.select().from(users).where(eq(users.id, counterpartyId)).get();
+  
+  return c.json({ 
+    success: true, 
+    data: order, 
+    merchant: cp ? {
+      id: cp.id,
+      displayName: cp.displayName || `User_${cp.id.substring(0,4)}`,
+      username: cp.email ? cp.email.split('@')[0] : `user_${cp.id.substring(0,4)}`,
+      verified: cp.status === 'ACTIVE',
+      completionRate: cp.p2pCompletionRate || "0",
+      totalOrders: cp.p2pTotalOrders || 0,
+      online: true, // For now assuming online if interacting
+      joinedAt: cp.createdAt
+    } : null 
+  });
 });
 
 p2pRoutes.get('/orders/:id/messages', async (c) => {
@@ -291,8 +341,10 @@ p2pRoutes.post('/orders/:id/mark-paid', async (c) => {
   const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
   if (!order || order.status !== 'PAYMENT_PENDING') return c.json({ success: false, error: 'Invalid order state.' }, 400);
   if (order.buyerId !== user.id) return c.json({ success: false, error: 'Only buyer can mark as paid.' }, 403);
+  if (new Date().getTime() > new Date(order.expiresAt).getTime()) return c.json({ success: false, error: 'Order has expired.' }, 400);
   
-  await db.update(p2pOrders).set({ status: 'BUYER_MARKED_PAID', updatedAt: new Date() }).where(eq(p2pOrders.id, order.id));
+  const result = await db.update(p2pOrders).set({ status: 'BUYER_MARKED_PAID', updatedAt: new Date() }).where(and(eq(p2pOrders.id, order.id), eq(p2pOrders.status, 'PAYMENT_PENDING'))).returning();
+  if (result.length === 0) return c.json({ success: false, error: 'Race condition detected.' }, 409);
   
   // System Message
   const now = new Date();
@@ -329,6 +381,9 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
   if (!order || (order.status !== 'BUYER_MARKED_PAID' && order.status !== 'SELLER_PAYMENT_REVIEW')) return c.json({ success: false, error: 'Order cannot be released in this state.' }, 400);
   if (order.sellerId !== user.id && user.role !== 'SUPER_ADMIN') return c.json({ success: false, error: 'Only seller or admin can release.' }, 403);
   
+  const result = await db.update(p2pOrders).set({ status: 'COMPLETED', updatedAt: new Date() }).where(and(eq(p2pOrders.id, order.id), or(eq(p2pOrders.status, 'BUYER_MARKED_PAID'), eq(p2pOrders.status, 'SELLER_PAYMENT_REVIEW')))).returning();
+  if (result.length === 0) return c.json({ success: false, error: 'Race condition detected.' }, 409);
+
   const ad = await db.select().from(p2pAds).where(eq(p2pAds.id, order.adId)).get();
   if (!ad) return c.json({ success: false, error: 'Ad not found' }, 400);
 
@@ -372,7 +427,8 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
     createdAt: now,
   });
 
-  await db.update(p2pOrders).set({ status: 'COMPLETED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
+  // We updated status optimistically to prevent race, now no need to update again below
+  // await db.update(p2pOrders).set({ status: 'COMPLETED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
   
   // Increment completed orders count for both
   await db.update(users).set({ p2pTotalOrders: user.p2pTotalOrders + 1 }).where(eq(users.id, order.sellerId));
@@ -404,6 +460,9 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
     return c.json({ success: false, error: 'Unauthorized.' }, 403);
   }
 
+  const result = await db.update(p2pOrders).set({ status: 'CANCELLED', updatedAt: new Date() }).where(and(eq(p2pOrders.id, order.id), inArray(p2pOrders.status, ['CREATED', 'PAYMENT_PENDING', 'BUYER_MARKED_PAID']))).returning();
+  if (result.length === 0) return c.json({ success: false, error: 'Race condition detected.' }, 409);
+
   const ad = await db.select().from(p2pAds).where(eq(p2pAds.id, order.adId)).get();
   if (!ad) return c.json({ success: false, error: 'Ad not found' }, 400);
 
@@ -434,7 +493,8 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
     createdAt: now,
   });
 
-  await db.update(p2pOrders).set({ status: 'CANCELLED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
+  // Status updated earlier
+  // await db.update(p2pOrders).set({ status: 'CANCELLED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
 
   // Notify Counterparty
   const counterpartyId = order.buyerId === user.id ? order.sellerId : order.buyerId;
@@ -465,6 +525,9 @@ p2pRoutes.post('/orders/:id/dispute', async (c) => {
     return c.json({ success: false, error: 'Only participants can dispute.' }, 403);
   }
 
+  const result = await db.update(p2pOrders).set({ status: 'DISPUTED', updatedAt: new Date() }).where(and(eq(p2pOrders.id, order.id), inArray(p2pOrders.status, ['BUYER_MARKED_PAID', 'SELLER_PAYMENT_REVIEW']))).returning();
+  if (result.length === 0) return c.json({ success: false, error: 'Race condition detected.' }, 409);
+
   const now = new Date();
   
   const disputeId = `DISP-${Date.now()}`;
@@ -479,7 +542,8 @@ p2pRoutes.post('/orders/:id/dispute', async (c) => {
     updatedAt: now,
   });
 
-  await db.update(p2pOrders).set({ status: 'DISPUTED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
+  // Status updated earlier
+  // await db.update(p2pOrders).set({ status: 'DISPUTED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
 
   // System Message
   await db.insert(p2pMessages).values({

@@ -318,7 +318,7 @@ export class EthsltdClient {
     });
   }
 
-  async getP2pOrder(orderId: string) {
+  async getP2pOrder(orderId: string): Promise<{ success: boolean; data?: any; merchant?: any; error?: any }> {
     return this.request<any>(`/api/v1/p2p/orders/${orderId}`);
   }
 
