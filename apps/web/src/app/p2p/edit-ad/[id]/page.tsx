@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth-store";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { apiClient } from "@ethsltd/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export default function EditAdPage({ params }: { params: { id: string } }) {
+export default function EditAdPage() {
+  const params = useParams();
+  const id = params.id as string;
   const { user, status, hasHydrated } = useAuthStore();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,12 +86,12 @@ export default function EditAdPage({ params }: { params: { id: string } }) {
   }, [hasHydrated, status, router]);
 
   useEffect(() => {
-    if (status === "authenticated" && params.id) {
+    if (status === "authenticated" && id) {
       async function fetchAd() {
         try {
           const res = await apiClient.getP2pAds();
           if (res.success && res.data) {
-            const ad = res.data.find((a: any) => a.id === params.id);
+            const ad = res.data.find((a: any) => a.id === id);
             if (ad) {
               setFormData({
                 type: ad.type,
@@ -132,7 +134,7 @@ export default function EditAdPage({ params }: { params: { id: string } }) {
       }
       fetchAd();
     }
-  }, [status, params.id, router]);
+  }, [status, id, router]);
 
   if (!hasHydrated || status === "loading" || status === "unauthenticated" || isCheckingBalance) {
     return (
@@ -196,7 +198,7 @@ export default function EditAdPage({ params }: { params: { id: string } }) {
         autoReply: formData.autoReply,
       };
 
-      const res = await apiClient.updateP2pAd(params.id, payload);
+      const res = await apiClient.updateP2pAd(id, payload);
 
       if (res.success) {
         toast.success("Ad updated successfully");

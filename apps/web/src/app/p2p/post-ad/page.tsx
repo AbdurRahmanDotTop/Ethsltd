@@ -27,6 +27,7 @@ export default function PostAdPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [walletBalances, setWalletBalances] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     type: "BUY" as P2PSide | "BUY" | "SELL",
@@ -64,6 +65,7 @@ export default function PostAdPage() {
         try {
           const res = await apiClient.getWalletBalances('REAL');
           if (res.success && res.data) {
+            setWalletBalances(res.data);
             let totalBalance = 0;
             for (const wallet of res.data) {
               totalBalance += parseFloat(wallet.balance) + parseFloat(wallet.lockedBalance || '0') + parseFloat(wallet.escrowBalance || '0');
@@ -100,7 +102,22 @@ export default function PostAdPage() {
 
   const handleSelectChange = (name: string, value: string) => {
     if (name === 'type') setError(null);
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // If user switches to SELL, auto-fetch the max balance for the selected asset
+      if ((name === 'type' && value === 'SELL') || (name === 'asset' && prev.type === 'SELL')) {
+        const currentAsset = name === 'asset' ? value : prev.asset;
+        const assetBalance = walletBalances.find((w: any) => w.currency === currentAsset);
+        if (assetBalance) {
+          newData.totalAmount = String(parseFloat(assetBalance.balance) || 0);
+        } else {
+          newData.totalAmount = "0";
+        }
+      }
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -221,7 +238,7 @@ export default function PostAdPage() {
               <select 
                 id="asset" 
                 name="asset" 
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={formData.asset} 
                 onChange={(e) => handleSelectChange('asset', e.target.value)}
               >
@@ -240,7 +257,7 @@ export default function PostAdPage() {
               <select 
                 id="fiat" 
                 name="fiat" 
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={formData.fiat} 
                 onChange={(e) => handleSelectChange('fiat', e.target.value)}
               >
@@ -399,7 +416,7 @@ export default function PostAdPage() {
                         }
                         setPaymentMethods(newMethods);
                       }}
-                      className="w-full max-w-[200px] border rounded-md px-3 py-2 text-sm bg-background font-medium text-brand-600"
+                      className="w-full max-w-[200px] border rounded-md px-3 py-2 text-sm bg-background text-foreground font-medium"
                     >
                       <option value="Bank Transfer">Bank Transfer</option>
                       <option value="UPI">UPI</option>
@@ -507,7 +524,7 @@ export default function PostAdPage() {
               placeholder="Enter any specific requirements for traders..."
               value={formData.terms}
               onChange={handleChange}
-              className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
             />
           </div>
           
@@ -520,7 +537,7 @@ export default function PostAdPage() {
               placeholder="Sent automatically to the chat when a trade starts..."
               value={formData.autoReply}
               onChange={handleChange}
-              className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
             />
           </div>
 
