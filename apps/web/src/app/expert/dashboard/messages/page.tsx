@@ -5,10 +5,25 @@ import { apiClient } from "@ethsltd/api-client";
 import { toast } from "sonner";
 import { Send, User, MessageSquare, Lock, Unlock, AlertCircle } from "lucide-react";
 
+interface Booking {
+  id: string;
+  status: string;
+  serviceTitle: string;
+  userDisplayName: string;
+}
+
+interface ChatMessage {
+  id: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  senderName: string;
+}
+
 export default function ExpertMessagesPage() {
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isChatClosed, setIsChatClosed] = useState(false);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -23,7 +38,7 @@ export default function ExpertMessagesPage() {
       const res = await apiClient.expertGetBookings();
       if (res.success) {
         // Only show chats for accepted/completed or active bookings
-        const valid = res.data.filter((b: any) => !['PENDING_PAYMENT', 'PENDING_EXPERT', 'CANCELLED', 'REFUNDED'].includes(b.status));
+        const valid = res.data.filter((b: Booking) => !['PENDING_PAYMENT', 'PENDING_EXPERT', 'CANCELLED', 'REFUNDED'].includes(b.status));
         setBookings(valid);
       }
     } catch (err) {

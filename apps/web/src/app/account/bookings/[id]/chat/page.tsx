@@ -7,11 +7,19 @@ import { toast } from "sonner";
 import { Send, ArrowLeft, AlertCircle, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
+interface ChatMessage {
+  id: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  senderName: string;
+}
+
 export default function UserChatPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
   
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isChatClosed, setIsChatClosed] = useState(false);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(true);
