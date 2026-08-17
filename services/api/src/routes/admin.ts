@@ -143,6 +143,68 @@ adminRoutes.post('/users/:id/password', async (c) => {
   }
 });
 
+// DELETE /api/v1/admin/users/:id
+adminRoutes.delete('/users/:id', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const userId = c.req.param('id');
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can delete users' }, 403);
+  }
+
+  try {
+    const { eq, or } = require('drizzle-orm');
+    const { 
+      users, wallets, walletTransactions, ledgerTransactions, bankTransfers, realManualDeposits,
+      orders, trades, positions,
+      p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback,
+      supportTickets, supportMessages, notifications, kycProfiles,
+      cregisWallets, cregisDepositHistory, authSessions, loginHistory
+    } = require('database');
+
+    await db.transaction(async (tx: any) => {
+      // Auth & System
+      if (authSessions) await tx.delete(authSessions).where(eq(authSessions.userId, userId));
+      if (loginHistory) await tx.delete(loginHistory).where(eq(loginHistory.userId, userId));
+      if (notifications) await tx.delete(notifications).where(eq(notifications.userId, userId));
+      if (kycProfiles) await tx.delete(kycProfiles).where(eq(kycProfiles.userId, userId));
+      if (supportMessages) await tx.delete(supportMessages).where(eq(supportMessages.senderId, userId));
+      if (supportTickets) await tx.delete(supportTickets).where(eq(supportTickets.userId, userId));
+      
+      // Financials
+      if (cregisDepositHistory) await tx.delete(cregisDepositHistory).where(eq(cregisDepositHistory.userId, userId));
+      if (cregisWallets) await tx.delete(cregisWallets).where(eq(cregisWallets.userId, userId));
+      if (realManualDeposits) await tx.delete(realManualDeposits).where(eq(realManualDeposits.user_id, userId));
+      if (bankTransfers) await tx.delete(bankTransfers).where(eq(bankTransfers.userId, userId));
+      if (walletTransactions) await tx.delete(walletTransactions).where(eq(walletTransactions.userId, userId));
+      if (wallets) await tx.delete(wallets).where(eq(wallets.userId, userId));
+      if (ledgerTransactions) await tx.delete(ledgerTransactions).where(eq(ledgerTransactions.userId, userId));
+
+      // Trading
+      if (positions) await tx.delete(positions).where(eq(positions.userId, userId));
+      if (orders) await tx.delete(orders).where(eq(orders.userId, userId));
+      if (trades) await tx.delete(trades).where(or(eq(trades.makerId, userId), eq(trades.takerId, userId)));
+      
+      // P2P
+      if (p2pPaymentMethods) await tx.delete(p2pPaymentMethods).where(eq(p2pPaymentMethods.userId, userId));
+      if (p2pFeedback) await tx.delete(p2pFeedback).where(or(eq(p2pFeedback.fromUserId, userId), eq(p2pFeedback.toUserId, userId)));
+      if (p2pMessages) await tx.delete(p2pMessages).where(eq(p2pMessages.senderId, userId));
+      if (p2pDisputes) await tx.delete(p2pDisputes).where(or(eq(p2pDisputes.openerId, userId), eq(p2pDisputes.assignedAdminId, userId)));
+      if (p2pOrders) await tx.delete(p2pOrders).where(or(eq(p2pOrders.buyerId, userId), eq(p2pOrders.sellerId, userId)));
+      if (p2pAds) await tx.delete(p2pAds).where(eq(p2pAds.userId, userId));
+
+      // Finally User
+      await tx.delete(users).where(eq(users.id, userId));
+    });
+
+    return c.json({ success: true, message: 'User completely deleted' });
+  } catch (error: any) {
+    console.error('Failed to delete user:', error);
+    return c.json({ success: false, error: error.message || 'Failed to delete user' }, 500);
+  }
+});
+
 // GET /api/v1/admin/wallets/overview
 adminRoutes.get('/wallets/overview', async (c) => {
   const db = c.get('db');

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AdminUser } from "@/lib/admin/types";
 import { apiClient } from "@ethsltd/api-client";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
-import { Search, Filter, ShieldAlert } from "lucide-react";
+import { Search, Filter, ShieldAlert, Trash2 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 
 export default function AdminUsersPage() {
@@ -135,6 +135,25 @@ export default function AdminUsersPage() {
             <option value="COMPLIANCE_ADMIN">COMPLIANCE_ADMIN</option>
             <option value="SUPER_ADMIN">SUPER_ADMIN</option>
           </select>
+          {user?.role === 'SUPER_ADMIN' && (
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (confirm("Are you sure you want to COMPLETELY DELETE this user? All their data across the platform will be wiped.")) {
+                  try {
+                    await apiClient.adminDeleteUser(row.id);
+                    window.location.reload();
+                  } catch (err) {
+                    alert("Failed to delete user");
+                  }
+                }
+              }}
+              className="p-1.5 rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors ml-1"
+              title="Completely Delete User"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )
     }

@@ -18,9 +18,12 @@ export default function TermsOfService() {
         </section>
 
         <section>
-          <h3 className="text-xl font-semibold text-foreground mb-3">2. Account Responsibilities</h3>
-          <p>
+          <h3 className="text-xl font-semibold text-foreground mb-3">2. Account Responsibilities & Termination</h3>
+          <p className="mb-4">
             You are responsible for safeguarding the password that you use to access the service and for any activities or actions under your password. We strongly recommend enabling Two-Factor Authentication (2FA) for your account.
+          </p>
+          <p>
+            <strong className="text-foreground">Account Deletion:</strong> The platform administrators (Super Admins) reserve the right to completely and permanently delete any user account and all associated data (including but not limited to transaction history, active and past orders, P2P records, and wallets) at their sole discretion, without prior notice. Once an account is deleted, the data cannot be recovered.
           </p>
         </section>
 

@@ -376,6 +376,12 @@ export class EthsltdClient {
     });
   }
 
+  async adminDeleteUser(userId: string) {
+    return this.request<any>(`/api/v1/admin/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getAdminPendingKYC() {
     return this.request<any[]>('/api/v1/admin/kyc');
   }

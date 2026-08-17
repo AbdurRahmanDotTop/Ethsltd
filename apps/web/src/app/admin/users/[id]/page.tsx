@@ -302,43 +302,74 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                   </div>
                 </div>
               ) : activeTab === "Security" ? (
-                <div className="space-y-4 max-w-md">
-                  <h3 className="font-semibold text-lg text-red-500 flex items-center gap-2">
-                    <ShieldAlert className="w-5 h-5" /> Super Admin Control
-                  </h3>
-                  <p className="text-sm text-muted-foreground">Force reset user password without email verification.</p>
-                  
-                  <div className="space-y-3 p-4 border border-red-500/20 bg-red-500/5 rounded-lg">
-                    <label className="text-sm font-medium">New Password</label>
-                    <input 
-                      type="text" 
-                      value={newPassword} 
-                      onChange={e => setNewPassword(e.target.value)} 
-                      className="w-full bg-background border border-border rounded px-3 py-2 text-sm" 
-                      placeholder="Minimum 8 characters" 
-                    />
-                    <button 
-                      disabled={isResetting || newPassword.length < 8}
-                      onClick={async () => {
-                        if (!confirm("Are you sure you want to forcibly reset this user's password?")) return;
-                        setIsResetting(true);
-                        try {
-                          const res = await apiClient.adminResetUserPassword(user.id, newPassword);
-                          if (res.success) {
-                            alert("Password reset successfully!");
-                            setNewPassword("");
-                          } else {
-                            alert("Error: " + res.error);
+                <div className="space-y-8 max-w-md">
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold border-b border-border pb-2">Password Reset</h3>
+                    <p className="text-sm text-muted-foreground -mt-4">
+                      As a Super Admin, you can forcefully reset this user's password without requiring their current password.
+                    </p>
+                    <div className="flex gap-3 items-end max-w-sm">
+                      <div className="flex-1 space-y-1.5">
+                        <label className="text-sm font-medium">New Password</label>
+                        <input 
+                          type="password"
+                          value={newPassword}
+                          onChange={e => setNewPassword(e.target.value)}
+                          placeholder="Enter new password"
+                          className="w-full px-3 py-2 bg-muted/50 border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                        />
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (!confirm("Are you sure you want to forcibly reset this user's password?")) return;
+                          setIsResetting(true);
+                          try {
+                            const res = await apiClient.adminResetUserPassword(user.id, newPassword);
+                            if (res.success) {
+                              alert("Password reset successfully!");
+                              setNewPassword("");
+                            } else {
+                              alert("Error: " + res.error);
+                            }
+                          } catch (err: any) {
+                            alert("Failed: " + err.message);
+                          } finally {
+                            setIsResetting(false);
                           }
-                        } catch (err: any) {
-                          alert("Failed: " + err.message);
-                        } finally {
-                          setIsResetting(false);
+                        }}
+                        className="mt-4 bg-brand-primary text-primary-foreground hover:bg-brand-primary/90 px-4 py-2 rounded-md font-medium text-sm disabled:opacity-50"
+                      >
+                        {isResetting ? 'Resetting...' : 'Reset'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 mt-8 pt-8 border-t border-border">
+                    <h3 className="text-lg font-semibold text-red-500 border-b border-red-500/20 pb-2 flex items-center gap-2">
+                      <ShieldAlert className="w-5 h-5" /> Danger Zone
+                    </h3>
+                    <p className="text-sm text-muted-foreground -mt-4">
+                      Completely delete this user account. This action is irreversible and will permanently wipe out all associated data (balances, orders, P2P history, tickets).
+                    </p>
+                    <button
+                      onClick={async () => {
+                        if (confirm("WARNING: Are you absolutely sure you want to COMPLETELY DELETE this user? All their data across the platform will be wiped.")) {
+                          try {
+                            const res = await apiClient.adminDeleteUser(user.id);
+                            if (res.success) {
+                              alert("User deleted successfully.");
+                              router.push('/admin/users');
+                            } else {
+                              alert("Error deleting user: " + res.error);
+                            }
+                          } catch (err) {
+                            alert("Failed to delete user.");
+                          }
                         }
                       }}
-                      className="w-full mt-4 bg-red-500 text-white hover:bg-red-600 py-2 rounded-md font-medium text-sm disabled:opacity-50"
+                      className="w-full bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white py-2 rounded-md font-medium text-sm transition-colors"
                     >
-                      {isResetting ? 'Resetting...' : 'Force Reset Password'}
+                      Completely Delete User
                     </button>
                   </div>
                 </div>
