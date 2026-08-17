@@ -12,6 +12,14 @@ import { ArrowLeft, Loader2, Info } from "lucide-react";
 import Link from "next/link";
 import { FIAT_CURRENCIES, ASSETS } from "@/lib/p2p/mock-data";
 import { P2PSide } from "@/lib/p2p/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function PostAdPage() {
   const { user, status, hasHydrated } = useAuthStore();
@@ -37,6 +45,7 @@ export default function PostAdPage() {
 
   const [hasInsufficientBalance, setHasInsufficientBalance] = useState(false);
   const [isCheckingBalance, setIsCheckingBalance] = useState(true);
+  const [showDepositPopup, setShowDepositPopup] = useState(false);
 
   useEffect(() => {
     if (hasHydrated && status === "unauthenticated") {
@@ -55,6 +64,7 @@ export default function PostAdPage() {
             }
             if (totalBalance <= 0) {
               setHasInsufficientBalance(true);
+              setShowDepositPopup(true);
             }
           }
         } catch (err) {
@@ -75,33 +85,7 @@ export default function PostAdPage() {
     );
   }
 
-  if (hasInsufficientBalance) {
-    return (
-      <main className="flex-1 py-12 px-4 md:px-8 max-w-[800px] mx-auto w-full">
-        <Link href="/p2p/my-ads" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-8 transition-colors">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to My Ads
-        </Link>
-        <div className="bg-card border border-border rounded-xl shadow-sm p-8 text-center max-w-lg mx-auto mt-12">
-          <div className="w-16 h-16 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Info className="w-8 h-8 text-brand-primary" />
-          </div>
-          <h2 className="text-2xl font-bold mb-4">Insufficient Balance</h2>
-          <p className="text-muted-foreground mb-8 text-sm md:text-base">
-            You do not have any real funds in your wallet. To post a P2P advertisement, you need to have a funded real wallet to ensure security and trust in the marketplace.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button onClick={() => router.push('/wallets?deposit=true')} size="lg" className="w-full sm:w-auto">
-              Add Deposit
-            </Button>
-            <Button variant="outline" onClick={() => router.push('/p2p')} size="lg" className="w-full sm:w-auto">
-              Explore P2P Market
-            </Button>
-          </div>
-        </div>
-      </main>
-    );
-  }
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -109,6 +93,7 @@ export default function PostAdPage() {
   };
 
   const handleSelectChange = (name: string, value: string) => {
+    if (name === 'type') setError(null);
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -118,6 +103,12 @@ export default function PostAdPage() {
     setError(null);
 
     try {
+      if (hasInsufficientBalance) {
+        setShowDepositPopup(true);
+        setIsSubmitting(false);
+        return;
+      }
+
       const payload = {
         ...formData,
         price: formData.price ? parseFloat(formData.price) : 0,
@@ -135,12 +126,20 @@ export default function PostAdPage() {
         router.refresh();
         router.push("/p2p/my-ads");
       } else {
-        setError(res.error || "Failed to create ad");
-        toast.error(res.error || "Failed to create advertisement");
+        if (res.error?.toLowerCase().includes("insufficient")) {
+          setShowDepositPopup(true);
+        } else {
+          setError(res.error || "Failed to create ad");
+          toast.error(res.error || "Failed to create advertisement");
+        }
       }
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
-      toast.error(err.message || "An unexpected error occurred");
+      if (err.message?.toLowerCase().includes("insufficient")) {
+        setShowDepositPopup(true);
+      } else {
+        setError(err.message || "An unexpected error occurred");
+        toast.error(err.message || "An unexpected error occurred");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -395,6 +394,26 @@ export default function PostAdPage() {
             </Button>
           </div>
         </form>
+
+        <Dialog open={showDepositPopup} onOpenChange={setShowDepositPopup}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Insufficient Balance</DialogTitle>
+              <DialogDescription>
+                You do not have enough funds in your wallet to post this P2P advertisement. To maintain security and trust, you must have the required balance available.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="sm:justify-start gap-2 mt-4">
+              <Button type="button" variant="default" onClick={() => router.push('/wallet?deposit=true')} className="w-full sm:w-auto">
+                Add Deposit
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowDepositPopup(false)} className="w-full sm:w-auto">
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </main>
   );
 }
