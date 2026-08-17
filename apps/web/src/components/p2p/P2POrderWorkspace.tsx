@@ -164,6 +164,15 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
     }
   };
 
+  let parsedDetails: Record<string, string> | null = null;
+  try {
+    if (order.paymentDetails) {
+      parsedDetails = JSON.parse(order.paymentDetails);
+    }
+  } catch (e) {
+    console.error("Failed to parse payment details", e);
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
@@ -248,27 +257,45 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                   <span className="font-medium">{order.paymentMethod.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
                 </div>
                 
-                <div>
-                  <span className="text-xs text-muted-foreground block mb-1">Recipient Name</span>
-                  <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
-                    <span className="font-mono text-sm">{merchant.displayName}</span>
-                    <button onClick={() => copyToClipboard(merchant.displayName, "name")} className="text-muted-foreground hover:text-foreground">
-                      {copiedField === "name" ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+                {parsedDetails ? (
+                  Object.entries(parsedDetails).map(([k, v]) => (
+                    <div key={k}>
+                      <span className="text-xs text-muted-foreground block mb-1">
+                        {k.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                      </span>
+                      <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
+                        <span className="font-mono text-sm">{v}</span>
+                        <button onClick={() => copyToClipboard(v, k)} className="text-muted-foreground hover:text-foreground">
+                          {copiedField === k ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div>
+                      <span className="text-xs text-muted-foreground block mb-1">Recipient Name</span>
+                      <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
+                        <span className="font-mono text-sm">{merchant.displayName}</span>
+                        <button onClick={() => copyToClipboard(merchant.displayName, "name")} className="text-muted-foreground hover:text-foreground">
+                          {copiedField === "name" ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
 
-                <div>
-                  <span className="text-xs text-muted-foreground block mb-1">{mode === 'DEMO' ? 'Simulated Account / ID' : 'Account / ID'}</span>
-                  <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
-                    <span className="font-mono text-sm">
-                      {mode === 'DEMO' ? `${merchant.username.toLowerCase()}@ethsltd.demo` : `${merchant.username.toLowerCase()}@bank.local`}
-                    </span>
-                    <button onClick={() => copyToClipboard(mode === 'DEMO' ? `${merchant.username.toLowerCase()}@ethsltd.demo` : `${merchant.username.toLowerCase()}@bank.local`, "account")} className="text-muted-foreground hover:text-foreground">
-                      {copiedField === "account" ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground block mb-1">{mode === 'DEMO' ? 'Simulated Account / ID' : 'Account / ID'}</span>
+                      <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
+                        <span className="font-mono text-sm">
+                          {mode === 'DEMO' ? `${merchant.username.toLowerCase()}@ethsltd.demo` : `${merchant.username.toLowerCase()}@bank.local`}
+                        </span>
+                        <button onClick={() => copyToClipboard(mode === 'DEMO' ? `${merchant.username.toLowerCase()}@ethsltd.demo` : `${merchant.username.toLowerCase()}@bank.local`, "account")} className="text-muted-foreground hover:text-foreground">
+                          {copiedField === "account" ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <span className="text-xs text-muted-foreground block mb-1">Reference Number (Required)</span>

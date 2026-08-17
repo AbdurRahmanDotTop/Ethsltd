@@ -12,6 +12,12 @@ export type P2POrderStatus =
   | "EXPIRED"
   | "DISPUTED";
 
+export interface PaymentMethodConfig {
+  id: string;
+  type: string; // e.g., 'Bank Transfer', 'UPI', 'PayPal', 'Other'
+  details: Record<string, string>; // e.g. { accountName: '...', accountNumber: '...' }
+}
+
 export type P2PAdvertisement = {
   id: string;
   merchantId: string;
@@ -23,7 +29,7 @@ export type P2PAdvertisement = {
   availableAmount: number;
   minLimit: number;
   maxLimit: number;
-  paymentMethods: string[];
+  paymentMethods: PaymentMethodConfig[] | string[];
   completionRate: number;
   completedOrders: number;
   responseTimeMinutes: number;
@@ -72,6 +78,7 @@ export type P2POrder = {
     canDispute: boolean;
   };
   paymentMethod: string;
+  paymentDetails?: string | null;
   status: P2POrderStatus;
   createdAt: string;
   expiresAt: string;

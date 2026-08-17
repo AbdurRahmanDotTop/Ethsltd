@@ -246,6 +246,19 @@ p2pRoutes.post('/orders', async (c) => {
   const orderId = `P2P-ORD-${Date.now()}`;
   const expiresAt = new Date(now.getTime() + (ad.paymentWindow * 60000));
   
+  let paymentDetails = null;
+  try {
+    const parsedMethods = JSON.parse(ad.paymentMethods);
+    if (Array.isArray(parsedMethods)) {
+      const selectedMethodObj = parsedMethods.find((m: any) => m.type === paymentMethod || m === paymentMethod);
+      if (selectedMethodObj && typeof selectedMethodObj === 'object' && selectedMethodObj.details) {
+        paymentDetails = JSON.stringify(selectedMethodObj.details);
+      }
+    }
+  } catch (e) {
+    // Ignore JSON parse errors for legacy strings
+  }
+
   await db.insert(p2pOrders).values({
     id: orderId,
     adId,
@@ -257,6 +270,7 @@ p2pRoutes.post('/orders', async (c) => {
     price: ad.price,
     status: 'PAYMENT_PENDING',
     paymentMethod,
+    paymentDetails,
     expiresAt,
     createdAt: now,
     updatedAt: now,

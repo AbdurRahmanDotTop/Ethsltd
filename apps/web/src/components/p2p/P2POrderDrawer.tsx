@@ -228,24 +228,29 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
               <div className="space-y-2">
                 <Label>Select Payment Method</Label>
                 <div className="grid grid-cols-1 gap-2">
-                  {ad.paymentMethods.map(method => (
-                    <label 
-                      key={method}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        useWatch({ control, name: "paymentMethod" }) === method
-                          ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20"
-                          : "border-border hover:bg-muted"
-                      }`}
-                    >
-                      <input 
-                        type="radio" 
-                        value={method} 
-                        {...register("paymentMethod")} 
-                        className="text-brand-600 focus:ring-brand-500 h-4 w-4"
-                      />
-                      <span className="text-sm font-medium">{method.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                    </label>
-                  ))}
+                  {ad.paymentMethods.map((methodObj, idx) => {
+                    const method = typeof methodObj === 'string' ? methodObj : (methodObj as any).type;
+                    const methodId = typeof methodObj === 'string' ? methodObj : (methodObj as any).id || method;
+                    
+                    return (
+                      <label 
+                        key={methodId}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          useWatch({ control, name: "paymentMethod" }) === method
+                            ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20"
+                            : "border-border hover:bg-muted"
+                        }`}
+                      >
+                        <input 
+                          type="radio" 
+                          value={method} 
+                          {...register("paymentMethod")} 
+                          className="text-brand-600 focus:ring-brand-500 h-4 w-4"
+                        />
+                        <span className="text-sm font-medium">{method.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
+                      </label>
+                    );
+                  })}
                 </div>
                 {errors.paymentMethod && <p className="text-xs text-destructive">{errors.paymentMethod.message}</p>}
               </div>

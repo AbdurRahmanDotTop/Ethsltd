@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Info } from "lucide-react";
 import Link from "next/link";
 import { FIAT_CURRENCIES, ASSETS } from "@/lib/p2p/mock-data";
-import { P2PSide } from "@/lib/p2p/types";
+import { P2PSide, PaymentMethodConfig } from "@/lib/p2p/types";
+import { Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -38,10 +39,15 @@ export default function PostAdPage() {
     minLimit: "",
     maxLimit: "",
     paymentWindow: "15",
-    paymentMethods: "Bank Transfer",
     terms: "",
     autoReply: ""
   });
+
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodConfig[]>([{
+    id: crypto.randomUUID(),
+    type: "Bank Transfer",
+    details: { accountName: "", bankName: "", accountNumber: "", ifscCode: "" }
+  }]);
 
   const [hasInsufficientBalance, setHasInsufficientBalance] = useState(false);
   const [isCheckingBalance, setIsCheckingBalance] = useState(true);
@@ -99,6 +105,22 @@ export default function PostAdPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate Payment Methods
+    if (paymentMethods.length === 0) {
+      toast.error("Please add at least one payment method");
+      return;
+    }
+
+    for (const method of paymentMethods) {
+      for (const [key, val] of Object.entries(method.details)) {
+        if (!val || val.trim() === '') {
+          toast.error(`Please fill all details for ${method.type}`);
+          return;
+        }
+      }
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -117,7 +139,7 @@ export default function PostAdPage() {
         minLimit: parseFloat(formData.minLimit),
         maxLimit: parseFloat(formData.maxLimit),
         paymentWindow: parseInt(formData.paymentWindow, 10),
-        paymentMethods: formData.paymentMethods.split(',').map(m => m.trim())
+        paymentMethods
       };
 
       const res = await apiClient.createP2pAd(payload);
@@ -348,16 +370,132 @@ export default function PostAdPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="paymentMethods">Payment Methods (Comma separated)</Label>
-            <Input
-              id="paymentMethods"
-              name="paymentMethods"
-              required
-              placeholder="e.g. Bank Transfer, Zelle, PayPal"
-              value={formData.paymentMethods}
-              onChange={handleChange}
-            />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Payment Methods</Label>
+              <Button type="button" variant="outline" size="sm" onClick={() => {
+                setPaymentMethods([...paymentMethods, { id: crypto.randomUUID(), type: 'UPI', details: { upiId: '', upiName: '' } }]);
+              }}>
+                <Plus className="w-4 h-4 mr-1" /> Add
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {paymentMethods.map((pm, index) => (
+                <div key={pm.id} className="p-4 bg-muted/30 border border-border rounded-lg space-y-4 relative">
+                  <div className="flex items-center justify-between">
+                    <select
+                      value={pm.type}
+                      onChange={(e) => {
+                        const type = e.target.value;
+                        const newMethods = [...paymentMethods];
+                        newMethods[index].type = type;
+                        if (type === 'Bank Transfer') {
+                          newMethods[index].details = { accountName: "", bankName: "", accountNumber: "", ifscCode: "" };
+                        } else if (type === 'UPI') {
+                          newMethods[index].details = { upiId: "", upiName: "" };
+                        } else {
+                          newMethods[index].details = { accountName: "", additionalInfo: "" };
+                        }
+                        setPaymentMethods(newMethods);
+                      }}
+                      className="w-full max-w-[200px] border rounded-md px-3 py-2 text-sm bg-background font-medium text-brand-600"
+                    >
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    
+                    {paymentMethods.length > 1 && (
+                      <button type="button" onClick={() => {
+                        setPaymentMethods(paymentMethods.filter(m => m.id !== pm.id));
+                      }} className="text-muted-foreground hover:text-red-500">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {pm.type === 'Bank Transfer' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Account Holder Name</Label>
+                        <Input required value={pm.details.accountName || ''} onChange={(e) => {
+                          const newMethods = [...paymentMethods];
+                          newMethods[index].details.accountName = e.target.value;
+                          setPaymentMethods(newMethods);
+                        }} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Bank Name</Label>
+                        <Input required value={pm.details.bankName || ''} onChange={(e) => {
+                          const newMethods = [...paymentMethods];
+                          newMethods[index].details.bankName = e.target.value;
+                          setPaymentMethods(newMethods);
+                        }} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Account Number</Label>
+                        <Input required value={pm.details.accountNumber || ''} onChange={(e) => {
+                          const newMethods = [...paymentMethods];
+                          newMethods[index].details.accountNumber = e.target.value;
+                          setPaymentMethods(newMethods);
+                        }} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">IFSC Code</Label>
+                        <Input required value={pm.details.ifscCode || ''} onChange={(e) => {
+                          const newMethods = [...paymentMethods];
+                          newMethods[index].details.ifscCode = e.target.value;
+                          setPaymentMethods(newMethods);
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {pm.type === 'UPI' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">UPI ID</Label>
+                        <Input required value={pm.details.upiId || ''} onChange={(e) => {
+                          const newMethods = [...paymentMethods];
+                          newMethods[index].details.upiId = e.target.value;
+                          setPaymentMethods(newMethods);
+                        }} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">UPI Name</Label>
+                        <Input required value={pm.details.upiName || ''} onChange={(e) => {
+                          const newMethods = [...paymentMethods];
+                          newMethods[index].details.upiName = e.target.value;
+                          setPaymentMethods(newMethods);
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {pm.type === 'Other' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Account/User Name</Label>
+                        <Input required value={pm.details.accountName || ''} onChange={(e) => {
+                          const newMethods = [...paymentMethods];
+                          newMethods[index].details.accountName = e.target.value;
+                          setPaymentMethods(newMethods);
+                        }} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Additional Info (ID, Number, etc)</Label>
+                        <Input required value={pm.details.additionalInfo || ''} onChange={(e) => {
+                          const newMethods = [...paymentMethods];
+                          newMethods[index].details.additionalInfo = e.target.value;
+                          setPaymentMethods(newMethods);
+                        }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">
