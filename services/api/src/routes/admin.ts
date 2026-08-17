@@ -118,7 +118,11 @@ adminRoutes.get('/wallets/overview', async (c) => {
     const { wallets, payment_methods } = require('database');
     
     const allRealWallets = await db.select().from(wallets).where(eq(wallets.type, 'REAL')).all();
-    const overview: Record<string, { balance: number, locked: number, escrow: number, total: number }> = {};
+    const overview: Record<string, { balance: number, locked: number, escrow: number, total: number }> = {
+      'USDT': { balance: 0, locked: 0, escrow: 0, total: 0 },
+      'USD': { balance: 0, locked: 0, escrow: 0, total: 0 },
+      'INR': { balance: 0, locked: 0, escrow: 0, total: 0 }
+    };
     
     for (const w of allRealWallets) {
       const sym = w.assetSymbol;

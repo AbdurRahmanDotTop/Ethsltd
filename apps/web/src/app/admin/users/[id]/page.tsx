@@ -19,7 +19,6 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   const [walletType, setWalletType] = useState<"REAL"|"DEMO">("REAL");
   const [adjustAction, setAdjustAction] = useState<"CREDIT"|"DEBIT">("CREDIT");
   const [targetField, setTargetField] = useState<"balance"|"lockedBalance"|"escrowBalance">("balance");
-  const [targetField, setTargetField] = useState<"balance"|"lockedBalance"|"escrowBalance">("balance");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustNotes, setAdjustNotes] = useState("");
   const [isAdjusting, setIsAdjusting] = useState(false);
