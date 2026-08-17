@@ -827,26 +827,62 @@ adminRoutes.put('/experts/:id/status', async (c) => {
   }
 });
 
-// POST /api/v1/admin/experts (Manually add an expert)
+// POST /api/v1/admin/experts (Manually add or convert an expert)
 adminRoutes.post('/experts', async (c) => {
   const db = c.get('db');
   const admin = c.get('user');
   const body = await c.req.json();
+  const mode = body.mode || 'convert'; // 'convert' or 'create'
 
   if (admin.role !== 'SUPER_ADMIN') {
     return c.json({ success: false, error: 'Unauthorized' }, 403);
   }
 
   try {
-    // Find user by email or ID
-    const targetUser = await db.select().from(users).where(eq(users.email, body.email)).get();
+    let targetUser;
+
+    if (mode === 'convert') {
+      targetUser = await db.select().from(users).where(eq(users.email, body.email)).get();
+      if (!targetUser) {
+        return c.json({ success: false, error: 'User not found with this email' }, 404);
+      }
+    } else if (mode === 'create') {
+      // Check if email already in use
+      const existingEmail = await db.select().from(users).where(eq(users.email, body.email)).get();
+      if (existingEmail) {
+        return c.json({ success: false, error: 'Email already in use' }, 400);
+      }
+      
+      const encoder = new TextEncoder();
+      const passwordData = encoder.encode(body.password || crypto.randomUUID()); // Use provided or random
+      const hashBuf = await crypto.subtle.digest('SHA-256', passwordData);
+      const hashedPassword = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      const userId = `usr_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+      
+      await db.insert(users).values({
+        id: userId,
+        email: body.email,
+        passwordHash: hashedPassword,
+        displayName: body.displayName || body.email.split('@')[0],
+        firstName: body.firstName,
+        lastName: body.lastName,
+        role: 'EXPERT',
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).run();
+      
+      targetUser = { id: userId, role: 'EXPERT' };
+    }
+
     if (!targetUser) {
-      return c.json({ success: false, error: 'User not found with this email' }, 404);
+      return c.json({ success: false, error: 'Invalid user target' }, 400);
     }
 
     // Check if profile exists
-    const existing = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, targetUser.id)).get();
-    if (existing) {
+    const existingProfile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, targetUser.id)).get();
+    if (existingProfile) {
       return c.json({ success: false, error: 'User is already an expert' }, 400);
     }
 
@@ -855,9 +891,9 @@ adminRoutes.post('/experts', async (c) => {
       id: profileId,
       userId: targetUser.id,
       bio: body.bio || 'Expert verified by Admin.',
-      experienceYears: body.experienceYears || 0,
-      languages: body.languages || ['English'],
-      categories: body.categories || ['General'],
+      experienceYears: parseInt(body.experienceYears) || 0,
+      languages: body.languages ? (Array.isArray(body.languages) ? body.languages : body.languages.split(',').map((l: string) => l.trim())) : ['English'],
+      categories: body.categories ? (Array.isArray(body.categories) ? body.categories : body.categories.split(',').map((c: string) => c.trim())) : ['General'],
       verificationStatus: 'VERIFIED',
       availabilityStatus: 'AVAILABLE',
       createdAt: new Date(),
@@ -865,12 +901,71 @@ adminRoutes.post('/experts', async (c) => {
     }).run();
 
     // Ensure role is EXPERT
-    if (targetUser.role === 'USER') {
+    if (targetUser.role !== 'EXPERT' && targetUser.role !== 'SUPER_ADMIN') {
       await db.update(users).set({ role: 'EXPERT', updatedAt: new Date() }).where(eq(users.id, targetUser.id)).run();
     }
 
     return c.json({ success: true, data: { id: profileId } });
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Create expert error:', error);
     return c.json({ success: false, error: 'Failed to create expert profile' }, 500);
   }
 });
+
+// GET /api/v1/admin/platform-settings
+adminRoutes.get('/platform-settings', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    const { platformSettings } = require('database');
+    const settingsList = await db.select().from(platformSettings).all();
+    return c.json({ success: true, data: settingsList });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch platform settings' }, 500);
+  }
+});
+
+// PUT /api/v1/admin/platform-settings/:key
+adminRoutes.put('/platform-settings/:key', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const key = c.req.param('key');
+  const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    const { platformSettings } = require('database');
+    const existing = await db.select().from(platformSettings).where(eq(platformSettings.key, key)).get();
+    
+    if (existing) {
+      await db.update(platformSettings).set({ 
+        value: String(body.value), 
+        description: body.description || existing.description,
+        updatedAt: new Date(),
+        updatedBy: admin.id
+      }).where(eq(platformSettings.key, key)).run();
+    } else {
+      await db.insert(platformSettings).values({
+        id: `set_${crypto.randomUUID().replace(/-/g, '').substring(0, 10)}`,
+        key,
+        value: String(body.value),
+        description: body.description || '',
+        updatedAt: new Date(),
+        updatedBy: admin.id
+      }).run();
+    }
+    
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update platform setting' }, 500);
+  }
+});
+

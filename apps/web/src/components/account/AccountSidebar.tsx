@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { name: "Overview", href: "/account", icon: LayoutDashboard },
   { name: "Profile", href: "/account/profile", icon: User },
+  { name: "My Bookings", href: "/account/bookings", icon: FileSignature },
   { name: "Security", href: "/account/security", icon: Shield },
   { name: "KYC Verification", href: "/account/kyc", icon: Shield },
   { name: "Sessions", href: "/account/sessions", icon: KeyRound },

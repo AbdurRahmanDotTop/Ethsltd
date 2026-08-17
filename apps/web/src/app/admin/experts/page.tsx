@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiClient } from "@ethsltd/api-client";
-import { CheckCircle, XCircle, Clock, Plus, Search } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Plus, Search, Settings } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 
 export default function AdminExpertsPage() {
@@ -10,9 +10,19 @@ export default function AdminExpertsPage() {
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
+  // Platform Fee State
+  const [commissionFee, setCommissionFee] = useState("10");
+  const [isFeeModalOpen, setIsFeeModalOpen] = useState(false);
+  const [isSavingFee, setIsSavingFee] = useState(false);
+
   // Add Expert Form State
+  const [mode, setMode] = useState<'convert' | 'create'>('convert');
   const [addForm, setAddForm] = useState({
     email: '',
+    firstName: '',
+    lastName: '',
+    displayName: '',
+    password: '',
     bio: '',
     experienceYears: 0,
     categories: '',
@@ -33,8 +43,21 @@ export default function AdminExpertsPage() {
     }
   };
 
+  const fetchPlatformSettings = async () => {
+    try {
+      const res = await apiClient.adminGetPlatformSettings();
+      if (res.success && res.data) {
+        const feeSetting = res.data.find((s: any) => s.key === 'EXPERT_COMMISSION_PERCENTAGE');
+        if (feeSetting) setCommissionFee(feeSetting.value);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchExperts();
+    fetchPlatformSettings();
   }, []);
 
   const handleUpdateStatus = async (expertId: string, status: string) => {
@@ -56,14 +79,15 @@ export default function AdminExpertsPage() {
     try {
       const payload = {
         ...addForm,
+        mode,
         categories: addForm.categories.split(',').map(c => c.trim()).filter(Boolean),
         languages: addForm.languages.split(',').map(l => l.trim()).filter(Boolean)
       };
       const res = await apiClient.adminCreateExpert(payload);
       if (res.success) {
-        alert("Expert created successfully!");
+        alert("Expert profile created successfully!");
         setIsAddModalOpen(false);
-        setAddForm({ email: '', bio: '', experienceYears: 0, categories: '', languages: '' });
+        setAddForm({ email: '', firstName: '', lastName: '', displayName: '', password: '', bio: '', experienceYears: 0, categories: '', languages: '' });
         fetchExperts();
       } else {
         alert(res.error || "Failed to create expert");
@@ -75,20 +99,50 @@ export default function AdminExpertsPage() {
     }
   };
 
+  const handleSaveFee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingFee(true);
+    try {
+      const res = await apiClient.adminUpdatePlatformSetting('EXPERT_COMMISSION_PERCENTAGE', {
+        value: commissionFee,
+        description: "Global platform fee percentage for expert services"
+      });
+      if (res.success) {
+        alert("Platform fee updated successfully!");
+        setIsFeeModalOpen(false);
+      } else {
+        alert(res.error || "Failed to update fee");
+      }
+    } catch (err) {
+      alert("Error saving fee");
+    } finally {
+      setIsSavingFee(false);
+    }
+  };
+
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Expert Management</h2>
           <p className="text-muted-foreground mt-1 text-sm">Review, approve, and add expert profiles.</p>
         </div>
-        <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="bg-brand-primary text-primary-foreground hover:bg-brand-primary/90 px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Expert
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setIsFeeModalOpen(true)}
+            className="bg-muted text-foreground hover:bg-muted/80 px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 border border-border"
+          >
+            <Settings className="w-4 h-4" />
+            Platform Fee ({commissionFee}%)
+          </button>
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-brand-primary text-primary-foreground hover:bg-brand-primary/90 px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Expert
+          </button>
+        </div>
       </div>
 
       <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
@@ -125,7 +179,6 @@ export default function AdminExpertsPage() {
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell max-w-[200px] truncate">
                       <div className="text-xs text-muted-foreground">
-                        {/* We are fetching this from adminGetExperts, let's make sure backend sends bio and categories if needed */}
                         <span className="font-medium text-foreground block truncate">Bio: {expert.bio || 'No bio'}</span>
                         <span>Exp: {expert.experienceYears}y</span>
                       </div>
@@ -181,26 +234,134 @@ export default function AdminExpertsPage() {
         )}
       </div>
 
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      <Dialog open={isFeeModalOpen} onOpenChange={setIsFeeModalOpen}>
         <DialogContent className="bg-card border-border sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add New Expert</DialogTitle>
+            <DialogTitle>Global Expert Commission</DialogTitle>
             <DialogDescription>
-              Assign the EXPERT role to an existing user and create their verified profile instantly.
+              Set the platform fee percentage deducted from all expert service bookings upon completion.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveFee} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Commission Percentage (%)</label>
+              <input 
+                type="number" 
+                min="0"
+                max="100"
+                step="0.01"
+                required
+                value={commissionFee}
+                onChange={(e) => setCommissionFee(e.target.value)}
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
+              />
+            </div>
+            <DialogFooter className="pt-4">
+              <button 
+                type="button" 
+                onClick={() => setIsFeeModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors"
+                disabled={isSavingFee}
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                disabled={isSavingFee}
+                className="px-4 py-2 text-sm font-medium text-primary-foreground bg-brand-primary hover:bg-brand-primary/90 rounded-md transition-colors disabled:opacity-50"
+              >
+                {isSavingFee ? 'Saving...' : 'Save Settings'}
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="bg-card border-border sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Expert</DialogTitle>
+            <DialogDescription>
+              Create a new expert account or convert an existing user into an expert.
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleAddExpert} className="space-y-4 py-4">
+          <div className="flex gap-2 bg-muted/50 p-1 rounded-md mb-4">
+            <button
+              type="button"
+              className={`flex-1 py-1.5 text-sm rounded-sm transition-colors ${mode === 'convert' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setMode('convert')}
+            >
+              Convert Existing User
+            </button>
+            <button
+              type="button"
+              className={`flex-1 py-1.5 text-sm rounded-sm transition-colors ${mode === 'create' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setMode('create')}
+            >
+              Create New User
+            </button>
+          </div>
+
+          <form onSubmit={handleAddExpert} className="space-y-4">
+            {mode === 'create' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">First Name</label>
+                    <input 
+                      type="text" 
+                      value={addForm.firstName}
+                      onChange={(e) => setAddForm({...addForm, firstName: e.target.value})}
+                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Last Name</label>
+                    <input 
+                      type="text" 
+                      value={addForm.lastName}
+                      onChange={(e) => setAddForm({...addForm, lastName: e.target.value})}
+                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Display Name</label>
+                  <input 
+                    type="text" 
+                    value={addForm.displayName}
+                    onChange={(e) => setAddForm({...addForm, displayName: e.target.value})}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Password <span className="text-red-500">*</span></label>
+                  <input 
+                    type="password" 
+                    required={mode === 'create'}
+                    placeholder="Temporary password"
+                    value={addForm.password}
+                    onChange={(e) => setAddForm({...addForm, password: e.target.value})}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                  />
+                </div>
+              </>
+            )}
+
             <div className="space-y-2">
               <label className="text-sm font-medium">User Email <span className="text-red-500">*</span></label>
               <input 
                 type="email" 
                 required
-                placeholder="user@example.com"
+                placeholder={mode === 'convert' ? "user@example.com" : "expert@example.com"}
                 value={addForm.email}
                 onChange={(e) => setAddForm({...addForm, email: e.target.value})}
                 className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
               />
+              {mode === 'convert' && (
+                <p className="text-xs text-muted-foreground">The user must already exist in the system.</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -260,7 +421,7 @@ export default function AdminExpertsPage() {
                 disabled={isSubmitting}
                 className="px-4 py-2 text-sm font-medium text-primary-foreground bg-brand-primary hover:bg-brand-primary/90 rounded-md transition-colors disabled:opacity-50"
               >
-                {isSubmitting ? 'Creating...' : 'Create Expert'}
+                {isSubmitting ? 'Processing...' : 'Submit'}
               </button>
             </DialogFooter>
           </form>
@@ -269,3 +430,4 @@ export default function AdminExpertsPage() {
     </div>
   );
 }
+

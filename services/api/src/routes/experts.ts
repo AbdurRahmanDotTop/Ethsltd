@@ -37,6 +37,39 @@ expertRoutes.get('/', async (c) => {
   }
 });
 
+// Get specific expert profile
+expertRoutes.get('/:id', async (c) => {
+  const db = c.get('db');
+  const id = c.req.param('id');
+  
+  try {
+    const expert = await db.select({
+      id: expertProfiles.id,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+      bio: expertProfiles.bio,
+      experienceYears: expertProfiles.experienceYears,
+      languages: expertProfiles.languages,
+      categories: expertProfiles.categories,
+      rating: expertProfiles.rating,
+      completedServices: expertProfiles.completedServices,
+      customersHelped: expertProfiles.customersHelped,
+      availabilityStatus: expertProfiles.availabilityStatus,
+      verificationStatus: expertProfiles.verificationStatus,
+    })
+    .from(expertProfiles)
+    .innerJoin(users, eq(users.id, expertProfiles.userId))
+    .where(and(eq(expertProfiles.id, id), eq(expertProfiles.verificationStatus, 'VERIFIED')))
+    .get();
+    
+    if (!expert) return c.json({ success: false, error: 'Expert not found' }, 404);
+    
+    return c.json({ success: true, data: expert });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch expert' }, 500);
+  }
+});
+
 // Get specific expert's services
 expertRoutes.get('/:id/services', async (c) => {
   const db = c.get('db');
@@ -206,6 +239,306 @@ expertRoutes.get('/bookings/me', async (c) => {
     
     return c.json({ success: true, data: bookings });
   } catch (error) {
+// ==========================================
+// EXPERT DASHBOARD ROUTES
+// ==========================================
+
+// Expert Middleware: Ensure user is an EXPERT
+expertRoutes.use('/dashboard/*', async (c, next) => {
+  const user = c.get('user');
+  if (user.role !== 'EXPERT') {
+    return c.json({ success: false, error: 'Unauthorized: Expert access required' }, 403);
+  }
+  await next();
+});
+
+// GET /api/v1/experts/dashboard/me
+expertRoutes.get('/dashboard/me', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  try {
+    const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    return c.json({ success: true, data: profile });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch expert profile' }, 500);
+  }
+});
+
+// PUT /api/v1/experts/dashboard/me
+expertRoutes.put('/dashboard/me', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const body = await c.req.json();
+  try {
+    const existing = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    if (!existing) return c.json({ success: false, error: 'Profile not found' }, 404);
+
+    await db.update(expertProfiles).set({
+      bio: body.bio || existing.bio,
+      experienceYears: body.experienceYears !== undefined ? body.experienceYears : existing.experienceYears,
+      languages: body.languages || existing.languages,
+      categories: body.categories || existing.categories,
+      availabilityStatus: body.availabilityStatus || existing.availabilityStatus,
+      updatedAt: new Date()
+    }).where(eq(expertProfiles.userId, user.id));
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update profile' }, 500);
+  }
+});
+
+// GET /api/v1/experts/dashboard/services
+expertRoutes.get('/dashboard/services', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  try {
+    const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
+
+    const services = await db.select().from(expertServices).where(eq(expertServices.expertId, profile.id)).all();
+    return c.json({ success: true, data: services });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch services' }, 500);
+  }
+});
+
+// POST /api/v1/experts/dashboard/services
+expertRoutes.post('/dashboard/services', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const body = await c.req.json();
+  try {
+    const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
+
+    const serviceId = `srv_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+    await db.insert(expertServices).values({
+      id: serviceId,
+      expertId: profile.id,
+      title: body.title,
+      description: body.description,
+      category: body.category || 'General',
+      durationMinutes: body.durationMinutes || 60,
+      price: String(body.price),
+      currency: body.currency || 'USD',
+      pricingType: body.pricingType || 'FIXED',
+      status: 'PENDING_APPROVAL', // Admin must approve
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    return c.json({ success: true, data: { id: serviceId } });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to create service' }, 500);
+  }
+});
+
+// PUT /api/v1/experts/dashboard/services/:id
+expertRoutes.put('/dashboard/services/:id', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const serviceId = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
+
+    const service = await db.select().from(expertServices).where(and(eq(expertServices.id, serviceId), eq(expertServices.expertId, profile.id))).get();
+    if (!service) return c.json({ success: false, error: 'Service not found' }, 404);
+
+    await db.update(expertServices).set({
+      title: body.title || service.title,
+      description: body.description || service.description,
+      category: body.category || service.category,
+      durationMinutes: body.durationMinutes || service.durationMinutes,
+      price: body.price ? String(body.price) : service.price,
+      currency: body.currency || service.currency,
+      status: body.status || service.status, // Allow toggling ACTIVE/PAUSED
+      updatedAt: new Date()
+    }).where(eq(expertServices.id, serviceId));
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update service' }, 500);
+  }
+});
+
+// GET /api/v1/experts/dashboard/bookings
+expertRoutes.get('/dashboard/bookings', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  try {
+    const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
+
+    const bookings = await db.select({
+      id: expertBookings.id,
+      userId: users.id,
+      userDisplayName: users.displayName,
+      serviceTitle: expertServices.title,
+      price: expertBookings.price,
+      currency: expertBookings.currency,
+      status: expertBookings.status,
+      scheduledAt: expertBookings.scheduledAt,
+      createdAt: expertBookings.createdAt
+    })
+    .from(expertBookings)
+    .innerJoin(users, eq(expertBookings.userId, users.id))
+    .innerJoin(expertServices, eq(expertBookings.serviceId, expertServices.id))
+    .where(eq(expertBookings.expertId, profile.id))
+    .orderBy(desc(expertBookings.createdAt))
+    .all();
+
+    return c.json({ success: true, data: bookings });
+  } catch (error) {
     return c.json({ success: false, error: 'Failed to fetch bookings' }, 500);
   }
 });
+
+// POST /api/v1/experts/dashboard/bookings/:id/action
+expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const bookingId = c.req.param('id');
+  const { action } = await c.req.json(); // ACCEPT, REJECT, COMPLETE
+  
+  try {
+    const { platformSettings } = require('database');
+    const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
+
+    const booking = await db.select().from(expertBookings).where(and(eq(expertBookings.id, bookingId), eq(expertBookings.expertId, profile.id))).get();
+    if (!booking) return c.json({ success: false, error: 'Booking not found' }, 404);
+
+    const now = new Date();
+
+    if (action === 'ACCEPT' && booking.status === 'PENDING_EXPERT') {
+      await db.update(expertBookings).set({ status: 'ACCEPTED', updatedAt: now }).where(eq(expertBookings.id, bookingId));
+      return c.json({ success: true });
+    }
+    
+    if (action === 'REJECT' && booking.status === 'PENDING_EXPERT') {
+      // Refund Escrow to User
+      const userWallet = await db.select().from(wallets).where(and(eq(wallets.userId, booking.userId), eq(wallets.assetSymbol, booking.currency))).get();
+      if (userWallet) {
+        const refundAmt = parseFloat(booking.price);
+        const newEscrow = parseFloat(userWallet.escrowBalance) - refundAmt;
+        const newBalance = parseFloat(userWallet.balance) + refundAmt;
+        await db.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id));
+        
+        // Record Refund Wallet Tx
+        await db.insert(walletTransactions).values({
+          id: `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
+          userId: booking.userId,
+          type: 'REFUND',
+          mode: userWallet.type,
+          assetSymbol: booking.currency,
+          amount: refundAmt.toString(),
+          status: 'COMPLETED',
+          reference: bookingId,
+          createdAt: now,
+          updatedAt: now
+        }).run();
+      }
+      
+      await db.update(expertBookings).set({ status: 'REJECTED', updatedAt: now }).where(eq(expertBookings.id, bookingId));
+      return c.json({ success: true });
+    }
+
+    if (action === 'COMPLETE' && booking.status === 'ACCEPTED') {
+      // Finalize Payment: Deduct Escrow from User -> Expert Balance & Platform Revenue
+      const price = parseFloat(booking.price);
+      
+      const commissionSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'EXPERT_COMMISSION_PERCENTAGE')).get();
+      const commissionRate = commissionSetting ? parseFloat(commissionSetting.value) : 10;
+      
+      const platformFee = (price * commissionRate) / 100;
+      const expertEarnings = price - platformFee;
+      
+      // 1. Deduct User Escrow and Overall Balance entirely
+      const userWallet = await db.select().from(wallets).where(and(eq(wallets.userId, booking.userId), eq(wallets.assetSymbol, booking.currency))).get();
+      if (userWallet) {
+        const newEscrow = parseFloat(userWallet.escrowBalance) - price;
+        const newBalance = parseFloat(userWallet.balance) - price;
+        await db.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id));
+      }
+      
+      // 2. Add to Expert Real Balance
+      const expertWallet = await db.select().from(wallets).where(and(eq(wallets.userId, profile.userId), eq(wallets.assetSymbol, booking.currency))).get();
+      if (expertWallet) {
+        const newExpertBalance = parseFloat(expertWallet.balance) + expertEarnings;
+        await db.update(wallets).set({ balance: newExpertBalance.toString(), updatedAt: now }).where(eq(wallets.id, expertWallet.id));
+      } else {
+        await db.insert(wallets).values({
+          id: `wal_${crypto.randomUUID()}`,
+          userId: profile.userId,
+          assetSymbol: booking.currency,
+          type: 'REAL',
+          balance: expertEarnings.toString(),
+          lockedBalance: '0',
+          escrowBalance: '0',
+          createdAt: now,
+          updatedAt: now
+        }).run();
+      }
+
+      // Record Expert Wallet Transaction
+      const expertTxId = `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+      await db.insert(walletTransactions).values({
+        id: expertTxId,
+        userId: profile.userId,
+        type: 'EXPERT_EARNINGS',
+        mode: 'REAL',
+        assetSymbol: booking.currency,
+        amount: expertEarnings.toString(),
+        status: 'COMPLETED',
+        reference: bookingId,
+        createdAt: now,
+        updatedAt: now
+      }).run();
+      
+      // Record Platform Ledger Entry for Commission
+      const ledgerTxId = `ltx_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+      await db.insert(ledgerTransactions).values({
+        id: ledgerTxId,
+        type: 'FEE',
+        referenceId: bookingId,
+        referenceType: 'EXPERT_SERVICE',
+        status: 'COMPLETED',
+        createdAt: now,
+        updatedAt: now
+      }).run();
+      
+      await db.insert(ledgerEntries).values({
+        id: `len_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
+        transactionId: ledgerTxId,
+        accountId: 'SYSTEM_FEE',
+        assetSymbol: booking.currency,
+        amount: platformFee.toString(),
+        type: 'CREDIT',
+        createdAt: now,
+        updatedAt: now
+      }).run();
+      
+      // 3. Update Booking
+      await db.update(expertBookings).set({ 
+        status: 'COMPLETED', 
+        platformFee: platformFee.toString(),
+        expertEarnings: expertEarnings.toString(),
+        updatedAt: now 
+      }).where(eq(expertBookings.id, bookingId));
+      
+      // 4. Expert Profile Stats Update
+      await db.update(expertProfiles).set({ completedServices: profile.completedServices + 1, updatedAt: now }).where(eq(expertProfiles.id, profile.id));
+
+      return c.json({ success: true });
+    }
+
+    return c.json({ success: false, error: 'Invalid action or booking state' }, 400);
+  } catch (error: any) {
+    console.error(error);
+    return c.json({ success: false, error: 'Failed to process booking action' }, 500);
+  }
+});
+

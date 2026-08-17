@@ -542,6 +542,18 @@ export class EthsltdClient {
     });
   }
 
+  // Admin Platform Settings
+  async adminGetPlatformSettings() {
+    return this.request<any[]>('/api/v1/admin/platform-settings');
+  }
+
+  async adminUpdatePlatformSetting(key: string, data: { value: string; description?: string }) {
+    return this.request<any>(`/api/v1/admin/platform-settings/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   // ==========================
   // SETTINGS (Profile, MFA, Sessions)
   // ==========================
@@ -616,6 +628,10 @@ export class EthsltdClient {
     return this.request<any[]>('/api/v1/experts');
   }
 
+  async getExpert(id: string) {
+    return this.request<any>(`/api/v1/experts/${id}`);
+  }
+
   async getExpertServices(expertId: string) {
     return this.request<any[]>(`/api/v1/experts/${expertId}/services`);
   }
@@ -636,6 +652,47 @@ export class EthsltdClient {
 
   async getMyExpertBookings() {
     return this.request<any[]>('/api/v1/experts/bookings/me');
+  }
+
+  // EXPERT DASHBOARD
+  async expertGetMe() {
+    return this.request<any>('/api/v1/experts/dashboard/me');
+  }
+
+  async expertUpdateMe(data: any) {
+    return this.request<any>('/api/v1/experts/dashboard/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async expertGetServices() {
+    return this.request<any[]>('/api/v1/experts/dashboard/services');
+  }
+
+  async expertCreateService(data: any) {
+    return this.request<any>('/api/v1/experts/dashboard/services', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async expertUpdateService(serviceId: string, data: any) {
+    return this.request<any>(`/api/v1/experts/dashboard/services/${serviceId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async expertGetBookings() {
+    return this.request<any[]>('/api/v1/experts/dashboard/bookings');
+  }
+
+  async expertActionBooking(bookingId: string, action: 'ACCEPT' | 'REJECT' | 'COMPLETE') {
+    return this.request<any>(`/api/v1/experts/dashboard/bookings/${bookingId}/action`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    });
   }
 }
 
