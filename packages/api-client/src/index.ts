@@ -654,6 +654,13 @@ export class EthsltdClient {
     return this.request<any[]>('/api/v1/experts/bookings/me');
   }
 
+  async submitExpertReview(bookingId: string, rating: number, comment: string) {
+    return this.request<any>(`/api/v1/experts/bookings/${bookingId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ rating, comment }),
+    });
+  }
+
   // EXPERT DASHBOARD
   async expertGetMe() {
     return this.request<any>('/api/v1/experts/dashboard/me');

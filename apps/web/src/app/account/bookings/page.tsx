@@ -2,12 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { apiClient } from "@ethsltd/api-client";
-import { Loader2, Calendar, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Loader2, Calendar, CheckCircle2, Clock, XCircle, Star, MessageSquare } from "lucide-react";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 
 export default function UserBookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Review Modal State
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -32,6 +41,81 @@ export default function UserBookingsPage() {
         <p className="text-muted-foreground mt-1 text-sm">View and manage your expert sessions.</p>
       </div>
 
+      <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Review your Session</DialogTitle>
+            <DialogDescription>
+              How was your session for {selectedBooking?.serviceTitle}? Your feedback helps the community.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="flex justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  className="transition-transform hover:scale-110 focus:outline-none"
+                >
+                  <Star className={`w-10 h-10 ${star <= rating ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground/30 stroke-[1.5]"}`} />
+                </button>
+              ))}
+            </div>
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-semibold text-foreground">Comment (Optional)</label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Share your experience..."
+                rows={4}
+                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-y"
+              />
+            </div>
+            {reviewError && (
+              <p className="text-sm text-red-500 font-medium">{reviewError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <button 
+              type="button" 
+              onClick={() => setReviewModalOpen(false)}
+              className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted rounded-lg"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              onClick={async () => {
+                if (!selectedBooking) return;
+                setIsSubmitting(true);
+                setReviewError(null);
+                try {
+                  const res = await apiClient.submitExpertReview(selectedBooking.id, rating, comment);
+                  if (res.success) {
+                    alert("Review submitted successfully!");
+                    setReviewModalOpen(false);
+                    // Update local state to hide button
+                    setBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, hasReviewed: true } : b));
+                  } else {
+                    setReviewError(res.error || "Failed to submit review");
+                  }
+                } catch(e) {
+                  setReviewError("An unexpected error occurred");
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }}
+              className="px-4 py-2 text-sm font-semibold bg-brand-primary text-primary-foreground hover:bg-brand-primary/90 rounded-lg flex items-center gap-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Review'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand-primary" /></div>
@@ -52,6 +136,7 @@ export default function UserBookingsPage() {
                   <th className="px-4 py-3">Scheduled For</th>
                   <th className="px-4 py-3">Amount</th>
                   <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -76,6 +161,28 @@ export default function UserBookingsPage() {
                         {b.status === 'REJECTED' && <XCircle className="w-3 h-3" />}
                         {b.status.replace('_', ' ')}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {b.status === 'COMPLETED' && !b.hasReviewed && (
+                        <button
+                          onClick={() => {
+                            setSelectedBooking(b);
+                            setRating(5);
+                            setComment("");
+                            setReviewError(null);
+                            setReviewModalOpen(true);
+                          }}
+                          className="text-xs font-semibold text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 px-3 py-1.5 rounded-md inline-flex items-center gap-1 transition-colors"
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                          Leave Review
+                        </button>
+                      )}
+                      {b.hasReviewed && (
+                        <span className="text-xs font-medium text-muted-foreground flex items-center justify-end gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Reviewed
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

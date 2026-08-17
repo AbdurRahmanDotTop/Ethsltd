@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { eq, and, desc } from 'drizzle-orm';
-import { expertProfiles, expertServices, expertBookings, users, wallets, ledgerTransactions, ledgerEntries, walletTransactions } from 'database';
+import { expertProfiles, expertServices, expertBookings, users, wallets, ledgerTransactions, ledgerEntries, walletTransactions, expertReviews } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { Bindings, Variables } from '../db';
 
@@ -64,7 +64,22 @@ expertRoutes.get('/:id', async (c) => {
     
     if (!expert) return c.json({ success: false, error: 'Expert not found' }, 404);
     
-    return c.json({ success: true, data: expert });
+    // Fetch reviews
+    const reviews = await db.select({
+      id: expertReviews.id,
+      rating: expertReviews.rating,
+      comment: expertReviews.comment,
+      createdAt: expertReviews.createdAt,
+      userDisplayName: users.displayName,
+      userAvatar: users.avatarUrl
+    })
+    .from(expertReviews)
+    .innerJoin(users, eq(users.id, expertReviews.userId))
+    .where(eq(expertReviews.expertId, id))
+    .orderBy(desc(expertReviews.createdAt))
+    .all();
+    
+    return c.json({ success: true, data: { ...expert, reviews } });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to fetch expert' }, 500);
   }
@@ -229,17 +244,71 @@ expertRoutes.get('/bookings/me', async (c) => {
       currency: expertBookings.currency,
       status: expertBookings.status,
       scheduledAt: expertBookings.scheduledAt,
-      createdAt: expertBookings.createdAt
+      createdAt: expertBookings.createdAt,
+      reviewId: expertReviews.id
     })
     .from(expertBookings)
     .innerJoin(expertServices, eq(expertBookings.serviceId, expertServices.id))
+    .leftJoin(expertReviews, eq(expertBookings.id, expertReviews.bookingId))
     .where(eq(expertBookings.userId, user.id))
     .orderBy(desc(expertBookings.createdAt))
     .all();
     
-    return c.json({ success: true, data: bookings });
+    const formattedBookings = bookings.map(b => ({
+      ...b,
+      hasReviewed: !!b.reviewId
+    }));
+    
+    return c.json({ success: true, data: formattedBookings });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to fetch bookings' }, 500);
+  }
+});
+
+// Submit a review for a completed booking
+expertRoutes.post('/bookings/:id/review', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const bookingId = c.req.param('id');
+  const { rating, comment } = await c.req.json();
+  
+  if (!rating || rating < 1 || rating > 5) {
+    return c.json({ success: false, error: 'Rating must be between 1 and 5' }, 400);
+  }
+  
+  try {
+    const booking = await db.select().from(expertBookings).where(and(eq(expertBookings.id, bookingId), eq(expertBookings.userId, user.id))).get();
+    
+    if (!booking) return c.json({ success: false, error: 'Booking not found' }, 404);
+    if (booking.status !== 'COMPLETED') return c.json({ success: false, error: 'You can only review completed sessions' }, 400);
+    
+    const existingReview = await db.select().from(expertReviews).where(eq(expertReviews.bookingId, bookingId)).get();
+    if (existingReview) return c.json({ success: false, error: 'Review already submitted for this session' }, 400);
+    
+    // Insert Review
+    await db.insert(expertReviews).values({
+      id: `rev_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
+      bookingId,
+      userId: user.id,
+      expertId: booking.expertId,
+      rating,
+      comment,
+      createdAt: new Date()
+    }).run();
+    
+    // Recalculate average rating for the expert
+    const allReviews = await db.select().from(expertReviews).where(eq(expertReviews.expertId, booking.expertId)).all();
+    const avgRating = allReviews.reduce((acc, curr) => acc + curr.rating, 0) / allReviews.length;
+    
+    await db.update(expertProfiles).set({
+      rating: parseFloat(avgRating.toFixed(1)),
+      updatedAt: new Date()
+    }).where(eq(expertProfiles.id, booking.expertId)).run();
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Submit review error:', error);
+    return c.json({ success: false, error: 'Failed to submit review' }, 500);
   }
 });
 

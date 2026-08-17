@@ -231,6 +231,55 @@ export default function ExpertProfilePage() {
               </div>
             </div>
             
+            {/* Reviews Section */}
+            <div className="md:col-span-2 space-y-6 mt-4">
+              <h2 className="text-xl font-bold text-foreground mb-4">Client Reviews</h2>
+              {(!expert.reviews || expert.reviews.length === 0) ? (
+                <div className="bg-card border border-border border-dashed rounded-xl p-8 text-center text-muted-foreground">
+                  No reviews yet. Be the first to review after a session!
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {expert.reviews.map((review: any) => (
+                    <div key={review.id} className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+                            {review.userAvatar ? (
+                              <img src={review.userAvatar} alt="User avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="font-bold text-muted-foreground">
+                                {(review.userDisplayName || 'U').charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm text-foreground">{review.userDisplayName || 'User'}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star 
+                              key={star} 
+                              className={`w-4 h-4 ${star <= review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-muted stroke-muted-foreground/30'}`} 
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                          "{review.comment}"
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             <div className="space-y-6">
               {/* Categories & Skills */}
               <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
