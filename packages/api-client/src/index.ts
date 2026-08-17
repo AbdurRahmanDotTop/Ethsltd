@@ -348,6 +348,10 @@ export class EthsltdClient {
     return this.request<any>(`/api/v1/admin/users?${query.toString()}`);
   }
 
+  async getAdminUserDetails(userId: string) {
+    return this.request<any>(`/api/v1/admin/users/${userId}`);
+  }
+
   async updateAdminUserStatus(userId: string, status: string) {
     return this.request<any>(`/api/v1/admin/users/${userId}/status`, {
       method: 'POST',

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, bankTransfers, real_manual_deposits, orders, positions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, sessions } from 'database';
+import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, bankTransfers, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const adminRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -61,6 +61,41 @@ adminRoutes.get('/users', async (c) => {
     return c.json({ success: true, data: allUsers });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to fetch users' }, 500);
+  }
+});
+
+// GET /api/v1/admin/users/:id
+adminRoutes.get('/users/:id', async (c) => {
+  const db = c.get('db');
+  const userId = c.req.param('id');
+  try {
+    const { eq } = require('drizzle-orm');
+    const user = await db.select().from(users).where(eq(users.id, userId)).get();
+    if (!user) return c.json({ success: false, error: 'User not found' }, 404);
+    
+    const kyc = await db.select().from(kycProfiles).where(eq(kycProfiles.userId, userId)).get();
+    const userWallets = await db.select().from(wallets).where(eq(wallets.userId, userId)).all();
+    
+    let balanceUsd = 0;
+    for (const w of userWallets) {
+      if (w.assetSymbol === 'USDT' || w.assetSymbol === 'USD') {
+        balanceUsd += parseFloat(w.balance || '0') + parseFloat(w.lockedBalance || '0') + parseFloat(w.escrowBalance || '0');
+      }
+    }
+    
+    return c.json({
+      success: true,
+      data: {
+        ...user,
+        kycStatus: kyc ? kyc.status : 'UNVERIFIED',
+        riskLevel: 'LOW',
+        balanceUsd,
+        tradingVolumeUsd: 0, // Implement real aggregation later
+        p2pVolumeUsd: 0, // Implement real aggregation later
+      }
+    });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch user details' }, 500);
   }
 });
 
@@ -168,6 +203,7 @@ adminRoutes.delete('/users/:id', async (c) => {
       
       // Financials
       if (cregisDeposits) await tx.delete(cregisDeposits).where(eq(cregisDeposits.userId, userId));
+      if (cregisPayouts) await tx.delete(cregisPayouts).where(eq(cregisPayouts.userId, userId));
       if (real_manual_deposits) await tx.delete(real_manual_deposits).where(eq(real_manual_deposits.user_id, userId));
       if (bankTransfers) await tx.delete(bankTransfers).where(eq(bankTransfers.userId, userId));
       if (walletTransactions) await tx.delete(walletTransactions).where(eq(walletTransactions.userId, userId));
@@ -177,6 +213,7 @@ adminRoutes.delete('/users/:id', async (c) => {
       // Trading
       if (positions) await tx.delete(positions).where(eq(positions.userId, userId));
       if (orders) await tx.delete(orders).where(eq(orders.userId, userId));
+      if (binaryOptions) await tx.delete(binaryOptions).where(eq(binaryOptions.userId, userId));
       
       // P2P
       if (p2pPaymentMethods) await tx.delete(p2pPaymentMethods).where(eq(p2pPaymentMethods.userId, userId));

@@ -30,9 +30,9 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   useEffect(() => {
     async function load() {
       try {
-        const res = await apiClient.getAdminUsers({ search: id, limit: 1 });
-        if (res.success && res.data && res.data.length > 0) {
-          setUser(res.data[0]);
+        const res = await apiClient.getAdminUserDetails(id);
+        if (res.success && res.data) {
+          setUser(res.data);
         }
       } catch (e) {
         console.error(e);
@@ -61,8 +61,9 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
     );
   }
 
-  const formatUSD = (val: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+  const formatUSD = (val: number | string | undefined | null) => {
+    const num = parseFloat(val as any);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(isNaN(num) ? 0 : num);
   };
 
   const statusColors: Record<string, string> = {
