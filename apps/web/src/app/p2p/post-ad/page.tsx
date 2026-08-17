@@ -22,7 +22,7 @@ export default function PostAdPage() {
   const [formData, setFormData] = useState({
     type: "BUY" as P2PSide | "BUY" | "SELL",
     asset: "USDT",
-    fiat: "USD",
+    fiat: "INR",
     price: "",
     isFloating: false,
     priceMargin: "",
@@ -35,17 +35,71 @@ export default function PostAdPage() {
     autoReply: ""
   });
 
+  const [hasInsufficientBalance, setHasInsufficientBalance] = useState(false);
+  const [isCheckingBalance, setIsCheckingBalance] = useState(true);
+
   useEffect(() => {
     if (hasHydrated && status === "unauthenticated") {
       router.push("/login?callbackUrl=/p2p/post-ad");
+      return;
+    }
+
+    if (hasHydrated && status === "authenticated") {
+      async function checkBalance() {
+        try {
+          const res = await apiClient.getWalletBalances('REAL');
+          if (res.success && res.data) {
+            let totalBalance = 0;
+            for (const wallet of res.data) {
+              totalBalance += parseFloat(wallet.balance) + parseFloat(wallet.lockedBalance || '0') + parseFloat(wallet.escrowBalance || '0');
+            }
+            if (totalBalance <= 0) {
+              setHasInsufficientBalance(true);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to check balance", err);
+        } finally {
+          setIsCheckingBalance(false);
+        }
+      }
+      checkBalance();
     }
   }, [hasHydrated, status, router]);
 
-  if (!hasHydrated || status === "loading" || status === "unauthenticated") {
+  if (!hasHydrated || status === "loading" || status === "unauthenticated" || isCheckingBalance) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] bg-muted/30">
         <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
       </div>
+    );
+  }
+
+  if (hasInsufficientBalance) {
+    return (
+      <main className="flex-1 py-12 px-4 md:px-8 max-w-[800px] mx-auto w-full">
+        <Link href="/p2p/my-ads" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-8 transition-colors">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to My Ads
+        </Link>
+        <div className="bg-card border border-border rounded-xl shadow-sm p-8 text-center max-w-lg mx-auto mt-12">
+          <div className="w-16 h-16 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Info className="w-8 h-8 text-brand-primary" />
+          </div>
+          <h2 className="text-2xl font-bold mb-4">Insufficient Balance</h2>
+          <p className="text-muted-foreground mb-8 text-sm md:text-base">
+            You do not have any real funds in your wallet. To post a P2P advertisement, you need to have a funded real wallet to ensure security and trust in the marketplace.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button onClick={() => router.push('/wallets?deposit=true')} size="lg" className="w-full sm:w-auto">
+              Add Deposit
+            </Button>
+            <Button variant="outline" onClick={() => router.push('/p2p')} size="lg" className="w-full sm:w-auto">
+              Explore P2P Market
+            </Button>
+          </div>
+        </div>
+      </main>
     );
   }
 
