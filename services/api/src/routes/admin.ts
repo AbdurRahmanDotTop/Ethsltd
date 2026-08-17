@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { users, kycProfiles, markets, payment_methods } from 'database';
+import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerTransactions, bankTransfers, real_manual_deposits, orders, trades, positions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, supportTickets, supportMessages, notifications, cregisWallets, cregisDepositHistory, authSessions, loginHistory } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const adminRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -155,13 +155,6 @@ adminRoutes.delete('/users/:id', async (c) => {
 
   try {
     const { eq, or } = require('drizzle-orm');
-    const { 
-      users, wallets, walletTransactions, ledgerTransactions, bankTransfers, realManualDeposits,
-      orders, trades, positions,
-      p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback,
-      supportTickets, supportMessages, notifications, kycProfiles,
-      cregisWallets, cregisDepositHistory, authSessions, loginHistory
-    } = require('database');
 
     await db.transaction(async (tx: any) => {
       // Auth & System
@@ -175,7 +168,7 @@ adminRoutes.delete('/users/:id', async (c) => {
       // Financials
       if (cregisDepositHistory) await tx.delete(cregisDepositHistory).where(eq(cregisDepositHistory.userId, userId));
       if (cregisWallets) await tx.delete(cregisWallets).where(eq(cregisWallets.userId, userId));
-      if (realManualDeposits) await tx.delete(realManualDeposits).where(eq(realManualDeposits.user_id, userId));
+      if (real_manual_deposits) await tx.delete(real_manual_deposits).where(eq(real_manual_deposits.user_id, userId));
       if (bankTransfers) await tx.delete(bankTransfers).where(eq(bankTransfers.userId, userId));
       if (walletTransactions) await tx.delete(walletTransactions).where(eq(walletTransactions.userId, userId));
       if (wallets) await tx.delete(wallets).where(eq(wallets.userId, userId));

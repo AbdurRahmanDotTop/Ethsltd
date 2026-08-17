@@ -141,8 +141,12 @@ export default function AdminUsersPage() {
                 e.stopPropagation();
                 if (confirm("Are you sure you want to COMPLETELY DELETE this user? All their data across the platform will be wiped.")) {
                   try {
-                    await apiClient.adminDeleteUser(row.id);
-                    window.location.reload();
+                    const res = await apiClient.adminDeleteUser(row.id);
+                    if (res.success) {
+                      window.location.reload();
+                    } else {
+                      alert("Error deleting user: " + res.error);
+                    }
                   } catch (err) {
                     alert("Failed to delete user");
                   }

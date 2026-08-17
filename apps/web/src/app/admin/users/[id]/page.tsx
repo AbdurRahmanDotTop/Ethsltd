@@ -100,7 +100,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center text-xl font-bold text-brand-primary">
-              {user.name.charAt(0).toUpperCase()}
+              {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
             </div>
             <div>
               <h2 className="text-2xl font-bold">{user.displayName || 'Unknown User'}</h2>
