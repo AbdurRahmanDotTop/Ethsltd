@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { AdminUser } from "@/lib/admin/types";
 import { apiClient } from "@ethsltd/api-client";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, ShieldAlert } from "lucide-react";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function AdminUsersPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -99,8 +101,9 @@ export default function AdminUsersPage() {
       accessor: (row) => (
         <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
           <select 
-            className="text-xs bg-muted border border-border rounded p-1"
+            className="text-xs bg-muted border border-border rounded p-1 disabled:opacity-50"
             value={row.status}
+            disabled={user?.role !== 'SUPER_ADMIN'}
             onChange={async (e) => {
               try {
                 await apiClient.updateAdminUserStatus(row.id, e.target.value);
@@ -115,8 +118,9 @@ export default function AdminUsersPage() {
             <option value="BANNED">BANNED</option>
           </select>
           <select 
-            className="text-xs bg-muted border border-border rounded p-1"
+            className="text-xs bg-muted border border-border rounded p-1 disabled:opacity-50"
             value={row.role}
+            disabled={user?.role !== 'SUPER_ADMIN'}
             onChange={async (e) => {
               try {
                 await apiClient.updateAdminUserRole(row.id, e.target.value);

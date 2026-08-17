@@ -40,7 +40,7 @@ export function AdminHeader() {
           <Menu className="w-5 h-5" />
         </button>
 
-        <h1 className="text-xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent hidden sm:block py-1 pr-4">
+        <h1 className="text-xl font-bold text-white tracking-wide hidden sm:block py-1 pr-4">
           ETHSLTD Admin
         </h1>
         
