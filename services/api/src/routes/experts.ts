@@ -503,7 +503,7 @@ expertRoutes.put('/dashboard/me', async (c) => {
       categories: body.categories || existing.categories,
       availabilityStatus: body.availabilityStatus || existing.availabilityStatus,
       updatedAt: new Date()
-    }).where(eq(expertProfiles.userId, user.id));
+    }).where(eq(expertProfiles.userId, user.id)).run();
 
     return c.json({ success: true });
   } catch (error) {
@@ -549,7 +549,7 @@ expertRoutes.post('/dashboard/services', async (c) => {
       status: 'PENDING_APPROVAL', // Admin must approve
       createdAt: new Date(),
       updatedAt: new Date()
-    });
+    }).run();
 
     return c.json({ success: true, data: { id: serviceId } });
   } catch (error) {
@@ -579,7 +579,7 @@ expertRoutes.put('/dashboard/services/:id', async (c) => {
       currency: body.currency || service.currency,
       status: body.status || service.status, // Allow toggling ACTIVE/PAUSED
       updatedAt: new Date()
-    }).where(eq(expertServices.id, serviceId));
+    }).where(eq(expertServices.id, serviceId)).run();
 
     return c.json({ success: true });
   } catch (error) {
@@ -644,7 +644,7 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
         d.setDate(d.getDate() + 30);
         expiresAt = d;
       }
-      await db.update(expertBookings).set({ status: 'ACCEPTED', expiresAt, updatedAt: now }).where(eq(expertBookings.id, bookingId));
+      await db.update(expertBookings).set({ status: 'ACCEPTED', expiresAt, updatedAt: now }).where(eq(expertBookings.id, bookingId)).run();
       return c.json({ success: true });
     }
     
@@ -655,7 +655,7 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
         const refundAmt = parseFloat(booking.price);
         const newEscrow = parseFloat(userWallet.escrowBalance) - refundAmt;
         const newBalance = parseFloat(userWallet.balance) + refundAmt;
-        await db.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id));
+        await db.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id)).run();
         
         // Record Refund Wallet Tx
         await db.insert(walletTransactions).values({
@@ -672,7 +672,7 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
         }).run();
       }
       
-      await db.update(expertBookings).set({ status: 'REFUNDED', updatedAt: now }).where(eq(expertBookings.id, bookingId));
+      await db.update(expertBookings).set({ status: 'REFUNDED', updatedAt: now }).where(eq(expertBookings.id, bookingId)).run();
       return c.json({ success: true });
     }
 
@@ -691,14 +691,14 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
       if (userWallet) {
         const newEscrow = parseFloat(userWallet.escrowBalance) - price;
         const newBalance = parseFloat(userWallet.balance) - price;
-        await db.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id));
+        await db.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id)).run();
       }
       
       // 2. Add to Expert Real Balance
       const expertWallet = await db.select().from(wallets).where(and(eq(wallets.userId, profile.userId), eq(wallets.assetSymbol, booking.currency))).get();
       if (expertWallet) {
         const newExpertBalance = parseFloat(expertWallet.balance) + expertEarnings;
-        await db.update(wallets).set({ balance: newExpertBalance.toString(), updatedAt: now }).where(eq(wallets.id, expertWallet.id));
+        await db.update(wallets).set({ balance: newExpertBalance.toString(), updatedAt: now }).where(eq(wallets.id, expertWallet.id)).run();
       } else {
         await db.insert(wallets).values({
           id: `wal_${crypto.randomUUID()}`,
@@ -755,10 +755,10 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
         platformFee: platformFee.toString(),
         expertEarnings: expertEarnings.toString(),
         updatedAt: now 
-      }).where(eq(expertBookings.id, bookingId));
+      }).where(eq(expertBookings.id, bookingId)).run();
       
       // 4. Expert Profile Stats Update
-      await db.update(expertProfiles).set({ completedServices: profile.completedServices + 1, updatedAt: now }).where(eq(expertProfiles.id, profile.id));
+      await db.update(expertProfiles).set({ completedServices: profile.completedServices + 1, updatedAt: now }).where(eq(expertProfiles.id, profile.id)).run();
 
       return c.json({ success: true });
     }
@@ -784,7 +784,7 @@ expertRoutes.put('/dashboard/bookings/:id/chat-toggle', async (c) => {
     const booking = await db.select().from(expertBookings).where(and(eq(expertBookings.id, bookingId), eq(expertBookings.expertId, profile.id))).get();
     if (!booking) return c.json({ success: false, error: 'Booking not found' }, 404);
     
-    await db.update(expertBookings).set({ chatEnabled, updatedAt: new Date() }).where(eq(expertBookings.id, bookingId));
+    await db.update(expertBookings).set({ chatEnabled, updatedAt: new Date() }).where(eq(expertBookings.id, bookingId)).run();
     
     return c.json({ success: true });
   } catch (error) {
