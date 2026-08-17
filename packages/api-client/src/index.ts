@@ -349,6 +349,13 @@ export class EthsltdClient {
     });
   }
 
+  async adminCreateExpert(data: { email: string; bio: string; experienceYears: number; categories: string[]; languages: string[] }) {
+    return this.request<any>('/api/v1/admin/experts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async getAdminUsers(params: { page?: number; limit?: number; search?: string; status?: string }) {
     const query = new URLSearchParams();
     if (params.page) query.append('page', params.page.toString());

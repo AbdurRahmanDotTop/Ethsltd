@@ -788,6 +788,8 @@ adminRoutes.get('/experts', async (c) => {
       userId: expertProfiles.userId,
       displayName: users.displayName,
       email: users.email,
+      bio: expertProfiles.bio,
+      experienceYears: expertProfiles.experienceYears,
       verificationStatus: expertProfiles.verificationStatus,
       createdAt: expertProfiles.createdAt
     })
@@ -822,5 +824,53 @@ adminRoutes.put('/experts/:id/status', async (c) => {
     return c.json({ success: true });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to update expert status' }, 500);
+  }
+});
+
+// POST /api/v1/admin/experts (Manually add an expert)
+adminRoutes.post('/experts', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    // Find user by email or ID
+    const targetUser = await db.select().from(users).where(eq(users.email, body.email)).get();
+    if (!targetUser) {
+      return c.json({ success: false, error: 'User not found with this email' }, 404);
+    }
+
+    // Check if profile exists
+    const existing = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, targetUser.id)).get();
+    if (existing) {
+      return c.json({ success: false, error: 'User is already an expert' }, 400);
+    }
+
+    const profileId = `exp_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+    await db.insert(expertProfiles).values({
+      id: profileId,
+      userId: targetUser.id,
+      bio: body.bio || 'Expert verified by Admin.',
+      experienceYears: body.experienceYears || 0,
+      languages: body.languages || ['English'],
+      categories: body.categories || ['General'],
+      verificationStatus: 'VERIFIED',
+      availabilityStatus: 'AVAILABLE',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).run();
+
+    // Ensure role is EXPERT
+    if (targetUser.role === 'USER') {
+      await db.update(users).set({ role: 'EXPERT', updatedAt: new Date() }).where(eq(users.id, targetUser.id)).run();
+    }
+
+    return c.json({ success: true, data: { id: profileId } });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to create expert profile' }, 500);
   }
 });
