@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -111,7 +112,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
       const res = await apiClient.updateP2pOrderStatus(order.id, "pay");
       if (res.success) {
         setOrder({ ...order, status: "BUYER_MARKED_PAID" });
-        alert("Payment marked as complete.");
+        toast.success("Payment marked as complete.");
         
         if (mode === 'DEMO') {
           // Simulate Merchant releasing crypto after a delay for demo
@@ -121,10 +122,10 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
           }, 4000);
         }
       } else {
-        alert(res.error || "Failed to mark paid.");
+        toast.error(res.error || "Failed to mark paid.");
       }
     } catch(e) {
-      alert("Error marking paid.");
+      toast.error("Error marking paid.");
     }
   };
 
@@ -137,12 +138,12 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
         const res = await apiClient.updateP2pOrderStatus(order.id, "cancel");
         if (res.success) {
           setOrder({ ...order, status: "CANCELLED" });
-          alert("Order cancelled.");
+          toast.success("Order cancelled.");
         } else {
-          alert(res.error || "Failed to cancel.");
+          toast.error(res.error || "Failed to cancel.");
         }
       } catch(e) {
-        alert("Error cancelling order.");
+        toast.error("Error cancelling order.");
       }
     }
   };
@@ -153,12 +154,12 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
         const res = await apiClient.updateP2pOrderStatus(order.id, "dispute");
         if (res.success) {
           setOrder({ ...order, status: "DISPUTED" });
-          alert("Dispute opened. Support will contact you shortly.");
+          toast.success("Dispute opened. Support will contact you shortly.");
         } else {
-          alert(res.error || "Failed to open dispute.");
+          toast.error(res.error || "Failed to open dispute.");
         }
       } catch(e) {
-        alert("Error opening dispute.");
+        toast.error("Error opening dispute.");
       }
     }
   };
@@ -339,12 +340,12 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                     const res = await apiClient.updateP2pOrderStatus(order.id, "release");
                     if (res.success) {
                       setOrder({ ...order, status: "COMPLETED" });
-                      alert("Crypto released successfully.");
+                      toast.success("Crypto released successfully.");
                     } else {
-                      alert(res.error || "Failed to release crypto.");
+                      toast.error(res.error || "Failed to release crypto.");
                     }
                   } catch(e) {
-                    alert("Error releasing crypto.");
+                    toast.error("Error releasing crypto.");
                   }
                 }}>Confirm Payment Received & Release</Button>
               </div>

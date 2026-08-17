@@ -44,6 +44,7 @@ import Script from "next/script";
 
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 export default function RootLayout({
   children,
@@ -65,6 +66,7 @@ export default function RootLayout({
         >
           {children}
           <Toaster richColors position="top-right" />
+          <AuthModal />
           <BackToTop />
         </ThemeProvider>
         <Script id="tawk-to" strategy="afterInteractive">

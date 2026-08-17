@@ -13,6 +13,7 @@ import { OrderSide, OrderType } from "@/lib/trading/types"
 import { cn } from "@/lib/utils"
 
 import { useTradingModeStore } from "@/stores/trading-mode-store"
+import { useRequireAuth } from "@/hooks/use-require-auth"
 
 // Schema dynamically updated based on order type
 const getOrderSchema = (type: OrderType) => z.object({
@@ -26,6 +27,7 @@ export function OrderEntry({ market }: { market: Market }) {
   const { selectedSide, setSide, selectedOrderType, setOrderType, orderFormPrice, orderFormQuantity, setOrderFormPrice, setOrderFormQuantity, marketType, leverage, setLeverage } = useTradingUIStore()
   const { balances, fetchBalances } = useWalletStore()
   const { mode } = useTradingModeStore()
+  const requireAuth = useRequireAuth()
   const { base, quote } = parseMarketSymbol(market.symbol)
   
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -119,72 +121,74 @@ export function OrderEntry({ market }: { market: Market }) {
     }
   }
 
-  const onSubmit = async (data: any) => {
-    setIsSubmitting(true)
-    setMessage(null)
-    
-    const reqAmount = parseFloat(data.quantity);
-    const reqPrice = selectedOrderType === 'limit' ? parseFloat(data.price) : currentPrice;
-    const reqTotal = reqAmount * reqPrice;
+  const onSubmit = (data: any) => {
+    requireAuth(async () => {
+      setIsSubmitting(true)
+      setMessage(null)
+      
+      const reqAmount = parseFloat(data.quantity);
+      const reqPrice = selectedOrderType === 'limit' ? parseFloat(data.price) : currentPrice;
+      const reqTotal = reqAmount * reqPrice;
 
-    if (marketType === 'SPOT') {
-      if (selectedSide === 'buy' && total > quoteBalance) {
-        setMessage({ type: 'error', text: `Insufficient ${quote} balance.` });
-        setIsSubmitting(false);
-        return;
-      } else if (selectedSide === 'sell' && reqAmount > baseBalance) {
-        setMessage({ type: 'error', text: `Insufficient ${base} balance.` });
-        setIsSubmitting(false);
-        return;
-      }
-    } else if (marketType === 'FUTURES') {
-      if (total > quoteBalance) {
-        setMessage({ type: 'error', text: `Insufficient Margin (${quote}) balance.` });
-        setIsSubmitting(false);
-        return;
-      }
-    }
-    
-    try {
-      let res;
       if (marketType === 'SPOT') {
-        res = await apiClient.createOrder({
-          market: market.id,
-          side: selectedSide === 'buy' ? 'BUY' : 'SELL',
-          type: selectedOrderType === 'market' ? 'MARKET' : 'LIMIT',
-          price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
-          amount: parseFloat(data.quantity),
-          mode: mode
-        });
+        if (selectedSide === 'buy' && total > quoteBalance) {
+          setMessage({ type: 'error', text: `Insufficient ${quote} balance.` });
+          setIsSubmitting(false);
+          return;
+        } else if (selectedSide === 'sell' && reqAmount > baseBalance) {
+          setMessage({ type: 'error', text: `Insufficient ${base} balance.` });
+          setIsSubmitting(false);
+          return;
+        }
       } else if (marketType === 'FUTURES') {
-        res = await apiClient.createFuturesOrder({
-          market: market.id,
-          side: selectedSide === 'buy' ? 'LONG' : 'SHORT',
-          amount: parseFloat(data.quantity),
-          leverage: leverage.toString(),
-        });
-      } else if (marketType === 'OPTIONS') {
-        res = await apiClient.createOptionsOrder({
-          market: market.id,
-          direction: selectedSide === 'buy' ? 'UP' : 'DOWN',
-          amount: parseFloat(data.quantity),
-          timeframeMinutes: '5', // Default 5m for now
-        });
+        if (total > quoteBalance) {
+          setMessage({ type: 'error', text: `Insufficient Margin (${quote}) balance.` });
+          setIsSubmitting(false);
+          return;
+        }
       }
       
-      if (!res || !res.success) {
-        throw new Error(res?.error || 'Failed to place order')
+      try {
+        let res;
+        if (marketType === 'SPOT') {
+          res = await apiClient.createOrder({
+            market: market.id,
+            side: selectedSide === 'buy' ? 'BUY' : 'SELL',
+            type: selectedOrderType === 'market' ? 'MARKET' : 'LIMIT',
+            price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
+            amount: parseFloat(data.quantity),
+            mode: mode
+          });
+        } else if (marketType === 'FUTURES') {
+          res = await apiClient.createFuturesOrder({
+            market: market.id,
+            side: selectedSide === 'buy' ? 'LONG' : 'SHORT',
+            amount: parseFloat(data.quantity),
+            leverage: leverage.toString(),
+          });
+        } else if (marketType === 'OPTIONS') {
+          res = await apiClient.createOptionsOrder({
+            market: market.id,
+            direction: selectedSide === 'buy' ? 'UP' : 'DOWN',
+            amount: parseFloat(data.quantity),
+            timeframeMinutes: '5', // Default 5m for now
+          });
+        }
+        
+        if (!res || !res.success) {
+          throw new Error(res?.error || 'Failed to place order')
+        }
+        
+        setMessage({ type: 'success', text: 'Order placed successfully' })
+        setValue("quantity", "") // Reset quantity on success
+        fetchBalances(mode) // Refresh balances
+        setTimeout(() => setMessage(null), 3000)
+      } catch (err: any) {
+        setMessage({ type: 'error', text: err.message || 'Failed to place order' })
+      } finally {
+        setIsSubmitting(false)
       }
-      
-      setMessage({ type: 'success', text: 'Order placed successfully' })
-      setValue("quantity", "") // Reset quantity on success
-      fetchBalances(mode) // Refresh balances
-      setTimeout(() => setMessage(null), 3000)
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Failed to place order' })
-    } finally {
-      setIsSubmitting(false)
-    }
+    }, "Please log in to trade.");
   }
 
   return (

@@ -6,6 +6,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiClient } from "@ethsltd/api-client";
 import { P2PAdvertisement, P2PMerchant, P2POrder } from "@/lib/p2p/types";
+import { toast } from "sonner";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { p2pOrderSchema, P2POrderInput } from "@/lib/validation/p2p";
 import { useP2PStore } from "@/stores/p2p-store";
 import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
@@ -23,6 +25,7 @@ interface P2POrderDrawerProps {
 
 export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
   const router = useRouter();
+  const requireAuth = useRequireAuth();
   const { query } = useP2PStore();
   const { mode } = useTradingModeStore();
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
@@ -74,40 +77,42 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
   const onSubmit = async (data: P2POrderInput) => {
     // Validate min/max limit explicitly
     if (data.fiatAmount < ad.minLimit) {
-      alert(`Minimum order amount is ${fiatSymbol}${ad.minLimit.toLocaleString()}`);
+      toast.error(`Minimum order amount is ${fiatSymbol}${ad.minLimit.toLocaleString()}`);
       return;
     }
     if (data.fiatAmount > ad.maxLimit) {
-      alert(`Maximum order amount is ${fiatSymbol}${ad.maxLimit.toLocaleString()}`);
+      toast.error(`Maximum order amount is ${fiatSymbol}${ad.maxLimit.toLocaleString()}`);
       return;
     }
     if (data.cryptoAmount > ad.availableAmount) {
-      alert(`This advertisement does not have enough available crypto.`);
+      toast.error(`This advertisement does not have enough available crypto.`);
       return;
     }
 
-    setIsSubmittingOrder(true);
-    
-    try {
-      const res = await apiClient.createP2pOrder({
-        adId: ad.id,
-        cryptoAmount: data.cryptoAmount.toString(),
-        fiatAmount: data.fiatAmount.toString(),
-        paymentMethod: data.paymentMethod,
-      });
+    requireAuth(async () => {
+      setIsSubmittingOrder(true);
+      
+      try {
+        const res = await apiClient.createP2pOrder({
+          adId: ad.id,
+          cryptoAmount: data.cryptoAmount.toString(),
+          fiatAmount: data.fiatAmount.toString(),
+          paymentMethod: data.paymentMethod,
+        });
 
-      if (res.success) {
-        onClose();
-        // Navigate to order workspace
-        router.push(`/p2p/order/${(res as any).orderId}`);
-      } else {
-        alert(res.error || 'Failed to create order');
+        if (res.success) {
+          onClose();
+          // Navigate to order workspace
+          router.push(`/p2p/order/${(res as any).orderId}`);
+        } else {
+          toast.error(res.error || 'Failed to create order');
+        }
+      } catch(e) {
+        toast.error('Failed to place order');
+      } finally {
+        setIsSubmittingOrder(false);
       }
-    } catch(e) {
-      alert('Failed to place order');
-    } finally {
-      setIsSubmittingOrder(false);
-    }
+    }, `To place a ${ad.side === "buy" ? "Sell" : "Buy"} order, please log in to your account.`);
   };
 
   return (

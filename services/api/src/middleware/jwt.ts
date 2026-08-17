@@ -15,8 +15,20 @@ export async function jwtMiddleware(c: Context, next: Next) {
   try {
     const payload = await verify(token, secret, "HS256");
     
-    // Find user in database
     const db = c.get('db');
+    
+    // Verify session in database
+    const sessionId = payload.sessionId as string;
+    if (!sessionId) {
+      return c.json({ success: false, error: 'Invalid token structure' }, 401);
+    }
+    
+    const session = await db.select().from(sessions).where(eq(sessions.id, sessionId)).get();
+    if (!session || new Date(session.expiresAt) < new Date()) {
+      return c.json({ success: false, error: 'Session expired or invalid' }, 401);
+    }
+    
+    // Find user in database
     const user = await db.select().from(users).where(eq(users.id, payload.id as string)).get();
     
     if (!user) {

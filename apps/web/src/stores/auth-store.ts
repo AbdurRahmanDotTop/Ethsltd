@@ -6,11 +6,15 @@ interface AuthState {
   user: AuthUser | null;
   status: AuthStatus;
   hasHydrated: boolean;
+  isAuthModalOpen: boolean;
+  authModalMessage: string;
   setHasHydrated: (state: boolean) => void;
   setUser: (user: AuthUser | null) => void;
   setStatus: (status: AuthStatus) => void;
   logout: () => void;
   updateUser: (data: Partial<AuthUser>) => void;
+  openAuthModal: (message?: string) => void;
+  closeAuthModal: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,6 +23,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       status: "unauthenticated",
       hasHydrated: false,
+      isAuthModalOpen: false,
+      authModalMessage: "",
       setHasHydrated: (state) => set({ hasHydrated: state }),
       setUser: (user) =>
         set({ user, status: user ? "authenticated" : "unauthenticated" }),
@@ -28,6 +34,8 @@ export const useAuthStore = create<AuthState>()(
         set((state) => ({
           user: state.user ? { ...state.user, ...data } : null,
         })),
+      openAuthModal: (message = "Please log in to continue.") => set({ isAuthModalOpen: true, authModalMessage: message }),
+      closeAuthModal: () => set({ isAuthModalOpen: false, authModalMessage: "" }),
     }),
     {
       name: "ethsltd-auth-storage",

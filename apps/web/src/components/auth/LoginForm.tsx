@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm() {
+export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/account";
@@ -45,7 +45,11 @@ export function LoginForm() {
         return;
       }
       setUser(response.data?.user || null);
-      router.push(redirectUrl);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(redirectUrl);
+      }
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred during login.");
     }

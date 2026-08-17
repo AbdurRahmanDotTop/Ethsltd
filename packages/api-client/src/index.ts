@@ -70,10 +70,10 @@ export class EthsltdClient {
       }
       
       // Handle 401 globally
-      if (res.status === 401 && (data?.error?.toLowerCase().includes('token') || data?.error?.toLowerCase().includes('unauthorized'))) {
+      if (res.status === 401) {
         this.setToken(null);
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:required', { detail: { message: data?.error || 'Session expired or invalid' } }));
         }
       }
 

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordStrength } from "./PasswordStrength";
 
-export function RegisterForm() {
+export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
@@ -49,8 +49,12 @@ export function RegisterForm() {
         setGlobalError(response.error || "An error occurred during registration.");
         return;
       }
-      // Redirect to verification flow
-      router.push("/verify-email");
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        // Redirect to verification flow
+        router.push("/verify-email");
+      }
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred during registration.");
     }
