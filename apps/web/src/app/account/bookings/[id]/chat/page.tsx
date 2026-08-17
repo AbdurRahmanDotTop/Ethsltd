@@ -50,15 +50,18 @@ export default function UserChatPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchMessages();
     
     pollingInterval.current = setInterval(() => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchMessages();
     }, 3000);
     
     return () => {
       if (pollingInterval.current) clearInterval(pollingInterval.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
