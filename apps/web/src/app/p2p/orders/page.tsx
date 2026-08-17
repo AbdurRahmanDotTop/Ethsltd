@@ -80,8 +80,8 @@ export default function P2POrdersPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {orders.map((order) => {
-                    const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === order.fiat)?.symbol || "$";
-                    const isBuy = order.side === "sell"; // if ad was sell, user is buying
+                    const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === order.fiatCurrency)?.symbol || order.fiatCurrency || "$";
+                    const isBuy = order.role === "BUYER";
                     
                     return (
                       <tr key={order.id} className="hover:bg-muted/30 transition-colors">
@@ -96,11 +96,11 @@ export default function P2POrdersPage() {
                             {isBuy ? "Buy" : "Sell"} {order.asset}
                           </span>
                           <div className="text-xs text-muted-foreground mt-1">
-                            Price: {fiatSymbol}{order.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            Price: {fiatSymbol}{parseFloat(order.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </td>
                         <td className="px-6 py-5 font-medium">
-                          {fiatSymbol}{order.fiatAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiat}
+                          {fiatSymbol}{parseFloat(order.fiatAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiatCurrency}
                         </td>
                         <td className="px-6 py-5 font-mono">
                           {order.cryptoAmount.toLocaleString()} {order.asset}

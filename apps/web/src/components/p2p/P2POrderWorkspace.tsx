@@ -90,9 +90,9 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
     );
   }
 
-  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === "USD")?.symbol || "$";
-  const isBuy = currentUser?.id === order.buyerId; 
-  const isActionableUser = currentUser?.id === order.buyerId; 
+  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === order.fiatCurrency)?.symbol || order.fiatCurrency || "$";
+  const isBuy = order.role === 'BUYER';
+  const perms = order.permissions || {};
   
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -208,13 +208,17 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
               <div className="flex justify-between items-center pb-4 border-b border-border">
-                <span className="text-muted-foreground text-sm">Amount to Pay</span>
+                <span className="text-muted-foreground text-sm">
+                  {isBuy ? "You Need To Pay" : "You Should Receive"}
+                </span>
                 <span className="text-xl font-bold font-display text-brand-600 dark:text-brand-400">
-                  {fiatSymbol}{parseFloat(order.fiatAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiat}
+                  {fiatSymbol}{parseFloat(order.fiatAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiatCurrency}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-4 border-b border-border">
-                <span className="text-muted-foreground text-sm">Receive Crypto</span>
+                <span className="text-muted-foreground text-sm">
+                  {isBuy ? "Receive Crypto" : "Crypto Locked In Escrow"}
+                </span>
                 <span className="text-xl font-bold font-mono">
                   {parseFloat(order.cryptoAmount).toLocaleString()} {order.asset}
                 </span>
@@ -222,7 +226,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-muted-foreground text-sm">Price</span>
                 <span className="font-medium">
-                  {fiatSymbol}{parseFloat(order.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {order.asset}
+                  {fiatSymbol}{parseFloat(order.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiatCurrency} / {order.asset}
                 </span>
               </div>
             </div>
@@ -279,17 +283,20 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
           </div>
 
           {/* Action Buttons */}
-          {(order.status === "CREATED" || order.status === "PAYMENT_PENDING") && isBuy && (
+          {perms.canMarkPaid && (
             <div className="p-6 bg-muted/10 border-t border-border flex flex-col sm:flex-row gap-4 items-center justify-end">
-              <Button variant="outline" onClick={handleCancel}>
-                Cancel Order
-              </Button>
+              {perms.canCancel && (
+                <Button variant="outline" onClick={handleCancel}>
+                  Cancel Order
+                </Button>
+              )}
               <Button size="lg" className="w-full sm:w-auto" onClick={handleMarkPaid}>
-                Transferred, Notify Seller
+                I've Paid
               </Button>
             </div>
           )}
-          {(order.status === "CREATED" || order.status === "PAYMENT_PENDING") && !isBuy && (
+
+          {order.status === "PAYMENT_PENDING" && !isBuy && (
             <div className="p-6 bg-muted/10 border-t border-border flex flex-col items-center justify-center text-center">
               <h3 className="font-semibold text-lg mb-1">Awaiting Buyer Payment</h3>
               <p className="text-sm text-muted-foreground">The buyer has {formatTime(timeLeft)} to complete the payment.</p>
@@ -303,20 +310,30 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
               <p className="text-sm text-blue-800/80 dark:text-blue-400/80 max-w-md">
                 You have marked the payment as complete. The merchant is verifying the funds and will release the crypto shortly.
               </p>
-              <Button variant="outline" className="mt-6" size="sm" onClick={handleDispute}>
-                Open Dispute {mode === 'DEMO' ? '(Simulation)' : ''}
-              </Button>
+              {perms.canDispute && (
+                <Button variant="outline" className="mt-6" size="sm" onClick={handleDispute}>
+                  Open Dispute {mode === 'DEMO' ? '(Simulation)' : ''}
+                </Button>
+              )}
             </div>
           )}
 
-          {(order.status === "BUYER_MARKED_PAID" || order.status === "SELLER_PAYMENT_REVIEW") && !isBuy && (
+          {perms.canReleaseCrypto && (
             <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border-t border-blue-100 dark:border-blue-900/50 flex flex-col items-center justify-center text-center">
               <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Buyer Marked as Paid</h3>
-              <p className="text-sm text-blue-800/80 dark:text-blue-400/80 max-w-md mb-4">
-                Please verify that you have received the exact amount in your bank account before releasing the crypto.
-              </p>
-              <div className="flex gap-4">
-                <Button variant="outline" size="lg" onClick={handleDispute}>Open Dispute</Button>
+              <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-900/50 p-4 rounded-lg my-4 max-w-lg text-left">
+                <p className="text-sm font-semibold mb-1 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" /> 
+                  Verify Before Releasing Crypto
+                </p>
+                <p className="text-sm">
+                  Please log in directly to your bank or payment account to verify that you have received exactly <strong>{fiatSymbol}{parseFloat(order.fiatAmount).toLocaleString()} {order.fiatCurrency}</strong>. Do not rely solely on screenshots provided by the buyer.
+                </p>
+              </div>
+              <div className="flex gap-4 mt-2">
+                {perms.canDispute && (
+                  <Button variant="outline" size="lg" onClick={handleDispute}>Open Dispute</Button>
+                )}
                 <Button size="lg" onClick={async () => {
                   try {
                     const res = await apiClient.updateP2pOrderStatus(order.id, "release");
@@ -329,7 +346,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                   } catch(e) {
                     alert("Error releasing crypto.");
                   }
-                }}>Confirm Payment Received</Button>
+                }}>Confirm Payment Received & Release</Button>
               </div>
             </div>
           )}

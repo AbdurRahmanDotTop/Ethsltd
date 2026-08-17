@@ -127,11 +127,27 @@ p2pRoutes.get('/orders', async (c) => {
   const user = c.get('user');
   const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
-  const userOrders = await db.select().from(p2pOrders)
+  const orderRows = await db.select({
+      order: p2pOrders,
+      ad: p2pAds
+    })
+    .from(p2pOrders)
+    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
     .where(and(or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id)), eq(p2pOrders.mode, mode)))
     .orderBy(desc(p2pOrders.createdAt)).all();
     
-  return c.json({ success: true, data: userOrders });
+  const enrichedOrders = orderRows.map(row => {
+    const role = row.order.buyerId === user.id ? 'BUYER' : 'SELLER';
+    return {
+      ...row.order,
+      role,
+      asset: row.ad ? row.ad.asset : 'Unknown',
+      fiatCurrency: row.ad ? row.ad.fiat : 'Unknown',
+      type: row.order.buyerId === user.id ? 'BUY' : 'SELL'
+    };
+  });
+    
+  return c.json({ success: true, data: enrichedOrders });
 });
 
 p2pRoutes.post('/orders', async (c) => {
@@ -215,8 +231,20 @@ p2pRoutes.get('/orders/:id', async (c) => {
   const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const orderId = c.req.param('id');
   
-  let order = await db.select().from(p2pOrders).where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode))).get();
-  if (!order) return c.json({ success: false, error: 'Order not found.' }, 404);
+  let orderData = await db
+    .select({
+      order: p2pOrders,
+      ad: p2pAds
+    })
+    .from(p2pOrders)
+    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
+    .where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode)))
+    .get();
+    
+  if (!orderData) return c.json({ success: false, error: 'Order not found.' }, 404);
+  
+  let order = orderData.order;
+  let ad = orderData.ad;
   
   if (order.buyerId !== user.id && order.sellerId !== user.id && user.role !== 'SUPER_ADMIN') {
     return c.json({ success: false, error: 'Unauthorized.' }, 403);
@@ -225,7 +253,6 @@ p2pRoutes.get('/orders/:id', async (c) => {
   const now = new Date();
   // Lazy Expiry Enforcement
   if (['CREATED', 'PAYMENT_PENDING'].includes(order.status) && now.getTime() > new Date(order.expiresAt).getTime()) {
-    const ad = await db.select().from(p2pAds).where(eq(p2pAds.id, order.adId)).get();
     if (ad) {
       const cryptoNum = parseFloat(order.cryptoAmount);
       // Return crypto to Seller's available balance from Escrow
@@ -259,9 +286,24 @@ p2pRoutes.get('/orders/:id', async (c) => {
   const counterpartyId = order.buyerId === user.id ? order.sellerId : order.buyerId;
   const cp = await db.select().from(users).where(eq(users.id, counterpartyId)).get();
   
+  const role = order.buyerId === user.id ? 'BUYER' : (order.sellerId === user.id ? 'SELLER' : 'ADMIN');
+  const enrichedOrder = {
+    ...order,
+    role,
+    asset: ad ? ad.asset : 'Unknown',
+    fiatCurrency: ad ? ad.fiat : 'Unknown',
+    permissions: {
+      canMarkPaid: role === 'BUYER' && order.status === 'PAYMENT_PENDING',
+      canConfirmPayment: false, 
+      canReleaseCrypto: role === 'SELLER' && (order.status === 'BUYER_MARKED_PAID' || order.status === 'SELLER_PAYMENT_REVIEW'),
+      canCancel: role === 'BUYER' && order.status === 'PAYMENT_PENDING',
+      canDispute: ['PAYMENT_PENDING', 'BUYER_MARKED_PAID', 'SELLER_PAYMENT_REVIEW'].includes(order.status)
+    }
+  };
+
   return c.json({ 
     success: true, 
-    data: order, 
+    data: enrichedOrder, 
     merchant: cp ? {
       id: cp.id,
       displayName: cp.displayName || `User_${cp.id.substring(0,4)}`,

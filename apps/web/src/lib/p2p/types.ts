@@ -59,9 +59,18 @@ export type P2POrder = {
   side: P2PSide; // the side of the ADVERTISEMENT. If ad is buy, user is selling.
   asset: string;
   fiat: string;
+  fiatCurrency: string; // Enriched from ad
   cryptoAmount: number;
   fiatAmount: number;
   price: number;
+  role: "BUYER" | "SELLER"; // Enriched by API
+  permissions: {
+    canMarkPaid: boolean;
+    canConfirmPayment: boolean;
+    canReleaseCrypto: boolean;
+    canCancel: boolean;
+    canDispute: boolean;
+  };
   paymentMethod: string;
   status: P2POrderStatus;
   createdAt: string;

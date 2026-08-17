@@ -116,10 +116,17 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
 
   return (
     <div className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-      <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
+      <div className="p-4 border-b border-border bg-muted/30 flex flex-col md:flex-row md:items-center justify-between gap-2">
         <div>
-          <h3 className="font-semibold">Trade Chat</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Order {order.id.substring(0, 12)}...</p>
+          <h3 className="font-semibold flex items-center gap-2">
+            Trade Chat 
+            <span className="text-xs px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400">
+              {order.role}
+            </span>
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Order: {order.id.substring(0, 12)}... • {order.asset} / {order.fiatCurrency}
+          </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-background px-2 py-1 rounded-full border border-border">
           <span className="relative flex h-2.5 w-2.5">
@@ -149,6 +156,8 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
           }
 
           const isUser = msg.sender === "user";
+          const senderLabel = isUser ? `Me (${order.role === 'BUYER' ? 'Buyer' : 'Seller'})` : `${merchant.displayName} (${order.role === 'BUYER' ? 'Seller' : 'Buyer'})`;
+          
           return (
             <div key={msg.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
@@ -156,6 +165,9 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
                   ? "bg-brand-600 text-white rounded-br-sm" 
                   : "bg-muted rounded-bl-sm"
               }`}>
+                <div className={`text-[10px] font-semibold mb-1 opacity-80 ${isUser ? "text-brand-100" : "text-muted-foreground"}`}>
+                  {senderLabel}
+                </div>
                 <p className="text-sm break-words">{msg.message}</p>
                 <div className={`text-[10px] mt-1 text-right ${isUser ? "text-brand-200" : "text-muted-foreground"}`}>
                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
