@@ -1005,86 +1005,92 @@ adminRoutes.put('/experts/bookings/:id/chat-toggle', async (c) => {
   }
 });
 
- / /   = = = = = = = = = = = = = = = = = = = = = = = = = = 
- / /   A D M I N   S U P P O R T   T I C K E T S 
- / /   = = = = = = = = = = = = = = = = = = = = = = = = = = 
- 
- / /   G E T   / a p i / v 1 / a d m i n / s u p p o r t / t i c k e t s 
- a d m i n R o u t e s . g e t ( ' / s u p p o r t / t i c k e t s ' ,   a s y n c   ( c )   = >   { 
-     c o n s t   d b   =   c . g e t ( ' d b ' ) ; 
-     
-     t r y   { 
-         c o n s t   a l l T i c k e t s   =   a w a i t   d b . s e l e c t ( ) . f r o m ( t i c k e t s ) . o r d e r B y ( d e s c ( t i c k e t s . u p d a t e d A t ) ) . a l l ( ) ; 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   t r u e ,   d a t a :   a l l T i c k e t s   } ) ; 
-     }   c a t c h   ( e r r o r )   { 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' F a i l e d   t o   f e t c h   t i c k e t s '   } ,   5 0 0 ) ; 
-     } 
- } ) ; 
- 
- / /   G E T   / a p i / v 1 / a d m i n / s u p p o r t / t i c k e t s / : i d 
- a d m i n R o u t e s . g e t ( ' / s u p p o r t / t i c k e t s / : i d ' ,   a s y n c   ( c )   = >   { 
-     c o n s t   d b   =   c . g e t ( ' d b ' ) ; 
-     c o n s t   t i c k e t I d   =   c . r e q . p a r a m ( ' i d ' ) ; 
-     
-     t r y   { 
-         c o n s t   t i c k e t   =   a w a i t   d b . s e l e c t ( ) . f r o m ( t i c k e t s ) . w h e r e ( e q ( t i c k e t s . i d ,   t i c k e t I d ) ) . g e t ( ) ; 
-         i f   ( ! t i c k e t )   r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' T i c k e t   n o t   f o u n d '   } ,   4 0 4 ) ; 
-         
-         c o n s t   m e s s a g e s   =   a w a i t   d b . s e l e c t ( ) . f r o m ( t i c k e t M e s s a g e s ) . w h e r e ( e q ( t i c k e t M e s s a g e s . t i c k e t I d ,   t i c k e t I d ) ) . o r d e r B y ( t i c k e t M e s s a g e s . c r e a t e d A t ) . a l l ( ) ; 
-         
-         r e t u r n   c . j s o n ( {   s u c c e s s :   t r u e ,   d a t a :   {   t i c k e t ,   m e s s a g e s   }   } ) ; 
-     }   c a t c h   ( e r r o r )   { 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' F a i l e d   t o   f e t c h   t i c k e t '   } ,   5 0 0 ) ; 
-     } 
- } ) ; 
- 
- / /   P O S T   / a p i / v 1 / a d m i n / s u p p o r t / t i c k e t s / : i d / m e s s a g e s 
- a d m i n R o u t e s . p o s t ( ' / s u p p o r t / t i c k e t s / : i d / m e s s a g e s ' ,   a s y n c   ( c )   = >   { 
-     c o n s t   d b   =   c . g e t ( ' d b ' ) ; 
-     c o n s t   a d m i n   =   c . g e t ( ' u s e r ' ) ; 
-     c o n s t   t i c k e t I d   =   c . r e q . p a r a m ( ' i d ' ) ; 
-     c o n s t   b o d y   =   a w a i t   c . r e q . j s o n ( ) ; 
- 
-     i f   ( ! b o d y . c o n t e n t )   r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' M e s s a g e   c o n t e n t   r e q u i r e d '   } ,   4 0 0 ) ; 
- 
-     t r y   { 
-         c o n s t   n o w   =   n e w   D a t e ( ) ; 
-         a w a i t   d b . i n s e r t ( t i c k e t M e s s a g e s ) . v a l u e s ( { 
-             i d :   \ M S G - \ - \ \ , 
-             t i c k e t I d , 
-             s e n d e r I d :   a d m i n . i d , 
-             i s A d m i n :   t r u e , 
-             c o n t e n t :   b o d y . c o n t e n t , 
-             c r e a t e d A t :   n o w , 
-         } ) ; 
- 
-         a w a i t   d b . u p d a t e ( t i c k e t s ) 
-             . s e t ( {   u p d a t e d A t :   n o w ,   s t a t u s :   ' W A I T I N G _ F O R _ U S E R '   } ) 
-             . w h e r e ( e q ( t i c k e t s . i d ,   t i c k e t I d ) ) ; 
- 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   t r u e   } ) ; 
-     }   c a t c h   ( e r r o r )   { 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' F a i l e d   t o   a d d   m e s s a g e '   } ,   5 0 0 ) ; 
-     } 
- } ) ; 
- 
- / /   P U T   / a p i / v 1 / a d m i n / s u p p o r t / t i c k e t s / : i d / s t a t u s 
- a d m i n R o u t e s . p u t ( ' / s u p p o r t / t i c k e t s / : i d / s t a t u s ' ,   a s y n c   ( c )   = >   { 
-     c o n s t   d b   =   c . g e t ( ' d b ' ) ; 
-     c o n s t   t i c k e t I d   =   c . r e q . p a r a m ( ' i d ' ) ; 
-     c o n s t   b o d y   =   a w a i t   c . r e q . j s o n ( ) ; 
- 
-     i f   ( ! b o d y . s t a t u s )   r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' S t a t u s   r e q u i r e d '   } ,   4 0 0 ) ; 
- 
-     t r y   { 
-         a w a i t   d b . u p d a t e ( t i c k e t s ) 
-             . s e t ( {   s t a t u s :   b o d y . s t a t u s ,   u p d a t e d A t :   n e w   D a t e ( )   } ) 
-             . w h e r e ( e q ( t i c k e t s . i d ,   t i c k e t I d ) ) ; 
- 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   t r u e   } ) ; 
-     }   c a t c h   ( e r r o r )   { 
-         r e t u r n   c . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   ' F a i l e d   t o   u p d a t e   s t a t u s '   } ,   5 0 0 ) ; 
-     } 
- } ) ; 
-  
- 
+// ==========================
+// ADMIN SUPPORT TICKETS
+// ==========================
+
+// GET /api/v1/admin/support/tickets
+adminRoutes.get('/support/tickets', async (c) => {
+  const db = c.get('db');
+  
+  try {
+    const { desc } = require('drizzle-orm');
+    const { tickets } = require('database');
+    const allTickets = await db.select().from(tickets).orderBy(desc(tickets.updatedAt)).all();
+    return c.json({ success: true, data: allTickets });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch tickets' }, 500);
+  }
+});
+
+// GET /api/v1/admin/support/tickets/:id
+adminRoutes.get('/support/tickets/:id', async (c) => {
+  const db = c.get('db');
+  const ticketId = c.req.param('id');
+  
+  try {
+    const { eq } = require('drizzle-orm');
+    const { tickets, ticketMessages } = require('database');
+    const ticket = await db.select().from(tickets).where(eq(tickets.id, ticketId)).get();
+    if (!ticket) return c.json({ success: false, error: 'Ticket not found' }, 404);
+    
+    const messages = await db.select().from(ticketMessages).where(eq(ticketMessages.ticketId, ticketId)).orderBy(ticketMessages.createdAt).all();
+    
+    return c.json({ success: true, data: { ticket, messages } });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch ticket' }, 500);
+  }
+});
+
+// POST /api/v1/admin/support/tickets/:id/messages
+adminRoutes.post('/support/tickets/:id/messages', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const ticketId = c.req.param('id');
+  const body = await c.req.json();
+
+  if (!body.content) return c.json({ success: false, error: 'Message content required' }, 400);
+
+  try {
+    const { eq } = require('drizzle-orm');
+    const { tickets, ticketMessages } = require('database');
+    const now = new Date();
+    await db.insert(ticketMessages).values({
+      id: `MSG-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`,
+      ticketId,
+      senderId: admin.id,
+      isAdmin: true,
+      content: body.content,
+      createdAt: now,
+    });
+
+    await db.update(tickets)
+      .set({ updatedAt: now, status: 'WAITING_FOR_USER' })
+      .where(eq(tickets.id, ticketId));
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to add message' }, 500);
+  }
+});
+
+// PUT /api/v1/admin/support/tickets/:id/status
+adminRoutes.put('/support/tickets/:id/status', async (c) => {
+  const db = c.get('db');
+  const ticketId = c.req.param('id');
+  const body = await c.req.json();
+
+  if (!body.status) return c.json({ success: false, error: 'Status required' }, 400);
+
+  try {
+    const { eq } = require('drizzle-orm');
+    const { tickets } = require('database');
+    await db.update(tickets)
+      .set({ status: body.status, updatedAt: new Date() })
+      .where(eq(tickets.id, ticketId));
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update status' }, 500);
+  }
+});
