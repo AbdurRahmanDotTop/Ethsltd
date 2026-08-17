@@ -131,6 +131,7 @@ export default function AdminUsersPage() {
             }}
           >
             <option value="USER">USER</option>
+            <option value="EXPERT">EXPERT</option>
             <option value="SUPPORT_ADMIN">SUPPORT_ADMIN</option>
             <option value="COMPLIANCE_ADMIN">COMPLIANCE_ADMIN</option>
             <option value="SUPER_ADMIN">SUPER_ADMIN</option>

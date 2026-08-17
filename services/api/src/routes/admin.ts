@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, ledgerEntries, bankTransfers, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions } from 'database';
+import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, ledgerEntries, bankTransfers, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions, expertProfiles } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const adminRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -140,12 +140,37 @@ adminRoutes.put('/users/:id/role', async (c) => {
     return c.json({ success: false, error: 'Unauthorized: Only Super Admins can change user roles' }, 403);
   }
 
-  if (!['USER', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN', 'SUPER_ADMIN'].includes(body.role)) {
+  if (!['USER', 'EXPERT', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN', 'SUPER_ADMIN'].includes(body.role)) {
     return c.json({ success: false, error: 'Invalid role' }, 400);
   }
 
   try {
     await db.update(users).set({ role: body.role, updatedAt: new Date() }).where(eq(users.id, userId));
+    
+    // Auto-create an expert profile if changed to EXPERT
+    if (body.role === 'EXPERT') {
+      const { expertProfiles } = await import('database');
+      const existing = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, userId)).get();
+      if (!existing) {
+        const profileId = `exp_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+        await db.insert(expertProfiles).values({
+          id: profileId,
+          userId: userId,
+          bio: 'Expert automatically verified by Admin.',
+          experienceYears: 0,
+          languages: ['English'],
+          categories: ['General'],
+          verificationStatus: 'VERIFIED',
+          availabilityStatus: 'AVAILABLE',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }).run();
+      } else {
+        // If it exists, ensure it's VERIFIED
+        await db.update(expertProfiles).set({ verificationStatus: 'VERIFIED' }).where(eq(expertProfiles.userId, userId)).run();
+      }
+    }
+    
     return c.json({ success: true });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to update user role' }, 500);
@@ -748,4 +773,54 @@ adminRoutes.delete('/withdrawals/:id', async (c) => {
   }
 });
 
+// GET /api/v1/admin/experts
+adminRoutes.get('/experts', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
 
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can view experts' }, 403);
+  }
+
+  try {
+    const experts = await db.select({
+      id: expertProfiles.id,
+      userId: expertProfiles.userId,
+      displayName: users.displayName,
+      email: users.email,
+      verificationStatus: expertProfiles.verificationStatus,
+      createdAt: expertProfiles.createdAt
+    })
+    .from(expertProfiles)
+    .innerJoin(users, eq(users.id, expertProfiles.userId))
+    .orderBy(desc(expertProfiles.createdAt))
+    .all();
+
+    return c.json({ success: true, data: experts });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch experts' }, 500);
+  }
+});
+
+// PUT /api/v1/admin/experts/:id/status
+adminRoutes.put('/experts/:id/status', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const expertId = c.req.param('id');
+  const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  if (!['PENDING', 'VERIFIED', 'REJECTED'].includes(body.status)) {
+    return c.json({ success: false, error: 'Invalid status' }, 400);
+  }
+
+  try {
+    await db.update(expertProfiles).set({ verificationStatus: body.status, updatedAt: new Date() }).where(eq(expertProfiles.id, expertId));
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update expert status' }, 500);
+  }
+});

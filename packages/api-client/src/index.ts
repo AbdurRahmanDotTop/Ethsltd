@@ -338,6 +338,17 @@ export class EthsltdClient {
     return this.request<any>('/api/v1/admin/stats');
   }
 
+  async adminGetExperts() {
+    return this.request<any[]>('/api/v1/admin/experts');
+  }
+
+  async adminUpdateExpertStatus(expertId: string, status: string) {
+    return this.request<any>(`/api/v1/admin/experts/${expertId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
   async getAdminUsers(params: { page?: number; limit?: number; search?: string; status?: string }) {
     const query = new URLSearchParams();
     if (params.page) query.append('page', params.page.toString());

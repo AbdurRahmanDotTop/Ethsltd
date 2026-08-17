@@ -22,6 +22,7 @@ export const adminNavGroups = [
     title: "Identity",
     items: [
       { name: "Users", href: "/admin/users", icon: Users },
+      { name: "Experts", href: "/admin/experts", icon: Handshake },
       { name: "KYC", href: "/admin/kyc", icon: UserCheck }
     ]
   },
