@@ -13,3 +13,4 @@ export * from './bank_accounts';
 export * from './payment_methods';
 export * from './experts';
 export * from './platform_settings';
+export * from './currency_rates';

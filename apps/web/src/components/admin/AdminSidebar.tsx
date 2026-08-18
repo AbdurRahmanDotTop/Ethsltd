@@ -71,6 +71,7 @@ export const adminNavGroups = [
     items: [
       { name: "Audit Logs", href: "/admin/audit", icon: ShieldCheck },
       { name: "Settings", href: "/admin/settings", icon: Settings },
+      { name: "Global Currency Rates", href: "/admin/currency-rates", icon: Settings },
       { name: "Payment Settings", href: "/admin/settings/payments", icon: Wallet },
       { name: "System", href: "/admin/system", icon: Server }
     ]

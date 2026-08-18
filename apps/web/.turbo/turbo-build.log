@@ -8,18 +8,18 @@
 ⚠ Invalid next.config.ts options detected: 
 ⚠     Unrecognized key(s) in object: 'eslint'
 ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
-✓ Running next.config.ts took 94ms
+✓ Running next.config.ts took 205ms
 
   Creating an optimized production build ...
-✓ Compiled successfully in 2.8s
+✓ Compiled successfully in 6.1s
   Skipping validation of types
-  Finished TypeScript config validation in 16ms ...
+  Finished TypeScript config validation in 26ms ...
   Collecting page data using 7 workers ...
-  Generating static pages using 7 workers (0/73) ...
-  Generating static pages using 7 workers (18/73) 
-  Generating static pages using 7 workers (36/73) 
-  Generating static pages using 7 workers (54/73) 
-✓ Generating static pages using 7 workers (73/73) in 2.3s
+  Generating static pages using 7 workers (0/84) ...
+  Generating static pages using 7 workers (21/84) 
+  Generating static pages using 7 workers (42/84) 
+  Generating static pages using 7 workers (63/84) 
+✓ Generating static pages using 7 workers (84/84) in 2.0s
   Finalizing page optimization ...
 
 Route (app)
@@ -28,6 +28,8 @@ Route (app)
 ├ ○ /account
 ├ ○ /account/api-keys
 ├ ○ /account/api-usage
+├ ○ /account/bookings
+├ ƒ /account/bookings/[id]/chat
 ├ ○ /account/contracts
 ├ ○ /account/kyc
 ├ ○ /account/notifications
@@ -40,8 +42,10 @@ Route (app)
 ├ ○ /admin/api
 ├ ○ /admin/audit
 ├ ○ /admin/contracts
+├ ○ /admin/currency-rates
 ├ ○ /admin/deposits
 ├ ○ /admin/deposits/settings
+├ ○ /admin/experts
 ├ ○ /admin/kyc
 ├ ○ /admin/notifications
 ├ ○ /admin/orders
@@ -55,6 +59,7 @@ Route (app)
 ├ ○ /admin/system
 ├ ○ /admin/trades
 ├ ○ /admin/trading
+├ ○ /admin/transactions
 ├ ○ /admin/users
 ├ ƒ /admin/users/[id]
 ├ ○ /admin/wallets
@@ -62,6 +67,14 @@ Route (app)
 ├ ○ /developers
 ├ ○ /developers/docs
 ├ ○ /developers/playground
+├ ○ /expert/dashboard
+├ ○ /expert/dashboard/bookings
+├ ○ /expert/dashboard/earnings
+├ ○ /expert/dashboard/messages
+├ ○ /expert/dashboard/services
+├ ○ /expert/dashboard/settings
+├ ○ /experts
+├ ƒ /experts/[id]
 ├ ○ /fees
 ├ ○ /forgot-password
 ├ ○ /learn
@@ -79,6 +92,7 @@ Route (app)
 ├ ƒ /markets
 ├ ○ /notifications
 ├ ○ /p2p
+├ ƒ /p2p/edit-ad/[id]
 ├ ○ /p2p/experts
 ├ ƒ /p2p/experts/[id]
 ├ ○ /p2p/my-ads

@@ -361,7 +361,7 @@ adminRoutes.get('/wallets/overview', async (c) => {
   const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   try {
     const { eq } = require('drizzle-orm');
-    const { wallets, payment_methods } = require('database');
+    const { wallets, payment_methods, currencyRates } = require('database');
     
     const allWallets = await db.select().from(wallets).where(eq(wallets.type, mode)).all();
     const overview: Record<string, { balance: number, locked: number, escrow: number, total: number }> = {
@@ -393,8 +393,15 @@ adminRoutes.get('/wallets/overview', async (c) => {
       type: m.type,
       enabled: m.enabled
     }));
+
+    // Fetch dynamic currency rates
+    const activeRates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
+    const rates = activeRates.reduce((acc: any, curr: any) => {
+      acc[curr.code] = parseFloat(curr.ratePerUsdt);
+      return acc;
+    }, {});
     
-    return c.json({ success: true, data: { overview, networks } });
+    return c.json({ success: true, data: { overview, networks, rates } });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to fetch wallets overview' }, 500);
   }

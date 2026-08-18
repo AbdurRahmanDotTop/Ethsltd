@@ -14,7 +14,8 @@ import { adminPaymentRoutes } from './routes/admin/payments';
 import { notificationRoutes } from './routes/notifications';
 import { webhookRoutes } from './routes/webhooks';
 import { expertRoutes } from './routes/experts';
-
+import { adminCurrencyRateRoutes } from './routes/admin/currency-rates';
+import { publicCurrencyRateRoutes } from './routes/currency-rates';
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use('*', cors({
@@ -42,6 +43,8 @@ app.route('/api/v1/admin', adminRoutes);
 app.route('/api/v1/admin/payments', adminPaymentRoutes);
 app.route('/api/v1/notifications', notificationRoutes);
 app.route('/api/v1/experts', expertRoutes);
+app.route('/api/v1/currency-rates', publicCurrencyRateRoutes);
+app.route('/api/v1/admin/currency-rates', adminCurrencyRateRoutes);
 app.route('/webhooks', webhookRoutes);
 
 export default app;
