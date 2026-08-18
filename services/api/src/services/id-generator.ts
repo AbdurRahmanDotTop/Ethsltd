@@ -1,14 +1,14 @@
 import { DrizzleD1Database } from 'drizzle-orm/d1';
-import { globalSequences } from '@ethsltd/database/schema';
+import { globalSequences } from 'database';
 import { eq, sql } from 'drizzle-orm';
-import * as schema from '@ethsltd/database/schema';
+import * as schema from 'database';
 
 /**
  * Global centralized business ID generator
  * Format: [EMAIL_PREFIX]-[ENTITY_PREFIX]-[SEQUENCE_NUM]-[YYYYMMDD]-[HHMMSS]
  */
 export async function generateBusinessId(
-  db: DrizzleD1Database<typeof schema>,
+  db: any, // Using any for generic db access to avoid schema type complexities
   email: string | null | undefined,
   entityPrefix: string
 ): Promise<string> {

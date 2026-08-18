@@ -5,6 +5,7 @@ import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_
 import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
 import { getFeeConfig, calculateFee, getLimit } from '../services/fees';
+import { generateBusinessId } from '../services/id-generator';
 
 export const walletRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -220,8 +221,10 @@ walletRoutes.post('/deposit', async (c) => {
   
   if (!wallet) {
     const walletId = crypto.randomUUID();
+    const displayId = await generateBusinessId(db, user.email, 'WALL');
     await db.insert(wallets).values({
       id: walletId,
+      displayId,
       userId: user.id,
       assetSymbol,
       type: mode,
@@ -231,13 +234,13 @@ walletRoutes.post('/deposit', async (c) => {
       createdAt: now,
       updatedAt: now,
     });
-    wallet = { id: walletId, userId: user.id, assetSymbol, type: mode, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, displayId, userId: user.id, assetSymbol, type: mode as any, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
   }
   
   if (mode === 'DEMO') {
     // For DEMO, we instantly credit the wallet
-    const newBalance = (parseFloat(wallet.balance) + parseFloat(amount)).toString();
-    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+    const newBalance = (parseFloat(wallet!.balance) + parseFloat(amount)).toString();
+    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
     
     // Record transaction
     await db.insert(walletTransactions).values({

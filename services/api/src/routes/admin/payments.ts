@@ -4,6 +4,7 @@ import { Bindings, Variables } from '../../db';
 import { bank_accounts as bankAccounts, payment_methods as paymentMethods, real_manual_deposits as realManualDeposits, bankTransfers, wallets, walletTransactions, ledgerEntries, ledgerTransactions, cregisDeposits, currencyRates, assetConversions } from 'database';
 import { getFeeConfig, calculateFee } from '../../services/fees';
 import { jwtMiddleware, adminMiddleware } from '../../middleware/jwt';
+import { generateBusinessId } from '../../services/id-generator';
 
 export const adminPaymentRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -168,15 +169,16 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset), eq(wallets.type, 'REAL'))).get();
   if (!wallet) {
     const walletId = crypto.randomUUID();
+    const displayId = await generateBusinessId(db, null, 'WALL');
     await db.insert(wallets).values({
-      id: walletId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
+      id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
     });
-    wallet = { id: walletId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
   }
   
   // Update wallet
-  const newBalance = (parseFloat(wallet.balance) + finalAmount).toString();
-  await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+  const newBalance = (parseFloat(wallet!.balance) + finalAmount).toString();
+  await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
   
   // Ledger
   await db.insert(ledgerTransactions).values({ 
@@ -253,15 +255,16 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.userId), eq(wallets.assetSymbol, deposit.currency), eq(wallets.type, 'REAL'))).get();
   if (!wallet) {
     const walletId = crypto.randomUUID();
+    const displayId = await generateBusinessId(db, null, 'WALL');
     await db.insert(wallets).values({
-      id: walletId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
+      id: walletId, displayId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
     });
-    wallet = { id: walletId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, displayId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
   }
   
   // Update wallet
-  const newBalance = (parseFloat(wallet.balance) + parseFloat(deposit.amount)).toString();
-  await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+  const newBalance = (parseFloat(wallet!.balance) + parseFloat(deposit.amount)).toString();
+  await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
   
   // Ledger
   await db.insert(ledgerTransactions).values({ 
