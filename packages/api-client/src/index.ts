@@ -764,6 +764,18 @@ export class EthsltdClient {
     });
   }
 
+  async readNotification(id: string) {
+    return this.request<any>(`/api/v1/notifications/${id}/read`, {
+      method: 'PATCH'
+    });
+  }
+
+  async readAllNotifications() {
+    return this.request<any>('/api/v1/notifications/read-all', {
+      method: 'POST'
+    });
+  }
+
 
 
   // Admin Currency Rates
