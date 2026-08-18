@@ -52,7 +52,7 @@ export default function CurrencyRatesAdminPage() {
       setLoading(true);
       const res = await apiClient.adminGetCurrencyRates();
       if (res.success) {
-        setRates(res.data);
+        setRates(res.data || []);
       } else {
         setError(res.error);
       }
@@ -123,7 +123,7 @@ export default function CurrencyRatesAdminPage() {
     try {
       const res = await apiClient.adminGetCurrencyRateHistory(code);
       if (res.success) {
-        setHistoryData(res.data);
+        setHistoryData(res.data || []);
         setIsHistoryModalOpen(true);
       } else {
         alert(res.error);
