@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
-import { AdminTrade } from "@/lib/admin/types";
+import { apiClient } from "@ethsltd/api-client";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
-import { Filter, ArrowRight } from "lucide-react";
+import { Filter } from "lucide-react";
+import { useAdminEnvStore } from "@/stores/admin-env-store";
 
 export default function AdminTradesPage() {
-  const [trades, setTrades] = useState<AdminTrade[]>([]);
+  const [trades, setTrades] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   
@@ -15,14 +15,21 @@ export default function AdminTradesPage() {
   const [market, setMarket] = useState("ALL");
   const limit = 20;
 
+  const { adminMode, setAdminMode } = useAdminEnvStore();
+
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
-    MockAdminProvider.getTrades({ page, limit, market }).then((res) => {
+    apiClient.adminGetTrades({ page, limit, market, mode: adminMode }).then((res) => {
+      if (res.success && isMounted) {
+        setTrades(res.data?.data || []);
+        setTotal(res.data?.total || 0);
+      }
+      if (isMounted) setLoading(false);
+    }).catch(() => {
       if (isMounted) {
-        setTrades(res.items);
-        setTotal(res.total);
+        setTrades([]);
         setLoading(false);
       }
     });
@@ -30,9 +37,9 @@ export default function AdminTradesPage() {
     return () => {
       isMounted = false;
     };
-  }, [page, market]);
+  }, [page, market, adminMode]);
 
-  const columns: Column<AdminTrade>[] = [
+  const columns: Column<any>[] = [
     {
       header: "Trade ID",
       accessor: "id",
@@ -47,8 +54,8 @@ export default function AdminTradesPage() {
     {
       header: "Taker Side",
       accessor: (row) => (
-        <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${row.side === 'BUY' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-          {row.side}
+        <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${row.takerSide === 'BUY' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+          {row.takerSide}
         </span>
       )
     },
@@ -56,7 +63,7 @@ export default function AdminTradesPage() {
       header: "Price",
       accessor: (row) => (
         <span className="font-medium">
-          ${row.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+          ${parseFloat(row.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
         </span>
       )
     },
@@ -64,7 +71,7 @@ export default function AdminTradesPage() {
       header: "Amount",
       accessor: (row) => (
         <span className="font-medium">
-          {row.amount.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+          {parseFloat(row.amount).toLocaleString(undefined, { maximumFractionDigits: 6 })}
         </span>
       )
     },
@@ -72,23 +79,21 @@ export default function AdminTradesPage() {
       header: "Total Vol",
       accessor: (row) => (
         <span className="font-medium text-brand-primary">
-          ${row.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ${(parseFloat(row.price) * parseFloat(row.amount)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
       )
     },
     {
-      header: "Participants",
+      header: "Fees (Maker/Taker)",
       accessor: (row) => (
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-          <span title="Maker" className="border-b border-dashed border-muted-foreground">{row.makerId.split('-').pop()}</span>
-          <ArrowRight className="w-3 h-3" />
-          <span title="Taker" className="border-b border-dashed border-muted-foreground">{row.takerId.split('-').pop()}</span>
+        <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground">
+          <span>{row.makerFee}</span> / <span>{row.takerFee}</span>
         </div>
       )
     },
     {
       header: "Time",
-      accessor: (row) => <span className="text-xs text-muted-foreground">{new Date(row.timestamp).toLocaleString()}</span>
+      accessor: (row) => <span className="text-xs text-muted-foreground">{new Date(row.createdAt).toLocaleString()}</span>
     }
   ];
 
@@ -100,13 +105,44 @@ export default function AdminTradesPage() {
           <p className="text-muted-foreground mt-1 text-sm">Global chronological log of all executed trades.</p>
         </div>
         
-        <div className="flex gap-3">
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        {/* Real / Demo Toggle */}
+        <div className="flex bg-muted/50 p-1 rounded-md border border-border/50 self-start sm:self-auto">
+          <button
+            onClick={() => setAdminMode('REAL')}
+            className={`px-4 py-1.5 text-sm font-medium rounded transition-all ${
+              adminMode === 'REAL'
+                ? 'bg-brand-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Real
+          </button>
+          <button
+            onClick={() => setAdminMode('DEMO')}
+            className={`px-4 py-1.5 text-sm font-medium rounded transition-all ${
+              adminMode === 'DEMO'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Demo
+          </button>
+        </div>
+      </div>
+
+      <div className="relative bg-card border border-border/50 rounded-lg overflow-hidden flex flex-col shadow-sm min-h-[400px]">
+        {loading && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10 rounded-lg">
+            <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+        <div className="p-4 border-b border-border/50 bg-muted/20 flex flex-wrap gap-4 justify-end">
+          <div className="flex items-center gap-2 text-sm bg-background border border-border/50 px-3 py-1.5 rounded-md">
+            <Filter className="w-4 h-4 text-muted-foreground" />
             <select 
               value={market}
-              onChange={(e) => { setMarket(e.target.value); setPage(1); }}
-              className="pl-9 pr-8 py-2 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary appearance-none cursor-pointer"
+              onChange={(e) => setMarket(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 cursor-pointer font-medium"
             >
               <option value="ALL">All Markets</option>
               <option value="BTC/USD">BTC/USD</option>
@@ -115,22 +151,35 @@ export default function AdminTradesPage() {
             </select>
           </div>
         </div>
-      </div>
 
-      <div className="relative min-h-[400px]">
-        {loading && (
-          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10 rounded-lg">
-            <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        )}
-        
         <AdminDataTable 
           columns={columns} 
           data={trades} 
-          page={page}
-          totalPages={Math.ceil(total / limit)}
-          onPageChange={setPage}
         />
+        
+        {total > limit && (
+          <div className="p-4 border-t border-border/50 bg-muted/20 flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing <span className="font-medium text-foreground">{((page - 1) * limit) + 1}</span> to <span className="font-medium text-foreground">{Math.min(page * limit, total)}</span> of <span className="font-medium text-foreground">{total}</span> trades
+            </p>
+            <div className="flex gap-2">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                className="px-3 py-1 text-sm bg-background border border-border/50 rounded hover:bg-muted disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                disabled={page * limit >= total}
+                onClick={() => setPage(p => p + 1)}
+                className="px-3 py-1 text-sm bg-background border border-border/50 rounded hover:bg-muted disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
 import { KycApplication } from "@/lib/admin/types";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { apiClient } from "@ethsltd/api-client";

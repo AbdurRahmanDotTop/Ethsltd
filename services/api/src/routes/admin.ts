@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, ledgerEntries, bankTransfers, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions, expertProfiles } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
@@ -23,73 +23,49 @@ adminRoutes.get('/stats', async (c) => {
   const db = c.get('db');
   
   try {
-    const allUsers = await db.select().from(users).all();
-    const allPendingKyc = await db.select().from(kycProfiles).where(eq(kycProfiles.status, 'PENDING')).all();
-    const activeMarkets = await db.select().from(markets).where(eq(markets.status, 'ACTIVE')).all();
+    const [{ count: totalUsers }] = await db.select({ count: sql<number>`count(*)` }).from(users);
+    const [{ count: pendingKyc }] = await db.select({ count: sql<number>`count(*)` }).from(kycProfiles).where(eq(kycProfiles.status, 'PENDING'));
+    const [{ count: activeMarkets }] = await db.select({ count: sql<number>`count(*)` }).from(markets).where(eq(markets.status, 'ACTIVE'));
+    const [{ count: pendingWithdrawals }] = await db.select({ count: sql<number>`count(*)` }).from(walletTransactions).where(and(eq(walletTransactions.type, 'WITHDRAWAL'), eq(walletTransactions.status, 'PENDING')));
+    const [{ count: pendingDisputes }] = await db.select({ count: sql<number>`count(*)` }).from(p2pDisputes).where(eq(p2pDisputes.status, 'OPEN'));
+    const [{ count: suspendedUsers }] = await db.select({ count: sql<number>`count(*)` }).from(users).where(sql`status IN ('FROZEN', 'BANNED')`);
+
+    // Platform Balance
+    const [{ balance }] = await db.select({
+      balance: sql<number>`sum(CAST(balance AS REAL) + CAST(locked_balance AS REAL) + CAST(escrow_balance AS REAL))`
+    }).from(wallets).where(and(eq(wallets.type, 'REAL'), sql`asset_symbol IN ('USDT', 'USD', 'USDC')`));
     
-    // Real Platform Balance (REAL wallets USDT/USD)
-    const allWallets = await db.select().from(wallets).where(eq(wallets.type, 'REAL')).all();
-    let totalPlatformBalance = 0;
-    for (const w of allWallets) {
-      if (w.assetSymbol === 'USDT' || w.assetSymbol === 'USD' || w.assetSymbol === 'USDC') {
-        totalPlatformBalance += parseFloat(w.balance || '0') + parseFloat(w.lockedBalance || '0') + parseFloat(w.escrowBalance || '0');
-      }
-    }
-    
-    // Deposits (Mocking sum from manual deposits)
-    const allManualDeposits = await db.select().from(real_manual_deposits).all();
-    let depositsToday = 0;
+    // Deposits Today
     const todayStart = new Date();
     todayStart.setHours(0,0,0,0);
-    for (const d of allManualDeposits) {
-      if (d.status === 'APPROVED' && new Date(d.created_at).getTime() >= todayStart.getTime()) {
-        depositsToday += d.amount;
-      }
-    }
-    
-    // Pending Withdrawals
-    const allWithdrawals = await db.select().from(walletTransactions).where(eq(walletTransactions.type, 'WITHDRAWAL')).all();
-    const pendingWithdrawals = allWithdrawals.filter(t => t.status === 'PENDING').length;
+    const [{ depositsToday }] = await db.select({
+      depositsToday: sql<number>`sum(amount)`
+    }).from(real_manual_deposits).where(and(eq(real_manual_deposits.status, 'APPROVED'), sql`created_at >= ${todayStart.toISOString()}`));
     
     // P2P Volume 24h
-    const allP2pOrders = await db.select().from(p2pOrders).where(eq(p2pOrders.mode, 'REAL')).all();
-    let p2pVolume24h = 0;
     const now = Date.now();
-    for (const o of allP2pOrders) {
-       if (o.status === 'COMPLETED' && new Date(o.updatedAt).getTime() > now - 86400000) {
-           p2pVolume24h += parseFloat(o.fiatAmount || '0');
-       }
-    }
-    
-    // Pending Disputes
-    const allDisputes = await db.select().from(p2pDisputes).all();
-    const pendingDisputes = allDisputes.filter(d => d.status === 'OPEN').length;
-    
-    // Suspended users
-    const suspendedUsers = allUsers.filter(u => u.status === 'FROZEN' || u.status === 'BANNED').length;
+    const [{ p2pVolume24h }] = await db.select({
+      p2pVolume24h: sql<number>`sum(CAST(fiat_amount AS REAL))`
+    }).from(p2pOrders).where(and(eq(p2pOrders.mode, 'REAL'), eq(p2pOrders.status, 'COMPLETED'), sql`updated_at > ${now - 86400000}`));
 
     // Trading Volume 24h
-    const allOrders = await db.select().from(orders).where(eq(orders.mode, 'REAL')).all();
-    let dailyVolumeUsd = 0;
-    for (const o of allOrders) {
-       if (o.status === 'FILLED' && new Date(o.createdAt).getTime() > now - 86400000) {
-           dailyVolumeUsd += parseFloat(o.filledAmount || '0') * parseFloat(o.price || '0');
-       }
-    }
+    const [{ dailyVolumeUsd }] = await db.select({
+      dailyVolumeUsd: sql<number>`sum(CAST(filled_amount AS REAL) * CAST(price AS REAL))`
+    }).from(orders).where(and(eq(orders.mode, 'REAL'), eq(orders.status, 'FILLED'), sql`created_at > ${now - 86400000}`));
 
     return c.json({
       success: true,
       data: {
-        totalUsers: allUsers.length,
-        pendingKyc: allPendingKyc.length,
-        activeMarkets: activeMarkets.length,
-        totalPlatformBalance,
-        depositsToday,
-        pendingWithdrawals,
-        p2pVolume24h,
-        pendingDisputes,
-        suspendedUsers,
-        dailyVolumeUsd
+        totalUsers: totalUsers || 0,
+        pendingKyc: pendingKyc || 0,
+        activeMarkets: activeMarkets || 0,
+        totalPlatformBalance: balance || 0,
+        depositsToday: depositsToday || 0,
+        pendingWithdrawals: pendingWithdrawals || 0,
+        p2pVolume24h: p2pVolume24h || 0,
+        pendingDisputes: pendingDisputes || 0,
+        suspendedUsers: suspendedUsers || 0,
+        dailyVolumeUsd: dailyVolumeUsd || 0
       }
     });
   } catch (error) {
