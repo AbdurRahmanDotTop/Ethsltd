@@ -43,7 +43,9 @@ export class MockP2PDataProvider implements P2PDataProvider {
 
     // Filter by Payment Method
     if (params.paymentMethod && params.paymentMethod !== "all") {
-      results = results.filter(ad => ad.paymentMethods.includes(params.paymentMethod!));
+      results = results.filter(ad => 
+        ad.paymentMethods.some(m => (typeof m === 'string' ? m : (m as any).type) === params.paymentMethod!)
+      );
     }
 
     // Filter by Amount

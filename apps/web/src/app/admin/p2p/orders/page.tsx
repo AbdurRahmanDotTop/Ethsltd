@@ -24,7 +24,7 @@ export default function AdminP2POrdersPage() {
     try {
       const res = await apiClient.adminGetP2POrders();
       if (res.success) {
-        setOrders(res.data);
+        setOrders(res.data || []);
       } else {
         toast.error(res.error || "Failed to fetch orders");
       }

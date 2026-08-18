@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AdminP2PDispute } from "@/lib/admin/types";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { Filter, Scale, CheckCircle2, UserX, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { apiClient } from "@ethsltd/api-client";
 import { toast } from "sonner";
 
@@ -20,7 +21,7 @@ export default function AdminP2PDisputesPage() {
     try {
       const res = await apiClient.adminGetP2PDisputes();
       if (res.success) {
-        setDisputes(res.data);
+        setDisputes(res.data || []);
       } else {
         toast.error(res.error || "Failed to fetch disputes");
       }
@@ -43,10 +44,7 @@ export default function AdminP2PDisputesPage() {
     if (!window.confirm(confirmMsg)) return;
 
     try {
-      const res = await apiClient.request(`/api/v1/admin/p2p/disputes/${disputeId}/resolve`, {
-        method: 'POST',
-        body: JSON.stringify({ resolution, notes: 'Resolved by Admin' })
-      });
+      const res = await apiClient.adminResolveP2PDispute(disputeId, resolution, 'Resolved by Admin');
       
       if (res.success) {
         toast.success("Dispute resolved successfully");

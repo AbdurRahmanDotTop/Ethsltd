@@ -820,6 +820,13 @@ export class EthsltdClient {
   async adminGetP2PDisputes() {
     return this.request<any[]>('/api/v1/admin/p2p/disputes');
   }
+
+  async adminResolveP2PDispute(disputeId: string, resolution: string, notes?: string) {
+    return this.request<any>(`/api/v1/admin/p2p/disputes/${disputeId}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ resolution, notes }),
+    });
+  }
 }
 
 export const apiClient = new EthsltdClient();

@@ -41,7 +41,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
     defaultValues: {
       fiatAmount: undefined,
       cryptoAmount: undefined,
-      paymentMethod: ad?.paymentMethods[0] || "",
+      paymentMethod: (ad && ad.paymentMethods.length > 0 ? (typeof ad.paymentMethods[0] === 'string' ? ad.paymentMethods[0] : (ad.paymentMethods[0] as any).type) : ""),
     },
   });
 
@@ -64,7 +64,8 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
   // When drawer opens, initialize the payment method
   useEffect(() => {
     if (ad && ad.paymentMethods.length > 0) {
-      setValue("paymentMethod", ad.paymentMethods[0]);
+      const pm = ad.paymentMethods[0];
+      setValue("paymentMethod", typeof pm === 'string' ? pm : (pm as any).type);
     }
   }, [ad, setValue]);
 
@@ -74,7 +75,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
   const userSideLabel = query.side === "buy" ? "Pay" : "Sell";
   const userReceiveLabel = query.side === "buy" ? "Receive" : "Receive";
 
-  const onSubmit = async (data: P2POrderInput) => {
+  const onSubmit = async (data: any) => {
     // Validate min/max limit explicitly
     if (data.fiatAmount < ad.minLimit) {
       toast.error(`Minimum order amount is ${fiatSymbol}${ad.minLimit.toLocaleString()}`);
