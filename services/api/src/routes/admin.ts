@@ -774,9 +774,24 @@ adminRoutes.post('/withdrawals/:id/approve', async (c) => {
   const id = c.req.param('id');
   
   try {
-    const { eq } = require('drizzle-orm');
-    const { walletTransactions } = require('database');
+    const { eq, and } = require('drizzle-orm');
+    const { walletTransactions, wallets } = require('database');
     
+    const tx = await db.select().from(walletTransactions).where(eq(walletTransactions.id, id)).get();
+    if (!tx || tx.status !== 'PENDING') return c.json({ success: false, error: 'Invalid transaction' }, 400);
+
+    // Deduct from locked balance permanently
+    const wallet = await db.select().from(wallets).where(and(
+      eq(wallets.userId, tx.userId),
+      eq(wallets.assetSymbol, tx.assetSymbol),
+      eq(wallets.type, tx.mode)
+    )).get();
+    
+    if (wallet) {
+      const newLocked = Math.max(0, parseFloat(wallet.lockedBalance) - parseFloat(tx.amount)).toString();
+      await db.update(wallets).set({ lockedBalance: newLocked, updatedAt: new Date() }).where(eq(wallets.id, wallet.id));
+    }
+
     // In a real Cregis setup, approving here might trigger a webhook or second payout call
     // For now, we just mark it as COMPLETED
     await db.update(walletTransactions).set({ status: 'COMPLETED', updatedAt: new Date() }).where(eq(walletTransactions.id, id));
@@ -800,7 +815,7 @@ adminRoutes.post('/withdrawals/:id/reject', async (c) => {
     const tx = await db.select().from(walletTransactions).where(eq(walletTransactions.id, id)).get();
     if (!tx || tx.status !== 'PENDING') return c.json({ success: false, error: 'Invalid transaction' }, 400);
     
-    // Refund the amount back to balance
+    // Refund the amount back to balance from locked balance
     const wallet = await db.select().from(wallets).where(and(
       eq(wallets.userId, tx.userId),
       eq(wallets.assetSymbol, tx.assetSymbol),
@@ -809,7 +824,8 @@ adminRoutes.post('/withdrawals/:id/reject', async (c) => {
     
     if (wallet) {
       const newBalance = (parseFloat(wallet.balance) + parseFloat(tx.amount)).toString();
-      await db.update(wallets).set({ balance: newBalance, updatedAt: new Date() }).where(eq(wallets.id, wallet.id));
+      const newLocked = Math.max(0, parseFloat(wallet.lockedBalance) - parseFloat(tx.amount)).toString();
+      await db.update(wallets).set({ balance: newBalance, lockedBalance: newLocked, updatedAt: new Date() }).where(eq(wallets.id, wallet.id));
     }
     
     const updatedNotes = notes ? `Rejected: ${notes}` : 'Rejected by Admin';

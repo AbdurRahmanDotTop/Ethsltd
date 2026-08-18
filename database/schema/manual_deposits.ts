@@ -12,6 +12,16 @@ export const real_manual_deposits = sqliteTable("real_manual_deposits", {
     transaction_hash: text("transaction_hash"),
     proof_file_url: text("proof_file_url"), 
     remarks: text("remarks"),
+    original_currency: text("original_currency"), // e.g. INR
+    original_amount: text("original_amount"),
+    conversion_rate: text("conversion_rate"),
+    gross_usdt: text("gross_usdt"),
+    deposit_fee: text("deposit_fee"),
+    other_fees: text("other_fees"),
+    total_fees: text("total_fees"),
+    net_usdt: text("net_usdt"),
+    expected_wallet_credit: text("expected_wallet_credit"),
+    
     status: text("status", { enum: ["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED"] }).default("PENDING").notNull(),
     reviewed_by: text("reviewed_by"),
     reviewed_at: integer("reviewed_at", { mode: "timestamp" }),

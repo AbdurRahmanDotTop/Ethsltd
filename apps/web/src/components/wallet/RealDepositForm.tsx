@@ -74,10 +74,48 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   
   // Checkout Modal State
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const FEE_PERCENTAGE = 0.01; // 1% fee
   
-  // Results
+  // Results & Previews
   const [bankDetails, setBankDetails] = useState<any | null>(null);
+  const [preview, setPreview] = useState<any | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchPreview = async () => {
+      const numAmount = Number(amount);
+      if (!amount || isNaN(numAmount) || numAmount <= 0) {
+        setPreview(null);
+        return;
+      }
+      setPreviewLoading(true);
+      try {
+        const currency = method === 'BANK' ? bankCurrency : selectedAsset;
+        const mappedMethod = method === 'CRYPTO' ? 'AUTO' : method === 'BANK' ? 'BANK_TRANSFER' : 'MANUAL';
+        
+        // Find methodId if possible
+        // Actually, we don't have method list with IDs here easily, wait...
+        // We can just pass method string as methodId to the backend and let backend find it by string if needed, 
+        // but backend expects ID. Let's modify backend to accept method name if methodId is not uuid.
+        
+        const res = await apiClient.getDepositPreview(numAmount, currency, mappedMethod);
+        if (res.success) {
+          setPreview(res.data);
+        } else {
+          setPreview(null);
+        }
+      } catch (e) {
+        setPreview(null);
+      } finally {
+        setPreviewLoading(false);
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchPreview();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [amount, method, selectedAsset, bankCurrency]);
 
   const copyToClipboard = (text: string, label: string) => {
     if (!text) return;
@@ -354,6 +392,50 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                   <label className="text-sm font-medium">Payment Receipt (Screenshot)</label>
                   <Input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" required />
                 </div>
+                
+                {/* Real-time Calculation Breakdown */}
+                {amount && Number(amount) > 0 && (
+                  <div className="bg-brand-50/50 dark:bg-brand-900/10 border border-brand-500/20 rounded-md p-4 space-y-2 mt-4 text-sm relative">
+                    {previewLoading && (
+                      <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-md z-10">
+                        <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+                      </div>
+                    )}
+                    <h5 className="font-semibold mb-3">Deposit Breakdown</h5>
+                    
+                    {preview ? (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Deposit Amount:</span>
+                          <span className="font-medium">{preview.originalAmount.toFixed(2)} {preview.originalCurrency}</span>
+                        </div>
+                        {preview.originalCurrency !== 'USDT' && (
+                          <>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">Exchange Rate:</span>
+                              <span className="font-medium">1 {preview.originalCurrency} = {preview.conversionRate} USDT</span>
+                            </div>
+                            <div className="flex justify-between text-brand-600 dark:text-brand-400">
+                              <span className="text-muted-foreground text-brand-600 dark:text-brand-400">Converted Value:</span>
+                              <span className="font-medium">{preview.grossUsdt.toFixed(2)} USDT</span>
+                            </div>
+                          </>
+                        )}
+                        <div className="flex justify-between text-red-500">
+                          <span>Deposit Fee:</span>
+                          <span>- {preview.totalFees.toFixed(2)} USDT</span>
+                        </div>
+                        <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between font-bold text-base">
+                          <span>Expected Wallet Credit:</span>
+                          <span className="text-emerald-600">{preview.netUsdt.toFixed(2)} USDT</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground italic">Enter an amount to see the calculation</div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <Button type="submit" className="w-full h-12 text-base whitespace-normal h-auto py-3" disabled={isSubmitting}>
@@ -408,6 +490,51 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                   <label className="text-sm font-medium">Payment Receipt (Screenshot)</label>
                   <Input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" required />
                 </div>
+                
+                {/* Real-time Calculation Breakdown */}
+                {amount && Number(amount) > 0 && (
+                  <div className="bg-brand-50/50 dark:bg-brand-900/10 border border-brand-500/20 rounded-md p-4 space-y-2 mt-4 text-sm relative">
+                    {previewLoading && (
+                      <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-md z-10">
+                        <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+                      </div>
+                    )}
+                    <h5 className="font-semibold mb-3">Deposit Breakdown</h5>
+                    
+                    {preview ? (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Deposit Amount:</span>
+                          <span className="font-medium">{preview.originalAmount.toFixed(2)} {preview.originalCurrency}</span>
+                        </div>
+                        {preview.originalCurrency !== 'USDT' && (
+                          <>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">Exchange Rate:</span>
+                              <span className="font-medium">1 {preview.originalCurrency} = {preview.conversionRate} USDT</span>
+                            </div>
+                            <div className="flex justify-between text-brand-600 dark:text-brand-400">
+                              <span className="text-muted-foreground text-brand-600 dark:text-brand-400">Converted Value:</span>
+                              <span className="font-medium">{preview.grossUsdt.toFixed(2)} USDT</span>
+                            </div>
+                          </>
+                        )}
+                        <div className="flex justify-between text-red-500">
+                          <span>Deposit Fee:</span>
+                          <span>- {preview.totalFees.toFixed(2)} USDT</span>
+                        </div>
+                        <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between font-bold text-base">
+                          <span>Expected Wallet Credit:</span>
+                          <span className="text-emerald-600">{preview.netUsdt.toFixed(2)} USDT</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground italic">Enter an amount to see the calculation</div>
+                    )}
+                  </div>
+                )}
+                
                 <Button type="submit" className="w-full h-12 text-base mt-2" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="w-5 h-5 animate-spin mr-2 shrink-0" />}
                   Submit Bank Transfer Details
@@ -431,19 +558,24 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
             </DialogDescription>
           </DialogHeader>
           
-          <div className="w-full space-y-3 mb-6">
+          <div className="w-full space-y-3 mb-6 relative">
+            {previewLoading && (
+              <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-md z-10">
+                <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+              </div>
+            )}
             <div className="flex justify-between items-start sm:items-center text-sm gap-2">
               <span className="text-muted-foreground shrink-0">Deposit Amount (Wallet):</span>
-              <span className="font-bold text-right break-words min-w-0">${Number(amount || 0).toFixed(2)}</span>
+              <span className="font-bold text-right break-words min-w-0">{Number(amount || 0).toFixed(2)} USD</span>
             </div>
             <div className="flex justify-between items-start sm:items-center text-sm gap-2">
-              <span className="text-muted-foreground shrink-0">1% Extra Fee:</span>
-              <span className="font-bold text-red-500 text-right break-words min-w-0">+${(Number(amount || 0) * FEE_PERCENTAGE).toFixed(2)}</span>
+              <span className="text-muted-foreground shrink-0">Extra Fee:</span>
+              <span className="font-bold text-red-500 text-right break-words min-w-0">+{preview ? preview.totalFees.toFixed(2) : '0.00'} USD</span>
             </div>
             <div className="h-px bg-border my-2 w-full"></div>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-2 w-full">
               <span className="font-medium shrink-0">Total Amount to Pay:</span>
-              <span className="text-xl font-bold text-green-600 dark:text-green-500 text-right break-all min-w-0">${(Number(amount || 0) * (1 + FEE_PERCENTAGE)).toFixed(2)}</span>
+              <span className="text-xl font-bold text-green-600 dark:text-green-500 text-right break-all min-w-0">{preview ? (Number(amount) + preview.totalFees).toFixed(2) : Number(amount || 0).toFixed(2)} USD</span>
             </div>
           </div>
           

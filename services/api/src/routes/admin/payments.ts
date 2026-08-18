@@ -116,48 +116,23 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   // Atomic approval
   await db.update(realManualDeposits).set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now }).where(eq(realManualDeposits.id, id));
   
-  let finalAsset = deposit.asset;
-  let finalAmount = deposit.amount;
-  let grossUsdtAmount = deposit.amount;
-  let conversionRateUsed = '1';
-  let isConverted = false;
-
-  // Convert to USDT if it's a fiat currency found in global currency rates
-  if (deposit.asset !== 'USDT') {
-    const rateRow = await db.select().from(currencyRates)
-      .where(and(eq(currencyRates.code, deposit.asset), eq(currencyRates.status, 'ACTIVE')))
-      .get();
-    
-    if (rateRow && rateRow.ratePerUsdt) {
-      const rate = parseFloat(rateRow.ratePerUsdt);
-      if (rate > 0) {
-        finalAsset = 'USDT';
-        grossUsdtAmount = deposit.amount / rate;
-        finalAmount = grossUsdtAmount;
-        conversionRateUsed = rateRow.ratePerUsdt;
-        isConverted = true;
-      }
-    }
-  }
-
-  // Calculate dynamic Deposit Fee
-  const depositFeeConfig = await getFeeConfig(db, 'DEPOSIT_FEE', { type: 'PERCENTAGE', percentage: 0 });
-  const feeAmount = calculateFee(grossUsdtAmount, depositFeeConfig);
-  finalAmount = grossUsdtAmount - feeAmount;
-
-  if (finalAmount < 0) finalAmount = 0;
+  // Read from the frozen snapshot in the deposit record
+  const finalAsset = 'USDT';
+  const finalAmount = parseFloat(deposit.net_usdt || deposit.amount.toString());
+  const feeAmount = parseFloat(deposit.total_fees || '0');
+  const isConverted = deposit.original_currency && deposit.original_currency !== 'USDT';
 
   // Record conversion if applicable
   if (isConverted) {
     await db.insert(assetConversions).values({
       id: crypto.randomUUID(),
       userId: deposit.user_id,
-      originalAsset: deposit.asset,
-      originalAmount: deposit.amount.toString(),
-      conversionRate: conversionRateUsed,
-      grossUsdt: grossUsdtAmount.toString(),
+      originalAsset: deposit.original_currency as string,
+      originalAmount: deposit.original_amount as string,
+      conversionRate: deposit.conversion_rate as string,
+      grossUsdt: deposit.gross_usdt as string,
       depositFee: feeAmount.toString(),
-      netUsdt: finalAmount.toString(),
+      netUsdt: deposit.net_usdt as string,
       status: 'COMPLETED',
       referenceId: deposit.id,
       createdAt: now,
@@ -185,7 +160,7 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   await db.insert(ledgerTransactions).values({ 
     id: crypto.randomUUID(),
     displayId: ltDisplayId,
-    idempotencyKey: `MANUAL_DEP_APPROVE_${deposit.id}_${now.getTime()}`,
+    idempotencyKey: `MANUAL_DEP_APPROVE_${deposit.id}`,
     referenceType: 'DEPOSIT', 
     referenceId: deposit.id,
     environment: 'REAL', 

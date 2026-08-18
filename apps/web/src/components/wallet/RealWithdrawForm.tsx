@@ -40,24 +40,61 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
   const amount = form.watch("amount");
 
   const { mode } = useTradingModeStore();
+  const [preview, setPreview] = useState<any | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
   useEffect(() => {
     if (mode === 'REAL') {
       apiClient.getWalletBalances(mode).then(res => setBalances(res.data || []));
     }
   }, [mode]);
 
+  useEffect(() => {
+    const fetchPreview = async () => {
+      const numAmount = Number(amount);
+      if (!amount || isNaN(numAmount) || numAmount <= 0) {
+        setPreview(null);
+        return;
+      }
+      setPreviewLoading(true);
+      try {
+        const res = await apiClient.getWithdrawalPreview(numAmount, selectedAsset, 'CRYPTO');
+        if (res.success) {
+          setPreview(res.data);
+        } else {
+          setPreview(null);
+        }
+      } catch (e) {
+        setPreview(null);
+      } finally {
+        setPreviewLoading(false);
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchPreview();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [amount, selectedAsset]);
+
   const activeBalance = balances.find((b) => b.symbol === selectedAsset);
   const availableAmount = activeBalance?.available || 0;
   
-  // Real withdrawal fee logic (from config in production, fixed for now)
-  const fee = selectedAsset === 'BTC' ? 0.0005 : (selectedAsset === 'ETH' ? 0.005 : 1.0); 
-  const totalDeduction = (amount || 0) + fee;
+  // Real withdrawal fee logic via preview
+  const fee = preview ? preview.totalFees : 0;
+  // If we don't have preview yet, we assume they withdraw `amount` exactly from balance.
+  const totalDeduction = Number(amount || 0); // User requests `amount` to be deducted from balance
   
   const hasInsufficientBalance = totalDeduction > availableAmount;
 
   const onReview = (values: z.infer<typeof withdrawSchema>) => {
     if (hasInsufficientBalance) {
-      form.setError("amount", { message: "Insufficient available balance including fees." });
+      form.setError("amount", { message: "Insufficient available balance." });
+      return;
+    }
+    if (preview && preview.netUsdtReceived <= 0) {
+      form.setError("amount", { message: "Amount must be greater than withdrawal fee" });
       return;
     }
     setIsConfirming(true);
@@ -102,23 +139,34 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
           <p>You are about to withdraw REAL funds. Cryptocurrency transactions are irreversible. Please double check the destination address.</p>
         </div>
         
-        <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border">
+        <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border relative">
+          {previewLoading && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-lg z-10">
+              <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+            </div>
+          )}
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Asset</span>
             <span className="font-semibold text-foreground">{selectedAsset}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Amount</span>
+            <span className="text-muted-foreground">Withdrawal Amount</span>
             <span className="font-mono text-foreground">{amount.toLocaleString()} {selectedAsset}</span>
           </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Network Fee</span>
-            <span className="font-mono text-foreground">{fee.toLocaleString()} {selectedAsset}</span>
+          {preview && preview.currencyCode !== 'USDT' && (
+             <div className="flex justify-between items-center text-sm">
+               <span className="text-muted-foreground">Exchange Rate</span>
+               <span className="font-mono text-foreground">1 {preview.currencyCode} = {preview.conversionRate} USDT</span>
+             </div>
+          )}
+          <div className="flex justify-between items-center text-sm text-red-500">
+            <span className="text-muted-foreground">Network & Platform Fees</span>
+            <span className="font-mono">- {fee.toLocaleString()} USDT</span>
           </div>
           <div className="pt-4 border-t border-border flex justify-between items-center">
             <span className="font-semibold text-foreground">You Will Receive</span>
             <span className="font-mono font-bold text-xl text-brand-600 dark:text-brand-400">
-              {amount.toLocaleString()} {selectedAsset}
+              {preview ? preview.netUsdtReceived.toLocaleString() : '0'} USDT
             </span>
           </div>
         </div>
@@ -228,15 +276,32 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
           )}
         </div>
         
-        <div className="bg-muted/30 p-4 rounded-lg border border-border space-y-2 text-sm">
-          <div className="flex justify-between text-muted-foreground">
-            <span>Estimated Network Fee</span>
-            <span className="font-mono">{fee.toLocaleString()} {selectedAsset}</span>
-          </div>
-          <div className="flex justify-between font-medium text-foreground">
-            <span>Total Deduction</span>
-            <span className="font-mono">{totalDeduction.toLocaleString()} {selectedAsset}</span>
-          </div>
+        <div className="bg-muted/30 p-4 rounded-lg border border-border space-y-2 text-sm relative">
+          {previewLoading && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-lg z-10">
+              <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+            </div>
+          )}
+          {preview ? (
+            <>
+              {preview.currencyCode !== 'USDT' && (
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <span>Exchange Rate</span>
+                  <span className="font-mono">1 {preview.currencyCode} = {preview.conversionRate} USDT</span>
+                </div>
+              )}
+              <div className="flex justify-between text-red-500">
+                <span>Estimated Network & Platform Fees</span>
+                <span className="font-mono">{fee.toLocaleString()} USDT</span>
+              </div>
+              <div className="flex justify-between font-medium text-foreground">
+                <span>Total Deduction from Balance</span>
+                <span className="font-mono">{totalDeduction.toLocaleString()} {selectedAsset}</span>
+              </div>
+            </>
+          ) : (
+            <div className="text-muted-foreground italic text-center">Enter amount to see fee breakdown</div>
+          )}
         </div>
 
         <Button type="submit" className="w-full h-12 text-base" disabled={hasInsufficientBalance || totalDeduction <= fee}>

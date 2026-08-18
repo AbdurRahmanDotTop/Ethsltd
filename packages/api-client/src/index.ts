@@ -188,6 +188,18 @@ export class EthsltdClient {
     return this.request<any>('/api/v1/wallets/deposit-settings');
   }
 
+  async getDepositPreview(amount: number, currency: string, methodId?: string | null) {
+    let url = `/api/v1/wallets/deposit/preview?amount=${amount}&currency=${currency}`;
+    if (methodId) url += `&methodId=${methodId}`;
+    return this.request<any>(url);
+  }
+
+  async getWithdrawalPreview(amount: number, currency: string, methodId?: string | null) {
+    let url = `/api/v1/wallets/withdrawal/preview?amount=${amount}&currency=${currency}`;
+    if (methodId) url += `&methodId=${methodId}`;
+    return this.request<any>(url);
+  }
+
   async deposit(data: { 
     assetSymbol: string; 
     amount: number; 

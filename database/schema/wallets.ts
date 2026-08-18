@@ -27,6 +27,15 @@ export const walletTransactions = sqliteTable('wallet_transactions', {
   destination: text('destination'),
   network: text('network'),
   reference: text('reference'),
+  
+  // Breakdown tracking (especially for withdrawals/deposits where conversion/fees apply)
+  originalCurrency: text('original_currency'),
+  originalAmount: text('original_amount'),
+  conversionRate: text('conversion_rate'),
+  grossAmount: text('gross_amount'),
+  totalFees: text('total_fees'),
+  netAmount: text('net_amount'),
+  
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });

@@ -103,9 +103,17 @@ export default function AdminWithdrawalsPage() {
     {
       header: "Amount",
       accessor: (row) => (
-        <span className="font-bold text-red-500">
-          -{parseFloat(row.amount as string).toLocaleString(undefined, { maximumFractionDigits: 6 })} {row.asset as string}
-        </span>
+        <div className="flex flex-col">
+          <span className="font-bold text-foreground">
+            {parseFloat(row.amount as string).toLocaleString(undefined, { maximumFractionDigits: 6 })} {row.asset as string}
+          </span>
+          {(row as any).netAmount && (
+            <span className="text-xs text-emerald-500 font-medium mt-0.5">Net: {Number((row as any).netAmount).toFixed(2)} USDT</span>
+          )}
+          {(row as any).totalFees && Number((row as any).totalFees) > 0 && (
+            <span className="text-xs text-red-500">Fee: {Number((row as any).totalFees).toFixed(2)} USDT</span>
+          )}
+        </div>
       )
     },
     {

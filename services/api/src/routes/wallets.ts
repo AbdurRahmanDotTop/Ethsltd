@@ -6,6 +6,7 @@ import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
 import { getFeeConfig, calculateFee, getLimit } from '../services/fees';
 import { generateBusinessId } from '../services/id-generator';
+import { calculateDepositPreview, calculateWithdrawalPreview } from '../services/calculations';
 
 export const walletRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -43,6 +44,50 @@ walletRoutes.get('/deposit-settings', async (c) => {
   
   return c.json({ success: true, activeMethods, manualAddresses });
 });
+
+walletRoutes.get('/deposit/preview', async (c) => {
+  try {
+    const db = c.get('db');
+    const amount = parseFloat(c.req.query('amount') || '0');
+    const currency = c.req.query('currency') || 'USDT';
+    let methodId = c.req.query('methodId') || null;
+
+    if (amount <= 0) return c.json({ success: false, error: 'Invalid amount' }, 400);
+
+    // If methodId is not a UUID, try to look it up as a string name
+    if (methodId && methodId.length < 30) {
+      const pm = await db.select().from(payment_methods).where(eq(payment_methods.method, methodId as any)).get();
+      if (pm) methodId = pm.id;
+    }
+
+    const preview = await calculateDepositPreview(db, amount, currency, methodId);
+    return c.json({ success: true, data: preview });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 400);
+  }
+});
+
+walletRoutes.get('/withdrawal/preview', async (c) => {
+  try {
+    const db = c.get('db');
+    const amount = parseFloat(c.req.query('amount') || '0');
+    const currency = c.req.query('currency') || 'USDT';
+    let methodId = c.req.query('methodId') || null;
+
+    if (amount <= 0) return c.json({ success: false, error: 'Invalid amount' }, 400);
+
+    if (methodId && methodId.length < 30) {
+      const pm = await db.select().from(payment_methods).where(eq(payment_methods.method, methodId as any)).get();
+      if (pm) methodId = pm.id;
+    }
+
+    const preview = await calculateWithdrawalPreview(db, amount, currency, methodId);
+    return c.json({ success: true, data: preview });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 400);
+  }
+});
+
 
 // Helper function to get mock prices for simulation
 const getMockPrice = (symbol: string) => {
@@ -290,10 +335,11 @@ walletRoutes.post('/deposit', async (c) => {
       } else {
         return c.json({ success: false, error: 'Valid amount required for checkout' }, 400);
       }
-    } else if (depositMethod === 'BANK') {
+    } else if (depositMethod === 'BANK' || depositMethod === 'MANUAL') {
       const amountNum = Number(amount) || 0;
-      if (amountNum <= 0) {
-        // Fetch active bank details
+      
+      // If BANK and amount is 0, we just return bank details
+      if (depositMethod === 'BANK' && amountNum <= 0) {
         const activeBank = await db.select().from(bank_accounts).where(eq(bank_accounts.active, true)).get();
         if (!activeBank) {
           return c.json({ success: false, error: 'No active bank account available for deposits.' }, 400);
@@ -308,38 +354,55 @@ walletRoutes.post('/deposit', async (c) => {
             ifsc: activeBank.ifsc || '',
             branch: activeBank.branch || '',
             country: activeBank.country || '',
-            instructions: activeBank.instructions || 'Please ensure you include your tracking reference when submitting your proof of payment. International payments may take 2-5 business days to process.'
+            instructions: activeBank.instructions || 'Please ensure you include your tracking reference when submitting your proof of payment.'
           }
         });
       }
 
-      await db.insert(bankTransfers).values({
-        id: crypto.randomUUID(),
-        userId: user.id,
-        amount: amount.toString(),
-        currency: assetSymbol,
-        bankReference: paymentReference || `UTR-${Date.now()}`,
-        proofDocumentUrl: proofFileUrl,
-        status: 'PENDING',
-        createdAt: now,
-        updatedAt: now,
-      });
-      return c.json({ success: true, message: 'Bank transfer submitted successfully. Awaiting admin review.' });
-    } else if (depositMethod === 'MANUAL') {
-       await db.insert(real_manual_deposits).values({
+      if (amountNum <= 0) {
+        return c.json({ success: false, error: 'Invalid amount' }, 400);
+      }
+
+      // We need methodId to calculate fee. We can fetch it by depositMethod string
+      const pm = await db.select().from(payment_methods).where(eq(payment_methods.method, depositMethod)).get();
+      const methodId = pm ? pm.id : null;
+
+      // Centralized Calculation Service!
+      const preview = await calculateDepositPreview(db, amountNum, assetSymbol, methodId);
+      
+      if (depositMethod === 'BANK') {
+        // We will store bank transfers in real_manual_deposits as well since we added breakdown fields there,
+        // or we store in bankTransfers. We will use bankTransfers but wait, we didn't add breakdown to bankTransfers.
+        // Let's store all manual/bank in real_manual_deposits to keep the schema unified.
+      }
+      
+      await db.insert(real_manual_deposits).values({
          id: crypto.randomUUID(),
          deposit_id: transactionId,
          user_id: user.id,
-         amount: parseFloat(amount),
+         amount: amountNum,
          asset: assetSymbol,
          payment_reference: paymentReference || `REF-${Date.now()}`,
-         transaction_hash: transactionHash,
-         proof_file_url: proofFileUrl,
+         transaction_hash: transactionHash || null,
+         proof_file_url: proofFileUrl || null,
+         
+         // Freeze the calculation breakdown
+         original_currency: preview.originalCurrency,
+         original_amount: preview.originalAmount.toString(),
+         conversion_rate: preview.conversionRate.toString(),
+         gross_usdt: preview.grossUsdt.toString(),
+         deposit_fee: preview.depositFee.toString(),
+         other_fees: preview.otherFees.toString(),
+         total_fees: preview.totalFees.toString(),
+         net_usdt: preview.netUsdt.toString(),
+         expected_wallet_credit: preview.netUsdt.toString(),
+         
          status: 'PENDING',
          created_at: now,
          updated_at: now,
-       });
-       return c.json({ success: true, message: 'Manual deposit submitted successfully. Awaiting admin review.' });
+      });
+
+      return c.json({ success: true, message: `${depositMethod} deposit submitted successfully. Awaiting admin review.` });
     } else {
       return c.json({ success: false, error: 'Invalid deposit method for REAL mode' }, 400);
     }
@@ -370,12 +433,18 @@ walletRoutes.post('/withdraw', async (c) => {
     return c.json({ success: false, error: `Minimum withdrawal is ${minWithdrawal}` }, 400);
   }
 
-  // 2. Calculate dynamic withdrawal fee
-  const withdrawFeeConfig = await getFeeConfig(db, 'WITHDRAWAL_FEE', { type: 'FIXED', amount: 0 });
-  const fee = calculateFee(parsedAmount, withdrawFeeConfig);
-  const netAmount = parsedAmount - fee;
+  // 2. Calculate dynamic withdrawal fee using the centralized service
+  // We need methodId to calculate fee. We can fetch it by mode/network or we assume null for crypto for now.
+  let methodId = null; 
+  try {
+     // Defaulting crypto withdrawals to MANUAL method for fee calculation if not specified
+     const pm = await db.select().from(payment_methods).where(eq(payment_methods.method, 'MANUAL')).get();
+     if (pm) methodId = pm.id;
+  } catch(e) {}
 
-  if (netAmount <= 0) {
+  const preview = await calculateWithdrawalPreview(db, parsedAmount, assetSymbol, methodId);
+  
+  if (preview.netUsdtReceived <= 0) {
     return c.json({ success: false, error: 'Amount must be greater than withdrawal fee' }, 400);
   }
   
@@ -398,7 +467,7 @@ walletRoutes.post('/withdraw', async (c) => {
       mode: mode,
       assetSymbol,
       amount: parsedAmount.toString(),
-      fee: fee.toString(),
+      fee: preview.totalFees.toString(),
       status: 'COMPLETED', // Simulated demo trading completes instantly
       destination,
       network: network || 'Internal',
@@ -412,15 +481,18 @@ walletRoutes.post('/withdraw', async (c) => {
     try {
       const cregis = new CregisClient(c.env);
       
-      // Step 1: Call Cregis Payout API via PHP Proxy
-      const payoutId = await cregis.createPayout(parsedAmount, assetSymbol, destination, user.id);
+      // Step 1: Call Cregis Payout API via PHP Proxy (payout actual net amount)
+      // Note: Do we payout gross or net? Usually user requests 100, fee is 1, they receive 99.
+      const payoutId = await cregis.createPayout(preview.netUsdtReceived, assetSymbol, destination, user.id);
       
-      // Step 2: Deduct balance (or move to locked_balance if your system prefers)
+      // Step 2: Move balance to locked_balance
       const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
-      await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+      const newLocked = (parseFloat(wallet.lockedBalance) + parsedAmount).toString();
+      await db.update(wallets).set({ balance: newBalance, lockedBalance: newLocked, updatedAt: now }).where(eq(wallets.id, wallet.id));
       
       const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
       const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
+      
       // Step 3: Record transaction as PENDING (Wait for Cregis Webhook to mark COMPLETED)
       await db.insert(walletTransactions).values({
         id: transactionId,
@@ -430,11 +502,20 @@ walletRoutes.post('/withdraw', async (c) => {
         mode: mode,
         assetSymbol,
         amount: parsedAmount.toString(),
-        fee: fee.toString(),
+        fee: preview.totalFees.toString(),
         status: 'PENDING',
         destination,
         network: network || 'External',
         reference: payoutId, // Store Cregis payout ID for webhook matching
+        
+        // Detailed breakdown
+        originalCurrency: preview.currencyCode,
+        originalAmount: parsedAmount.toString(),
+        conversionRate: preview.conversionRate.toString(),
+        grossAmount: parsedAmount.toString(),
+        totalFees: preview.totalFees.toString(),
+        netAmount: preview.netUsdtReceived.toString(),
+        
         createdAt: now,
         updatedAt: now,
       });
