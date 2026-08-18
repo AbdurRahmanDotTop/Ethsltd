@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit, Activity, Power, PowerOff, Save, X, History, Trash2 } from "lucide-react";
+import { apiClient } from "@ethsltd/api-client";
 
 type CurrencyRate = {
   code: string;
@@ -49,16 +50,11 @@ export default function CurrencyRatesAdminPage() {
   const fetchRates = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/v1/admin/currency-rates', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setRates(data.data);
+      const res = await apiClient.adminGetCurrencyRates();
+      if (res.success) {
+        setRates(res.data);
       } else {
-        setError(data.error);
+        setError(res.error);
       }
     } catch (err: any) {
       setError(err.message);
@@ -74,20 +70,12 @@ export default function CurrencyRatesAdminPage() {
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/v1/admin/currency-rates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (data.success) {
+      const res = await apiClient.adminCreateCurrencyRate(formData);
+      if (res.success) {
         setIsAddModalOpen(false);
         fetchRates();
       } else {
-        alert(data.error);
+        alert(res.error);
       }
     } catch (err: any) {
       alert(err.message);
@@ -98,25 +86,17 @@ export default function CurrencyRatesAdminPage() {
     e.preventDefault();
     if (!selectedCurrency) return;
     try {
-      const res = await fetch(`/api/v1/admin/currency-rates/${selectedCurrency.code}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          symbol: formData.symbol,
-          ratePerUsdt: formData.ratePerUsdt,
-          decimalPrecision: formData.decimalPrecision
-        })
+      const res = await apiClient.adminUpdateCurrencyRate(selectedCurrency.code, {
+        name: formData.name,
+        symbol: formData.symbol,
+        ratePerUsdt: formData.ratePerUsdt,
+        decimalPrecision: formData.decimalPrecision
       });
-      const data = await res.json();
-      if (data.success) {
+      if (res.success) {
         setIsEditModalOpen(false);
         fetchRates();
       } else {
-        alert(data.error);
+        alert(res.error);
       }
     } catch (err: any) {
       alert(err.message);
@@ -128,19 +108,11 @@ export default function CurrencyRatesAdminPage() {
     if (!confirm(`Are you sure you want to mark ${code} as ${newStatus}?`)) return;
     
     try {
-      const res = await fetch(`/api/v1/admin/currency-rates/${code}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-      const data = await res.json();
-      if (data.success) {
+      const res = await apiClient.adminUpdateCurrencyRateStatus(code, newStatus);
+      if (res.success) {
         fetchRates();
       } else {
-        alert(data.error);
+        alert(res.error);
       }
     } catch (err: any) {
       alert(err.message);
@@ -149,17 +121,12 @@ export default function CurrencyRatesAdminPage() {
 
   const openHistory = async (code: string) => {
     try {
-      const res = await fetch(`/api/v1/admin/currency-rates/${code}/history`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setHistoryData(data.data);
+      const res = await apiClient.adminGetCurrencyRateHistory(code);
+      if (res.success) {
+        setHistoryData(res.data);
         setIsHistoryModalOpen(true);
       } else {
-        alert(data.error);
+        alert(res.error);
       }
     } catch (err: any) {
       alert(err.message);

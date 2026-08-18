@@ -780,6 +780,36 @@ export class EthsltdClient {
       method: 'POST'
     });
   }
+
+  // Admin Currency Rates
+  async adminGetCurrencyRates() {
+    return this.request<any[]>('/api/v1/admin/currency-rates');
+  }
+
+  async adminCreateCurrencyRate(data: any) {
+    return this.request<any>('/api/v1/admin/currency-rates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async adminUpdateCurrencyRate(code: string, data: any) {
+    return this.request<any>(`/api/v1/admin/currency-rates/${code}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async adminUpdateCurrencyRateStatus(code: string, status: string) {
+    return this.request<any>(`/api/v1/admin/currency-rates/${code}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async adminGetCurrencyRateHistory(code: string) {
+    return this.request<any[]>(`/api/v1/admin/currency-rates/${code}/history`);
+  }
 }
 
 export const apiClient = new EthsltdClient();
