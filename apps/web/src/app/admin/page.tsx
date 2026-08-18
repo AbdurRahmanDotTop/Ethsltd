@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Users, Activity, Wallet, ArrowDownToLine, Handshake, AlertTriangle, UserCheck, Server, Loader2 } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
-import { useAdminEnvStore } from "@/stores/admin-env-store";
 
 function StatCard({ 
   title, 
@@ -38,7 +37,6 @@ function StatCard({
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [activity, setActivity] = useState<any[]>([]);
-  const { adminMode, setAdminMode } = useAdminEnvStore();
 
   useEffect(() => {
     async function fetchStats() {
@@ -54,7 +52,7 @@ export default function AdminDashboardPage() {
       }
     }
     fetchStats();
-  }, [adminMode]);
+  }, []);
 
   // Helper for USD formatting
   const formatUSD = (val: number) => {

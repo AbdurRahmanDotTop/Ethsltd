@@ -97,20 +97,6 @@ export default function AdminWalletsPage() {
           <p className="text-muted-foreground mt-1 text-sm">Monitor platform liquidity and manage user wallets.</p>
         </div>
         <div className="flex gap-4">
-          <div className="flex bg-muted p-1 rounded-lg">
-            <button
-              onClick={() => setAdminMode("REAL")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "REAL" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Real
-            </button>
-            <button
-              onClick={() => setAdminMode("DEMO")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${adminMode === "DEMO" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Demo
-            </button>
-          </div>
           <Button variant="outline" onClick={loadData}>
             <RefreshCw className="w-4 h-4 mr-2" /> Refresh Balances
           </Button>
@@ -243,7 +229,6 @@ export default function AdminWalletsPage() {
                   <label className="text-sm font-medium mb-1 block">Wallet Type</label>
                   <select value={adjustType} onChange={e => setAdjustType(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
                     <option value="REAL">REAL</option>
-                    <option value="DEMO">DEMO</option>
                   </select>
                 </div>
               </div>

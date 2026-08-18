@@ -3,8 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiClient } from '@ethsltd/api-client';
 
 interface AdminEnvState {
-  adminMode: 'REAL' | 'DEMO';
-  setAdminMode: (mode: 'REAL' | 'DEMO') => void;
+  adminMode: 'REAL';
+  setAdminMode: (mode: 'REAL') => void;
 }
 
 export const useAdminEnvStore = create<AdminEnvState>()(

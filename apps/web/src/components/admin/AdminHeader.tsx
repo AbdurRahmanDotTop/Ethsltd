@@ -6,13 +6,11 @@ import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { adminNavGroups } from "./AdminSidebar";
-import { useAdminEnvStore } from "@/stores/admin-env-store";
 import { apiClient } from "@ethsltd/api-client";
 import { formatDistanceToNow } from "date-fns";
 
 export function AdminHeader() {
   const { user, logout } = useAuthStore();
-  const { adminMode, setAdminMode } = useAdminEnvStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);

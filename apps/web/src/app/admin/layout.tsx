@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminPermissionGuard } from "@/components/admin/AdminPermissionGuard";
-import { DemoBanner } from "@/components/admin/DemoBanner";
 
 export const metadata: Metadata = {
   title: "Admin Console | ETHSLTD",
@@ -17,7 +16,6 @@ export default function AdminLayout({
   return (
     <AdminPermissionGuard>
       <div className="h-screen overflow-hidden bg-background flex flex-col">
-        <DemoBanner />
         <AdminHeader />
         <div className="flex flex-1 overflow-hidden">
           <AdminSidebar />
