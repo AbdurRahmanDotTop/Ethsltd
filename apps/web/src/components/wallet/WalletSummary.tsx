@@ -4,8 +4,8 @@ import { useWalletStore } from "@/stores/wallet-store";
 
 export function WalletSummary({ summary }: { summary: PortfolioSummary }) {
   const isPositive = summary.change24hUsd >= 0;
-  const { fiatCurrency } = useWalletStore();
-  const exchangeRate = fiatCurrency === 'INR' ? 84.5 : 1;
+  const { fiatCurrency, fiatExchangeRate } = useWalletStore();
+  const exchangeRate = fiatExchangeRate || 1;
   const symbol = fiatCurrency === 'INR' ? '₹' : '$';
 
   return (

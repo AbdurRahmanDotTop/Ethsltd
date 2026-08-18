@@ -18,8 +18,8 @@ export function AssetTable({ balances }: { balances: AssetBalance[] }) {
     return true;
   });
 
-  const fiatCurrency = useWalletStore(state => state.fiatCurrency);
-  const INR_RATE = 84.5;
+  const { fiatCurrency, fiatExchangeRate } = useWalletStore();
+  const exchangeRate = fiatExchangeRate || 1;
   const formatFiat = (usdAmount: number, isPrice = false) => {
     const maxDecimals = isPrice ? (usdAmount < 1 ? 4 : 2) : 2;
     if (fiatCurrency === 'INR') {
@@ -28,7 +28,7 @@ export function AssetTable({ balances }: { balances: AssetBalance[] }) {
         currency: 'INR',
         minimumFractionDigits: 2,
         maximumFractionDigits: maxDecimals
-      }).format(usdAmount * INR_RATE);
+      }).format(usdAmount * exchangeRate);
     }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

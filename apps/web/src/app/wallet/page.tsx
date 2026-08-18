@@ -26,10 +26,12 @@ export default function WalletPage() {
 
   // Subscribe to wallet store balances to trigger re-fetch when they change globally
   const storeBalances = useWalletStore(state => state.balances);
+  const fetchFiatExchangeRate = useWalletStore(state => state.fetchFiatExchangeRate);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
+      await fetchFiatExchangeRate();
       const balanceData = await apiClient.getWalletBalances(mode);
       setBalances(balanceData.data || []);
       

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, and, desc } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { markets, orders, trades, wallets, walletTransactions, positions, binaryOptions } from 'database';
+import { markets, orders, trades, wallets, walletTransactions, positions, binaryOptions, currencyRates } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const tradingRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -247,11 +247,28 @@ tradingRoutes.get('/markets/:symbol/trades', async (c) => {
 });
 
 tradingRoutes.get('/exchange-rate', async (c) => {
+  const db = c.get('db');
   const base = (c.req.query('base') || 'USDT').toUpperCase();
   const quote = (c.req.query('quote') || 'INR').toUpperCase();
 
+  // 1. Check Global Currency Rates managed by Admin
+  if (base === 'USDT') {
+    try {
+      const adminRate = await db.select().from(currencyRates)
+        .where(and(eq(currencyRates.code, quote), eq(currencyRates.status, 'ACTIVE')))
+        .get();
+      
+      if (adminRate && adminRate.ratePerUsdt) {
+        return c.json({ success: true, data: { rate: parseFloat(adminRate.ratePerUsdt), source: 'Admin' } });
+      }
+    } catch (e) {
+      console.warn('Admin currency rate fetch failed', e);
+    }
+  }
+
+  // 2. Fallback to external markets if no active admin rate is found
   if (base === 'USDT' && quote === 'INR') {
-    // 1. Try WazirX for accurate Crypto INR rate
+    // Try WazirX for accurate Crypto INR rate
     try {
       const res = await fetch('https://api.wazirx.com/sapi/v1/ticker/24hr?symbol=usdtinr');
       if (res.ok) {
@@ -264,7 +281,7 @@ tradingRoutes.get('/exchange-rate', async (c) => {
       console.warn('WazirX exchange rate fetch failed', e);
     }
 
-    // 2. Fallback to Coinbase Forex rate
+    // Try Coinbase Forex rate
     try {
       const res = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=USDT');
       if (res.ok) {
@@ -277,7 +294,7 @@ tradingRoutes.get('/exchange-rate', async (c) => {
       console.warn('Coinbase exchange rate fetch failed', e);
     }
     
-    // 3. Absolute Fallback
+    // Absolute Fallback
     return c.json({ success: true, data: { rate: 90.00, source: 'Fallback' } });
   }
 

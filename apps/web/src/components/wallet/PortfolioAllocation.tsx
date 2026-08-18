@@ -41,11 +41,11 @@ export function PortfolioAllocation({ allocations }: { allocations: AssetAllocat
 
   let currentAngle = -90; // Start at top
 
-  const fiatCurrency = useWalletStore(state => state.fiatCurrency);
-  const INR_RATE = 84.5;
+  const { fiatCurrency, fiatExchangeRate } = useWalletStore();
+  const exchangeRate = fiatExchangeRate || 1;
   const formatValue = (usd: number) => {
     if (fiatCurrency === 'INR') {
-      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(usd * INR_RATE);
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(usd * exchangeRate);
     }
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(usd);
   };

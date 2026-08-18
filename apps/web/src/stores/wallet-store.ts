@@ -14,7 +14,9 @@ interface WalletState {
   simulateDeposit: (asset: string, amount: number, mode: string) => Promise<any>;
   simulateWithdrawal: (asset: string, amount: number, destination: string, network: string, fee: number, mode: string) => Promise<any>;
   fiatCurrency: string;
+  fiatExchangeRate: number;
   setFiatCurrency: (fiat: string) => void;
+  fetchFiatExchangeRate: () => Promise<void>;
 }
 
 export const useWalletStore = create<WalletState>()(
@@ -24,8 +26,28 @@ export const useWalletStore = create<WalletState>()(
     isLoading: false,
     error: null,
     fiatCurrency: 'INR',
+    fiatExchangeRate: 1,
 
-    setFiatCurrency: (fiat) => set({ fiatCurrency: fiat }),
+    setFiatCurrency: (fiat) => {
+      set({ fiatCurrency: fiat });
+      get().fetchFiatExchangeRate();
+    },
+
+    fetchFiatExchangeRate: async () => {
+      const fiat = get().fiatCurrency;
+      if (fiat === 'USDT' || fiat === 'USD') {
+        set({ fiatExchangeRate: 1 });
+        return;
+      }
+      try {
+        const res = await apiClient.getExchangeRate('USDT', fiat);
+        if (res.success && res.data && res.data.rate) {
+          set({ fiatExchangeRate: res.data.rate });
+        }
+      } catch (err) {
+        console.error("Failed to fetch fiat exchange rate", err);
+      }
+    },
 
     fetchBalances: async (mode) => {
       // Clear balances before fetching to prevent flickering from old mode
