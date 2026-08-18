@@ -388,12 +388,16 @@ const processOpenLimitOrders = async (db: any, userId: string, mode: 'REAL' | 'D
       }).where(eq(orders.id, order.id));
       
       // Create trade record
+      const tradeId = `TRD-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      const tradeDisplayId = await generateBusinessId(db, 'bot', 'TRAD');
+      
       await db.insert(trades).values({
-        id: `TRD-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        id: tradeId,
+        displayId: tradeDisplayId,
         marketSymbol: order.marketSymbol,
         mode: mode,
         makerOrderId: order.id,
-        takerOrderId: 'mock-taker-order',
+        takerOrderId: 'external-liquidity-bot',
         price: executionPrice.toString(),
         amount: parsedAmount.toString(),
         makerFee: feeAmount.toString(),
@@ -524,7 +528,7 @@ tradingRoutes.post('/orders', async (c) => {
       amount: amount.toString(),
       filledAmount: '0',
       remainingAmount: amount.toString(),
-      status: 'OPEN',
+      status: 'OPEN' as const,
       createdAt: now,
       updatedAt: now,
     };
