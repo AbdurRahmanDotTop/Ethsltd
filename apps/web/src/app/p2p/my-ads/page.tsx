@@ -7,7 +7,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
+import { FIAT_CURRENCIES } from "@/lib/p2p/constants";
 import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export default function MyAdsPage() {

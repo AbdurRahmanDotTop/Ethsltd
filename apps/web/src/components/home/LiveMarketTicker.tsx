@@ -2,23 +2,33 @@
 
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
-
-const MOCK_TICKERS = [
-  { pair: "BTC/USDT", price: "$104,284", change: "+2.41%", positive: true },
-  { pair: "ETH/USDT", price: "$4,028", change: "+1.82%", positive: true },
-  { pair: "SOL/USDT", price: "$188.32", change: "+4.20%", positive: true },
-  { pair: "BNB/USDT", price: "$701.42", change: "-0.31%", positive: false },
-  { pair: "XRP/USDT", price: "$2.91", change: "+1.14%", positive: true },
-  { pair: "ADA/USDT", price: "$1.45", change: "-1.05%", positive: false },
-  { pair: "DOGE/USDT", price: "$0.42", change: "+5.12%", positive: true },
-  { pair: "DOT/USDT", price: "$18.90", change: "+0.45%", positive: true },
-]
+import { apiClient } from "@ethsltd/api-client"
 
 export function LiveMarketTicker() {
+  const [tickers, setTickers] = useState<any[]>([])
+
+  useEffect(() => {
+    let mounted = true;
+    apiClient.getMarkets().then(res => {
+      if (res.success && mounted && res.data) {
+        const formatted = res.data.map((m: any) => ({
+          pair: m.symbol,
+          price: `$${m.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`,
+          change: `${m.priceChange24h >= 0 ? '+' : ''}${m.priceChange24h}%`,
+          positive: m.priceChange24h >= 0
+        }));
+        setTickers(formatted);
+      }
+    }).catch(console.error);
+    return () => { mounted = false; }
+  }, []);
+
+  if (tickers.length === 0) return null;
+
   return (
     <div className="w-full bg-muted border-y border-border py-3 overflow-hidden flex whitespace-nowrap">
       <div className="animate-marquee flex gap-12 px-6">
-        {[...MOCK_TICKERS, ...MOCK_TICKERS].map((ticker, index) => (
+        {[...tickers, ...tickers, ...tickers, ...tickers].map((ticker, index) => (
           <div key={index} className="flex items-center gap-3 font-mono text-sm cursor-pointer hover:opacity-80 transition-opacity">
             <span className="text-foreground font-medium">{ticker.pair}</span>
             <span className="text-muted-foreground">{ticker.price}</span>

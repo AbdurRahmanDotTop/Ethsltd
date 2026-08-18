@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getMockExperts } from "@/lib/p2p/mock-data";
+
 import { ExpertCard } from "@/components/p2p/ExpertCard";
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";

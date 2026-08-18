@@ -58,8 +58,8 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
         if (m) {
           const [cRes, oRes, tRes] = await Promise.all([
             apiClient.getMarketCandles(symbol, '15m'),
-            apiClient.getMarketOrderBook(symbol),
-            apiClient.getMarketTrades(symbol)
+            apiClient.getMarketOrderBook(symbol, { mode }),
+            apiClient.getMarketTrades(symbol, { mode })
           ])
           if (mounted) {
             setMarket(m)

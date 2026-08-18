@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@ethsltd/api-client";
 import { P2PMerchant } from "@/lib/p2p/types";
-import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
+import { FIAT_CURRENCIES } from "@/lib/p2p/constants";
 import { P2PChat } from "@/components/p2p/P2PChat";
 import { Loader2, AlertCircle, Copy, CheckCircle2, Clock, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";

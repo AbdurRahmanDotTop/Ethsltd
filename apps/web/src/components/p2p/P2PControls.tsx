@@ -1,7 +1,7 @@
 "use client";
 
 import { useP2PStore } from "@/stores/p2p-store";
-import { ASSETS, FIAT_CURRENCIES, PAYMENT_METHODS } from "@/lib/p2p/mock-data";
+import { ASSETS, FIAT_CURRENCIES, PAYMENT_METHODS } from "@/lib/p2p/constants";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";

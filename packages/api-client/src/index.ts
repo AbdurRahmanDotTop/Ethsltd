@@ -225,12 +225,14 @@ export class EthsltdClient {
     return this.request<any[]>(`/api/v1/trading/markets/${symbol}/candles?interval=${interval}`);
   }
 
-  async getMarketOrderBook(symbol: string) {
-    return this.request<any>(`/api/v1/trading/markets/${symbol}/orderbook`);
+  async getMarketOrderBook(symbol: string, params: { mode?: 'REAL' | 'DEMO' } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<any>(`/api/v1/trading/markets/${symbol}/orderbook?${query}`);
   }
 
-  async getMarketTrades(symbol: string) {
-    return this.request<any[]>(`/api/v1/trading/markets/${symbol}/trades`);
+  async getMarketTrades(symbol: string, params: { mode?: 'REAL' | 'DEMO' } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<any>(`/api/v1/trading/markets/${symbol}/trades?${query}`);
   }
 
   // Fiat Exchange Rates
@@ -246,6 +248,8 @@ export class EthsltdClient {
   async getTrades(mode: string = 'REAL') {
     return this.request<any[]>(`/api/v1/trading/trades?mode=${mode}`);
   }
+
+
 
   async createOrder(data: any) {
     return this.request<any>('/api/v1/trading/orders', {
@@ -292,8 +296,17 @@ export class EthsltdClient {
   }
 
   // P2P API Methods
-  async getP2pAds(params?: any) {
-    return this.request<any[]>('/api/v1/p2p/ads');
+  async getP2pAds(params?: Record<string, any>) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== null && v !== '') {
+          searchParams.append(k, v.toString());
+        }
+      }
+    }
+    const query = searchParams.toString();
+    return this.request<any[]>(`/api/v1/p2p/ads${query ? '?' + query : ''}`);
   }
 
   async createP2pAd(data: any) {
@@ -317,8 +330,17 @@ export class EthsltdClient {
     });
   }
 
-  async getP2pOrders(params?: any) {
-    return this.request<any[]>('/api/v1/p2p/orders');
+  async getP2pOrders(params?: Record<string, any>) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== null && v !== '') {
+          searchParams.append(k, v.toString());
+        }
+      }
+    }
+    const query = searchParams.toString();
+    return this.request<any[]>(`/api/v1/p2p/orders${query ? '?' + query : ''}`);
   }
 
   async createP2pOrder(data: any) {

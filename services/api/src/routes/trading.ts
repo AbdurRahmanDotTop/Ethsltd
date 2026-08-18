@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { markets, orders, trades, wallets, walletTransactions, positions, binaryOptions, currencyRates } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
@@ -174,76 +174,85 @@ tradingRoutes.get('/markets/:symbol/candles', async (c) => {
 
 tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
   const symbol = c.req.param('symbol');
+  const mode = (c.req.query('mode') || 'REAL') as 'REAL' | 'DEMO';
+  const db = c.get('db');
 
   try {
-    const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol.replace('-', '')}&limit=20`);
-    const data = await res.json() as any;
-    if (data && data.bids && data.asks) {
-      const bids = data.bids.map((b: string[]) => ({ price: parseFloat(b[0]), amount: parseFloat(b[1]), total: parseFloat(b[0]) * parseFloat(b[1]) }));
-      const asks = data.asks.map((a: string[]) => ({ price: parseFloat(a[0]), amount: parseFloat(a[1]), total: parseFloat(a[0]) * parseFloat(a[1]) })).reverse();
-      return c.json({ success: true, data: { asks, bids } });
-    }
-  } catch(e) {
-    console.error('Binance API error (orderbook):', e);
-  }
+    const activeOrders = await db.select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.marketSymbol, symbol),
+          eq(orders.mode, mode),
+          eq(orders.type, 'LIMIT'),
+          eq(orders.status, 'OPEN')
+        )
+      )
+      .all();
 
-  // Fallback to mock data if Binance fails
-  const currentPrice = await getRealPrice(symbol) || 100000;
-  
-  const asks = [];
-  const bids = [];
-  let currentAsk = currentPrice * 1.0001;
-  let currentBid = currentPrice * 0.9999;
-  
-  for(let i = 0; i < 20; i++) {
-    const askAmount = Math.random() * 2 + 0.1;
-    asks.push({ price: currentAsk, amount: askAmount, total: currentAsk * askAmount });
-    currentAsk *= (1 + (Math.random() * 0.001));
-    
-    const bidAmount = Math.random() * 2 + 0.1;
-    bids.push({ price: currentBid, amount: bidAmount, total: currentBid * bidAmount });
-    currentBid *= (1 - (Math.random() * 0.001));
+    const askMap = new Map<number, number>();
+    const bidMap = new Map<number, number>();
+
+    for (const o of activeOrders) {
+      if (!o.price) continue;
+      const price = parseFloat(o.price);
+      const amount = parseFloat(o.remainingAmount);
+      
+      if (o.side === 'SELL') {
+        askMap.set(price, (askMap.get(price) || 0) + amount);
+      } else {
+        bidMap.set(price, (bidMap.get(price) || 0) + amount);
+      }
+    }
+
+    const asks = Array.from(askMap.entries())
+      .map(([price, amount]) => ({ price, amount, total: price * amount }))
+      .sort((a, b) => a.price - b.price)
+      .slice(0, 50); // Limit depth
+
+    const bids = Array.from(bidMap.entries())
+      .map(([price, amount]) => ({ price, amount, total: price * amount }))
+      .sort((a, b) => b.price - a.price)
+      .slice(0, 50); // Limit depth
+
+    return c.json({ success: true, data: { asks, bids } });
+  } catch (error) {
+    console.error('Orderbook error:', error);
+    return c.json({ success: true, data: { asks: [], bids: [] } });
   }
-  
-  return c.json({ success: true, data: { asks: asks.reverse(), bids } });
 });
 
 tradingRoutes.get('/markets/:symbol/trades', async (c) => {
   const symbol = c.req.param('symbol');
+  const mode = (c.req.query('mode') || 'REAL') as 'REAL' | 'DEMO';
+  const db = c.get('db');
   
   try {
-    const res = await fetch(`https://api.binance.com/api/v3/trades?symbol=${symbol.replace('-', '')}&limit=30`);
-    const data = await res.json() as any[];
-    if (Array.isArray(data)) {
-      const formattedTrades = data.map(t => ({
-        id: t.id.toString(),
-        price: parseFloat(t.price),
-        amount: parseFloat(t.qty),
-        time: new Date(t.time).toLocaleTimeString(),
-        isBuyerMaker: t.isBuyerMaker
-      })).reverse(); // Show newest trades first
-      return c.json({ success: true, data: formattedTrades });
-    }
-  } catch(e) {
-    console.error('Binance API error (trades):', e);
-  }
+    const recentTrades = await db.select()
+      .from(trades)
+      .where(
+        and(
+          eq(trades.marketSymbol, symbol),
+          eq(trades.mode, mode)
+        )
+      )
+      .orderBy(desc(trades.createdAt))
+      .limit(50)
+      .all();
 
-  // Fallback to mock data if Binance fails
-  const currentPrice = await getRealPrice(symbol) || 100000;
-  
-  const trades = [];
-  for(let i = 0; i < 30; i++) {
-    trades.push({
-      id: Math.random().toString(),
-      price: currentPrice * (1 + (Math.random() * 0.002 - 0.001)),
-      amount: Math.random() * 1.5 + 0.01,
-      time: new Date(Date.now() - Math.random() * 600000).toLocaleTimeString(),
-      isBuyerMaker: Math.random() > 0.5
-    });
+    const formattedTrades = recentTrades.map(t => ({
+      id: t.id,
+      price: parseFloat(t.price),
+      amount: parseFloat(t.amount),
+      time: t.createdAt.toISOString(),
+      isBuyerMaker: false // Or determine from logic
+    }));
+
+    return c.json({ success: true, data: formattedTrades });
+  } catch (error) {
+    console.error('Trades error:', error);
+    return c.json({ success: true, data: [] });
   }
-  
-  const sortedTrades = trades.sort((a,b) => b.time.localeCompare(a.time));
-  return c.json({ success: true, data: sortedTrades });
 });
 
 tradingRoutes.get('/exchange-rate', async (c) => {

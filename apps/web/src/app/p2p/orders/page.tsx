@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useP2PStore } from "@/stores/p2p-store";
-import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
+import { FIAT_CURRENCIES } from "@/lib/p2p/constants";
 import { ChevronLeft, History, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

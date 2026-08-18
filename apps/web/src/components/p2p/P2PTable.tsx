@@ -6,7 +6,7 @@ import { P2PAdvertisement, P2PMerchant } from "@/lib/p2p/types";
 import { useP2PStore } from "@/stores/p2p-store";
 import { Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FIAT_CURRENCIES } from "@/lib/p2p/mock-data";
+import { FIAT_CURRENCIES } from "@/lib/p2p/constants";
 import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, merchant: P2PMerchant) => void }) {

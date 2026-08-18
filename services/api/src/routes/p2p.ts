@@ -7,10 +7,7 @@ import { generateBusinessId } from '../services/id-generator';
 
 export const p2pRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-const DEFAULT_P2P_ADS = [
-  { id: 'ad-1', type: 'SELL' as const, asset: 'USDT', fiat: 'USD', price: '1.02', isFloating: false, priceMargin: null, totalAmount: '1000', availableAmount: '1000', minLimit: '50', maxLimit: '1000', paymentWindow: 15, paymentMethods: JSON.stringify(['Bank Transfer']), status: 'ACTIVE' as const },
-  { id: 'ad-2', type: 'BUY' as const, asset: 'USDT', fiat: 'USD', price: '0.98', isFloating: false, priceMargin: null, totalAmount: '5000', availableAmount: '5000', minLimit: '100', maxLimit: '5000', paymentWindow: 15, paymentMethods: JSON.stringify(['Zelle', 'PayPal']), status: 'ACTIVE' as const },
-];
+// Removed DEFAULT_P2P_ADS array
 
 p2pRoutes.get('/ads', async (c) => {
   const db = c.get('db');
@@ -27,24 +24,7 @@ p2pRoutes.get('/ads', async (c) => {
     .orderBy(desc(p2pAds.createdAt))
     .all();
 
-  if (adsWithUsers.length === 0) {
-    const now = new Date();
-    const dummyUserId = 'system-user-id'; 
-    await db.insert(p2pAds).values(DEFAULT_P2P_ADS.map(ad => ({
-      ...ad,
-      mode,
-      userId: dummyUserId,
-      createdAt: now,
-      updatedAt: now
-    })));
-    adsWithUsers = await db
-      .select({ ad: p2pAds, user: users })
-      .from(p2pAds)
-      .leftJoin(users, eq(p2pAds.userId, users.id))
-      .where(and(eq(p2pAds.status, 'ACTIVE'), eq(p2pAds.mode, mode)))
-      .orderBy(desc(p2pAds.createdAt))
-      .all();
-  }
+// Removed fake data seeding block
 
   const formattedAds = adsWithUsers.map(({ ad, user }) => {
     return {

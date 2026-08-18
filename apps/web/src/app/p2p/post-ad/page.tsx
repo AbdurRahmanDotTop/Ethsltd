@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Info } from "lucide-react";
 import Link from "next/link";
-import { FIAT_CURRENCIES, ASSETS } from "@/lib/p2p/mock-data";
+import { FIAT_CURRENCIES, ASSETS } from "@/lib/p2p/constants";
 import { P2PSide, PaymentMethodConfig } from "@/lib/p2p/types";
 import { Trash2, Plus } from "lucide-react";
 import {

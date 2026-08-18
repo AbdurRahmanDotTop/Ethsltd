@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useP2PStore } from "@/stores/p2p-store";
-import { ASSETS, FIAT_CURRENCIES, PAYMENT_METHODS } from "@/lib/p2p/mock-data";
+import { ASSETS, FIAT_CURRENCIES, PAYMENT_METHODS } from "@/lib/p2p/constants";
 import { Zap, CreditCard, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
