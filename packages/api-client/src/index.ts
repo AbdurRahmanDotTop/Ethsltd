@@ -827,6 +827,21 @@ export class EthsltdClient {
       body: JSON.stringify({ resolution, notes }),
     });
   }
+  // Admin Trading (Phase 1 Dynamic Isolation)
+  async adminGetMarkets(params: { mode?: 'REAL' | 'DEMO' } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<any[]>(`/api/v1/admin/trading/markets?${query}`);
+  }
+
+  async adminGetOrders(params: { mode?: 'REAL' | 'DEMO', page?: number, limit?: number, status?: string, market?: string } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<{data: any[], total: number}>(`/api/v1/admin/trading/orders?${query}`);
+  }
+
+  async adminGetTrades(params: { mode?: 'REAL' | 'DEMO', page?: number, limit?: number, market?: string } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<{data: any[], total: number}>(`/api/v1/admin/trading/trades?${query}`);
+  }
 }
 
 export const apiClient = new EthsltdClient();
