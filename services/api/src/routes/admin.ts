@@ -42,7 +42,7 @@ adminRoutes.get('/stats', async (c) => {
     const todayStart = new Date();
     todayStart.setHours(0,0,0,0);
     for (const d of allManualDeposits) {
-      if (d.status === 'COMPLETED' && new Date(d.createdAt).getTime() >= todayStart.getTime()) {
+      if (d.status === 'APPROVED' && new Date(d.createdAt).getTime() >= todayStart.getTime()) {
         depositsToday += parseFloat(d.amount || '0');
       }
     }
