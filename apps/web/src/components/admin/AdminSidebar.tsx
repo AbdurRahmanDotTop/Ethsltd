@@ -27,9 +27,10 @@ export const adminNavGroups = [
     ]
   },
   {
-    title: "Developer",
+    title: "P2P Marketplace",
     items: [
-      { name: "API Platform", href: "/admin/api", icon: Code }
+      { name: "Orders", href: "/admin/p2p/orders", icon: Handshake },
+      { name: "Disputes", href: "/admin/p2p/disputes", icon: AlertTriangle }
     ]
   },
   {
@@ -51,13 +52,6 @@ export const adminNavGroups = [
     ]
   },
   {
-    title: "P2P Marketplace",
-    items: [
-      { name: "Orders", href: "/admin/p2p/orders", icon: Handshake },
-      { name: "Disputes", href: "/admin/p2p/disputes", icon: AlertTriangle }
-    ]
-  },
-  {
     title: "Operations",
     items: [
       { name: "Risk", href: "/admin/risk", icon: ShieldCheck },
@@ -74,6 +68,12 @@ export const adminNavGroups = [
       { name: "Global Currency Rates", href: "/admin/currency-rates", icon: Settings },
       { name: "Payment Settings", href: "/admin/settings/payments", icon: Wallet },
       { name: "System", href: "/admin/system", icon: Server }
+    ]
+  },
+  {
+    title: "Developer",
+    items: [
+      { name: "API Platform", href: "/admin/api", icon: Code }
     ]
   }
 ];
