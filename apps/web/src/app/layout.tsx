@@ -61,7 +61,7 @@ export default async function RootLayout({
 
   if (sessionToken) {
     try {
-      const appUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8787";
+      const appUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.ethsltd.com";
       const res = await fetch(`${appUrl}/api/v1/auth/me`, {
         headers: {
           Cookie: `ethsltd_session=${sessionToken}`,

@@ -20,7 +20,7 @@ import { publicCurrencyRateRoutes } from './routes/currency-rates';
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use('*', cors({
-  origin: (origin) => origin || 'http://localhost:3000',
+  origin: (origin) => origin || 'https://ethsltd.com',
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-Trading-Mode'],
   credentials: true,
