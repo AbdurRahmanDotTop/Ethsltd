@@ -42,14 +42,14 @@ adminRoutes.get('/stats', async (c) => {
     const todayStart = new Date();
     todayStart.setHours(0,0,0,0);
     for (const d of allManualDeposits) {
-      if (d.status === 'APPROVED' && new Date(d.createdAt).getTime() >= todayStart.getTime()) {
-        depositsToday += parseFloat(d.amount || '0');
+      if (d.status === 'APPROVED' && new Date(d.created_at).getTime() >= todayStart.getTime()) {
+        depositsToday += d.amount;
       }
     }
     
     // Pending Withdrawals
-    const allBankTransfers = await db.select().from(bankTransfers).where(eq(bankTransfers.type, 'WITHDRAWAL')).all();
-    const pendingWithdrawals = allBankTransfers.filter(t => t.status === 'PENDING').length;
+    const allWithdrawals = await db.select().from(walletTransactions).where(eq(walletTransactions.type, 'WITHDRAWAL')).all();
+    const pendingWithdrawals = allWithdrawals.filter(t => t.status === 'PENDING').length;
     
     // P2P Volume 24h
     const allP2pOrders = await db.select().from(p2pOrders).where(eq(p2pOrders.mode, 'REAL')).all();
