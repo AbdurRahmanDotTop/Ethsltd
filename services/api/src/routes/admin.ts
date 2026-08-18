@@ -716,6 +716,7 @@ adminRoutes.get('/transactions', async (c) => {
     })
     .from(walletTransactions)
     .leftJoin(users, eq(users.id, walletTransactions.userId))
+    .where(eq(walletTransactions.mode, 'REAL'))
     .orderBy(desc(walletTransactions.createdAt))
     .limit(200);
     
