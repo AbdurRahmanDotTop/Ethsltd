@@ -20,9 +20,10 @@ import { publicCurrencyRateRoutes } from './routes/currency-rates';
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use('*', cors({
-  origin: (origin) => origin || '*',
+  origin: (origin) => origin || 'http://localhost:3000',
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-Trading-Mode'],
+  credentials: true,
 }));
 
 // Setup DB context middleware
