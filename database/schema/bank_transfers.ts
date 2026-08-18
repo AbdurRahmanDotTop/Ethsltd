@@ -3,6 +3,7 @@ import { users } from './auth';
 
 export const bankTransfers = sqliteTable('bank_transfers', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id),
   amount: text('amount').notNull(),
   currency: text('currency').notNull(), // usually USD or local fiat

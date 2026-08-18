@@ -21,6 +21,7 @@ export const markets = sqliteTable('markets', {
 
 export const orders = sqliteTable('orders', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id),
   marketSymbol: text('market_symbol').notNull().references(() => markets.symbol),
   mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
@@ -37,6 +38,7 @@ export const orders = sqliteTable('orders', {
 
 export const trades = sqliteTable('trades', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   marketSymbol: text('market_symbol').notNull().references(() => markets.symbol),
   mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   makerOrderId: text('maker_order_id').notNull(),
@@ -50,6 +52,7 @@ export const trades = sqliteTable('trades', {
 
 export const positions = sqliteTable('positions', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id),
   marketSymbol: text('market_symbol').notNull().references(() => markets.symbol),
   mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
@@ -68,6 +71,7 @@ export const positions = sqliteTable('positions', {
 
 export const binaryOptions = sqliteTable('binary_options', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id),
   marketSymbol: text('market_symbol').notNull().references(() => markets.symbol),
   mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),

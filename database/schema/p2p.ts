@@ -3,6 +3,7 @@ import { users } from './auth';
 
 export const p2pAds = sqliteTable('p2p_ads', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id),
   mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   type: text('type', { enum: ['BUY', 'SELL'] }).notNull(), // Buy ad means creator wants to buy crypto with fiat
@@ -27,6 +28,7 @@ export const p2pAds = sqliteTable('p2p_ads', {
 
 export const p2pOrders = sqliteTable('p2p_orders', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   adId: text('ad_id').notNull().references(() => p2pAds.id),
   buyerId: text('buyer_id').notNull().references(() => users.id),
   sellerId: text('seller_id').notNull().references(() => users.id),
@@ -55,6 +57,7 @@ export const p2pMessages = sqliteTable('p2p_messages', {
 
 export const p2pDisputes = sqliteTable('p2p_disputes', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   orderId: text('order_id').notNull().references(() => p2pOrders.id),
   openerId: text('opener_id').notNull().references(() => users.id), // The user who opened the dispute
   assignedAdminId: text('assigned_admin_id').references(() => users.id),

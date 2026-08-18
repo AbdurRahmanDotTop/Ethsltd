@@ -3,6 +3,7 @@ import { users } from './auth';
 
 export const wallets = sqliteTable('wallets', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   assetSymbol: text('asset_symbol').notNull(),
   type: text('type', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
@@ -15,6 +16,7 @@ export const wallets = sqliteTable('wallets', {
 
 export const walletTransactions = sqliteTable('wallet_transactions', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: text('type', { enum: ['DEPOSIT', 'WITHDRAWAL', 'TRADE', 'P2P', 'TRANSFER', 'FEE', 'REWARD', 'ADJUSTMENT', 'EXPERT_SERVICE'] }).notNull(),
   mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),

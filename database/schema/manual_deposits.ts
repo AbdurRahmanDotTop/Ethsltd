@@ -3,6 +3,7 @@ import { users } from "./auth";
 
 export const real_manual_deposits = sqliteTable("real_manual_deposits", {
     id: text("id").primaryKey(),
+    displayId: text("display_id").unique(),
     deposit_id: text("deposit_id").notNull(),
     user_id: text("user_id").notNull().references(() => users.id),
     amount: real("amount").notNull(),

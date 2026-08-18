@@ -811,6 +811,15 @@ export class EthsltdClient {
   async adminGetCurrencyRateHistory(code: string) {
     return this.request<any[]>(`/api/v1/admin/currency-rates/${code}/history`);
   }
+
+  // Admin P2P
+  async adminGetP2POrders() {
+    return this.request<any[]>('/api/v1/admin/p2p/orders');
+  }
+
+  async adminGetP2PDisputes() {
+    return this.request<any[]>('/api/v1/admin/p2p/disputes');
+  }
 }
 
 export const apiClient = new EthsltdClient();

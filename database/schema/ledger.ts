@@ -12,6 +12,7 @@ export const ledgerAccounts = sqliteTable('ledger_accounts', {
 
 export const ledgerTransactions = sqliteTable('ledger_transactions', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   idempotencyKey: text('idempotency_key').notNull().unique(),
   environment: text('environment', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   referenceType: text('reference_type', { enum: ['DEPOSIT', 'WITHDRAWAL', 'TRADE', 'P2P_ESCROW', 'FEE', 'EXPERT_SERVICE'] }).notNull(),

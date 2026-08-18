@@ -1192,3 +1192,115 @@ adminRoutes.put('/support/tickets/:id/status', async (c) => {
     return c.json({ success: false, error: 'Failed to update status' }, 500);
   }
 });
+
+// ==========================
+// ADMIN P2P
+// ==========================
+
+// GET /api/v1/admin/p2p/orders
+adminRoutes.get('/p2p/orders', async (c) => {
+  const db = c.get('db');
+  try {
+    const { eq, desc } = require('drizzle-orm');
+    const { p2pOrders, p2pAds, users } = require('database');
+    const orderRows = await db.select({
+      order: p2pOrders,
+      ad: p2pAds
+    })
+    .from(p2pOrders)
+    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
+    .where(eq(p2pOrders.mode, 'REAL'))
+    .orderBy(desc(p2pOrders.createdAt))
+    .all();
+
+    const buyerIds = orderRows.map((r: any) => r.order.buyerId);
+    const sellerIds = orderRows.map((r: any) => r.order.sellerId);
+    const allUserIds = Array.from(new Set([...buyerIds, ...sellerIds]));
+
+    let usersMap: Record<string, any> = {};
+    if (allUserIds.length > 0) {
+      const usersInfo = await db.select().from(users).where(require('drizzle-orm').inArray(users.id, allUserIds)).all();
+      for (const u of usersInfo) {
+        usersMap[u.id] = u;
+      }
+    }
+
+    const enrichedOrders = orderRows.map((row: any) => {
+      const buyer = usersMap[row.order.buyerId];
+      const seller = usersMap[row.order.sellerId];
+      return {
+        ...row.order,
+        buyerEmail: buyer ? buyer.email : 'Unknown',
+        sellerEmail: seller ? seller.email : 'Unknown',
+        asset: row.ad ? row.ad.asset : 'Unknown',
+        fiatCurrency: row.ad ? row.ad.fiat : 'Unknown'
+      };
+    });
+
+    return c.json({ success: true, data: enrichedOrders });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch p2p orders' }, 500);
+  }
+});
+
+// GET /api/v1/admin/p2p/disputes
+adminRoutes.get('/p2p/disputes', async (c) => {
+  const db = c.get('db');
+  try {
+    const { eq, desc } = require('drizzle-orm');
+    const { p2pDisputes, p2pOrders, p2pAds, users } = require('database');
+    const disputeRows = await db.select({
+      dispute: p2pDisputes,
+      order: p2pOrders,
+      ad: p2pAds
+    })
+    .from(p2pDisputes)
+    .leftJoin(p2pOrders, eq(p2pDisputes.orderId, p2pOrders.id))
+    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
+    .orderBy(desc(p2pDisputes.createdAt))
+    .all();
+
+    const userIdsToFetch = new Set<string>();
+    disputeRows.forEach((row: any) => {
+      userIdsToFetch.add(row.dispute.openerId);
+      if (row.order) {
+        userIdsToFetch.add(row.order.buyerId);
+        userIdsToFetch.add(row.order.sellerId);
+      }
+    });
+
+    let usersMap: Record<string, any> = {};
+    if (userIdsToFetch.size > 0) {
+      const usersInfo = await db.select().from(users).where(require('drizzle-orm').inArray(users.id, Array.from(userIdsToFetch))).all();
+      for (const u of usersInfo) {
+        usersMap[u.id] = u;
+      }
+    }
+
+    const enrichedDisputes = disputeRows.map((row: any) => {
+      const opener = usersMap[row.dispute.openerId];
+      const buyer = row.order ? usersMap[row.order.buyerId] : null;
+      const seller = row.order ? usersMap[row.order.sellerId] : null;
+      
+      // Get the order display id if it exists
+      const displayOrderId = row.order ? row.order.displayId || row.order.id : row.dispute.orderId;
+      
+      return {
+        ...row.dispute,
+        openerEmail: opener ? opener.email : 'Unknown',
+        buyerEmail: buyer ? buyer.email : 'Unknown',
+        sellerEmail: seller ? seller.email : 'Unknown',
+        asset: row.ad ? row.ad.asset : 'Unknown',
+        fiatAmount: row.order ? row.order.fiatAmount : '0',
+        cryptoAmount: row.order ? row.order.cryptoAmount : '0',
+        fiatCurrency: row.ad ? row.ad.fiat : 'Unknown',
+        orderDisplayId: displayOrderId
+      };
+    });
+
+    return c.json({ success: true, data: enrichedDisputes });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch p2p disputes' }, 500);
+  }
+});
+

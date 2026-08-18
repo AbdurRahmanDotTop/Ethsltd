@@ -3,6 +3,7 @@ import { eq, and, desc, or, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { p2pAds, p2pOrders, wallets, p2pMessages, users, ledgerAccounts, ledgerTransactions, ledgerEntries, p2pDisputes, notifications } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
+import { generateBusinessId } from '../services/id-generator';
 
 export const p2pRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -94,9 +95,12 @@ p2pRoutes.post('/ads', async (c) => {
   }
 
   const now = new Date();
-  const adId = `AD-${Date.now()}`;
+  const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+  const adDisplayId = await generateBusinessId(db, dbUser?.email, 'PADS');
+  const adId = crypto.randomUUID();
   await db.insert(p2pAds).values({
     id: adId,
+    displayId: adDisplayId,
     userId: user.id,
     mode,
     type,
@@ -243,7 +247,9 @@ p2pRoutes.post('/orders', async (c) => {
   const newAvailable = (parseFloat(ad.availableAmount) - cryptoNum).toString();
   await db.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
 
-  const orderId = `P2P-ORD-${Date.now()}`;
+  const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+  const orderDisplayId = await generateBusinessId(db, dbUser?.email, 'ORDE');
+  const orderId = crypto.randomUUID();
   const expiresAt = new Date(now.getTime() + (ad.paymentWindow * 60000));
   
   let paymentDetails = null;
@@ -261,6 +267,7 @@ p2pRoutes.post('/orders', async (c) => {
 
   await db.insert(p2pOrders).values({
     id: orderId,
+    displayId: orderDisplayId,
     adId,
     buyerId,
     sellerId,
@@ -636,10 +643,12 @@ p2pRoutes.post('/orders/:id/dispute', async (c) => {
   if (result.length === 0) return c.json({ success: false, error: 'Race condition detected.' }, 409);
 
   const now = new Date();
-  
-  const disputeId = `DISP-${Date.now()}`;
+  const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+  const disputeDisplayId = await generateBusinessId(db, dbUser?.email, 'DISP');
+  const disputeId = crypto.randomUUID();
   await db.insert(p2pDisputes).values({
     id: disputeId,
+    displayId: disputeDisplayId,
     orderId: order.id,
     openerId: user.id,
     reason: body.reason || 'Payment issue',

@@ -85,6 +85,13 @@
       "when": 1787031593332,
       "tag": "0011_unique_revanche",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1787055492596,
+      "tag": "0012_big_jack_power",
+      "breakpoints": true
     }
   ]
 }

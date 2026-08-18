@@ -1,49 +1,84 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MockAdminProvider } from "@/lib/admin/providers/mock-admin-provider";
 import { AdminP2PDispute } from "@/lib/admin/types";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
-import { Filter, Scale, CheckCircle2, UserX } from "lucide-react";
+import { Filter, Scale, CheckCircle2, UserX, RefreshCw } from "lucide-react";
+import { apiClient } from "@ethsltd/api-client";
+import { toast } from "sonner";
 
 export default function AdminP2PDisputesPage() {
-  const [disputes, setDisputes] = useState<AdminP2PDispute[]>([]);
-  const [total, setTotal] = useState(0);
+  const [disputes, setDisputes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("OPEN");
+  const [status, setStatus] = useState("ALL");
   const limit = 20;
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchDisputes = async () => {
     setLoading(true);
-
-    MockAdminProvider.getP2PDisputes({ page, limit, status }).then((res) => {
-      if (isMounted) {
-        setDisputes(res.items);
-        setTotal(res.total);
-        setLoading(false);
+    try {
+      const res = await apiClient.adminGetP2PDisputes();
+      if (res.success) {
+        setDisputes(res.data);
+      } else {
+        toast.error(res.error || "Failed to fetch disputes");
       }
-    });
+    } catch (err) {
+      toast.error("Network error fetching disputes");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return () => {
-      isMounted = false;
-    };
-  }, [page, status]);
+  useEffect(() => {
+    fetchDisputes();
+  }, []);
 
-  const columns: Column<AdminP2PDispute>[] = [
+  const handleResolve = async (disputeId: string, resolution: 'RELEASE_TO_BUYER' | 'REFUND_TO_SELLER') => {
+    const confirmMsg = resolution === 'RELEASE_TO_BUYER' 
+      ? 'Are you sure you want to resolve in favor of the BUYER? Crypto will be released to the buyer.' 
+      : 'Are you sure you want to resolve in favor of the SELLER? Crypto will be returned to the seller.';
+      
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await apiClient.request(`/api/v1/admin/p2p/disputes/${disputeId}/resolve`, {
+        method: 'POST',
+        body: JSON.stringify({ resolution, notes: 'Resolved by Admin' })
+      });
+      
+      if (res.success) {
+        toast.success("Dispute resolved successfully");
+        fetchDisputes();
+      } else {
+        toast.error(res.error || "Failed to resolve dispute");
+      }
+    } catch (e) {
+      toast.error("An error occurred");
+    }
+  };
+
+  const filteredDisputes = disputes.filter(d => {
+    if (status === "ALL") return true;
+    return d.status === status;
+  });
+
+  const columns: Column<any>[] = [
     {
       header: "Dispute ID",
-      accessor: "id",
-      className: "font-mono text-xs text-brand-primary font-medium"
+      accessor: (row) => (
+        <div className="flex flex-col">
+          <span className="font-mono text-xs text-brand-primary font-medium">{row.displayId || row.id}</span>
+        </div>
+      )
     },
     {
       header: "Order / Asset",
       accessor: (row) => (
         <div className="flex flex-col">
-          <span className="font-mono text-xs text-muted-foreground">{row.orderId}</span>
-          <span className="font-bold text-sm">{row.fiatAmount} {row.fiatCurrency} / {row.asset}</span>
+          <span className="font-mono text-[10px] text-muted-foreground">{row.orderDisplayId}</span>
+          <span className="font-bold text-sm">{row.fiatAmount} {row.fiatCurrency} / {row.cryptoAmount} {row.asset}</span>
         </div>
       )
     },
@@ -51,13 +86,13 @@ export default function AdminP2PDisputesPage() {
       header: "Participants",
       accessor: (row) => (
         <div className="flex flex-col gap-1 text-xs font-mono">
-          <div className="flex justify-between w-40">
-            <span className="text-muted-foreground">Buyer:</span>
-            <span className={row.raisedBy === "BUYER" ? "text-red-500 font-bold" : ""}>{row.buyerId}</span>
+          <div className="flex justify-between w-48">
+            <span className="text-muted-foreground">B:</span>
+            <span className={`truncate max-w-[140px] ${row.openerId === row.buyerId ? "text-red-500 font-bold" : ""}`} title={row.buyerEmail}>{row.buyerEmail?.split('@')[0]}</span>
           </div>
-          <div className="flex justify-between w-40">
-            <span className="text-muted-foreground">Seller:</span>
-            <span className={row.raisedBy === "SELLER" ? "text-red-500 font-bold" : ""}>{row.sellerId}</span>
+          <div className="flex justify-between w-48">
+            <span className="text-muted-foreground">S:</span>
+            <span className={`truncate max-w-[140px] ${row.openerId === row.sellerId ? "text-red-500 font-bold" : ""}`} title={row.sellerEmail}>{row.sellerEmail?.split('@')[0]}</span>
           </div>
         </div>
       )
@@ -65,7 +100,7 @@ export default function AdminP2PDisputesPage() {
     {
       header: "Reason",
       accessor: (row) => (
-        <span className="text-xs font-medium text-foreground max-w-[200px] truncate block">
+        <span className="text-xs font-medium text-foreground max-w-[150px] truncate block" title={row.reason}>
           {row.reason}
         </span>
       )
@@ -98,10 +133,14 @@ export default function AdminP2PDisputesPage() {
         if (row.status !== "OPEN" && row.status !== "UNDER_REVIEW") return <span className="text-muted-foreground text-xs">-</span>;
         return (
           <div className="flex gap-2">
-            <button className="flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded text-xs transition-colors" title="Resolve in favor of Buyer">
+            <button 
+              onClick={() => handleResolve(row.id, 'RELEASE_TO_BUYER')}
+              className="flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded text-xs transition-colors" title="Resolve in favor of Buyer">
               <CheckCircle2 className="w-3 h-3" /> Buyer
             </button>
-            <button className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded text-xs transition-colors" title="Resolve in favor of Seller">
+            <button 
+              onClick={() => handleResolve(row.id, 'REFUND_TO_SELLER')}
+              className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded text-xs transition-colors" title="Resolve in favor of Seller">
               <CheckCircle2 className="w-3 h-3" /> Seller
             </button>
           </div>
@@ -122,6 +161,10 @@ export default function AdminP2PDisputesPage() {
         </div>
         
         <div className="flex gap-3">
+          <Button onClick={fetchDisputes} disabled={loading} variant="outline" size="sm">
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <select 
@@ -148,9 +191,9 @@ export default function AdminP2PDisputesPage() {
         
         <AdminDataTable 
           columns={columns} 
-          data={disputes} 
+          data={filteredDisputes} 
           page={page}
-          totalPages={Math.ceil(total / limit)}
+          totalPages={Math.ceil(filteredDisputes.length / limit) || 1}
           onPageChange={setPage}
         />
       </div>
