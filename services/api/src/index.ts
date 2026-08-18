@@ -18,6 +18,7 @@ import { expertRoutes } from './routes/experts';
 import { adminCurrencyRateRoutes } from './routes/admin/currency-rates';
 import { publicCurrencyRateRoutes } from './routes/currency-rates';
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+// Triggering deployment to apply CORS fix
 
 app.use('*', cors({
   origin: (origin) => origin || 'https://ethsltd.com',
