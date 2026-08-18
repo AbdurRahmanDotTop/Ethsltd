@@ -59,6 +59,7 @@ export type P2PMerchant = {
 
 export type P2POrder = {
   id: string;
+  displayId?: string;
   advertisementId: string;
   merchantId: string;
   userId: string;

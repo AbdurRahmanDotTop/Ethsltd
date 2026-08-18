@@ -43,6 +43,7 @@ export class EthsltdClient {
     try {
       const res = await fetch(`${this.baseUrl}${endpoint}`, {
         cache: 'no-store',
+        credentials: 'include',
         ...options,
         headers,
       });
@@ -99,6 +100,12 @@ export class EthsltdClient {
     return res;
   }
 
+  async logout() {
+    const res = await this.request('/api/v1/auth/logout', { method: 'POST' });
+    this.setToken(null);
+    return res;
+  }
+
   async register(email: string, password: string) {
     const res = await this.request<{ token: string; user: User }>('/api/v1/auth/register', {
       method: 'POST',
@@ -109,11 +116,6 @@ export class EthsltdClient {
       this.setToken((res as any).token);
     }
     return res;
-  }
-
-  async logout() {
-    this.setToken(null);
-    return { success: true };
   }
 
   async resendVerification() {

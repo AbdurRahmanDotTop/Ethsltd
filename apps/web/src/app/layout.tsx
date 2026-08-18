@@ -46,11 +46,39 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
 import { AuthModal } from "@/components/auth/AuthModal";
 
-export default function RootLayout({
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { cookies } from "next/headers";
+import { AuthUser } from "@/lib/auth/types";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("ethsltd_session")?.value;
+  let initialUser: AuthUser | null = null;
+
+  if (sessionToken) {
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8787";
+      const res = await fetch(`${appUrl}/api/v1/auth/me`, {
+        headers: {
+          Cookie: `ethsltd_session=${sessionToken}`,
+        },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          initialUser = data.data;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch SSR user session:", e);
+    }
+  }
+
   return (
     <html
       lang="en"
@@ -64,10 +92,12 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          {children}
-          <Toaster richColors position="top-right" />
-          <AuthModal />
-          <BackToTop />
+          <AuthProvider initialUser={initialUser}>
+            {children}
+            <Toaster richColors position="top-right" />
+            <AuthModal />
+            <BackToTop />
+          </AuthProvider>
         </ThemeProvider>
         <Script id="tawk-to" strategy="afterInteractive">
           {`

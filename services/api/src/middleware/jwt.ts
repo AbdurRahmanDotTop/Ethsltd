@@ -1,15 +1,23 @@
 import { Context, Next } from 'hono';
 import { verify } from 'hono/jwt';
+import { getCookie } from 'hono/cookie';
 import { eq } from 'drizzle-orm';
 import { users, sessions } from 'database';
 
 export async function jwtMiddleware(c: Context, next: Next) {
+  let token = '';
+
   const authHeader = c.req.header('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ success: false, error: 'Missing or invalid Authorization header' }, 401);
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else {
+    token = getCookie(c, 'ethsltd_session') || '';
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return c.json({ success: false, error: 'Missing or invalid token' }, 401);
+  }
+
   const secret = 'super_secret_jwt_key_replace_me_in_prod'; // Use env variable in prod
 
   try {

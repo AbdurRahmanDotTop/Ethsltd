@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { sign } from 'hono/jwt';
+import { setCookie, deleteCookie } from 'hono/cookie';
 import { eq, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { users, sessions, wallets } from 'database';
@@ -50,10 +51,12 @@ authRoutes.post('/register', async (c) => {
     status: 'ACTIVE'
   });
 
+  const sessionDuration = 7 * 24 * 60 * 60 * 1000; // 7 days
+
   await db.insert(sessions).values({
     id: sessionId,
     userId: userId,
-    expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000), // 1 day
+    expiresAt: new Date(now.getTime() + sessionDuration),
     userAgent: c.req.header('user-agent') || 'Unknown',
     ipAddress: c.req.header('x-real-ip') || c.req.header('x-forwarded-for') || 'Unknown',
     createdAt: now,
@@ -81,7 +84,15 @@ authRoutes.post('/register', async (c) => {
     });
   }
 
-  const token = await sign({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }, JWT_SECRET);
+  const token = await sign({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, JWT_SECRET);
+
+  setCookie(c, 'ethsltd_session', token, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60,
+    sameSite: 'Lax',
+  });
 
   const user = await db.select().from(users).where(eq(users.id, userId)).get();
 
@@ -108,10 +119,12 @@ authRoutes.post('/login', async (c) => {
   const sessionId = crypto.randomUUID();
   const now = new Date();
 
+  const sessionDuration = 7 * 24 * 60 * 60 * 1000; // 7 days
+
   await db.insert(sessions).values({
     id: sessionId,
     userId: user.id,
-    expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000), // 1 day
+    expiresAt: new Date(now.getTime() + sessionDuration),
     userAgent: c.req.header('user-agent') || 'Unknown',
     ipAddress: c.req.header('x-real-ip') || c.req.header('x-forwarded-for') || 'Unknown',
     createdAt: now,
@@ -119,7 +132,15 @@ authRoutes.post('/login', async (c) => {
 
   await db.update(users).set({ lastLoginAt: now }).where(eq(users.id, user.id));
 
-  const token = await sign({ id: user.id, email: user.email, sessionId, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }, JWT_SECRET);
+  const token = await sign({ id: user.id, email: user.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, JWT_SECRET);
+
+  setCookie(c, 'ethsltd_session', token, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60,
+    sameSite: 'Lax',
+  });
 
   return c.json({ success: true, token, data: { user } });
 });
@@ -195,5 +216,18 @@ authRoutes.post('/sessions/revoke-all', jwtMiddleware, async (c) => {
     }
   }
   
+  return c.json({ success: true });
+});
+
+authRoutes.post('/logout', jwtMiddleware, async (c) => {
+  const db = c.get('db');
+  const jwtPayload = c.get('jwtPayload') as any;
+  const currentSessionId = jwtPayload?.sessionId;
+
+  if (currentSessionId) {
+    await db.delete(sessions).where(eq(sessions.id, currentSessionId));
+  }
+
+  deleteCookie(c, 'ethsltd_session', { path: '/' });
   return c.json({ success: true });
 });

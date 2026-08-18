@@ -4,6 +4,7 @@ import { Bindings, Variables } from '../db';
 import { markets, orders, trades, wallets, walletTransactions, positions, binaryOptions, currencyRates } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
+import { processOrderMatching } from '../services/matching-engine';
 import { users } from 'database';
 
 export const tradingRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -511,24 +512,7 @@ tradingRoutes.post('/orders', async (c) => {
     const newLockedBalance = (parseFloat(spendWallet.lockedBalance) + spendAmount).toString();
     await db.update(wallets).set({ balance: newSpendBalance, lockedBalance: newLockedBalance, updatedAt: now }).where(eq(wallets.id, spendWallet.id));
     
-    // Determine if LIMIT order crosses the book for immediate execution
-    let isInstantCross = false;
-    if (type === 'LIMIT') {
-       const currentMarketPrice = await getRealPrice(market);
-       if (currentMarketPrice > 0) {
-          const limitP = parseFloat(price);
-          isInstantCross = side === 'BUY' ? currentMarketPrice <= limitP : currentMarketPrice >= limitP;
-       }
-    }
-  
-    // For MARKET orders, simulate instant fill
-    const isInstantFill = type === 'MARKET' || isInstantCross;
-    const executionPrice = type === 'MARKET' ? orderPrice : parseFloat(price);
-    const orderStatus = isInstantFill ? 'FILLED' : 'OPEN';
-    const filledAmount = isInstantFill ? amount.toString() : '0';
-    const remainingAmount = isInstantFill ? '0' : amount.toString();
-    
-    await db.insert(orders).values({
+    const newOrderRecord = {
       id: orderId,
       displayId: orderDisplayId,
       userId: user.id,
@@ -536,50 +520,79 @@ tradingRoutes.post('/orders', async (c) => {
       mode,
       side,
       type,
-      price: executionPrice.toString(),
+      price: orderPrice.toString(),
       amount: amount.toString(),
-      filledAmount,
-      remainingAmount,
-      status: orderStatus,
+      filledAmount: '0',
+      remainingAmount: amount.toString(),
+      status: 'OPEN',
       createdAt: now,
       updatedAt: now,
-    });
+    };
+
+    await db.insert(orders).values(newOrderRecord);
     
-    if (isInstantFill) {
-      // Process instant fill
+    // Call the matching engine
+    const matchResult = await processOrderMatching(db, newOrderRecord, marketInfo);
+    
+    // Check if MARKET order and still has remaining. If so, bot fills it (External Liquidity Fallback)
+    if (matchResult.remainingToFill > 0 && type === 'MARKET') {
+      const fallbackPrice = orderPrice; // Extracted earlier via getRealPrice
+      const fillAmount = matchResult.remainingToFill;
+      
       const tradeId = crypto.randomUUID();
-      const tradeDisplayId = await generateBusinessId(db, dbUser?.email, 'TRAD');
-      // Recalculate actual spend/receive for limit crossed orders if needed, but for MVP taker fee applies
-      const actualSpend = side === 'BUY' ? parsedAmount * executionPrice : parsedAmount;
-      const actualFee = actualSpend * parseFloat(marketInfo.takerFee);
+      const tradeDisplayId = await generateBusinessId(db, 'bot', 'TRAD');
+      const takerFeeAmt = (fillAmount * fallbackPrice) * parseFloat(marketInfo.takerFee);
       
       await db.insert(trades).values({
         id: tradeId,
         displayId: tradeDisplayId,
         marketSymbol: market,
         mode,
-        makerOrderId: 'mock-maker-order',
+        makerOrderId: 'external-liquidity-bot',
         takerOrderId: orderId,
-        price: executionPrice.toString(),
-        amount: amount.toString(),
+        price: fallbackPrice.toString(),
+        amount: fillAmount.toString(),
         makerFee: '0',
-        takerFee: actualFee.toString(),
+        takerFee: takerFeeAmt.toString(),
         createdAt: now,
       });
       
-      // Release lock and finalize transfer
-      // 1. Remove locked balance (which was just added using worst-case spendAmount)
+      matchResult.remainingToFill -= fillAmount;
+      matchResult.totalFilledAmount += fillAmount;
+      matchResult.totalSpentOrReceived += fillAmount * fallbackPrice;
+    }
+    
+    // Update Taker Order (This User's Order)
+    const takerStatus = matchResult.remainingToFill <= 0 ? 'FILLED' : 'OPEN';
+    await db.update(orders).set({
+      filledAmount: matchResult.totalFilledAmount.toString(),
+      remainingAmount: matchResult.remainingToFill.toString(),
+      status: takerStatus,
+      updatedAt: now
+    }).where(eq(orders.id, orderId));
+    
+    // Finalize Taker Wallet
+    if (matchResult.totalFilledAmount > 0) {
+      // 1. Remove from locked balance
+      const avgPrice = matchResult.totalSpentOrReceived / matchResult.totalFilledAmount;
+      const actualSpend = side === 'BUY' ? matchResult.totalFilledAmount * avgPrice : matchResult.totalFilledAmount;
+      
       const finalSpendWallet = await db.select().from(wallets).where(eq(wallets.id, spendWallet.id)).get();
       if(finalSpendWallet) {
-         const finalLocked = (parseFloat(finalSpendWallet.lockedBalance) - spendAmount).toString();
-         // Refund any difference if limit price was worse than market execution price (though here we execute at limit for simplicity)
-         const refundAmount = spendAmount - actualSpend;
+         // Free up locked balance that was used
+         const usedLockedAmount = side === 'BUY' ? actualSpend : matchResult.totalFilledAmount;
+         const finalLocked = Math.max(0, parseFloat(finalSpendWallet.lockedBalance) - usedLockedAmount).toString();
+         
+         // If MARKET order, we locked worst-case. We may need to refund the difference.
+         // But for limits, we locked exact.
+         const refundAmount = side === 'BUY' && type === 'MARKET' ? Math.max(0, (spendAmount * (matchResult.totalFilledAmount / parsedAmount)) - actualSpend) : 0;
          const finalBalance = (parseFloat(finalSpendWallet.balance) + refundAmount).toString();
+         
          await db.update(wallets).set({ balance: finalBalance, lockedBalance: finalLocked, updatedAt: now }).where(eq(wallets.id, spendWallet.id));
       }
       
       // 2. Add received asset
-      const receiveTotal = side === 'BUY' ? parsedAmount : parsedAmount * executionPrice;
+      const receiveTotal = side === 'BUY' ? matchResult.totalFilledAmount : matchResult.totalSpentOrReceived;
       const receiveFee = receiveTotal * parseFloat(marketInfo.takerFee);
       const receiveAmountFinal = receiveTotal - receiveFee;
       
@@ -598,11 +611,11 @@ tradingRoutes.post('/orders', async (c) => {
           createdAt: now,
           updatedAt: now,
         });
-    } else {
-      const newReceiveBalance = (parseFloat(receiveWallet.balance) + receiveAmountFinal).toString();
-      await db.update(wallets).set({ balance: newReceiveBalance, updatedAt: now }).where(eq(wallets.id, receiveWallet.id));
+      } else {
+        const newReceiveBalance = (parseFloat(receiveWallet.balance) + receiveAmountFinal).toString();
+        await db.update(wallets).set({ balance: newReceiveBalance, updatedAt: now }).where(eq(wallets.id, receiveWallet.id));
+      }
     }
-  }
 
   return c.json({ success: true, orderId });
 });
