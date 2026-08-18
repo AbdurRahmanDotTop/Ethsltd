@@ -380,6 +380,40 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
               <MessageCircle className="w-5 h-5 mr-2" />
               Contact Support for Bank Details
             </Button>
+            
+            <div className="w-full mt-8 text-left border-t border-brand-500/20 pt-6">
+              <h5 className="font-medium text-foreground mb-4 text-center">Already transferred? Submit details here:</h5>
+              <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md mx-auto text-left">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Deposit Amount</label>
+                  <div className="flex gap-2">
+                    <Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
+                    <select 
+                      value={bankCurrency} 
+                      onChange={e => setBankCurrency(e.target.value)}
+                      className="border border-border bg-background rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                    >
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                      <option value="GBP">GBP</option>
+                      <option value="INR">INR</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Reference Number / Transaction ID</label>
+                  <Input type="text" value={paymentReference} onChange={e => setPaymentReference(e.target.value)} placeholder="Enter Reference" required />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Payment Receipt (Screenshot)</label>
+                  <Input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" required />
+                </div>
+                <Button type="submit" className="w-full h-12 text-base mt-2" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="w-5 h-5 animate-spin mr-2 shrink-0" />}
+                  Submit Bank Transfer Details
+                </Button>
+              </form>
+            </div>
           </div>
         )}
 

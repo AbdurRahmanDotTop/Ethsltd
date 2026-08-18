@@ -66,14 +66,14 @@ adminRoutes.get('/stats', async (c) => {
     const pendingDisputes = allDisputes.filter(d => d.status === 'OPEN').length;
     
     // Suspended users
-    const suspendedUsers = allUsers.filter(u => u.status === 'SUSPENDED' || u.status === 'BANNED').length;
+    const suspendedUsers = allUsers.filter(u => u.status === 'FROZEN' || u.status === 'BANNED').length;
 
     // Trading Volume 24h
     const allOrders = await db.select().from(orders).where(eq(orders.mode, 'REAL')).all();
     let dailyVolumeUsd = 0;
     for (const o of allOrders) {
        if (o.status === 'FILLED' && new Date(o.createdAt).getTime() > now - 86400000) {
-           dailyVolumeUsd += parseFloat(o.total || '0');
+           dailyVolumeUsd += parseFloat(o.filledAmount || '0') * parseFloat(o.price || '0');
        }
     }
 
