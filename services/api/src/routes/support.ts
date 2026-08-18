@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { eq, desc } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { tickets, ticketMessages } from 'database';
+import { tickets, ticketMessages, users } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
+import { generateBusinessId } from '../services/id-generator';
 
 export const supportRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -35,11 +36,14 @@ supportRoutes.post('/tickets', async (c) => {
   }
 
   try {
+    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+    const displayId = await generateBusinessId(db, dbUser?.email, 'TICK');
     const ticketId = generateId('TIC');
     const now = new Date();
 
     await db.insert(tickets).values({
       id: ticketId,
+      displayId,
       userId: user.id,
       subject: body.subject,
       category: body.category,

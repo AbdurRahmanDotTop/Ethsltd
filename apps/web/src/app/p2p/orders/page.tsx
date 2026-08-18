@@ -86,7 +86,7 @@ export default function P2POrdersPage() {
                     return (
                       <tr key={order.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-6 py-5">
-                          <span className="font-mono font-medium">{order.id}</span>
+                          <span className="font-mono font-medium">{order.displayId || order.id}</span>
                           <div className="text-xs text-muted-foreground mt-1">
                             {new Date(order.createdAt).toLocaleDateString()}
                           </div>

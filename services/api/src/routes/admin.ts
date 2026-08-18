@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc, sql, and } from 'drizzle-orm';
+import { getFeeConfig, calculateFee } from '../services/fees';
+import { generateBusinessId } from '../services/id-generator';
 import { Bindings, Variables } from '../db';
 import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, ledgerEntries, bankTransfers, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions, expertProfiles } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
@@ -478,8 +480,10 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
     }
 
     // Ledger Entry for Admin Override
+    const ltDisplayId = await generateBusinessId(db, null, 'LTXN');
     await db.insert(ledgerTransactions).values({
       id: crypto.randomUUID(),
+      displayId: ltDisplayId,
       idempotencyKey: `admin-adjust-${Date.now()}-${userId}`,
       environment: type,
       referenceType: 'ADJUSTMENT',
@@ -489,8 +493,10 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
     });
 
     // Wallet Transaction Entry for User History
+    const wtDisplayId = await generateBusinessId(db, null, 'WTXN');
     await db.insert(walletTransactions).values({
       id: crypto.randomUUID(),
+      displayId: wtDisplayId,
       userId,
       type: 'ADJUSTMENT',
       mode: type,
@@ -651,8 +657,10 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
     }
     
     // Ledger Entry for Admin resolution
+    const ltDisplayId2 = await generateBusinessId(db, null, 'LTXN');
     await db.insert(ledgerTransactions).values({
       id: crypto.randomUUID(),
+      displayId: ltDisplayId2,
       idempotencyKey: `p2p-admin-resolve-${order.id}`,
       environment: order.mode,
       referenceType: 'P2P_ESCROW',

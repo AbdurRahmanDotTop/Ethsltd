@@ -93,7 +93,7 @@ export default function AdminDepositsPage() {
   };
 
   const manualColumns: Column<any>[] = [
-    { header: "ID", accessor: "id", className: "font-mono text-xs" },
+    { header: "ID", accessor: (row: any) => row.displayId || row.id, className: "font-mono text-xs" },
     { header: "User", accessor: "user_id", className: "font-mono text-xs" },
     { header: "Amount", accessor: (row) => <span className="font-bold text-green-500">+{row.amount} {row.asset}</span> },
     { header: "Ref / Notes", accessor: "payment_reference", className: "font-mono text-xs max-w-[150px] truncate" },
@@ -127,7 +127,7 @@ export default function AdminDepositsPage() {
   ];
 
   const bankColumns: Column<any>[] = [
-    { header: "ID", accessor: "id", className: "font-mono text-xs" },
+    { header: "ID", accessor: (row: any) => row.displayId || row.id, className: "font-mono text-xs" },
     { header: "User", accessor: "userId", className: "font-mono text-xs" },
     { header: "Amount", accessor: (row) => <span className="font-bold text-green-500">+{row.amount} {row.currency}</span> },
     { header: "Ref / Notes", accessor: "bankReference", className: "font-mono text-xs max-w-[150px] truncate" },

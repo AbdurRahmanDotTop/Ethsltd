@@ -3,6 +3,7 @@ import { users } from './auth';
 
 export const cregisDeposits = sqliteTable('cregis_deposits', {
   id: text('id').primaryKey(), // Internal UUID
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id),
   cid: text('cid'), // Cregis Client ID for this project
   txid: text('txid'), // Cregis Transaction ID (idempotency key from provider)
@@ -17,6 +18,7 @@ export const cregisDeposits = sqliteTable('cregis_deposits', {
 
 export const cregisPayouts = sqliteTable('cregis_payouts', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id),
   thirdPartyId: text('third_party_id').notNull().unique(), // Our idempotency key sent to Cregis
   txid: text('txid'), // Transaction ID returned by Cregis

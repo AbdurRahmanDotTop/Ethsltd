@@ -4,6 +4,7 @@ import { eq, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { users, sessions, wallets } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
+import { generateBusinessId } from '../services/id-generator';
 
 export const authRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -36,8 +37,11 @@ authRoutes.post('/register', async (c) => {
   const userCount = await db.select().from(users).all();
   const isFirstUser = userCount.length === 0;
 
+  const displayId = await generateBusinessId(db, body.email, 'USER');
+
   await db.insert(users).values({
     id: userId,
+    displayId,
     email: body.email,
     passwordHash: hashedPassword,
     createdAt: now,
@@ -63,8 +67,10 @@ authRoutes.post('/register', async (c) => {
   ];
 
   for (const fund of initialDemoFunds) {
+    const walletDisplayId = await generateBusinessId(db, body.email, 'WALL');
     await db.insert(wallets).values({
       id: crypto.randomUUID(),
+      displayId: walletDisplayId,
       userId: userId,
       assetSymbol: fund.assetSymbol,
       type: 'DEMO',

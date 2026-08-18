@@ -13,10 +13,10 @@ export async function generateBusinessId(
   entityPrefix: string
 ): Promise<string> {
   // 1. Process Email Prefix
-  let emailPrefix = 'SYS';
+  let emailPrefix = 'sys';
   if (email) {
     const localPart = email.split('@')[0];
-    emailPrefix = localPart.substring(0, 11).toUpperCase();
+    emailPrefix = localPart.substring(0, 11).toLowerCase();
   }
 
   // 2. Ensure Entity Prefix is max 4 chars uppercase

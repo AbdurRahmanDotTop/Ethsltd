@@ -511,8 +511,10 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
 
   // Ledger Entries
   const txId = crypto.randomUUID();
+  const txDisplayId = await generateBusinessId(db, user?.email, 'LTXN');
   await db.insert(ledgerTransactions).values({
     id: txId,
+    displayId: txDisplayId,
     idempotencyKey: `p2p-release-${order.id}`,
     environment: order.mode,
     referenceType: 'P2P_ESCROW',
@@ -575,10 +577,12 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
   const newAvailable = (parseFloat(ad.availableAmount) + cryptoNum).toString();
   await db.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
 
-  // Ledger Entries
+  // Ledger Reversal
   const txId = crypto.randomUUID();
+  const txDisplayId = await generateBusinessId(db, user?.email, 'LTXN');
   await db.insert(ledgerTransactions).values({
     id: txId,
+    displayId: txDisplayId,
     idempotencyKey: `p2p-cancel-${order.id}`,
     environment: order.mode,
     referenceType: 'P2P_ESCROW',

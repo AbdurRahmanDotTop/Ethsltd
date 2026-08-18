@@ -3,6 +3,7 @@ import { users } from './auth';
 
 export const tickets = sqliteTable('tickets', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   subject: text('subject').notNull(),
   category: text('category').notNull(),

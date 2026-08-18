@@ -88,7 +88,7 @@ export default function AdminWithdrawalsPage() {
   const columns: Column<Record<string, unknown>>[] = [
     {
       header: "Tx ID",
-      accessor: "id",
+      accessor: (row: any) => row.displayId || row.id,
       className: "font-mono text-xs text-muted-foreground"
     },
     {

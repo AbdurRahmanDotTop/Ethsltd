@@ -181,8 +181,10 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
   
   // Ledger
+  const ltDisplayId = await generateBusinessId(db, null, 'LTXN');
   await db.insert(ledgerTransactions).values({ 
     id: crypto.randomUUID(),
+    displayId: ltDisplayId,
     idempotencyKey: `MANUAL_DEP_APPROVE_${deposit.id}_${now.getTime()}`,
     referenceType: 'DEPOSIT', 
     referenceId: deposit.id,
@@ -192,8 +194,10 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   });
   
   // Wallet Transaction History
+  const wtDisplayId = await generateBusinessId(db, null, 'WTXN');
   await db.insert(walletTransactions).values({
     id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+    displayId: wtDisplayId,
     userId: deposit.user_id,
     type: 'DEPOSIT',
     mode: 'REAL',
@@ -267,8 +271,10 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
   
   // Ledger
+  const ltDisplayId2 = await generateBusinessId(db, null, 'LTXN');
   await db.insert(ledgerTransactions).values({ 
     id: crypto.randomUUID(), 
+    displayId: ltDisplayId2,
     idempotencyKey: `BANK_TRANS_APPROVE_${deposit.id}_${now.getTime()}`,
     referenceType: 'DEPOSIT', 
     referenceId: deposit.id,
@@ -278,8 +284,10 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   });
   
   // Wallet Transaction History
+  const wtDisplayId2 = await generateBusinessId(db, null, 'WTXN');
   await db.insert(walletTransactions).values({
     id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+    displayId: wtDisplayId2,
     userId: deposit.userId,
     type: 'DEPOSIT',
     mode: 'REAL',

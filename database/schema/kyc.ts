@@ -3,6 +3,7 @@ import { users } from './auth';
 
 export const kycProfiles = sqliteTable('kyc_profiles', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),

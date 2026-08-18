@@ -60,7 +60,7 @@ export default function AdminUsersPage() {
   const columns: Column<any>[] = [
     {
       header: "User ID",
-      accessor: "id",
+      accessor: (row: any) => row.displayId || row.id,
       className: "font-mono text-xs text-brand-primary font-medium"
     },
     {

@@ -3,6 +3,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { expertProfiles, expertServices, expertBookings, users, wallets, ledgerTransactions, ledgerEntries, walletTransactions, expertReviews } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { Bindings, Variables } from '../db';
+import { generateBusinessId } from '../services/id-generator';
 
 export const expertRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -125,10 +126,13 @@ expertRoutes.post('/apply', async (c) => {
       return c.json({ success: false, error: 'Expert profile already exists' }, 400);
     }
     
+    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+    const displayId = await generateBusinessId(db, dbUser?.email, 'EXPP');
     const profileId = `exp_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
     
     await db.insert(expertProfiles).values({
       id: profileId,
+      displayId,
       userId: user.id,
       bio: body.bio,
       experienceYears: body.experienceYears || 0,
@@ -199,9 +203,12 @@ expertRoutes.post('/bookings', async (c) => {
       .where(eq(wallets.id, wallet.id))
       .run();
       
+    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+    const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
     // Record Wallet Tx
     await db.insert(walletTransactions).values({
       id: txId,
+      displayId: txDisplayId,
       userId: user.id,
       type: 'EXPERT_SERVICE',
       mode: mode,
@@ -213,9 +220,11 @@ expertRoutes.post('/bookings', async (c) => {
       updatedAt: new Date()
     }).run();
     
+    const bookingDisplayId = await generateBusinessId(db, dbUser?.email, 'BOOK');
     // Create Booking
     await db.insert(expertBookings).values({
       id: bookingId,
+      displayId: bookingDisplayId,
       userId: user.id,
       expertId: service.expertId,
       serviceId: service.id,
@@ -740,8 +749,11 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
 
       // Record Expert Wallet Transaction
       const expertTxId = `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+      const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+      const wtDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
       await db.insert(walletTransactions).values({
         id: expertTxId,
+        displayId: wtDisplayId,
         userId: profile.userId,
         type: 'EXPERT_SERVICE',
         mode: 'REAL',
@@ -755,8 +767,10 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
       
       // Record Platform Ledger Entry for Commission
       const ledgerTxId = `ltx_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+      const ltDisplayId = await generateBusinessId(db, dbUser?.email, 'LTXN');
       await db.insert(ledgerTransactions).values({
         id: ledgerTxId,
+        displayId: ltDisplayId,
         idempotencyKey: `comm_${bookingId}`,
         referenceId: bookingId,
         referenceType: 'EXPERT_SERVICE',

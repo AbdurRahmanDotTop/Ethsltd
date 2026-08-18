@@ -81,9 +81,9 @@ export default function AdminKycPage() {
 
   const columns: Column<any>[] = [
     {
-      header: "Application ID",
-      accessor: "id",
-      className: "font-mono text-xs text-brand-primary font-medium"
+      header: "Req ID",
+      accessor: (row: any) => row.displayId || row.id,
+      className: "font-mono text-xs text-muted-foreground font-medium"
     },
     {
       header: "User",

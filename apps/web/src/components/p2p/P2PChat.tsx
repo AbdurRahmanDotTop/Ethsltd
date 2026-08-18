@@ -125,7 +125,7 @@ export function P2PChat({ order, merchant }: P2PChatProps) {
             </span>
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Order: {order.id.substring(0, 12)}... • {order.asset} / {order.fiatCurrency}
+            Order: {(order.displayId || order.id).substring(0, 15)}... • {order.asset} / {order.fiatCurrency}
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-background px-2 py-1 rounded-full border border-border">

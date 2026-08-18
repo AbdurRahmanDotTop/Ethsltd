@@ -3,6 +3,7 @@ import { users } from './auth';
 
 export const expertProfiles = sqliteTable('expert_profiles', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
   bio: text('bio'),
   experienceYears: integer('experience_years').notNull().default(0),
@@ -34,6 +35,7 @@ export const expertServices = sqliteTable('expert_services', {
 
 export const expertBookings = sqliteTable('expert_bookings', {
   id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id),
   expertId: text('expert_id').notNull().references(() => expertProfiles.id),
   serviceId: text('service_id').notNull().references(() => expertServices.id),

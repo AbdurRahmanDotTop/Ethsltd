@@ -47,7 +47,7 @@ export default function AdminOrdersPage() {
   const columns: Column<any>[] = [
     {
       header: "Order ID",
-      accessor: "id",
+      accessor: (row: any) => row.displayId || row.id,
       className: "font-mono text-xs text-muted-foreground"
     },
     {

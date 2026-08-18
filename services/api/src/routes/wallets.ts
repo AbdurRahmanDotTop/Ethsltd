@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions } from 'database';
+import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
 import { getFeeConfig, calculateFee, getLimit } from '../services/fees';
@@ -89,8 +89,11 @@ walletRoutes.post('/top-up-demo', async (c) => {
     await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
   }
   
+  const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+  const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
   await db.insert(walletTransactions).values({
     id: `TX-DEMO-${Date.now()}`,
+    displayId: txDisplayId,
     userId: user.id,
     type: 'DEPOSIT',
     mode: 'DEMO',
@@ -242,9 +245,12 @@ walletRoutes.post('/deposit', async (c) => {
     const newBalance = (parseFloat(wallet!.balance) + parseFloat(amount)).toString();
     await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
     
+    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+    const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
     // Record transaction
     await db.insert(walletTransactions).values({
       id: transactionId,
+      displayId: txDisplayId,
       userId: user.id,
       type: 'DEPOSIT',
       mode: mode,
@@ -381,9 +387,12 @@ walletRoutes.post('/withdraw', async (c) => {
     const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
     await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
     
+    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+    const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
     // Record transaction
     await db.insert(walletTransactions).values({
       id: transactionId,
+      displayId: txDisplayId,
       userId: user.id,
       type: 'WITHDRAWAL',
       mode: mode,
@@ -410,9 +419,12 @@ walletRoutes.post('/withdraw', async (c) => {
       const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
       await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
       
+      const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+      const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
       // Step 3: Record transaction as PENDING (Wait for Cregis Webhook to mark COMPLETED)
       await db.insert(walletTransactions).values({
         id: transactionId,
+        displayId: txDisplayId,
         userId: user.id,
         type: 'WITHDRAWAL',
         mode: mode,

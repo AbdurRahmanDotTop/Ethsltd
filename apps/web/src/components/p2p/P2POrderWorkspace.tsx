@@ -183,7 +183,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight mb-1">
-              Order {order.id}
+              Order {order.displayId || order.id}
             </h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
@@ -300,8 +300,8 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                 <div>
                   <span className="text-xs text-muted-foreground block mb-1">Reference Number (Required)</span>
                   <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
-                    <span className="font-mono text-sm">{order.id}</span>
-                    <button onClick={() => copyToClipboard(order.id, "ref")} className="text-muted-foreground hover:text-foreground">
+                    <span className="font-mono text-sm">{order.displayId || order.id}</span>
+                    <button onClick={() => copyToClipboard(order.displayId || order.id, "ref")} className="text-muted-foreground hover:text-foreground">
                       {copiedField === "ref" ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                     </button>
                   </div>

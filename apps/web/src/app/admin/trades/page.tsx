@@ -42,7 +42,7 @@ export default function AdminTradesPage() {
   const columns: Column<any>[] = [
     {
       header: "Trade ID",
-      accessor: "id",
+      accessor: (row: any) => row.displayId || row.id,
       className: "font-mono text-xs text-muted-foreground"
     },
     {
