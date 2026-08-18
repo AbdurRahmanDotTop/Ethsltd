@@ -6,6 +6,7 @@ import { WalletSummary } from "@/components/wallet/WalletSummary";
 import { AssetTable } from "@/components/wallet/AssetTable";
 import { PortfolioAllocation } from "@/components/wallet/PortfolioAllocation";
 import { TransactionTable } from "@/components/wallet/TransactionTable";
+import { AssetConversionsTable } from "@/components/wallet/AssetConversionsTable";
 import { apiClient } from "@ethsltd/api-client";
 import { AssetBalance, PortfolioSummary, AssetAllocation, WalletTransaction } from "@/lib/wallet/types";
 import { useWalletStore } from "@/stores/wallet-store";
@@ -19,6 +20,7 @@ export default function WalletPage() {
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
   const [allocations, setAllocations] = useState<AssetAllocation[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
+  const [conversions, setConversions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -54,6 +56,11 @@ export default function WalletPage() {
       const txs = await apiClient.getWalletTransactions(mode);
       if (txs.success && txs.data) {
         setRecentTransactions(txs.data.slice(0, 5) || []);
+      }
+
+      const convs = await apiClient.getAssetConversions();
+      if (convs.success && convs.data) {
+        setConversions(convs.data);
       }
     } catch (err: any) {
       setError(err.message || "An error occurred while loading wallet data");
@@ -159,6 +166,8 @@ export default function WalletPage() {
         </div>
         <TransactionTable transactions={recentTransactions} />
       </div>
+
+      <AssetConversionsTable conversions={conversions} />
     </div>
   );
 }

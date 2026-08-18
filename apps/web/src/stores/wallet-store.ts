@@ -65,7 +65,7 @@ export const useWalletStore = create<WalletState>()(
     fetchTransactions: async (mode) => {
       set({ transactions: [], isLoading: true, error: null });
       try {
-        const res = await apiClient.getWalletTransactions(mode);
+        const res = await apiClient.getWalletTransactions(mode as 'REAL' | 'DEMO');
         if (res.success && res.data) {
           set({ transactions: res.data, isLoading: false });
         } else {

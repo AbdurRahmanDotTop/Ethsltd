@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { eq, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../../db';
-import { bank_accounts as bankAccounts, payment_methods as paymentMethods, real_manual_deposits as realManualDeposits, bankTransfers, wallets, walletTransactions, ledgerEntries, ledgerTransactions, cregisDeposits } from 'database';
+import { bank_accounts as bankAccounts, payment_methods as paymentMethods, real_manual_deposits as realManualDeposits, bankTransfers, wallets, walletTransactions, ledgerEntries, ledgerTransactions, cregisDeposits, currencyRates, assetConversions } from 'database';
+import { getFeeConfig, calculateFee } from '../../services/fees';
 import { jwtMiddleware, adminMiddleware } from '../../middleware/jwt';
 
 export const adminPaymentRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -114,18 +115,67 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   // Atomic approval
   await db.update(realManualDeposits).set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now }).where(eq(realManualDeposits.id, id));
   
-  // Find or create REAL wallet
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, deposit.asset), eq(wallets.type, 'REAL'))).get();
+  let finalAsset = deposit.asset;
+  let finalAmount = deposit.amount;
+  let grossUsdtAmount = deposit.amount;
+  let conversionRateUsed = '1';
+  let isConverted = false;
+
+  // Convert to USDT if it's a fiat currency found in global currency rates
+  if (deposit.asset !== 'USDT') {
+    const rateRow = await db.select().from(currencyRates)
+      .where(and(eq(currencyRates.code, deposit.asset), eq(currencyRates.status, 'ACTIVE')))
+      .get();
+    
+    if (rateRow && rateRow.ratePerUsdt) {
+      const rate = parseFloat(rateRow.ratePerUsdt);
+      if (rate > 0) {
+        finalAsset = 'USDT';
+        grossUsdtAmount = deposit.amount / rate;
+        finalAmount = grossUsdtAmount;
+        conversionRateUsed = rateRow.ratePerUsdt;
+        isConverted = true;
+      }
+    }
+  }
+
+  // Calculate dynamic Deposit Fee
+  const depositFeeConfig = await getFeeConfig(db, 'DEPOSIT_FEE', { type: 'PERCENTAGE', percentage: 0 });
+  const feeAmount = calculateFee(grossUsdtAmount, depositFeeConfig);
+  finalAmount = grossUsdtAmount - feeAmount;
+
+  if (finalAmount < 0) finalAmount = 0;
+
+  // Record conversion if applicable
+  if (isConverted) {
+    await db.insert(assetConversions).values({
+      id: crypto.randomUUID(),
+      userId: deposit.user_id,
+      originalAsset: deposit.asset,
+      originalAmount: deposit.amount.toString(),
+      conversionRate: conversionRateUsed,
+      grossUsdt: grossUsdtAmount.toString(),
+      depositFee: feeAmount.toString(),
+      netUsdt: finalAmount.toString(),
+      status: 'COMPLETED',
+      referenceId: deposit.id,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // Find or create REAL wallet for the FINAL asset
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset), eq(wallets.type, 'REAL'))).get();
   if (!wallet) {
     const walletId = crypto.randomUUID();
     await db.insert(wallets).values({
-      id: walletId, userId: deposit.user_id, assetSymbol: deposit.asset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
+      id: walletId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
     });
-    wallet = { id: walletId, userId: deposit.user_id, assetSymbol: deposit.asset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
   }
   
   // Update wallet
-  const newBalance = (parseFloat(wallet.balance) + deposit.amount).toString();
+  const newBalance = (parseFloat(wallet.balance) + finalAmount).toString();
   await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
   
   // Ledger
@@ -145,8 +195,9 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
     userId: deposit.user_id,
     type: 'DEPOSIT',
     mode: 'REAL',
-    assetSymbol: deposit.asset,
-    amount: deposit.amount.toString(),
+    assetSymbol: finalAsset,
+    amount: finalAmount.toString(),
+    fee: feeAmount.toString(),
     status: 'COMPLETED',
     network: 'Manual',
     reference: deposit.payment_reference,

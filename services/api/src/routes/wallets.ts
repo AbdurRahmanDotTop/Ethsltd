@@ -1,14 +1,23 @@
 import { Hono } from 'hono';
 import { eq, desc, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods } from 'database';
+import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
+import { getFeeConfig, calculateFee, getLimit } from '../services/fees';
 
 export const walletRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Add JWT Middleware to all routes in this router
 walletRoutes.use('*', jwtMiddleware);
+
+walletRoutes.get('/asset-conversions', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  
+  const conversions = await db.select().from(assetConversions).where(eq(assetConversions.userId, user.id)).orderBy(desc(assetConversions.createdAt)).limit(50);
+  return c.json({ success: true, data: conversions });
+});
 
 walletRoutes.get('/deposit-settings', async (c) => {
   const db = c.get('db');
@@ -105,7 +114,7 @@ walletRoutes.get('/balances', async (c) => {
   // Format to AssetBalance structure
   const formattedBalances = userWallets.map(w => {
     const available = parseFloat(w.balance);
-    const locked = parseFloat(w.lockedBalance);
+    const locked = parseFloat(w.lockedBalance) + parseFloat(w.escrowBalance);
     const total = available + locked;
     const usdPrice = getMockPrice(w.assetSymbol);
     
@@ -137,12 +146,13 @@ walletRoutes.get('/portfolio', async (c) => {
   let lockedBalanceUsd = 0;
   
   const allocations = userWallets.map(w => {
-    const total = parseFloat(w.balance) + parseFloat(w.lockedBalance);
+    const lockedAmt = parseFloat(w.lockedBalance) + parseFloat(w.escrowBalance);
+    const total = parseFloat(w.balance) + lockedAmt;
     const usdValue = total * getMockPrice(w.assetSymbol);
     
     totalValueUsd += usdValue;
     availableBalanceUsd += parseFloat(w.balance) * getMockPrice(w.assetSymbol);
-    lockedBalanceUsd += parseFloat(w.lockedBalance) * getMockPrice(w.assetSymbol);
+    lockedBalanceUsd += lockedAmt * getMockPrice(w.assetSymbol);
     
     return {
       asset: w.assetSymbol,
@@ -344,6 +354,21 @@ walletRoutes.post('/withdraw', async (c) => {
   if (!wallet || parseFloat(wallet.balance) < parsedAmount) {
     return c.json({ success: false, error: 'Insufficient balance' }, 400);
   }
+
+  // 1. Validate withdrawal limits
+  const minWithdrawal = await getLimit(db, 'MIN_WITHDRAWAL', 10);
+  if (parsedAmount < minWithdrawal) {
+    return c.json({ success: false, error: `Minimum withdrawal is ${minWithdrawal}` }, 400);
+  }
+
+  // 2. Calculate dynamic withdrawal fee
+  const withdrawFeeConfig = await getFeeConfig(db, 'WITHDRAWAL_FEE', { type: 'FIXED', amount: 0 });
+  const fee = calculateFee(parsedAmount, withdrawFeeConfig);
+  const netAmount = parsedAmount - fee;
+
+  if (netAmount <= 0) {
+    return c.json({ success: false, error: 'Amount must be greater than withdrawal fee' }, 400);
+  }
   
   const now = new Date();
   const transactionId = `TX-${Date.now()}`;
@@ -360,7 +385,8 @@ walletRoutes.post('/withdraw', async (c) => {
       type: 'WITHDRAWAL',
       mode: mode,
       assetSymbol,
-      amount: amount.toString(),
+      amount: parsedAmount.toString(),
+      fee: fee.toString(),
       status: 'COMPLETED', // Simulated demo trading completes instantly
       destination,
       network: network || 'Internal',
@@ -388,7 +414,8 @@ walletRoutes.post('/withdraw', async (c) => {
         type: 'WITHDRAWAL',
         mode: mode,
         assetSymbol,
-        amount: amount.toString(),
+        amount: parsedAmount.toString(),
+        fee: fee.toString(),
         status: 'PENDING',
         destination,
         network: network || 'External',

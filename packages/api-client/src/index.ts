@@ -174,8 +174,12 @@ export class EthsltdClient {
     return this.request<any>(`/api/v1/wallets/portfolio?mode=${mode}`);
   }
 
-  async getWalletTransactions(mode: string = 'REAL') {
-    return this.request<any[]>(`/api/v1/wallets/transactions?mode=${mode}`);
+  async getWalletTransactions(mode?: 'REAL' | 'DEMO'): Promise<any> {
+    return this.request<any[]>(`/api/v1/wallets/transactions${mode ? `?mode=${mode}` : ''}`);
+  }
+
+  async getAssetConversions(): Promise<any> {
+    return this.request<any[]>('/api/v1/wallets/asset-conversions');
   }
 
   async getDepositSettings() {
