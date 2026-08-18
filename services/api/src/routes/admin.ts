@@ -690,6 +690,44 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
 });
 
 // ==========================
+// ADMIN TRANSACTIONS
+// ==========================
+
+// GET /api/v1/admin/transactions
+adminRoutes.get('/transactions', async (c) => {
+  const db = c.get('db');
+  
+  try {
+    const { eq, desc } = require('drizzle-orm');
+    const { walletTransactions, users } = require('database');
+    
+    const query = db.select({
+      id: walletTransactions.id,
+      userId: walletTransactions.userId,
+      userName: users.displayName,
+      type: walletTransactions.type,
+      mode: walletTransactions.mode,
+      asset: walletTransactions.assetSymbol,
+      amount: walletTransactions.amount,
+      status: walletTransactions.status,
+      network: walletTransactions.network,
+      reference: walletTransactions.reference,
+      createdAt: walletTransactions.createdAt,
+    })
+    .from(walletTransactions)
+    .leftJoin(users, eq(users.id, walletTransactions.userId))
+    .orderBy(desc(walletTransactions.createdAt))
+    .limit(200);
+    
+    const results = await query.all();
+    
+    return c.json({ success: true, data: results });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch transactions' }, 500);
+  }
+});
+
+// ==========================
 // ADMIN WITHDRAWALS
 // ==========================
 

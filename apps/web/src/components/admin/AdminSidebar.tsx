@@ -46,7 +46,8 @@ export const adminNavGroups = [
       { name: "Wallets", href: "/admin/wallets", icon: Wallet },
       { name: "Deposits", href: "/admin/deposits", icon: ArrowDownToLine },
       { name: "Deposit Settings", href: "/admin/deposits/settings", icon: Settings },
-      { name: "Withdrawals", href: "/admin/withdrawals", icon: ArrowUpFromLine }
+      { name: "Withdrawals", href: "/admin/withdrawals", icon: ArrowUpFromLine },
+      { name: "Transactions", href: "/admin/transactions", icon: ListOrdered }
     ]
   },
   {

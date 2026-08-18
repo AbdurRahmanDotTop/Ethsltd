@@ -139,6 +139,21 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
     createdAt: now
   });
   
+  // Wallet Transaction History
+  await db.insert(walletTransactions).values({
+    id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+    userId: deposit.user_id,
+    type: 'DEPOSIT',
+    mode: 'REAL',
+    assetSymbol: deposit.asset,
+    amount: deposit.amount.toString(),
+    status: 'COMPLETED',
+    network: 'Manual',
+    reference: deposit.payment_reference,
+    createdAt: now,
+    updatedAt: now,
+  });
+  
   return c.json({ success: true });
 });
 
@@ -206,6 +221,21 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
     environment: 'REAL', 
     status: 'COMMITTED', 
     createdAt: now 
+  });
+  
+  // Wallet Transaction History
+  await db.insert(walletTransactions).values({
+    id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+    userId: deposit.userId,
+    type: 'DEPOSIT',
+    mode: 'REAL',
+    assetSymbol: deposit.currency,
+    amount: deposit.amount.toString(),
+    status: 'COMPLETED',
+    network: 'Bank Transfer',
+    reference: deposit.bankReference,
+    createdAt: now,
+    updatedAt: now,
   });
   
   return c.json({ success: true });
