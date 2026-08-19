@@ -15,7 +15,7 @@ export function GlobalWalletDashboard() {
 
   const fetchBalance = async () => {
     try {
-      const res = await apiClient.getWalletBalance();
+      const res = await apiClient.getWalletPortfolio();
       if (res.success && res.data) {
         setBalance(res.data);
       }
@@ -28,12 +28,12 @@ export function GlobalWalletDashboard() {
     fetchBalance();
   }, []);
 
-  const totalUsdt = balance ? balance.totalValue : 0;
+  const totalUsdt = balance?.totalValue || 0;
   
   // Dummy individual assets if real ones aren't available in structure
   const assets = balance?.assets || [
-    { symbol: "BTC", available: 0, onOrders: 0, value: 0 },
-    { symbol: "ETH", available: 0, onOrders: 0, value: 0 },
+    { asset: "BTC", available: 0, inOrder: 0, usdValue: 0 },
+    { asset: "ETH", available: 0, inOrder: 0, usdValue: 0 },
   ];
 
   return (
@@ -137,13 +137,13 @@ export function GlobalWalletDashboard() {
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#00C087] font-bold text-xs">
-                  {asset.symbol.charAt(0)}
+                  {(asset.asset || asset.symbol || 'C').charAt(0)}
                 </div>
-                <span className="font-bold text-lg">{asset.symbol}</span>
+                <span className="font-bold text-lg">{asset.asset || asset.symbol}</span>
               </div>
               <div className="text-right">
-                <p className="font-bold">{showBalance ? asset.value.toFixed(8) : '********'}</p>
-                <p className="text-xs text-gray-400">≈{showBalance ? asset.value.toFixed(4) : '********'} USD</p>
+                <p className="font-bold">{showBalance ? (asset.total || (asset.available + (asset.inOrder || 0))).toFixed(8) : '********'}</p>
+                <p className="text-xs text-gray-400">≈{showBalance ? (asset.usdValue || asset.value || 0).toFixed(4) : '********'} USD</p>
               </div>
             </div>
             <div className="flex items-center justify-between pt-3 text-xs text-gray-400">
@@ -151,7 +151,7 @@ export function GlobalWalletDashboard() {
                 <span>Available {showBalance ? asset.available.toFixed(8) : '********'}</span>
               </div>
               <div className="flex flex-col text-right">
-                <span>On orders {showBalance ? asset.onOrders.toFixed(8) : '********'}</span>
+                <span>On orders {showBalance ? (asset.inOrder || asset.onOrders || 0).toFixed(8) : '********'}</span>
               </div>
             </div>
           </div>
