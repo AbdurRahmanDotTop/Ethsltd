@@ -211,6 +211,9 @@ export function Header() {
           </div>
 
           <div className="lg:hidden flex items-center gap-2 sm:gap-4">
+            <div className="scale-90 origin-right">
+              {renderToggle()}
+            </div>
             <ThemeToggle />
             <button className="text-foreground w-9 h-9 flex items-center justify-center">
               <Search className="h-5 w-5" />
@@ -229,10 +232,6 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full h-[calc(100vh-4rem)] overflow-y-auto bg-background border-t border-border p-4 pb-50 shadow-xl">
           <nav className="flex flex-col gap-4">
-            <div className="py-2 border-b border-border flex justify-between items-center">
-              <span className="text-sm font-medium text-muted-foreground">Trading Mode</span>
-              {renderToggle()}
-            </div>
             <Link href="/markets" className={`text-lg font-medium py-2 border-b border-border ${pathname === '/markets' ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Markets</Link>
             <Link href="/trade" className={`text-lg font-medium py-2 border-b border-border ${pathname.startsWith('/trade') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Trade</Link>
             <Link href="/p2p" className={`text-lg font-medium py-2 border-b border-border ${pathname.startsWith('/p2p') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>P2P</Link>

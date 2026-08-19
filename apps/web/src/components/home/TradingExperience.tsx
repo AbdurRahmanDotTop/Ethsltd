@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
+import { DemoTradingCTA } from "./DemoTradingCTA"
 import { Card } from "@/components/ui/card"
 import { LineChart, BarChart3, Wallet, ShieldCheck } from "lucide-react"
 
@@ -75,9 +76,12 @@ export function TradingExperience() {
                 </li>
               ))}
             </ul>
-            <Button size="lg" className="px-8" asChild>
-              <Link href="/trade">Launch Terminal</Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button size="lg" className="w-full sm:w-auto px-8" asChild>
+                <Link href="/trade">Start Trading</Link>
+              </Button>
+              <DemoTradingCTA variant="outline" className="w-full sm:w-auto border-border hover:bg-foreground/5" />
+            </div>
           </div>
           
           <div className="relative">

@@ -16,10 +16,10 @@ export function MarketsHero() {
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-base" asChild>
-            <Link href="/trade">Start Trading</Link>
+            <Link href="/login">Log In</Link>
           </Button>
           <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base" asChild>
-            <Link href="/learn/demo-trading">Try Demo Trading</Link>
+            <Link href="/register">Sign Up</Link>
           </Button>
         </div>
       </div>

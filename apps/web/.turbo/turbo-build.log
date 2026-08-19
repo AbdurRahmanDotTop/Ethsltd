@@ -1,0 +1,121 @@
+
+> @ethsltd/web@0.1.0 build C:\Users\abdur\Downloads\Clients\Ethsltd\apps\web
+> next build
+
+▲ Next.js 16.3.0 (Turbopack)
+- Environments: .env.production, .env
+⚠ `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+⚠ Invalid next.config.ts options detected: 
+⚠     Unrecognized key(s) in object: 'eslint'
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+✓ Running next.config.ts took 57ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.0s
+  Skipping validation of types
+  Finished TypeScript config validation in 107ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/84) ...
+  Generating static pages using 7 workers (21/84) 
+  Generating static pages using 7 workers (42/84) 
+  Generating static pages using 7 workers (63/84) 
+✓ Generating static pages using 7 workers (84/84) in 798ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /account
+├ ƒ /account/api-keys
+├ ƒ /account/api-usage
+├ ƒ /account/bookings
+├ ƒ /account/bookings/[id]/chat
+├ ƒ /account/contracts
+├ ƒ /account/kyc
+├ ƒ /account/notifications
+├ ƒ /account/preferences
+├ ƒ /account/preferences/notifications
+├ ƒ /account/profile
+├ ƒ /account/security
+├ ƒ /account/sessions
+├ ƒ /admin
+├ ƒ /admin/api
+├ ƒ /admin/audit
+├ ƒ /admin/contracts
+├ ƒ /admin/currency-rates
+├ ƒ /admin/deposits
+├ ƒ /admin/deposits/settings
+├ ƒ /admin/experts
+├ ƒ /admin/kyc
+├ ƒ /admin/notifications
+├ ƒ /admin/orders
+├ ƒ /admin/p2p/disputes
+├ ƒ /admin/p2p/orders
+├ ƒ /admin/risk
+├ ƒ /admin/settings
+├ ƒ /admin/settings/payments
+├ ƒ /admin/support
+├ ƒ /admin/support/tickets/[id]
+├ ƒ /admin/system
+├ ƒ /admin/trades
+├ ƒ /admin/trading
+├ ƒ /admin/transactions
+├ ƒ /admin/users
+├ ƒ /admin/users/[id]
+├ ƒ /admin/wallets
+├ ƒ /admin/withdrawals
+├ ƒ /developers
+├ ƒ /developers/docs
+├ ƒ /developers/playground
+├ ƒ /expert/dashboard
+├ ƒ /expert/dashboard/bookings
+├ ƒ /expert/dashboard/earnings
+├ ƒ /expert/dashboard/messages
+├ ƒ /expert/dashboard/services
+├ ƒ /expert/dashboard/settings
+├ ƒ /experts
+├ ƒ /experts/[id]
+├ ƒ /fees
+├ ƒ /forgot-password
+├ ƒ /learn
+├ ƒ /learn/crypto-basics
+├ ƒ /learn/demo-trading
+├ ƒ /learn/market-insights
+├ ƒ /learn/security
+├ ƒ /learn/trading
+├ ƒ /legal/cookies
+├ ƒ /legal/privacy
+├ ƒ /legal/risk-disclosure
+├ ƒ /legal/security
+├ ƒ /legal/terms
+├ ƒ /login
+├ ƒ /markets
+├ ƒ /notifications
+├ ƒ /p2p
+├ ƒ /p2p/edit-ad/[id]
+├ ƒ /p2p/experts
+├ ƒ /p2p/experts/[id]
+├ ƒ /p2p/my-ads
+├ ƒ /p2p/order/[id]
+├ ƒ /p2p/orders
+├ ƒ /p2p/post-ad
+├ ƒ /register
+├ ƒ /reset-password
+├ ○ /robots.txt
+├ ○ /sitemap.xml
+├ ƒ /support
+├ ƒ /support/tickets
+├ ƒ /support/tickets/[id]
+├ ƒ /support/tickets/new
+├ ƒ /trade
+├ ƒ /trade/[symbol]
+├ ƒ /verify-email
+├ ƒ /wallet
+├ ƒ /wallet/deposit
+├ ƒ /wallet/history
+└ ƒ /wallet/withdraw
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

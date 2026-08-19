@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { DemoTradingCTA } from "./DemoTradingCTA"
 
 export function DemoTrading() {
   return (
@@ -60,9 +61,7 @@ export function DemoTrading() {
               Experience the ETHSLTD trading environment with virtual funds before moving into live trading.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="px-8" asChild>
-                <Link href="/trade">Try Demo Trading</Link>
-              </Button>
+              <DemoTradingCTA size="lg" className="px-8" variant="default" />
               <Button variant="outline" size="lg" className="border-border" asChild>
                 <Link href="/learn/demo-trading">How Demo Trading Works &rarr;</Link>
               </Button>

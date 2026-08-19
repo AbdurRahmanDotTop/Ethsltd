@@ -23,10 +23,10 @@ export function Hero() {
         
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base" asChild>
-            <Link href="/trade">Start Trading</Link>
+            <Link href="/login">Log In</Link>
           </Button>
           <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 px-8 text-base border-border hover:bg-foreground/5" asChild>
-            <Link href="/learn/demo-trading">Try Demo Trading</Link>
+            <Link href="/register">Sign Up</Link>
           </Button>
         </div>
         
