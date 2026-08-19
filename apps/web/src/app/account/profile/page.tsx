@@ -44,8 +44,10 @@ export default function ProfilePage() {
       const updated = await apiClient.updateProfile(data);
       if (updated.success && updated.data) {
         updateUser(updated.data);
+        setSuccess("Profile updated successfully.");
+      } else {
+        setError(updated.error || "Failed to update profile.");
       }
-      setSuccess("Profile updated successfully.");
     } catch (err: any) {
       setError(err.message || "Failed to update profile.");
     }
@@ -61,10 +63,18 @@ export default function ProfilePage() {
         setOtpSuccess(res.message || "OTP sent to your email!");
         setIsVerifyModalOpen(true);
       } else {
-        setError(res.error || "Failed to send OTP.");
+        if (isVerifyModalOpen) {
+          setOtpError(res.error || "Failed to send OTP.");
+        } else {
+          setError(res.error || "Failed to send OTP.");
+        }
       }
     } catch (err: any) {
-      setError(err.message || "Error requesting OTP.");
+      if (isVerifyModalOpen) {
+        setOtpError(err.message || "Error requesting OTP.");
+      } else {
+        setError(err.message || "Error requesting OTP.");
+      }
     } finally {
       setOtpLoading(false);
     }
@@ -83,6 +93,7 @@ export default function ProfilePage() {
         updateUser({ ...user, emailVerified: true });
         setIsVerifyModalOpen(false);
         setSuccess("Email successfully verified!");
+        setOtp("");
       } else {
         setOtpError(res.error || "Invalid OTP.");
       }
@@ -101,7 +112,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-        <div className="flex items-center gap-6 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
           <div className="w-20 h-20 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
             {user.avatarUrl ? (
               <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
@@ -133,15 +144,15 @@ export default function ProfilePage() {
 
           <div className="space-y-2">
             <Label>Email Address</Label>
-            <div className="flex items-center justify-between p-3 rounded-md border border-border bg-muted/50">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">{user.email}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-md border border-border bg-muted/50 gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 overflow-hidden">
+                <span className="text-sm font-medium truncate" title={user.email}>{user.email}</span>
                 {user.emailVerified ? (
-                  <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2.5 py-0.5 rounded-full font-semibold border border-green-200 dark:border-green-800">
+                  <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2.5 py-0.5 rounded-full font-semibold border border-green-200 dark:border-green-800 w-fit shrink-0">
                     Verified
                   </span>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2.5 py-0.5 rounded-full font-semibold border border-red-200 dark:border-red-800">
                       Unverified
                     </span>
@@ -151,7 +162,7 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-              <Button type="button" variant="link" className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground">Change email</Button>
+              <Button type="button" variant="link" className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground shrink-0 self-start sm:self-center">Change email</Button>
             </div>
           </div>
 

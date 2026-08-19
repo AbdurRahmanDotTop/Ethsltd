@@ -12,12 +12,19 @@ async function getSetting(dbInstance: any, key: string, defaultValue: string = '
   const now = Date.now();
   if (now - lastCacheUpdate > 60000 || !(key in settingsCache)) {
     // Refresh cache
-    const settings = await dbInstance.select().from(platformSettings).all();
-    settingsCache = {};
-    for (const s of settings) {
-      settingsCache[s.key] = s.value;
+    try {
+      const settings = await dbInstance.select().from(platformSettings).all();
+      settingsCache = {};
+      for (const s of settings) {
+        settingsCache[s.key] = s.value;
+      }
+      lastCacheUpdate = now;
+    } catch (error) {
+      console.error("Failed to fetch platformSettings for emails:", error);
+      // Do not update lastCacheUpdate so it tries again next time,
+      // but return defaultValue for now to prevent complete failure.
+      return settingsCache[key] ?? defaultValue;
     }
-    lastCacheUpdate = now;
   }
   return settingsCache[key] ?? defaultValue;
 }
