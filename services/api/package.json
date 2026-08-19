@@ -13,6 +13,7 @@
   "dependencies": {
     "@ethsltd/types": "workspace:^",
     "database": "workspace:*",
+    "decimal.js": "^10.6.0",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.13.1",
     "nodemailer": "^9.0.5",
