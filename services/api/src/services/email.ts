@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import { Bindings } from '../db';
-import { db } from '../db';
 import { platformSettings, emailDeliveryLogs } from 'database';
 import { eq } from 'drizzle-orm';
 import { renderVerificationEmail, renderAdminNotificationEmail, renderUserTransactionEmail, renderAdminTransactionEmail } from './email-templates';

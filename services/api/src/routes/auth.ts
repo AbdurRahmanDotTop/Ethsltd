@@ -145,9 +145,13 @@ authRoutes.post('/login', async (c) => {
     }
 
     const hashedPassword = await hashPassword(body.password);
-  if (user.passwordHash !== hashedPassword) {
-    return c.json({ success: false, error: 'Invalid credentials' }, 401);
-  }
+    if (user.passwordHash !== hashedPassword) {
+      return c.json({ success: false, error: 'Invalid credentials' }, 401);
+    }
+
+    if (user.status !== 'ACTIVE') {
+      return c.json({ success: false, error: `Account is ${user.status}` }, 403);
+    }
 
   const sessionId = crypto.randomUUID();
   const now = new Date();
@@ -198,7 +202,7 @@ authRoutes.post('/verify-email', async (c) => {
     if (!token) return c.json({ success: false, error: 'Token required' }, 400);
 
     const { verify } = await import('hono/jwt');
-    const payload = await verify(token, JWT_SECRET);
+    const payload = await verify(token, JWT_SECRET, "HS256");
     if (payload.purpose !== 'email_verify' || !payload.userId) {
       return c.json({ success: false, error: 'Invalid token' }, 400);
     }
