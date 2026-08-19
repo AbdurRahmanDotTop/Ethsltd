@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { sign } from 'hono/jwt';
 import { setCookie, deleteCookie } from 'hono/cookie';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { users, sessions, wallets } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
@@ -39,9 +39,9 @@ authRoutes.post('/register', async (c) => {
   const sessionId = crypto.randomUUID();
   const now = new Date();
 
-  // Check if this is the first user
-  const userCount = await db.select().from(users).all();
-  const isFirstUser = userCount.length === 0;
+  // Check if this is the first user without loading all users into memory
+  const result = await db.select({ count: sql<number>`count(*)` }).from(users).get();
+  const isFirstUser = result?.count === 0;
 
   const displayId = await generateBusinessId(db, body.email, 'USER');
 
@@ -176,8 +176,12 @@ authRoutes.post('/login', async (c) => {
 });
 
 authRoutes.get('/me', jwtMiddleware, async (c) => {
-  const user = c.get('user');
-  return c.json({ success: true, data: user });
+  try {
+    const user = c.get('user');
+    return c.json({ success: true, data: user });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 authRoutes.post('/verify-email', async (c) => {
@@ -200,83 +204,106 @@ authRoutes.post('/verify-email', async (c) => {
 });
 
 authRoutes.post('/profile/update', jwtMiddleware, async (c) => {
-  const body = await c.req.json();
-  const user = c.get('user');
-  const db = c.get('db');
-  const now = new Date();
+  try {
+    const body = await c.req.json();
+    const user = c.get('user');
+    const db = c.get('db');
+    const now = new Date();
 
-  await db.update(users)
-    .set({
-      displayName: body.displayName,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      updatedAt: now,
-    })
-    .where(eq(users.id, user.id));
+    await db.update(users)
+      .set({
+        displayName: body.displayName,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        updatedAt: now,
+      })
+      .where(eq(users.id, user.id));
 
-  const updatedUser = await db.select().from(users).where(eq(users.id, user.id)).get();
-  return c.json({ success: true, data: updatedUser });
+    const updatedUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+    return c.json({ success: true, data: updatedUser });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 authRoutes.get('/sessions', jwtMiddleware, async (c) => {
-  const user = c.get('user');
-  const db = c.get('db');
-  
-  const activeSessions = await db.select().from(sessions).where(eq(sessions.userId, user.id)).all();
-  
-  const jwtPayload = c.get('jwtPayload') as any;
-  const currentSessionId = jwtPayload?.sessionId;
+  try {
+    const user = c.get('user');
+    const db = c.get('db');
+    
+    const activeSessions = await db.select().from(sessions).where(eq(sessions.userId, user.id)).all();
+    
+    const jwtPayload = c.get('jwtPayload') as any;
+    const currentSessionId = jwtPayload?.sessionId;
 
-  const mappedSessions = activeSessions.map(s => ({
-    id: s.id,
-    device: s.userAgent?.includes('Mobile') ? 'Mobile' : 'Desktop',
-    browser: s.userAgent?.split(' ')[0] || 'Unknown Browser',
-    os: s.userAgent?.split(' ')[1] || 'Unknown OS',
-    lastActiveAt: s.createdAt,
-    isCurrentSession: s.id === currentSessionId
-  }));
+    const mappedSessions = activeSessions.map(s => ({
+      id: s.id,
+      device: s.userAgent?.includes('Mobile') ? 'Mobile' : 'Desktop',
+      browser: s.userAgent?.split(' ')[0] || 'Unknown Browser',
+      os: s.userAgent?.split(' ')[1] || 'Unknown OS',
+      lastActiveAt: s.createdAt,
+      isCurrentSession: s.id === currentSessionId
+    }));
 
-  return c.json({ success: true, data: mappedSessions });
+    return c.json({ success: true, data: mappedSessions });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 authRoutes.post('/sessions/revoke', jwtMiddleware, async (c) => {
-  const body = await c.req.json();
-  const user = c.get('user');
-  const db = c.get('db');
-  
-  await db.delete(sessions).where(and(eq(sessions.id, body.sessionId), eq(sessions.userId, user.id)));
-  
-  return c.json({ success: true });
+  try {
+    const body = await c.req.json();
+    const user = c.get('user');
+    const db = c.get('db');
+    
+    if (!body.sessionId) {
+      return c.json({ success: false, error: 'Session ID is required' }, 400);
+    }
+
+    await db.delete(sessions).where(and(eq(sessions.id, body.sessionId), eq(sessions.userId, user.id)));
+    
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 authRoutes.post('/sessions/revoke-all', jwtMiddleware, async (c) => {
-  const user = c.get('user');
-  const db = c.get('db');
-  const jwtPayload = c.get('jwtPayload') as any;
-  const currentSessionId = jwtPayload?.sessionId;
+  try {
+    const user = c.get('user');
+    const db = c.get('db');
+    const jwtPayload = c.get('jwtPayload') as any;
+    const currentSessionId = jwtPayload?.sessionId;
 
-  // Delete all except current
-  if (currentSessionId) {
-    const allSessions = await db.select().from(sessions).where(eq(sessions.userId, user.id)).all();
-    for (const s of allSessions) {
-      if (s.id !== currentSessionId) {
-        await db.delete(sessions).where(eq(sessions.id, s.id));
+    if (currentSessionId) {
+      const allSessions = await db.select().from(sessions).where(eq(sessions.userId, user.id)).all();
+      for (const s of allSessions) {
+        if (s.id !== currentSessionId) {
+          await db.delete(sessions).where(eq(sessions.id, s.id));
+        }
       }
     }
+    
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
   }
-  
-  return c.json({ success: true });
 });
 
 authRoutes.post('/logout', jwtMiddleware, async (c) => {
-  const db = c.get('db');
-  const jwtPayload = c.get('jwtPayload') as any;
-  const currentSessionId = jwtPayload?.sessionId;
+  try {
+    const db = c.get('db');
+    const jwtPayload = c.get('jwtPayload') as any;
+    const currentSessionId = jwtPayload?.sessionId;
 
-  if (currentSessionId) {
-    await db.delete(sessions).where(eq(sessions.id, currentSessionId));
+    if (currentSessionId) {
+      await db.delete(sessions).where(eq(sessions.id, currentSessionId));
+    }
+
+    deleteCookie(c, 'ethsltd_session', { path: '/', secure: c.req.url.startsWith('https://'), sameSite: 'Lax', domain: getCookieDomain(c) });
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
   }
-
-  deleteCookie(c, 'ethsltd_session', { path: '/', domain: getCookieDomain(c) });
-  return c.json({ success: true });
 });
