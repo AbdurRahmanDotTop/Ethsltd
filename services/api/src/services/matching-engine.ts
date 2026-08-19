@@ -1,6 +1,7 @@
-import { eq, and, asc, desc } from 'drizzle-orm';
-import { orders, trades, wallets, users } from 'database';
+import { eq, and } from 'drizzle-orm';
+import { orders, trades, wallets } from 'database';
 import { generateBusinessId } from './id-generator';
+import Decimal from 'decimal.js';
 
 export async function processOrderMatching(db: any, newOrder: any, marketInfo: any) {
   const isBuy = newOrder.side === 'BUY';
@@ -20,49 +21,49 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
       )
     );
 
-  // If new order is LIMIT, it can only match if price crosses
-  if (newOrder.type === 'LIMIT') {
-    // We filter in memory for simplicity or add to query, but let's do it in memory.
-  }
-
   let matchingOrders = await matchingOrdersQuery.all();
 
   // Sort: Buy orders want lowest Ask (asc), Sell orders want highest Bid (desc)
   matchingOrders.sort((a: any, b: any) => {
-    const pA = parseFloat(a.price);
-    const pB = parseFloat(b.price);
-    return isBuy ? pA - pB : pB - pA;
+    const pA = new Decimal(a.price);
+    const pB = new Decimal(b.price);
+    if (isBuy) {
+      return pA.cmp(pB); // ascending
+    } else {
+      return pB.cmp(pA); // descending
+    }
   });
 
-  let remainingToFill = parseFloat(newOrder.remainingAmount);
-  let totalFilledAmount = 0;
-  let totalSpentOrReceived = 0;
+  let remainingToFill = new Decimal(newOrder.remainingAmount);
+  let totalFilledAmount = new Decimal(0);
+  let totalSpentOrReceived = new Decimal(0);
   
   const now = new Date();
 
   for (const makerOrder of matchingOrders) {
-    if (remainingToFill <= 0) break;
+    if (remainingToFill.lte(0)) break;
 
-    const makerPrice = parseFloat(makerOrder.price);
+    const makerPrice = new Decimal(makerOrder.price);
     
     if (newOrder.type === 'LIMIT') {
-      const takerPrice = parseFloat(newOrder.price);
-      if (isBuy && takerPrice < makerPrice) break; // limit buy price is lower than lowest ask
-      if (!isBuy && takerPrice > makerPrice) break; // limit sell price is higher than highest bid
+      const takerPrice = new Decimal(newOrder.price);
+      if (isBuy && takerPrice.lt(makerPrice)) break; // limit buy price is lower than lowest ask
+      if (!isBuy && takerPrice.gt(makerPrice)) break; // limit sell price is higher than highest bid
     }
 
-    const makerRemaining = parseFloat(makerOrder.remainingAmount);
-    const fillAmount = Math.min(remainingToFill, makerRemaining);
+    const makerRemaining = new Decimal(makerOrder.remainingAmount);
+    const fillAmount = Decimal.min(remainingToFill, makerRemaining);
 
     // Execute match
-    remainingToFill -= fillAmount;
-    totalFilledAmount += fillAmount;
-    totalSpentOrReceived += fillAmount * makerPrice;
+    remainingToFill = remainingToFill.minus(fillAmount);
+    totalFilledAmount = totalFilledAmount.plus(fillAmount);
+    const cost = fillAmount.times(makerPrice);
+    totalSpentOrReceived = totalSpentOrReceived.plus(cost);
 
     // Update Maker Order
-    const newMakerRemaining = makerRemaining - fillAmount;
-    const newMakerFilled = parseFloat(makerOrder.filledAmount) + fillAmount;
-    const makerStatus = newMakerRemaining <= 0 ? 'FILLED' : 'OPEN';
+    const newMakerRemaining = makerRemaining.minus(fillAmount);
+    const newMakerFilled = new Decimal(makerOrder.filledAmount).plus(fillAmount);
+    const makerStatus = newMakerRemaining.lte(0) ? 'FILLED' : 'OPEN';
 
     await db.update(orders).set({
       remainingAmount: newMakerRemaining.toString(),
@@ -73,10 +74,10 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
 
     // Create Trade Record
     const tradeId = crypto.randomUUID();
-    const tradeDisplayId = await generateBusinessId(db, 'system', 'TRAD'); // We don't have user email here easily, default to system prefix or similar
+    const tradeDisplayId = await generateBusinessId(db, 'system', 'TRAD');
 
-    const makerFeeAmt = (fillAmount * makerPrice) * parseFloat(marketInfo.makerFee);
-    const takerFeeAmt = (fillAmount * makerPrice) * parseFloat(marketInfo.takerFee);
+    const makerFeeAmt = fillAmount.times(makerPrice).times(marketInfo.makerFee);
+    const takerFeeAmt = fillAmount.times(makerPrice).times(marketInfo.takerFee);
 
     await db.insert(trades).values({
       id: tradeId,
@@ -93,20 +94,18 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
     });
 
     // --- Update Maker Wallet ---
-    // Maker sold (opposite is SELL). They receive Quote Asset, spend Base Asset.
-    // Maker bought (opposite is BUY). They receive Base Asset, spend Quote Asset.
     const makerReceiveAsset = makerOrder.side === 'BUY' ? marketInfo.baseAsset : marketInfo.quoteAsset;
-    const makerReceiveGross = makerOrder.side === 'BUY' ? fillAmount : fillAmount * makerPrice;
+    const makerReceiveGross = makerOrder.side === 'BUY' ? fillAmount : fillAmount.times(makerPrice);
     
-    // In our simplified logic, maker fee is charged in the receive asset.
-    const mFee = makerReceiveGross * parseFloat(marketInfo.makerFee);
-    const makerReceiveNet = makerReceiveGross - mFee;
+    // Fee in receive asset
+    const mFee = makerReceiveGross.times(marketInfo.makerFee);
+    const makerReceiveNet = makerReceiveGross.minus(mFee);
 
     // Credit maker receive wallet
     let mRecWallet = await db.select().from(wallets).where(and(eq(wallets.userId, makerOrder.userId), eq(wallets.assetSymbol, makerReceiveAsset), eq(wallets.type, mode))).get();
     if (mRecWallet) {
       await db.update(wallets).set({ 
-        balance: (parseFloat(mRecWallet.balance) + makerReceiveNet).toString(),
+        balance: new Decimal(mRecWallet.balance).plus(makerReceiveNet).toString(),
         updatedAt: now 
       }).where(eq(wallets.id, mRecWallet.id));
     } else {
@@ -127,21 +126,21 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
 
     // Un-lock maker spend wallet
     const makerSpendAsset = makerOrder.side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
-    const makerSpendGross = makerOrder.side === 'BUY' ? fillAmount * makerPrice : fillAmount;
+    const makerSpendGross = makerOrder.side === 'BUY' ? fillAmount.times(makerPrice) : fillAmount;
     
     let mSpdWallet = await db.select().from(wallets).where(and(eq(wallets.userId, makerOrder.userId), eq(wallets.assetSymbol, makerSpendAsset), eq(wallets.type, mode))).get();
     if (mSpdWallet) {
       await db.update(wallets).set({
-        lockedBalance: Math.max(0, parseFloat(mSpdWallet.lockedBalance) - makerSpendGross).toString(),
+        lockedBalance: Decimal.max(0, new Decimal(mSpdWallet.lockedBalance).minus(makerSpendGross)).toString(),
         updatedAt: now
       }).where(eq(wallets.id, mSpdWallet.id));
     }
   }
 
   return {
-    remainingToFill,
-    totalFilledAmount,
-    totalSpentOrReceived,
-    averagePrice: totalFilledAmount > 0 ? totalSpentOrReceived / totalFilledAmount : 0
+    remainingToFill: remainingToFill.toNumber(),
+    totalFilledAmount: totalFilledAmount.toNumber(),
+    totalSpentOrReceived: totalSpentOrReceived.toNumber(),
+    averagePrice: totalFilledAmount.gt(0) ? totalSpentOrReceived.div(totalFilledAmount).toNumber() : 0
   };
 }
