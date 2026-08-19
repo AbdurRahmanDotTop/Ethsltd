@@ -168,3 +168,37 @@ adminCurrencyRateRoutes.get('/:code/history', async (c) => {
     return c.json({ success: false, error: 'Failed to fetch rate history' }, 500);
   }
 });
+
+// DELETE a currency rate
+adminCurrencyRateRoutes.delete('/:code', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const code = c.req.param('code').toUpperCase();
+
+  if (user.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can delete currency rates' }, 403);
+  }
+
+  // Prevent deleting base assets like USDT
+  if (['USDT', 'USD', 'EUR', 'GBP'].includes(code)) {
+    return c.json({ success: false, error: 'Cannot delete core system currencies.' }, 400);
+  }
+
+  try {
+    // Check if it exists
+    const existing = await db.select().from(currencyRates).where(eq(currencyRates.code, code)).get();
+    if (!existing) {
+      return c.json({ success: false, error: 'Currency not found' }, 404);
+    }
+
+    // Delete history first due to foreign key constraints if any
+    await db.delete(currencyRateHistory).where(eq(currencyRateHistory.currencyCode, code));
+    
+    // Delete the rate
+    await db.delete(currencyRates).where(eq(currencyRates.code, code));
+
+    return c.json({ success: true, message: 'Currency deleted successfully' });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to delete currency. It might be referenced by other records.' }, 500);
+  }
+});

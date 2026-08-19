@@ -133,6 +133,20 @@ export default function CurrencyRatesAdminPage() {
     }
   };
 
+  const handleDelete = async (code: string) => {
+    if (!confirm(`Are you sure you want to permanently delete currency ${code}? This action cannot be undone.`)) return;
+    try {
+      const res = await apiClient.adminDeleteCurrencyRate(code);
+      if (res.success) {
+        fetchRates();
+      } else {
+        alert(res.error);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   const openEdit = (rate: CurrencyRate) => {
     setSelectedCurrency(rate);
     setFormData({
@@ -237,6 +251,13 @@ export default function CurrencyRatesAdminPage() {
                           title="View History"
                         >
                           <History size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(rate.code)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                          title="Delete Rate"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>

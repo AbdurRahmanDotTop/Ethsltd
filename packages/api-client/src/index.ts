@@ -864,6 +864,12 @@ export class EthsltdClient {
     });
   }
 
+  async adminDeleteCurrencyRate(code: string) {
+    return this.request<any>(`/api/v1/admin/currency-rates/${code}`, {
+      method: 'DELETE',
+    });
+  }
+
   async adminGetCurrencyRateHistory(code: string) {
     return this.request<any[]>(`/api/v1/admin/currency-rates/${code}/history`);
   }

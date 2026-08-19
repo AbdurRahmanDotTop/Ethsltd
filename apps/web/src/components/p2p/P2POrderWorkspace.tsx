@@ -111,7 +111,16 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
     try {
       const res = await apiClient.updateP2pOrderStatus(order.id, "pay");
       if (res.success) {
-        setOrder({ ...order, status: "BUYER_MARKED_PAID" });
+        setOrder({ 
+          ...order, 
+          status: "BUYER_MARKED_PAID",
+          permissions: {
+            ...(order.permissions || {}),
+            canMarkPaid: false,
+            canCancel: false,
+            canDispute: true
+          }
+        });
         toast.success("Payment marked as complete.");
         
         if (mode === 'DEMO') {

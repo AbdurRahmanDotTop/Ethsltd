@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { currencyRates, payment_methods, platformSettings } from 'database';
 import { getRealPrice } from '../utils/price';
+import { getFeeConfig, calculateFee } from './fees';
 import Decimal from 'decimal.js';
 
 const KNOWN_CRYPTOS = ['BTC', 'ETH', 'USDT', 'USDC', 'SOL', 'BNB', 'XRP', 'TRX', 'ADA', 'DOGE', 'LTC', 'BCH', 'MATIC', 'DOT'];
@@ -48,7 +49,7 @@ export async function calculateDepositPreview(
   }
 
   let depositFee = new Decimal(0);
-  if (paymentMethodId) {
+  if (paymentMethodId && !['AUTO', 'MANUAL', 'BANK_TRANSFER'].includes(paymentMethodId)) {
     const pm = await db.select().from(payment_methods).where(eq(payment_methods.id, paymentMethodId)).get();
     if (pm) {
       if (pm.fee_type === 'FIXED') {
@@ -61,11 +62,11 @@ export async function calculateDepositPreview(
 
   let otherFees = new Decimal(0);
   try {
-    const generalFeeSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'GLOBAL_DEPOSIT_FEE_USDT')).get();
-    if (generalFeeSetting) {
-      otherFees = new Decimal(generalFeeSetting.value);
-    }
-  } catch(e) {}
+    const feeConfig = await getFeeConfig(db, 'DEPOSIT_FEE', { type: 'FIXED', amount: 0, percentage: 0 });
+    otherFees = new Decimal(calculateFee(grossUsdt.toNumber(), feeConfig));
+  } catch(e) {
+    console.error("Failed to calculate global deposit fee", e);
+  }
 
   const totalFees = depositFee.plus(otherFees);
   const netUsdt = grossUsdt.minus(totalFees);
@@ -106,11 +107,11 @@ export async function calculateWithdrawalPreview(
 
   let otherFees = new Decimal(0);
   try {
-    const generalFeeSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'GLOBAL_WITHDRAWAL_FEE_USDT')).get();
-    if (generalFeeSetting) {
-      otherFees = new Decimal(generalFeeSetting.value);
-    }
-  } catch(e) {}
+    const feeConfig = await getFeeConfig(db, 'WITHDRAWAL_FEE', { type: 'FIXED', amount: 0, percentage: 0 });
+    otherFees = new Decimal(calculateFee(usdtAmount, feeConfig));
+  } catch(e) {
+    console.error("Failed to calculate global withdrawal fee", e);
+  }
 
   const totalFees = withdrawalFee.plus(otherFees);
   const netUsdtReceived = new Decimal(usdtAmount).minus(totalFees);

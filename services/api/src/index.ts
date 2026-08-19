@@ -27,7 +27,7 @@ app.use('*', cors({
     const allowed = ['https://ethsltd.com', 'https://www.ethsltd.com'];
     return allowed.includes(origin) ? origin : 'https://ethsltd.com';
   },
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-Trading-Mode'],
   credentials: true,
 }));

@@ -68,7 +68,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   const [amount, setAmount] = useState("");
   const [transactionHash, setTransactionHash] = useState("");
   const [paymentReference, setPaymentReference] = useState("");
-  const [bankCurrency, setBankCurrency] = useState("USD");
+  const [bankCurrency, setBankCurrency] = useState("INR");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
