@@ -17,3 +17,5 @@ migrations_dir = "../../database/migrations"
 [vars]
 CREGIS_PROXY_URL = "https://techilyfly.com/ethsltd/cregis-proxy.php"
 CREGIS_PROXY_SECRET = "ETHSLTD_CREGIS_PROXY_SECURE_TOKEN_2026"
+SMTP_HOST = "smtp.hostinger.com"
+SMTP_PORT = "465"
