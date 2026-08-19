@@ -4,37 +4,29 @@ import { useState, useEffect } from "react";
 import { Search, RefreshCw, Eye, EyeOff, Star, ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { useWalletStore } from "@/stores/wallet-store";
 import { useRouter } from "next/navigation";
 
 export function GlobalWalletDashboard() {
-  const [balance, setBalance] = useState<any>(null);
+  const { balances, fetchBalances } = useWalletStore();
   const [showBalance, setShowBalance] = useState(true);
   const [hideSmallAssets, setHideSmallAssets] = useState(false);
   const { user } = useAuthStore();
   const router = useRouter();
 
-  const fetchBalance = async () => {
-    try {
-      const res = await apiClient.getWalletPortfolio();
-      if (res.success && res.data) {
-        setBalance(res.data);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   useEffect(() => {
-    fetchBalance();
-  }, []);
+    fetchBalances('REAL');
+  }, [fetchBalances]);
 
-  const totalUsdt = balance?.totalValue || 0;
+  const totalUsdt = balances.reduce((acc, b) => acc + (b.usdValue || 0), 0);
   
-  // Dummy individual assets if real ones aren't available in structure
-  const assets = balance?.assets || [
-    { asset: "BTC", available: 0, inOrder: 0, usdValue: 0 },
-    { asset: "ETH", available: 0, inOrder: 0, usdValue: 0 },
+  // Provide dummy assets if none exist so it looks like the screenshot
+  const displayAssets = balances.length > 0 ? balances : [
+    { symbol: "BTC", available: 0, locked: 0, total: 0, usdValue: 0 },
+    { symbol: "ETH", available: 0, locked: 0, total: 0, usdValue: 0 },
   ];
+
+
 
   return (
     <div className="flex flex-col min-h-screen bg-[#121212] text-white font-sans w-full max-w-[1280px] mx-auto pb-24">
@@ -43,7 +35,7 @@ export function GlobalWalletDashboard() {
         <div className="bg-[#1A1C24] border border-white/10 rounded-lg flex items-center justify-between px-3 py-2">
           <Star className="w-5 h-5 text-gray-400" />
           <span className="text-sm font-medium">ETHSLTD</span>
-          <button onClick={fetchBalance}><RefreshCw className="w-4 h-4 text-gray-400" /></button>
+          <button onClick={() => fetchBalances('REAL')}><RefreshCw className="w-4 h-4 text-gray-400" /></button>
         </div>
       </div>
 
@@ -132,26 +124,26 @@ export function GlobalWalletDashboard() {
 
       {/* Asset List Items */}
       <div className="mt-4 px-4 flex flex-col gap-3">
-        {assets.map((asset: any, i: number) => (
+        {displayAssets.map((asset: any, i: number) => (
           <div key={i} className="bg-[#1A1C24] border border-white/5 rounded-xl p-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#00C087] font-bold text-xs">
-                  {(asset.asset || asset.symbol || 'C').charAt(0)}
+                  {asset.symbol.charAt(0)}
                 </div>
-                <span className="font-bold text-lg">{asset.asset || asset.symbol}</span>
+                <span className="font-bold text-lg">{asset.symbol}</span>
               </div>
               <div className="text-right">
-                <p className="font-bold">{showBalance ? (asset.total || (asset.available + (asset.inOrder || 0))).toFixed(8) : '********'}</p>
-                <p className="text-xs text-gray-400">≈{showBalance ? (asset.usdValue || asset.value || 0).toFixed(4) : '********'} USD</p>
+                <p className="font-bold">{showBalance ? Number(asset.total || 0).toFixed(8) : '********'}</p>
+                <p className="text-xs text-gray-400">≈{showBalance ? Number(asset.usdValue || 0).toFixed(4) : '********'} USD</p>
               </div>
             </div>
             <div className="flex items-center justify-between pt-3 text-xs text-gray-400">
               <div className="flex flex-col">
-                <span>Available {showBalance ? asset.available.toFixed(8) : '********'}</span>
+                <span>Available {showBalance ? Number(asset.available || 0).toFixed(8) : '********'}</span>
               </div>
               <div className="flex flex-col text-right">
-                <span>On orders {showBalance ? (asset.inOrder || asset.onOrders || 0).toFixed(8) : '********'}</span>
+                <span>On orders {showBalance ? Number(asset.locked || 0).toFixed(8) : '********'}</span>
               </div>
             </div>
           </div>
