@@ -7,6 +7,7 @@ import { CregisClient } from '../services/cregis';
 import { getFeeConfig, calculateFee, getLimit } from '../services/fees';
 import { generateBusinessId } from '../services/id-generator';
 import { calculateDepositPreview, calculateWithdrawalPreview } from '../services/calculations';
+import { EmailService } from '../services/email';
 
 export const walletRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -402,6 +403,22 @@ walletRoutes.post('/deposit', async (c) => {
          updated_at: now,
       });
 
+      // Async Email Dispatch
+      const emailService = new EmailService(c.env, db);
+      c.executionCtx.waitUntil((async () => {
+        try {
+          await emailService.sendAdminDepositAlert({
+            id: transactionId,
+            userId: user.id,
+            amount: amountNum.toString(),
+            asset: assetSymbol,
+            mode: 'REAL',
+          });
+        } catch (e) {
+          console.error("Background email failed for deposit", e);
+        }
+      })());
+
       return c.json({ success: true, message: `${depositMethod} deposit submitted successfully. Awaiting admin review.` });
     } else {
       return c.json({ success: false, error: 'Invalid deposit method for REAL mode' }, 400);
@@ -519,6 +536,22 @@ walletRoutes.post('/withdraw', async (c) => {
         createdAt: now,
         updatedAt: now,
       });
+
+      // Async Email Dispatch
+      const emailService = new EmailService(c.env, db);
+      c.executionCtx.waitUntil((async () => {
+        try {
+          await emailService.sendAdminWithdrawalAlert({
+            id: transactionId,
+            userId: user.id,
+            amount: parsedAmount.toString(),
+            asset: assetSymbol,
+            mode: 'REAL',
+          });
+        } catch (e) {
+          console.error("Background email failed for withdrawal", e);
+        }
+      })());
 
       return c.json({ 
         success: true, 

@@ -6,7 +6,7 @@ import { Bindings, Variables } from '../db';
 import { users, sessions, wallets } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
-
+import { EmailService } from '../services/email';
 import { getCookieDomain } from '../utils/cookie';
 
 export const authRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -99,6 +99,21 @@ authRoutes.post('/register', async (c) => {
 
   const user = await db.select().from(users).where(eq(users.id, userId)).get();
 
+  // Async Email Dispatch
+  const emailService = new EmailService(c.env, db);
+  const verifyToken = await sign({ purpose: 'email_verify', userId: user?.id, exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) }, JWT_SECRET);
+  // We determine the origin based on request headers (or a configured APP_URL)
+  const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
+  
+  c.executionCtx.waitUntil((async () => {
+    try {
+      await emailService.sendAdminNewUserAlert(user);
+      await emailService.sendVerificationEmail(user!.email, verifyToken, appUrl);
+    } catch (e) {
+      console.error("Background email failed", e);
+    }
+  })());
+
   return c.json({ success: true, token, data: { user } });
   } catch (err: any) {
     return c.json({ success: false, error: err.message, stack: err.stack }, 500);
@@ -152,6 +167,25 @@ authRoutes.post('/login', async (c) => {
 authRoutes.get('/me', jwtMiddleware, async (c) => {
   const user = c.get('user');
   return c.json({ success: true, data: user });
+});
+
+authRoutes.post('/verify-email', async (c) => {
+  const body = await c.req.json();
+  const token = body.token;
+  if (!token) return c.json({ success: false, error: 'Token required' }, 400);
+
+  try {
+    const { verify } = await import('hono/jwt');
+    const payload = await verify(token, JWT_SECRET);
+    if (payload.purpose !== 'email_verify' || !payload.userId) {
+      return c.json({ success: false, error: 'Invalid token' }, 400);
+    }
+    const db = c.get('db');
+    await db.update(users).set({ emailVerified: true }).where(eq(users.id, payload.userId as string));
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ success: false, error: 'Token expired or invalid' }, 400);
+  }
 });
 
 authRoutes.post('/profile/update', jwtMiddleware, async (c) => {

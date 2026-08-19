@@ -16,3 +16,4 @@ export * from './platform_settings';
 export * from './currency_rates';
 export * from './asset_conversions';
 export * from './sequences';
+export * from './email_logs';

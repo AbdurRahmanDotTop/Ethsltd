@@ -608,6 +608,18 @@ export class EthsltdClient {
     });
   }
 
+  // Admin System Settings
+  async adminGetSystemSettings() {
+    return this.request<any>('/api/v1/admin/system-settings');
+  }
+
+  async adminUpdateSystemSettings(data: Record<string, string>) {
+    return this.request<any>('/api/v1/admin/system-settings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // ==========================
   // SETTINGS (Profile, MFA, Sessions)
   // ==========================

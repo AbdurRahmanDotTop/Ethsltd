@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Settings, Shield, Server, Coins, Check, X, 
-  Save, AlertCircle, RefreshCw, KeyRound, Globe
+  Save, AlertCircle, RefreshCw, KeyRound, Globe, Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@ethsltd/api-client";
@@ -34,8 +34,17 @@ export default function AdminSettingsPage() {
     sessionTimeout: "30",
     ipWhitelist: "",
     maxFailedLogins: "5",
+    ipWhitelist: "",
+    maxFailedLogins: "5",
     globalApiStatus: true,
-    apiRateLimit: "100"
+    apiRateLimit: "100",
+    
+    // Notification Settings
+    EMAIL_ADMIN: "admin@ethsltd.com",
+    EMAIL_SUPPORT: "support@ethsltd.com",
+    EMAIL_NOTIFY_NEW_USER: true,
+    EMAIL_NOTIFY_DEPOSIT: true,
+    EMAIL_NOTIFY_WITHDRAWAL: true,
   });
 
   useEffect(() => {
@@ -66,6 +75,19 @@ export default function AdminSettingsPage() {
           if (s.key === 'TRADING_FEE_TAKER') newForm.takerFee = parseJsonSafely(s.value)?.percentage?.toString() || s.value;
         });
         setFormData(newForm);
+      }
+
+      // Load System Settings for Notifications
+      const sysRes = await apiClient.adminGetSystemSettings();
+      if (sysRes.success && sysRes.data) {
+        setFormData(prev => ({
+          ...prev,
+          EMAIL_ADMIN: sysRes.data.EMAIL_ADMIN || "admin@ethsltd.com",
+          EMAIL_SUPPORT: sysRes.data.EMAIL_SUPPORT || "support@ethsltd.com",
+          EMAIL_NOTIFY_NEW_USER: sysRes.data.EMAIL_NOTIFY_NEW_USER !== 'false',
+          EMAIL_NOTIFY_DEPOSIT: sysRes.data.EMAIL_NOTIFY_DEPOSIT !== 'false',
+          EMAIL_NOTIFY_WITHDRAWAL: sysRes.data.EMAIL_NOTIFY_WITHDRAWAL !== 'false',
+        }));
       }
     } catch (err) {
       console.error(err);
@@ -101,8 +123,14 @@ export default function AdminSettingsPage() {
           amount: parseFloat(formData.depositFeeAmount),
           percentage: parseFloat(formData.depositFeePercentage)
         }) }),
-        apiClient.adminUpdatePlatformSetting('TRADING_FEE_MAKER', { value: JSON.stringify({ type: 'PERCENTAGE', percentage: parseFloat(formData.makerFee) }) }),
-        apiClient.adminUpdatePlatformSetting('TRADING_FEE_TAKER', { value: JSON.stringify({ type: 'PERCENTAGE', percentage: parseFloat(formData.takerFee) }) })
+        apiClient.adminUpdatePlatformSetting('TRADING_FEE_TAKER', { value: JSON.stringify({ type: 'PERCENTAGE', percentage: parseFloat(formData.takerFee) }) }),
+        apiClient.adminUpdateSystemSettings({
+          EMAIL_ADMIN: formData.EMAIL_ADMIN,
+          EMAIL_SUPPORT: formData.EMAIL_SUPPORT,
+          EMAIL_NOTIFY_NEW_USER: formData.EMAIL_NOTIFY_NEW_USER.toString(),
+          EMAIL_NOTIFY_DEPOSIT: formData.EMAIL_NOTIFY_DEPOSIT.toString(),
+          EMAIL_NOTIFY_WITHDRAWAL: formData.EMAIL_NOTIFY_WITHDRAWAL.toString(),
+        })
       ];
       await Promise.all(updates);
       setSaved(true);
@@ -162,6 +190,7 @@ export default function AdminSettingsPage() {
             { id: "fees", label: "Fees & Limits", icon: Coins },
             { id: "security", label: "Security & Access", icon: Shield },
             { id: "api", label: "API & Webhooks", icon: Globe },
+            { id: "notifications", label: "Email Notifications", icon: Mail },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
@@ -413,6 +442,65 @@ export default function AdminSettingsPage() {
                       <h4 className="text-sm font-medium text-yellow-500">API Documentation Required</h4>
                       <p className="text-xs text-muted-foreground mt-1">Changes to API limits will affect active algorithmic traders. Ensure clients are notified before reducing limits.</p>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* EMAIL NOTIFICATIONS */}
+          {activeTab === "notifications" && (
+            <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+              <div className="px-6 py-4 border-b border-border bg-muted/20">
+                <h3 className="text-lg font-medium">Email Notification Settings</h3>
+                <p className="text-sm text-muted-foreground">Manage system email addresses and notification events.</p>
+              </div>
+              <div className="p-6 space-y-6">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Admin Email Address</label>
+                    <p className="text-xs text-muted-foreground">Receives alerts for new users, deposits, and withdrawals.</p>
+                    <input 
+                      type="email" 
+                      value={formData.EMAIL_ADMIN}
+                      onChange={(e) => handleInputChange('EMAIL_ADMIN', e.target.value)}
+                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Support Email Address</label>
+                    <p className="text-xs text-muted-foreground">Used as the "Reply-To" address for user-facing emails.</p>
+                    <input 
+                      type="email" 
+                      value={formData.EMAIL_SUPPORT}
+                      onChange={(e) => handleInputChange('EMAIL_SUPPORT', e.target.value)}
+                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" 
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-border space-y-2">
+                  <h4 className="text-sm font-medium mb-4">Admin Alert Events</h4>
+                  <div className="space-y-4 divide-y divide-border">
+                    <CustomSwitch 
+                      label="New User Registrations" 
+                      description="Send an email to the Admin when a new user registers."
+                      checked={formData.EMAIL_NOTIFY_NEW_USER} 
+                      onChange={(c) => handleInputChange('EMAIL_NOTIFY_NEW_USER', c)} 
+                    />
+                    <CustomSwitch 
+                      label="New Deposits" 
+                      description="Send an email to the Admin when a new deposit is initiated."
+                      checked={formData.EMAIL_NOTIFY_DEPOSIT} 
+                      onChange={(c) => handleInputChange('EMAIL_NOTIFY_DEPOSIT', c)} 
+                    />
+                    <CustomSwitch 
+                      label="New Withdrawals" 
+                      description="Send an email to the Admin when a user requests a withdrawal."
+                      checked={formData.EMAIL_NOTIFY_WITHDRAWAL} 
+                      onChange={(c) => handleInputChange('EMAIL_NOTIFY_WITHDRAWAL', c)} 
+                    />
                   </div>
                 </div>
               </div>
