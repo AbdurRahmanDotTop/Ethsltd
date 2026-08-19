@@ -35,7 +35,7 @@ export default function ApiUsagePage() {
           {/* Metrics Grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-card border border-border p-5 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
                 <span className="text-sm font-medium text-muted-foreground">Requests (Today)</span>
                 <Activity className="w-4 h-4 text-brand-primary" />
               </div>
@@ -43,7 +43,7 @@ export default function ApiUsagePage() {
             </div>
 
             <div className="bg-card border border-border p-5 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
                 <span className="text-sm font-medium text-muted-foreground">Successful</span>
                 <ShieldCheck className="w-4 h-4 text-green-500" />
               </div>
@@ -51,7 +51,7 @@ export default function ApiUsagePage() {
             </div>
 
             <div className="bg-card border border-border p-5 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
                 <span className="text-sm font-medium text-muted-foreground">Failed</span>
                 <XCircle className="w-4 h-4 text-red-500" />
               </div>
@@ -59,7 +59,7 @@ export default function ApiUsagePage() {
             </div>
 
             <div className="bg-card border border-border p-5 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
                 <span className="text-sm font-medium text-muted-foreground">Rate Limited</span>
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
               </div>

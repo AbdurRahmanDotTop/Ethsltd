@@ -23,7 +23,7 @@ export function DemoTrading() {
               </div>
               
               <div className="space-y-4 mb-8">
-                <div className="bg-muted rounded-lg p-4 flex justify-between items-center border border-border">
+                <div className="bg-muted rounded-lg p-4 flex justify-between items-center border border-border flex-wrap gap-y-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-foreground">BTC/USDT</span>
                     <span className="text-xs text-success bg-success/10 w-fit px-2 py-0.5 rounded mt-1">BUY</span>
@@ -34,7 +34,7 @@ export function DemoTrading() {
                   </div>
                 </div>
                 
-                <div className="bg-muted rounded-lg p-4 flex justify-between items-center border border-border">
+                <div className="bg-muted rounded-lg p-4 flex justify-between items-center border border-border flex-wrap gap-y-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-foreground">ETH/USDT</span>
                     <span className="text-xs text-danger bg-danger/10 w-fit px-2 py-0.5 rounded mt-1">SELL</span>
@@ -46,7 +46,7 @@ export function DemoTrading() {
                 </div>
               </div>
               
-              <div className="pt-6 border-t border-border flex justify-between items-center">
+              <div className="pt-6 border-t border-border flex justify-between items-center flex-wrap gap-y-4">
                 <span className="text-muted-foreground font-medium">P&L</span>
                 <span className="text-success font-display text-xl font-bold">+$124.50</span>
               </div>

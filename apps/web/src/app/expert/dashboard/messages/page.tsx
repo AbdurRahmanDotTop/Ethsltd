@@ -157,7 +157,7 @@ export default function ExpertMessagesPage() {
                 onClick={() => setSelectedBooking(booking)}
                 className={`p-4 border-b border-border cursor-pointer transition-colors hover:bg-muted ${selectedBooking?.id === booking.id ? 'bg-muted border-l-4 border-l-brand-500' : 'border-l-4 border-l-transparent'}`}
               >
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1 flex-wrap gap-y-4">
                   <div className="font-medium text-foreground flex items-center gap-2">
                     <User className="w-4 h-4 text-muted-foreground" />
                     {booking.userDisplayName || 'Client'}
@@ -177,7 +177,7 @@ export default function ExpertMessagesPage() {
         {selectedBooking ? (
           <>
             {/* Chat Header */}
-            <div className="h-16 px-6 border-b border-border flex items-center justify-between bg-card shrink-0">
+            <div className="h-16 px-6 border-b border-border flex items-center justify-between bg-card shrink-0 flex-wrap gap-y-4">
               <div>
                 <h2 className="font-semibold text-foreground">{selectedBooking.userDisplayName || 'Client'}</h2>
                 <div className="text-xs text-muted-foreground">{selectedBooking.serviceTitle}</div>

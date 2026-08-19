@@ -238,7 +238,7 @@ export function OrderEntry({ market }: { market: Market }) {
       {/* Leverage Slider (Futures only) */}
       {marketType === 'FUTURES' && (
         <div className="mb-4">
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-2 flex-wrap gap-y-4">
             <span className="text-xs text-muted-foreground">Leverage</span>
             <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{leverage}x</span>
           </div>
@@ -253,7 +253,7 @@ export function OrderEntry({ market }: { market: Market }) {
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-4 text-xs">
+      <div className="flex justify-between items-center mb-4 text-xs flex-wrap gap-y-4">
         <span className="text-muted-foreground">Available</span>
         <span className="font-mono font-medium">
           {marketType === 'SPOT' 

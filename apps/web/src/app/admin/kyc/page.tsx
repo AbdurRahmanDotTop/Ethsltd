@@ -208,7 +208,7 @@ export default function AdminKycPage() {
       {selectedApp && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
+            <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10 flex-wrap gap-y-4">
               <h3 className="text-xl font-bold">KYC Application Details</h3>
               <button 
                 onClick={() => setSelectedApp(null)}
@@ -313,7 +313,7 @@ export default function AdminKycPage() {
       {previewData && (
         <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-5xl h-[90vh] bg-background border border-border rounded-xl overflow-hidden flex flex-col shadow-2xl">
-            <div className="flex justify-between items-center p-4 border-b border-border bg-muted/30">
+            <div className="flex justify-between items-center p-4 border-b border-border bg-muted/30 flex-wrap gap-y-4">
               <h3 className="text-lg font-medium">Document Preview</h3>
               <button onClick={() => setPreviewData(null)} className="p-2 hover:bg-muted rounded-full transition-colors">
                 <X className="w-5 h-5" />

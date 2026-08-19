@@ -124,7 +124,7 @@ export default function DocsPage() {
         {activeTab === "market" && (
           <div className="hidden xl:block w-[450px] shrink-0 bg-[#0d1117] text-[#c9d1d9] overflow-y-auto border-l border-border">
             <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Example Request</span>
                 <div className="flex gap-2">
                   <button className="text-xs font-mono bg-white/10 px-2 py-1 rounded">cURL</button>

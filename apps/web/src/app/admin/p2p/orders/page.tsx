@@ -206,7 +206,7 @@ export default function AdminP2POrdersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95">
             
-            <div className="px-6 py-4 border-b border-border flex justify-between items-center">
+            <div className="px-6 py-4 border-b border-border flex justify-between items-center flex-wrap gap-y-4">
               <div>
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   Trade Details <span className="text-xs font-mono font-normal text-muted-foreground ml-2">({selectedOrder.displayId || selectedOrder.id})</span>
@@ -273,7 +273,7 @@ export default function AdminP2POrdersPage() {
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Internal Timeline</h3>
                 <div className="space-y-4 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active flex-wrap gap-y-4">
                     <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-brand-primary bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2"></div>
                     <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.25rem)] p-3 rounded-lg border border-border bg-card shadow-sm">
                       <p className="font-semibold text-sm">Order Created</p>
@@ -282,7 +282,7 @@ export default function AdminP2POrdersPage() {
                   </div>
                   
                   {['BUYER_MARKED_PAID', 'SELLER_PAYMENT_REVIEW', 'COMPLETED', 'DISPUTED'].includes(selectedOrder.status) && (
-                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active flex-wrap gap-y-4">
                       <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-brand-primary bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2"></div>
                       <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.25rem)] p-3 rounded-lg border border-border bg-card shadow-sm">
                         <p className="font-semibold text-sm">Action Taken</p>
@@ -292,7 +292,7 @@ export default function AdminP2POrdersPage() {
                   )}
 
                   {selectedOrder.status === 'COMPLETED' && (
-                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active flex-wrap gap-y-4">
                       <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-green-500 bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2"></div>
                       <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.25rem)] p-3 rounded-lg border border-border bg-card shadow-sm">
                         <p className="font-semibold text-sm text-green-500">Completed</p>
@@ -305,7 +305,7 @@ export default function AdminP2POrdersPage() {
 
             </div>
 
-            <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-between items-center">
+            <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-between items-center flex-wrap gap-y-4">
               <div>
                 
               </div>

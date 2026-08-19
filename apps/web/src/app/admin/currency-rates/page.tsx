@@ -148,7 +148,7 @@ export default function CurrencyRatesAdminPage() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-y-4">
         <div>
           <h1 className="text-2xl font-bold">Global Currency Rates</h1>
           <p className="text-muted-foreground text-sm">Manage fiat equivalent rates for platform calculations</p>
@@ -171,7 +171,8 @@ export default function CurrencyRatesAdminPage() {
         <div className="text-red-500 bg-red-50 p-4 rounded-md">{error}</div>
       ) : (
         <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
-          <table className="w-full">
+          <div className="w-full overflow-x-auto">
+<table className="w-full">
             <thead className="bg-muted">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Currency</th>
@@ -244,6 +245,7 @@ export default function CurrencyRatesAdminPage() {
               )}
             </tbody>
           </table>
+</div>
         </div>
       )}
 
@@ -251,7 +253,7 @@ export default function CurrencyRatesAdminPage() {
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-card w-full max-w-md rounded-lg shadow-xl overflow-hidden border">
-            <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex justify-between items-center p-4 border-b flex-wrap gap-y-4">
               <h3 className="font-semibold text-lg">Add Currency</h3>
               <button onClick={() => setIsAddModalOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <X size={20} />
@@ -301,7 +303,7 @@ export default function CurrencyRatesAdminPage() {
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-card w-full max-w-md rounded-lg shadow-xl overflow-hidden border">
-            <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex justify-between items-center p-4 border-b flex-wrap gap-y-4">
               <h3 className="font-semibold text-lg">Edit {selectedCurrency?.code}</h3>
               <button onClick={() => setIsEditModalOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <X size={20} />
@@ -345,14 +347,15 @@ export default function CurrencyRatesAdminPage() {
       {isHistoryModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-card w-full max-w-2xl rounded-lg shadow-xl overflow-hidden border">
-            <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex justify-between items-center p-4 border-b flex-wrap gap-y-4">
               <h3 className="font-semibold text-lg">Rate History</h3>
               <button onClick={() => setIsHistoryModalOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <X size={20} />
               </button>
             </div>
             <div className="max-h-[60vh] overflow-y-auto">
-              <table className="w-full">
+              <div className="w-full overflow-x-auto">
+<table className="w-full">
                 <thead className="bg-muted sticky top-0">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Date</th>
@@ -376,6 +379,7 @@ export default function CurrencyRatesAdminPage() {
                   )}
                 </tbody>
               </table>
+</div>
             </div>
           </div>
         </div>

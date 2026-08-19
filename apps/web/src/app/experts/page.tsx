@@ -110,7 +110,7 @@ export default function PublicExpertsPage() {
                         {expert.bio || 'Experienced professional offering personalized guidance and strategies.'}
                       </p>
                       
-                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border mt-auto">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border mt-auto flex-wrap gap-y-4">
                         <div className="flex items-center gap-1.5">
                           <Briefcase className="w-4 h-4" />
                           {expert.experienceYears || 0}y exp

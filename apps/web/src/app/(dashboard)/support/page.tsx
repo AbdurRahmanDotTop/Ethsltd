@@ -149,7 +149,7 @@ export default function SupportPage() {
               <div key={i} className="border border-border rounded-lg bg-card overflow-hidden transition-all">
                 <div 
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors group"
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors group flex-wrap gap-y-4"
                 >
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-muted-foreground group-hover:text-brand-primary transition-colors" />

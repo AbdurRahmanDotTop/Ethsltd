@@ -79,7 +79,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-y-4">
           <Label htmlFor="password">Password</Label>
           <Link
             href="/forgot-password"

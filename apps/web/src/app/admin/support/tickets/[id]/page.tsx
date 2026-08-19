@@ -99,7 +99,7 @@ export default function AdminTicketDetailPage() {
       
       {/* Left Col - Conversation */}
       <div className="flex-1 flex flex-col min-w-0 bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-border bg-card shrink-0 flex items-center justify-between">
+        <div className="p-4 border-b border-border bg-card shrink-0 flex items-center justify-between flex-wrap gap-y-4">
           <div className="flex items-center gap-3">
             <button onClick={() => router.push("/admin/support")} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4" />

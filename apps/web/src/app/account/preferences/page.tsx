@@ -106,7 +106,7 @@ export default function PreferencesPage() {
           </div>
         </div>
 
-        <div className="pt-6 flex items-center justify-between border-t border-border">
+        <div className="pt-6 flex items-center justify-between border-t border-border flex-wrap gap-y-4">
           <div className="text-sm font-medium text-green-600 dark:text-green-500">
             {success && success}
           </div>

@@ -180,7 +180,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
       <div className="lg:col-span-2 space-y-6">
         
         {/* Header / Status Alert */}
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex items-center justify-between">
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex items-center justify-between flex-wrap gap-y-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight mb-1">
               Order {order.displayId || order.id}
@@ -217,7 +217,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
           
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <div className="flex justify-between items-center pb-4 border-b border-border">
+              <div className="flex justify-between items-center pb-4 border-b border-border flex-wrap gap-y-4">
                 <span className="text-muted-foreground text-sm">
                   {isBuy ? "You Need To Pay" : "You Should Receive"}
                 </span>
@@ -225,7 +225,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                   {fiatSymbol}{parseFloat(order.fiatAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiatCurrency}
                 </span>
               </div>
-              <div className="flex justify-between items-center pb-4 border-b border-border">
+              <div className="flex justify-between items-center pb-4 border-b border-border flex-wrap gap-y-4">
                 <span className="text-muted-foreground text-sm">
                   {isBuy ? "Receive Crypto" : "Crypto Locked In Escrow"}
                 </span>
@@ -233,7 +233,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                   {parseFloat(order.cryptoAmount).toLocaleString()} {order.asset}
                 </span>
               </div>
-              <div className="flex justify-between items-center pb-4 border-b border-border">
+              <div className="flex justify-between items-center pb-4 border-b border-border flex-wrap gap-y-4">
                 <span className="text-muted-foreground text-sm">Price</span>
                 <span className="font-medium">
                   {fiatSymbol}{parseFloat(order.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiatCurrency} / {order.asset}
@@ -263,7 +263,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                       <span className="text-xs text-muted-foreground block mb-1">
                         {k.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                       </span>
-                      <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
+                      <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border flex-wrap gap-y-4">
                         <span className="font-mono text-sm">{v}</span>
                         <button onClick={() => copyToClipboard(v, k)} className="text-muted-foreground hover:text-foreground">
                           {copiedField === k ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
@@ -275,7 +275,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                   <>
                     <div>
                       <span className="text-xs text-muted-foreground block mb-1">Recipient Name</span>
-                      <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
+                      <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border flex-wrap gap-y-4">
                         <span className="font-mono text-sm">{merchant.displayName}</span>
                         <button onClick={() => copyToClipboard(merchant.displayName, "name")} className="text-muted-foreground hover:text-foreground">
                           {copiedField === "name" ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
@@ -285,7 +285,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
 
                     <div>
                       <span className="text-xs text-muted-foreground block mb-1">{mode === 'DEMO' ? 'Simulated Account / ID' : 'Account / ID'}</span>
-                      <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
+                      <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border flex-wrap gap-y-4">
                         <span className="font-mono text-sm">
                           {mode === 'DEMO' ? `${merchant.username.toLowerCase()}@ethsltd.demo` : `${merchant.username.toLowerCase()}@bank.local`}
                         </span>
@@ -299,7 +299,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
 
                 <div>
                   <span className="text-xs text-muted-foreground block mb-1">Reference Number (Required)</span>
-                  <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border">
+                  <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border flex-wrap gap-y-4">
                     <span className="font-mono text-sm">{order.displayId || order.id}</span>
                     <button onClick={() => copyToClipboard(order.displayId || order.id, "ref")} className="text-muted-foreground hover:text-foreground">
                       {copiedField === "ref" ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}

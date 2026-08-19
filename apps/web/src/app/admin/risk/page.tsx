@@ -187,7 +187,7 @@ export default function AdminRiskPage() {
 
         {/* Live Alerts Feed */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between flex-wrap gap-y-4">
             Live Risk Feed
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>

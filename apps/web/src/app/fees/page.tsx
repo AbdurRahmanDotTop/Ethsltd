@@ -23,11 +23,11 @@ export default function FeesPage() {
       <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
         <div className="bg-card border border-border rounded-xl p-8">
           <h3 className="text-xl font-semibold text-foreground mb-4">Spot Trading Fees</h3>
-          <div className="flex justify-between items-center py-4 border-b border-border">
+          <div className="flex justify-between items-center py-4 border-b border-border flex-wrap gap-y-4">
             <span className="text-muted-foreground">Maker Fee</span>
             <span className="font-mono text-lg text-foreground">0.10%</span>
           </div>
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-4 flex-wrap gap-y-4">
             <span className="text-muted-foreground">Taker Fee</span>
             <span className="font-mono text-lg text-foreground">0.10%</span>
           </div>
@@ -38,11 +38,11 @@ export default function FeesPage() {
 
         <div className="bg-card border border-border rounded-xl p-8">
           <h3 className="text-xl font-semibold text-foreground mb-4">P2P Trading Fees</h3>
-          <div className="flex justify-between items-center py-4 border-b border-border">
+          <div className="flex justify-between items-center py-4 border-b border-border flex-wrap gap-y-4">
             <span className="text-muted-foreground">Buyer Fee</span>
             <span className="font-mono text-lg text-success">0.00%</span>
           </div>
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-4 flex-wrap gap-y-4">
             <span className="text-muted-foreground">Seller (Maker) Fee</span>
             <span className="font-mono text-lg text-foreground">0.15%</span>
           </div>
@@ -55,7 +55,8 @@ export default function FeesPage() {
       <div className="max-w-4xl mx-auto">
         <h3 className="text-2xl font-bold text-foreground mb-6">Withdrawal Fees</h3>
         <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <table className="w-full text-left">
+          <div className="w-full overflow-x-auto">
+<table className="w-full text-left">
             <thead className="bg-muted border-b border-border">
               <tr>
                 <th className="px-6 py-4 font-medium text-foreground">Asset</th>
@@ -85,6 +86,7 @@ export default function FeesPage() {
               </tr>
             </tbody>
           </table>
+</div>
         </div>
         <p className="text-sm text-muted-foreground mt-4">
           Withdrawal fees are dynamic and adjust based on current blockchain network conditions. The fees shown above are estimates.

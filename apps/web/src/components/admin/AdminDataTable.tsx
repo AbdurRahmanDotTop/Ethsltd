@@ -66,7 +66,7 @@ export function AdminDataTable<T>({
       </div>
 
       {page !== undefined && totalPages !== undefined && totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center justify-between mt-4 flex-wrap gap-y-4">
           <div className="text-sm text-muted-foreground">
             Page {page} of {totalPages}
           </div>

@@ -158,7 +158,7 @@ export default function WalletPage() {
       </div>
 
       <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
           <h3 className="font-semibold text-lg text-foreground">Recent Activity</h3>
           <Link href="/wallet/history">
             <Button variant="link">View All</Button>

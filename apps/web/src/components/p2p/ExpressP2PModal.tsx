@@ -118,7 +118,7 @@ export function ExpressP2PModal({ isOpen, onClose }: ExpressP2PModalProps) {
             Pick Ads Now
           </Button>
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border">
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border flex-wrap gap-y-4">
             <div className="flex flex-col items-center gap-1">
               <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold text-foreground">1</span>
               <span>Pick an Ad</span>

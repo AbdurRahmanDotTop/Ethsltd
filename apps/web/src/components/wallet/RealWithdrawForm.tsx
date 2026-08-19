@@ -145,25 +145,25 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
               <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
             </div>
           )}
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex justify-between items-center text-sm flex-wrap gap-y-4">
             <span className="text-muted-foreground">Asset</span>
             <span className="font-semibold text-foreground">{selectedAsset}</span>
           </div>
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex justify-between items-center text-sm flex-wrap gap-y-4">
             <span className="text-muted-foreground">Withdrawal Amount</span>
             <span className="font-mono text-foreground">{amount.toLocaleString()} {selectedAsset}</span>
           </div>
           {preview && preview.currencyCode !== 'USDT' && (
-             <div className="flex justify-between items-center text-sm">
+             <div className="flex justify-between items-center text-sm flex-wrap gap-y-4">
                <span className="text-muted-foreground">Exchange Rate</span>
                <span className="font-mono text-foreground">1 {preview.currencyCode} = {preview.conversionRate} USDT</span>
              </div>
           )}
-          <div className="flex justify-between items-center text-sm text-red-500">
+          <div className="flex justify-between items-center text-sm text-red-500 flex-wrap gap-y-4">
             <span className="text-muted-foreground">Network & Platform Fees</span>
             <span className="font-mono">- {fee.toLocaleString()} USDT</span>
           </div>
-          <div className="pt-4 border-t border-border flex justify-between items-center">
+          <div className="pt-4 border-t border-border flex justify-between items-center flex-wrap gap-y-4">
             <span className="font-semibold text-foreground">You Will Receive</span>
             <span className="font-mono font-bold text-xl text-brand-600 dark:text-brand-400">
               {preview ? preview.netUsdtReceived.toLocaleString() : '0'} USDT
@@ -207,7 +207,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
 
       <form onSubmit={form.handleSubmit(onReview)} className="p-6 space-y-6">
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap gap-y-4">
             <label className="text-sm font-medium text-foreground">Asset</label>
             <span className="text-xs text-muted-foreground">
               Available: <span className="font-mono font-medium text-foreground">{availableAmount.toLocaleString()} {selectedAsset}</span>
@@ -285,7 +285,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
           {preview ? (
             <>
               {preview.currencyCode !== 'USDT' && (
-                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                <div className="flex justify-between items-center text-xs text-muted-foreground flex-wrap gap-y-4">
                   <span>Exchange Rate</span>
                   <span className="font-mono">1 {preview.currencyCode} = {preview.conversionRate} USDT</span>
                 </div>

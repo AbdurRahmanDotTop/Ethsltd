@@ -138,7 +138,7 @@ export default function AdminSystemPage() {
               {services.map((service, idx) => {
                 const Icon = service.icon;
                 return (
-                  <div key={idx} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                  <div key={idx} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors flex-wrap gap-y-4">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
                         <Icon className="w-5 h-5 text-foreground" />

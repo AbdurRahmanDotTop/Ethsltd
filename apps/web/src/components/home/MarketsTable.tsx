@@ -122,7 +122,7 @@ export function MarketsTable() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-border">
+                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-border flex-wrap gap-y-4">
                     <div>
                       <div className="text-xs text-muted-foreground">24h Volume</div>
                       <div className="font-mono text-sm text-muted-foreground/90">{market.vol}</div>

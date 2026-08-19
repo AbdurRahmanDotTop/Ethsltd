@@ -188,21 +188,21 @@ export default function AdminDashboardPage() {
           <div className="bg-card border border-border rounded-lg p-6">
             <h3 className="text-lg font-bold mb-4">System Status</h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-y-4">
                 <div className="flex items-center gap-2">
                   <Server className="w-4 h-4 text-green-500" />
                   <span className="text-sm font-medium">API Gateway</span>
                 </div>
                 <span className="text-xs bg-green-500/10 text-green-500 px-2 py-1 rounded">Operational</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-y-4">
                 <div className="flex items-center gap-2">
                   <Server className="w-4 h-4 text-green-500" />
                   <span className="text-sm font-medium">Database (D1)</span>
                 </div>
                 <span className="text-xs bg-green-500/10 text-green-500 px-2 py-1 rounded">Operational</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-y-4">
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-brand-primary" />
                   <span className="text-sm font-medium">Error Rate</span>

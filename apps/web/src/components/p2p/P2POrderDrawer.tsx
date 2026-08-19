@@ -126,7 +126,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
       
       {/* Drawer */}
       <div className="fixed inset-y-0 right-0 w-full md:w-[500px] bg-card border-l border-border shadow-2xl z-50 flex flex-col transform transition-transform duration-300">
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-border flex-wrap gap-y-4">
           <h2 className="text-xl font-bold">Advertisement Details</h2>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-full text-muted-foreground transition-colors">
             <X className="w-5 h-5" />
@@ -188,7 +188,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap gap-y-4">
                   <Label htmlFor="fiatAmount">I want to {userSideLabel}</Label>
                   <span className="text-xs text-muted-foreground">Limit: {fiatSymbol}{ad.minLimit} - {fiatSymbol}{ad.maxLimit}</span>
                 </div>

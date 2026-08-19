@@ -96,7 +96,7 @@ export default function ExpertEarningsPage() {
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-border flex justify-between items-center">
+        <div className="p-6 border-b border-border flex justify-between items-center flex-wrap gap-y-4">
           <h2 className="text-xl font-bold text-foreground">Completed Sessions History</h2>
         </div>
         

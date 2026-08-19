@@ -142,7 +142,7 @@ export default function AdminSettingsPage() {
 
   // Custom Switch Component
   const CustomSwitch = ({ checked, onChange, label, description }: { checked: boolean, onChange: (c: boolean) => void, label: string, description?: string }) => (
-    <div className="flex items-center justify-between py-3">
+    <div className="flex items-center justify-between py-3 flex-wrap gap-y-4">
       <div>
         <p className="text-sm font-medium">{label}</p>
         {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}

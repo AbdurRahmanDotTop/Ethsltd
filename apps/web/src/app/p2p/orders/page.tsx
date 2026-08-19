@@ -42,7 +42,7 @@ export default function P2POrdersPage() {
     <div className="bg-muted/30">
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8 min-h-[70vh]">
         
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-y-4">
           <div>
             <Link href="/p2p" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4">
               <ChevronLeft className="w-4 h-4 mr-1" />

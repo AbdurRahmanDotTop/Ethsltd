@@ -32,7 +32,7 @@ export function ExpertServiceCard({ service, onBook }: ExpertServiceCardProps) {
         {service.description}
       </p>
       
-      <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
+      <div className="flex items-center justify-between mt-auto pt-4 border-t border-border flex-wrap gap-y-4">
         <div className="space-y-1">
           <div className="flex items-center gap-1.5 text-foreground font-semibold">
             <span>{formatCurrency(service.price, service.currency)}</span>

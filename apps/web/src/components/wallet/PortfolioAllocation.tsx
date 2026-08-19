@@ -90,7 +90,7 @@ export function PortfolioAllocation({ allocations }: { allocations: AssetAllocat
 
         <div className="flex-1 w-full space-y-3">
           {allocations.slice(0, 5).map((alloc, i) => (
-            <div key={alloc.asset} className="flex items-center justify-between">
+            <div key={alloc.asset} className="flex items-center justify-between flex-wrap gap-y-4">
               <div className="flex items-center gap-3">
                 <div 
                   className="w-3 h-3 rounded-sm" 

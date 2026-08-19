@@ -115,7 +115,7 @@ export default function ExpertServicesPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-y-4">
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground">My Services</h1>
           <p className="text-muted-foreground mt-1">Manage the services you offer to clients.</p>
@@ -131,7 +131,8 @@ export default function ExpertServicesPage() {
         ) : services.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground">No services found. Add one to get started.</div>
         ) : (
-          <table className="w-full text-sm text-left">
+          <div className="w-full overflow-x-auto">
+<table className="w-full text-sm text-left">
             <thead className="bg-muted/50 border-b border-border text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Service</th>
@@ -178,6 +179,7 @@ export default function ExpertServicesPage() {
               ))}
             </tbody>
           </table>
+</div>
         )}
       </div>
 

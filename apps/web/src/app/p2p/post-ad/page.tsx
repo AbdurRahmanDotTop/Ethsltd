@@ -388,7 +388,7 @@ export default function PostAdPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-y-4">
               <Label>Payment Methods</Label>
               <Button type="button" variant="outline" size="sm" onClick={() => {
                 setPaymentMethods([...paymentMethods, { id: crypto.randomUUID(), type: 'UPI', details: { upiId: '', upiName: '' } }]);
@@ -400,7 +400,7 @@ export default function PostAdPage() {
             <div className="space-y-4">
               {paymentMethods.map((pm, index) => (
                 <div key={pm.id} className="p-4 bg-muted/30 border border-border rounded-lg space-y-4 relative">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-y-4">
                     <select
                       value={pm.type}
                       onChange={(e) => {

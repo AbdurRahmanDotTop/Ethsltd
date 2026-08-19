@@ -48,7 +48,7 @@ export function OrderBook({ data }: { data?: OrderBookType }) {
       </div>
       
       {/* Spread */}
-      <div className="py-2 px-3 border-y border-border flex items-center justify-between text-xs bg-muted/10">
+      <div className="py-2 px-3 border-y border-border flex items-center justify-between text-xs bg-muted/10 flex-wrap gap-y-4">
         <span className="text-muted-foreground">Spread</span>
         <span className="font-mono font-medium">{formatPrice(Math.abs(spread))}</span>
       </div>

@@ -82,23 +82,23 @@ export function DemoWithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: stri
         <h3 className="text-xl font-bold text-foreground">Review Withdrawal</h3>
         
         <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border">
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex justify-between items-center text-sm flex-wrap gap-y-4">
             <span className="text-muted-foreground">Asset</span>
             <span className="font-semibold text-foreground">{selectedAsset}</span>
           </div>
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex justify-between items-center text-sm flex-wrap gap-y-4">
             <span className="text-muted-foreground">Network</span>
             <span className="font-medium text-foreground">Simulated Network</span>
           </div>
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex justify-between items-center text-sm flex-wrap gap-y-4">
             <span className="text-muted-foreground">Amount</span>
             <span className="font-mono text-foreground">{amount.toLocaleString()} {selectedAsset}</span>
           </div>
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex justify-between items-center text-sm flex-wrap gap-y-4">
             <span className="text-muted-foreground">Fee</span>
             <span className="font-mono text-foreground">{fee.toLocaleString()} {selectedAsset}</span>
           </div>
-          <div className="pt-4 border-t border-border flex justify-between items-center">
+          <div className="pt-4 border-t border-border flex justify-between items-center flex-wrap gap-y-4">
             <span className="font-semibold text-foreground">You Receive</span>
             <span className="font-mono font-bold text-xl text-brand-600 dark:text-brand-400">
               {amount.toLocaleString()} {selectedAsset}
@@ -142,7 +142,7 @@ export function DemoWithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: stri
 
       <form onSubmit={form.handleSubmit(onReview)} className="p-6 space-y-6">
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap gap-y-4">
             <label className="text-sm font-medium text-foreground">Asset</label>
             <span className="text-xs text-muted-foreground">
               Available: <span className="font-mono font-medium text-foreground">{availableAmount.toLocaleString()} {selectedAsset}</span>

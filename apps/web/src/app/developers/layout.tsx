@@ -47,7 +47,7 @@ export default function DevelopersLayout({ children }: { children: React.ReactNo
       <Header />
       <div className="flex-1 flex flex-col">
       {/* Mobile Toggle */}
-      <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card">
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card flex-wrap gap-y-4">
         <span className="font-semibold text-lg">Developer Portal</span>
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}

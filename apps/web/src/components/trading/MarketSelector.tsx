@@ -49,7 +49,7 @@ export function MarketSelector({ currentSymbol }: { currentSymbol: string }) {
               {markets.map(m => (
                 <button 
                   key={m.id} 
-                  className="w-full flex items-center justify-between p-2 hover:bg-muted rounded text-left text-sm"
+                  className="w-full flex items-center justify-between p-2 hover:bg-muted rounded text-left text-sm flex-wrap gap-y-4"
                   onClick={() => {
                     setOpen(false)
                     router.push(`/trade/${m.id}`)

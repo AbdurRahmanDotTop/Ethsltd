@@ -134,7 +134,7 @@ export default function AdminWalletsPage() {
         
         {/* User Wallets Management */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
               <Wallet className="w-4 h-4" /> User Wallets Directory
             </h3>
@@ -192,7 +192,7 @@ export default function AdminWalletsPage() {
           </h3>
           <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden divide-y divide-border">
             {networks.map((net) => (
-              <div key={net.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+              <div key={net.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors flex-wrap gap-y-4">
                 <div>
                   <h4 className="text-sm font-semibold text-foreground">{net.name}</h4>
                   <p className="text-xs text-muted-foreground uppercase mt-0.5">{net.currency} • {net.type}</p>

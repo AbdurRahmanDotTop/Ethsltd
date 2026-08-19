@@ -68,7 +68,7 @@ export function P2PSection() {
               const isBuy = ad.type.toUpperCase() === 'BUY';
               return (
                 <div key={i} className="bg-card border border-border rounded-xl p-6 hover:border-border transition-colors">
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex justify-between items-center mb-6 flex-wrap gap-y-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-full text-white flex items-center justify-center font-bold ${ad.assetSymbol === 'BTC' ? 'bg-[#F7931A]' : ad.assetSymbol === 'ETH' ? 'bg-[#627EEA]' : 'bg-[#26A17B]'}`}>
                         {ad.assetSymbol === 'BTC' ? '₿' : ad.assetSymbol === 'ETH' ? 'Ξ' : '₮'}

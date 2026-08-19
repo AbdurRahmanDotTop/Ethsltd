@@ -158,7 +158,7 @@ export default function AdminTradesPage() {
         />
         
         {total > limit && (
-          <div className="p-4 border-t border-border/50 bg-muted/20 flex items-center justify-between">
+          <div className="p-4 border-t border-border/50 bg-muted/20 flex items-center justify-between flex-wrap gap-y-4">
             <p className="text-sm text-muted-foreground">
               Showing <span className="font-medium text-foreground">{((page - 1) * limit) + 1}</span> to <span className="font-medium text-foreground">{Math.min(page * limit, total)}</span> of <span className="font-medium text-foreground">{total}</span> trades
             </p>

@@ -37,7 +37,7 @@ export default function NotificationsPage() {
           </div>
           
           <div className="space-y-4 pt-4 border-t border-border">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-y-4">
               <div>
                 <p className="font-medium">New login alerts</p>
                 <p className="text-sm text-muted-foreground">When your account is accessed from a new device or location.</p>
@@ -45,7 +45,7 @@ export default function NotificationsPage() {
               <input type="checkbox" checked disabled className="rounded border-input text-brand-foreground h-5 w-5 opacity-50" />
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-y-4">
               <div>
                 <p className="font-medium">Account changes</p>
                 <p className="text-sm text-muted-foreground">When your password, email, or 2FA settings are changed.</p>
@@ -67,7 +67,7 @@ export default function NotificationsPage() {
           </div>
           
           <div className="space-y-4 pt-4 border-t border-border">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-y-4">
               <div>
                 <p className="font-medium">Order filled</p>
                 <p className="text-sm text-muted-foreground">When your limit or stop orders are executed.</p>
@@ -75,7 +75,7 @@ export default function NotificationsPage() {
               <input type="checkbox" defaultChecked className="rounded border-input text-brand-foreground focus:ring-brand-foreground h-5 w-5" />
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-y-4">
               <div>
                 <p className="font-medium">Price alerts</p>
                 <p className="text-sm text-muted-foreground">When assets on your watchlist experience significant volatility.</p>
@@ -97,7 +97,7 @@ export default function NotificationsPage() {
           </div>
           
           <div className="space-y-4 pt-4 border-t border-border">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-y-4">
               <div>
                 <p className="font-medium">Product updates</p>
                 <p className="text-sm text-muted-foreground">New features, pairs, and platform improvements.</p>
@@ -105,7 +105,7 @@ export default function NotificationsPage() {
               <input type="checkbox" className="rounded border-input text-brand-foreground focus:ring-brand-foreground h-5 w-5" />
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-y-4">
               <div>
                 <p className="font-medium">Market insights</p>
                 <p className="text-sm text-muted-foreground">Weekly market recaps and educational content.</p>
@@ -115,7 +115,7 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        <div className="pt-6 flex items-center justify-between border-t border-border">
+        <div className="pt-6 flex items-center justify-between border-t border-border flex-wrap gap-y-4">
           <div className="text-sm font-medium text-green-600 dark:text-green-500">
             {success && success}
           </div>

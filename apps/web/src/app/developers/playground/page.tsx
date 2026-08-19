@@ -115,7 +115,7 @@ export default function PlaygroundPage() {
         {/* Response Panel */}
         <div>
           <div className="bg-[#0d1117] rounded-xl overflow-hidden shadow-sm h-full min-h-[400px] flex flex-col">
-            <div className="p-4 border-b border-[#30363d] flex items-center justify-between">
+            <div className="p-4 border-b border-[#30363d] flex items-center justify-between flex-wrap gap-y-4">
               <span className="font-semibold text-white">Response</span>
               
               <div className="flex items-center gap-4 text-xs font-mono">

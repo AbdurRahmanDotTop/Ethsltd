@@ -366,7 +366,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 ) : manualAddresses[selectedAsset] ? (
                   <div className="p-4 bg-brand-500/10 border border-brand-500/20 rounded-lg space-y-2">
                     <label className="text-sm font-semibold text-brand-600 dark:text-brand-400 block">Deposit Address for {selectedAsset}</label>
-                    <div className="flex items-center justify-between gap-2 p-3 bg-background border rounded-md group">
+                    <div className="flex items-center justify-between gap-2 p-3 bg-background border rounded-md group flex-wrap gap-y-4">
                       <span className="font-mono text-sm break-all font-medium">{manualAddresses[selectedAsset]}</span>
                       <button type="button" onClick={() => copyToClipboard(manualAddresses[selectedAsset], `${selectedAsset} Address`)} className="p-2 hover:bg-muted rounded-md shrink-0 transition-colors">
                         <Copy className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />

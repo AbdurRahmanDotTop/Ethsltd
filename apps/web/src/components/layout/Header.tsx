@@ -99,7 +99,7 @@ export function Header() {
             : "bg-transparent border-b border-transparent"
           }`}
       >
-        <div className="max-w-[1280px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8 min-h-[4rem] py-2 flex items-center justify-between flex-wrap gap-y-4">
           <div className="flex items-center gap-8">
             <Link href="/" className="font-display font-bold text-xl text-foreground tracking-tight">
               ETHSLTD
@@ -236,7 +236,7 @@ export function Header() {
             <div className="py-2 border-b border-border">
               <button
                 onClick={() => setMobileMoreOpen(!mobileMoreOpen)}
-                className="w-full flex items-center justify-between text-lg font-medium text-foreground"
+                className="w-full flex items-center justify-between text-lg font-medium text-foreground flex-wrap gap-y-4"
               >
                 More
                 <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${mobileMoreOpen ? 'rotate-180' : ''}`} />
@@ -258,7 +258,7 @@ export function Header() {
                 <div className="py-2">
                   <button
                     onClick={() => setMobileProfileOpen(!mobileProfileOpen)}
-                    className="w-full flex items-center justify-between py-2"
+                    className="w-full flex items-center justify-between py-2 flex-wrap gap-y-4"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center overflow-hidden">

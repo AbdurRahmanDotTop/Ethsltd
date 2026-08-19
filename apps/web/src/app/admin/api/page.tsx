@@ -57,21 +57,21 @@ export default function AdminApiDashboard() {
 
       <div className="grid sm:grid-cols-3 gap-4">
         <div className="bg-card border border-border p-5 rounded-xl shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
             <span className="text-sm font-medium text-muted-foreground">Active Keys</span>
             <KeyRound className="w-4 h-4 text-brand-primary" />
           </div>
           <div className="text-2xl font-bold">{activeKeysCount}</div>
         </div>
         <div className="bg-card border border-border p-5 rounded-xl shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
             <span className="text-sm font-medium text-muted-foreground">Live Keys</span>
             <Activity className="w-4 h-4 text-green-500" />
           </div>
           <div className="text-2xl font-bold text-green-600 dark:text-green-500">{liveKeysCount}</div>
         </div>
         <div className="bg-card border border-border p-5 rounded-xl shadow-sm border-red-500/20">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
             <span className="text-sm font-medium text-red-600 dark:text-red-500">Withdrawal Keys</span>
             <AlertTriangle className="w-4 h-4 text-red-500" />
           </div>

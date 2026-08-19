@@ -292,7 +292,7 @@ export default function AdminPaymentSettingsPage() {
       </div>
 
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-y-4">
           <h3 className="text-xl font-semibold">Payment Methods</h3>
           <Button onClick={() => {
             setCryptoAddresses([{ asset: "USDT", address: "" }]);
@@ -301,7 +301,7 @@ export default function AdminPaymentSettingsPage() {
           }}>Add Method</Button>
         </div>
         {loading ? <p>Loading...</p> : methods.map(method => (
-          <div key={method.id} className="p-4 border border-border rounded-lg bg-card flex justify-between items-center">
+          <div key={method.id} className="p-4 border border-border rounded-lg bg-card flex justify-between items-center flex-wrap gap-y-4">
             <div>
               <h4 className="font-semibold">{method.method}</h4>
               <p className="text-sm text-muted-foreground">Status: {method.enabled ? "Enabled" : "Disabled"}</p>
@@ -320,12 +320,12 @@ export default function AdminPaymentSettingsPage() {
       </div>
 
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-y-4">
           <h3 className="text-xl font-semibold">Bank Accounts</h3>
           <Button onClick={() => handleOpenBankModal()}>Add Bank Account</Button>
         </div>
         {loading ? <p>Loading...</p> : banks.map(bank => (
-          <div key={bank.id} className="p-4 border border-border rounded-lg bg-card flex justify-between items-center">
+          <div key={bank.id} className="p-4 border border-border rounded-lg bg-card flex justify-between items-center flex-wrap gap-y-4">
             <div>
               <h4 className="font-semibold">{bank.bank_name}</h4>
               <p className="text-sm text-muted-foreground">{bank.account_holder} - {bank.currency}</p>

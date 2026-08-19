@@ -180,7 +180,7 @@ export default function AdminContractsPage() {
           <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col animate-in zoom-in-95">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-border flex justify-between items-center">
+            <div className="px-6 py-4 border-b border-border flex justify-between items-center flex-wrap gap-y-4">
               <div>
                 <h2 className="text-lg font-bold">Contract Review</h2>
                 <p className="text-xs text-muted-foreground font-mono mt-1">{selectedContract.id} • {selectedContract.type}</p>

@@ -82,7 +82,7 @@ export function BookingModal({ expert, service, onClose }: BookingModalProps) {
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-card w-full max-w-lg rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center justify-between p-4 border-b border-border flex-wrap gap-y-4">
           <h2 className="font-semibold text-lg">Book Expert Service</h2>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-full text-muted-foreground transition-colors">
             <X className="w-5 h-5" />

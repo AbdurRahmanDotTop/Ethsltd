@@ -63,7 +63,7 @@ export function AdminHeader() {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-30">
+    <header className="min-h-[4rem] py-2 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-30 flex-wrap gap-y-4">
       <div className="flex items-center gap-4">
         {/* Mobile Menu Toggle */}
         <button 
@@ -110,8 +110,8 @@ export function AdminHeader() {
           </button>
 
           {isNotificationsOpen && (
-            <div className="absolute right-0 top-12 w-80 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
-              <div className="p-3 border-b border-border bg-muted/20 flex items-center justify-between">
+            <div className="absolute right-0 top-12 w-full max-w-[20rem] bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="p-3 border-b border-border bg-muted/20 flex items-center justify-between flex-wrap gap-y-4">
                 <h3 className="font-semibold text-sm">Notifications</h3>
                 {unreadCount > 0 && (
                   <button 
@@ -244,7 +244,7 @@ export function AdminHeader() {
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <div className="relative w-72 max-w-[80vw] bg-card border-r border-border flex flex-col h-full animate-in slide-in-from-left">
-            <div className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center justify-between p-4 border-b border-border flex-wrap gap-y-4">
               <span className="font-bold text-lg">Admin Menu</span>
               <button onClick={() => setIsMobileMenuOpen(false)} className="p-2">
                 <X className="w-5 h-5" />

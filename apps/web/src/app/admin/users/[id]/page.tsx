@@ -147,25 +147,25 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
           <div className="bg-card border border-border rounded-lg p-5 space-y-4">
             <h3 className="font-semibold border-b border-border pb-2">Overview</h3>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-y-4">
                 <span className="text-sm text-muted-foreground">Account Status</span>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[user.status] || "bg-muted text-foreground border-border"}`}>
                   {user.status}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-y-4">
                 <span className="text-sm text-muted-foreground">Role</span>
                 <span className="text-sm font-medium">{user.role}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-y-4">
                 <span className="text-sm text-muted-foreground">KYC Status</span>
                 <span className="text-sm font-medium">{user.kycStatus}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-y-4">
                 <span className="text-sm text-muted-foreground">Registration Date</span>
                 <span className="text-sm font-medium">{new Date(user.createdAt).toLocaleDateString()}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-y-4">
                 <span className="text-sm text-muted-foreground">Last Login</span>
                 <span className="text-sm font-medium">{new Date(user.lastLoginAt).toLocaleString()}</span>
               </div>
@@ -173,12 +173,12 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
           </div>
 
           <div className="bg-card border border-border rounded-lg p-5 space-y-4">
-            <div className="flex justify-between items-center border-b border-border pb-2">
+            <div className="flex justify-between items-center border-b border-border pb-2 flex-wrap gap-y-4">
               <h3 className="font-semibold">Risk Profile</h3>
               <ShieldAlert className={`w-4 h-4 ${user.riskLevel === 'CRITICAL' ? 'text-red-500' : 'text-muted-foreground'}`} />
             </div>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-y-4">
                 <span className="text-sm text-muted-foreground">Risk Level</span>
                 <span className={`text-sm font-bold ${
                   user.riskLevel === 'LOW' ? 'text-green-500' : 

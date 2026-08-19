@@ -38,7 +38,7 @@ export function EducationalSection() {
               <p className="text-muted-foreground text-sm mb-8 flex-1">
                 {article.desc}
               </p>
-              <div className="flex items-center justify-between text-xs font-medium text-muted-foreground/80 mt-auto">
+              <div className="flex items-center justify-between text-xs font-medium text-muted-foreground/80 mt-auto flex-wrap gap-y-4">
                 <span>5 min read</span>
                 <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
               </div>

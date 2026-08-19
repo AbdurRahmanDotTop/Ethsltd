@@ -59,7 +59,7 @@ export default function ExpertDashboardOverview() {
           const Icon = stat.icon;
           return (
             <div key={stat.name} className="bg-card border border-border rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
                 <div className="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center">
                   <Icon className="w-5 h-5 text-brand-600" />
                 </div>
@@ -76,7 +76,7 @@ export default function ExpertDashboardOverview() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 flex-wrap gap-y-4">
             <h3 className="font-semibold text-lg">Recent Bookings</h3>
             <Link href="/expert/dashboard/bookings" className="text-sm text-brand-primary flex items-center gap-1 hover:underline">
               View All <ArrowRight className="w-4 h-4" />
@@ -90,7 +90,7 @@ export default function ExpertDashboardOverview() {
           ) : (
             <div className="space-y-3">
               {recentBookings.map((b) => (
-                <div key={b.id} className="flex justify-between items-center p-3 rounded-lg hover:bg-muted/30 border border-transparent hover:border-border transition-colors">
+                <div key={b.id} className="flex justify-between items-center p-3 rounded-lg hover:bg-muted/30 border border-transparent hover:border-border transition-colors flex-wrap gap-y-4">
                   <div>
                     <div className="font-medium text-sm text-foreground">{b.serviceTitle}</div>
                     <div className="text-xs text-muted-foreground">{new Date(b.scheduledAt).toLocaleString()} • Client: {b.userDisplayName || b.userId}</div>
@@ -115,13 +115,13 @@ export default function ExpertDashboardOverview() {
         <div className="bg-card border border-border rounded-xl p-6">
           <h3 className="font-semibold text-lg mb-4">Profile Status</h3>
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50 flex-wrap gap-y-4">
               <span className="text-sm text-muted-foreground">Verification</span>
               <span className={`text-xs font-medium px-2 py-1 rounded-full ${profile?.verificationStatus === 'VERIFIED' ? 'bg-green-500/10 text-green-500' : 'bg-orange-500/10 text-orange-500'}`}>
                 {profile?.verificationStatus || 'PENDING'}
               </span>
             </div>
-            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50 flex-wrap gap-y-4">
               <span className="text-sm text-muted-foreground">Availability</span>
               <span className={`text-xs font-medium px-2 py-1 rounded-full ${profile?.availabilityStatus === 'ONLINE' ? 'bg-green-500/10 text-green-500' : 'bg-muted text-muted-foreground'}`}>
                 {profile?.availabilityStatus || 'OFFLINE'}
