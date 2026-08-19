@@ -45,6 +45,7 @@ import Script from "next/script";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { AppNavigation } from "@/components/layout/AppNavigation";
 
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { cookies } from "next/headers";
@@ -95,7 +96,10 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider initialUser={initialUser}>
-            {children}
+            <div className="flex-1 pb-16">
+              {children}
+            </div>
+            <AppNavigation />
             <Toaster richColors position="top-right" />
             <AuthModal />
             <BackToTop />
