@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, Search, X, User, ChevronDown, LogOut, LayoutDashboard, Shield, Settings, Bell, Info } from "lucide-react"
+import { Menu, X, User, ChevronDown, LogOut, LayoutDashboard, Shield, Settings, Bell, Info } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useTradingModeStore } from "@/stores/trading-mode-store"
 import { apiClient } from "@ethsltd/api-client"
@@ -142,9 +142,6 @@ export function Header() {
           </div>
 
           <div className="hidden lg:flex items-center gap-4">
-            <button className="text-muted-foreground hover:text-foreground transition-colors w-9 h-9 flex items-center justify-center">
-              <Search className="h-5 w-5" />
-            </button>
             <ThemeToggle />
 
             {/* Demo Trading Toggle */}
@@ -215,9 +212,6 @@ export function Header() {
               {renderToggle()}
             </div>
             <ThemeToggle />
-            <button className="text-foreground w-9 h-9 flex items-center justify-center">
-              <Search className="h-5 w-5" />
-            </button>
             <button
               className="text-foreground"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
