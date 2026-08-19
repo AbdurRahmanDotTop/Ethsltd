@@ -25,6 +25,9 @@ authRoutes.post('/register', async (c) => {
   const db = c.get('db');
   
   try {
+  if (!body.email || !body.password) {
+    return c.json({ success: false, error: 'Email and password are required' }, 400);
+  }
   
   const existingUser = await db.select().from(users).where(eq(users.email, body.email)).get();
   if (existingUser) {
@@ -121,15 +124,20 @@ authRoutes.post('/register', async (c) => {
 });
 
 authRoutes.post('/login', async (c) => {
-  const body = await c.req.json();
-  const db = c.get('db');
-  
-  const user = await db.select().from(users).where(eq(users.email, body.email)).get();
-  if (!user) {
-    return c.json({ success: false, error: 'Invalid credentials' }, 401);
-  }
+  try {
+    const body = await c.req.json();
+    const db = c.get('db');
+    
+    if (!body.email || !body.password) {
+      return c.json({ success: false, error: 'Email and password are required' }, 400);
+    }
+    
+    const user = await db.select().from(users).where(eq(users.email, body.email)).get();
+    if (!user) {
+      return c.json({ success: false, error: 'Invalid credentials' }, 401);
+    }
 
-  const hashedPassword = await hashPassword(body.password);
+    const hashedPassword = await hashPassword(body.password);
   if (user.passwordHash !== hashedPassword) {
     return c.json({ success: false, error: 'Invalid credentials' }, 401);
   }
@@ -161,7 +169,10 @@ authRoutes.post('/login', async (c) => {
     domain: getCookieDomain(c),
   });
 
-  return c.json({ success: true, token, data: { user } });
+    return c.json({ success: true, token, data: { user } });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message, stack: err.stack }, 500);
+  }
 });
 
 authRoutes.get('/me', jwtMiddleware, async (c) => {
