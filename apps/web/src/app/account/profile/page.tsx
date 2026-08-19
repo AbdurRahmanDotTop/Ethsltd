@@ -72,7 +72,7 @@ export default function ProfilePage() {
       setOtpLoading(true);
       const res = await apiClient.requestEmailVerificationOTP();
       if (res.success) {
-        setOtpSuccess(res.message || "OTP sent to your email!");
+        setOtpSuccess((res as any).message || "OTP sent to your email!");
         setIsVerifyModalOpen(true);
       } else {
         if (isVerifyModalOpen) {
