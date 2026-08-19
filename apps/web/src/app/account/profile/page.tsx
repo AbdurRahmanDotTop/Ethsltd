@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, User } from "lucide-react";
+import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth-store";
 import { apiClient } from "@ethsltd/api-client";
 import { profileSchema, ProfileInput } from "@/lib/validation/auth";
@@ -115,6 +116,28 @@ export default function ProfilePage() {
     }
   };
 
+  const handleRemoveAvatar = async () => {
+    try {
+      const updated = await apiClient.updateProfile({ avatarUrl: "" });
+      if (updated.success) {
+        updateUser({ ...user, avatarUrl: "" });
+        toast.success("Profile photo removed successfully.");
+      } else {
+        toast.error(updated.error || "Failed to remove profile photo.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove profile photo.");
+    }
+  };
+
+  const handleUploadClick = () => {
+    toast.info("Profile photo uploads will be enabled soon!");
+  };
+
+  const handleChangeEmailClick = () => {
+    toast.info("Email changes will be supported in an upcoming update.");
+  };
+
   return (
     <div className="max-w-2xl space-y-8">
       <div>
@@ -134,8 +157,8 @@ export default function ProfilePage() {
           <div className="space-y-2">
             <h3 className="font-medium">Profile Photo</h3>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm">Upload new</Button>
-              <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">Remove</Button>
+              <Button type="button" variant="outline" size="sm" onClick={handleUploadClick}>Upload new</Button>
+              <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleRemoveAvatar}>Remove</Button>
             </div>
             <p className="text-xs text-muted-foreground">JPG, PNG or WebP. Max size 2MB.</p>
           </div>
@@ -173,7 +196,7 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-              <Button type="button" variant="link" className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground shrink-0 self-start sm:self-center">Change email</Button>
+              <Button type="button" variant="link" className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground shrink-0 self-start sm:self-center" onClick={handleChangeEmailClick}>Change email</Button>
             </div>
           </div>
 
