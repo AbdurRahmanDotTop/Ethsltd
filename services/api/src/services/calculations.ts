@@ -1,5 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { currencyRates, payment_methods, platformSettings } from 'database';
+import { getRealPrice } from '../utils/price';
+import Decimal from 'decimal.js';
+
+const KNOWN_CRYPTOS = ['BTC', 'ETH', 'USDT', 'USDC', 'SOL', 'BNB', 'XRP', 'TRX', 'ADA', 'DOGE', 'LTC', 'BCH', 'MATIC', 'DOT'];
 
 export async function calculateDepositPreview(
   db: any,
@@ -7,47 +11,65 @@ export async function calculateDepositPreview(
   currencyCode: string,
   paymentMethodId: string | null
 ) {
-  let grossUsdt = amount;
+  let grossUsdt = new Decimal(amount);
   let conversionRateValue = 1;
   
   if (currencyCode !== 'USDT') {
-    const rateRecord = await db.select().from(currencyRates).where(eq(currencyRates.code, currencyCode)).get();
-    if (!rateRecord || rateRecord.status !== 'ACTIVE') {
-      throw new Error(`Active Global Currency Rate not found for ${currencyCode}`);
+    const isCrypto = KNOWN_CRYPTOS.includes(currencyCode.toUpperCase());
+    
+    if (isCrypto) {
+      // It's a Crypto Asset. Fetch real-time price from Binance (Price in USDT)
+      const realPrice = await getRealPrice(`${currencyCode}-USDT`);
+      if (!realPrice || realPrice <= 0) {
+        throw new Error(`Real-time price unavailable for ${currencyCode}`);
+      }
+      conversionRateValue = realPrice;
+      // Formula: 1 BTC = 60000 USDT -> grossUsdt = amount * price
+      grossUsdt = new Decimal(amount).times(conversionRateValue);
+    } else {
+      // It's a Fiat Asset. Fetch from admin-managed currencyRates table
+      const rateRecord = await db.select().from(currencyRates).where(eq(currencyRates.code, currencyCode)).get();
+      if (!rateRecord || rateRecord.status !== 'ACTIVE') {
+        throw new Error(`Active Global Currency Rate not found for ${currencyCode}`);
+      }
+      
+      const ratePerUsdt = new Decimal(rateRecord.ratePerUsdt);
+      if (ratePerUsdt.lte(0)) {
+        throw new Error(`Invalid conversion rate for ${currencyCode}`);
+      }
+      // ratePerUsdt is stored as "How many Fiat units per 1 USDT" (e.g. 1 USDT = 84 INR)
+      // We normalize the conversion rate to "USDT per 1 Unit" for the UI display
+      conversionRateValue = new Decimal(1).div(ratePerUsdt).toNumber();
+      
+      // Formula: 1000 INR / 84 = 11.9 USDT
+      grossUsdt = new Decimal(amount).div(ratePerUsdt);
     }
-    conversionRateValue = parseFloat(rateRecord.ratePerUsdt);
-    if (conversionRateValue <= 0) {
-      throw new Error(`Invalid conversion rate for ${currencyCode}`);
-    }
-    grossUsdt = amount / conversionRateValue;
   }
 
-  let depositFee = 0;
+  let depositFee = new Decimal(0);
   if (paymentMethodId) {
     const pm = await db.select().from(payment_methods).where(eq(payment_methods.id, paymentMethodId)).get();
     if (pm) {
       if (pm.fee_type === 'FIXED') {
-        depositFee = pm.fee_value;
-      } else if (pm.fee_type === 'PERCENTAGE') {
-        depositFee = (grossUsdt * pm.fee_value) / 100;
-      } else if (pm.fee_type === 'PERCENTAGE_AND_FIXED') {
-        depositFee = (grossUsdt * pm.fee_value) / 100;
+        depositFee = new Decimal(pm.fee_value);
+      } else if (pm.fee_type === 'PERCENTAGE' || pm.fee_type === 'PERCENTAGE_AND_FIXED') {
+        depositFee = grossUsdt.times(pm.fee_value).div(100);
       }
     }
   }
 
-  let otherFees = 0;
+  let otherFees = new Decimal(0);
   try {
     const generalFeeSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'GLOBAL_DEPOSIT_FEE_USDT')).get();
     if (generalFeeSetting) {
-      otherFees = parseFloat(generalFeeSetting.value);
+      otherFees = new Decimal(generalFeeSetting.value);
     }
   } catch(e) {}
 
-  const totalFees = depositFee + otherFees;
-  const netUsdt = grossUsdt - totalFees;
+  const totalFees = depositFee.plus(otherFees);
+  const netUsdt = grossUsdt.minus(totalFees);
 
-  if (netUsdt <= 0) {
+  if (netUsdt.lte(0)) {
     throw new Error('Deposit amount after fees is too low.');
   }
 
@@ -55,11 +77,11 @@ export async function calculateDepositPreview(
     originalAmount: amount,
     originalCurrency: currencyCode,
     conversionRate: conversionRateValue,
-    grossUsdt: Number(grossUsdt.toFixed(4)),
-    depositFee: Number(depositFee.toFixed(4)),
-    otherFees: Number(otherFees.toFixed(4)),
-    totalFees: Number(totalFees.toFixed(4)),
-    netUsdt: Number(netUsdt.toFixed(4)),
+    grossUsdt: grossUsdt.toDP(4).toNumber(),
+    depositFee: depositFee.toDP(4).toNumber(),
+    otherFees: otherFees.toDP(4).toNumber(),
+    totalFees: totalFees.toDP(4).toNumber(),
+    netUsdt: netUsdt.toDP(4).toNumber(),
   };
 }
 
@@ -69,32 +91,30 @@ export async function calculateWithdrawalPreview(
   currencyCode: string,
   paymentMethodId: string | null
 ) {
-  let withdrawalFee = 0;
+  let withdrawalFee = new Decimal(0);
   if (paymentMethodId) {
     const pm = await db.select().from(payment_methods).where(eq(payment_methods.id, paymentMethodId)).get();
     if (pm) {
       if (pm.fee_type === 'FIXED') {
-        withdrawalFee = pm.fee_value;
-      } else if (pm.fee_type === 'PERCENTAGE') {
-        withdrawalFee = (usdtAmount * pm.fee_value) / 100;
-      } else if (pm.fee_type === 'PERCENTAGE_AND_FIXED') {
-        withdrawalFee = (usdtAmount * pm.fee_value) / 100;
+        withdrawalFee = new Decimal(pm.fee_value);
+      } else if (pm.fee_type === 'PERCENTAGE' || pm.fee_type === 'PERCENTAGE_AND_FIXED') {
+        withdrawalFee = new Decimal(usdtAmount).times(pm.fee_value).div(100);
       }
     }
   }
 
-  let otherFees = 0;
+  let otherFees = new Decimal(0);
   try {
     const generalFeeSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'GLOBAL_WITHDRAWAL_FEE_USDT')).get();
     if (generalFeeSetting) {
-      otherFees = parseFloat(generalFeeSetting.value);
+      otherFees = new Decimal(generalFeeSetting.value);
     }
   } catch(e) {}
 
-  const totalFees = withdrawalFee + otherFees;
-  const netUsdtReceived = usdtAmount - totalFees;
+  const totalFees = withdrawalFee.plus(otherFees);
+  const netUsdtReceived = new Decimal(usdtAmount).minus(totalFees);
 
-  if (netUsdtReceived <= 0) {
+  if (netUsdtReceived.lte(0)) {
     throw new Error('Withdrawal amount after fees is too low.');
   }
 
@@ -102,25 +122,45 @@ export async function calculateWithdrawalPreview(
   let finalFiatAmount = netUsdtReceived;
 
   if (currencyCode !== 'USDT') {
-    const rateRecord = await db.select().from(currencyRates).where(eq(currencyRates.code, currencyCode)).get();
-    if (!rateRecord || rateRecord.status !== 'ACTIVE') {
-      throw new Error(`Active Global Currency Rate not found for ${currencyCode}`);
+    const isCrypto = KNOWN_CRYPTOS.includes(currencyCode.toUpperCase());
+    
+    if (isCrypto) {
+      // It's a Crypto Asset. 
+      const realPrice = await getRealPrice(`${currencyCode}-USDT`);
+      if (!realPrice || realPrice <= 0) {
+        throw new Error(`Real-time price unavailable for ${currencyCode}`);
+      }
+      conversionRateValue = realPrice;
+      // Formula: 60000 USDT withdrawal in BTC -> 60000 / 60000 = 1 BTC
+      finalFiatAmount = netUsdtReceived.div(conversionRateValue);
+    } else {
+      // It's a Fiat Asset.
+      const rateRecord = await db.select().from(currencyRates).where(eq(currencyRates.code, currencyCode)).get();
+      if (!rateRecord || rateRecord.status !== 'ACTIVE') {
+        throw new Error(`Active Global Currency Rate not found for ${currencyCode}`);
+      }
+      
+      const ratePerUsdt = new Decimal(rateRecord.ratePerUsdt);
+      if (ratePerUsdt.lte(0)) {
+        throw new Error(`Invalid conversion rate for ${currencyCode}`);
+      }
+      
+      // Normalized for UI display: 1 Fiat = X USDT
+      conversionRateValue = new Decimal(1).div(ratePerUsdt).toNumber();
+      
+      // Formula: 10 USDT withdrawal in INR (rate 84) -> 10 * 84 = 840 INR
+      finalFiatAmount = netUsdtReceived.times(ratePerUsdt);
     }
-    conversionRateValue = parseFloat(rateRecord.ratePerUsdt);
-    if (conversionRateValue <= 0) {
-      throw new Error(`Invalid conversion rate for ${currencyCode}`);
-    }
-    finalFiatAmount = netUsdtReceived * conversionRateValue;
   }
 
   return {
-    requestedUsdt: Number(usdtAmount.toFixed(4)),
-    withdrawalFee: Number(withdrawalFee.toFixed(4)),
-    otherFees: Number(otherFees.toFixed(4)),
-    totalFees: Number(totalFees.toFixed(4)),
-    netUsdtReceived: Number(netUsdtReceived.toFixed(4)),
+    requestedUsdt: new Decimal(usdtAmount).toDP(4).toNumber(),
+    withdrawalFee: withdrawalFee.toDP(4).toNumber(),
+    otherFees: otherFees.toDP(4).toNumber(),
+    totalFees: totalFees.toDP(4).toNumber(),
+    netUsdtReceived: netUsdtReceived.toDP(4).toNumber(),
     currencyCode: currencyCode,
     conversionRate: conversionRateValue,
-    finalFiatAmount: Number(finalFiatAmount.toFixed(4))
+    finalFiatAmount: finalFiatAmount.toDP(4).toNumber()
   };
 }

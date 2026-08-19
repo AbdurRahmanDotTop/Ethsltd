@@ -6,42 +6,9 @@ import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
 import { processOrderMatching } from '../services/matching-engine';
 import { users } from 'database';
+import { getRealPrice } from '../utils/price';
 
 export const tradingRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
-
-const getRealPrice = async (symbol: string): Promise<number> => {
-  const symbolNoDash = symbol.replace('-', '');
-  
-  // 1. Try Binance
-  try {
-    const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbolNoDash}`);
-    if (res.ok) {
-      const data = await res.json() as any;
-      if (data.price) return parseFloat(data.price);
-    }
-  } catch (e) {
-    console.warn(`Binance price fetch failed for ${symbol}`);
-  }
-  
-  // 2. Try KuCoin as fallback
-  try {
-    const res = await fetch(`https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${symbol}`);
-    if (res.ok) {
-      const data = await res.json() as any;
-      if (data.data && data.data.price) return parseFloat(data.data.price);
-    }
-  } catch (e) {
-    console.warn(`KuCoin price fetch failed for ${symbol}`);
-  }
-  
-  // 3. Fallback mock prices so the system never breaks
-  const mocks: Record<string, number> = {
-    'BTC-USDT': 104250.00,
-    'ETH-USDT': 3500.00,
-    'SOL-USDT': 140.00,
-  };
-  return mocks[symbol] || 100.00;
-};
 
 const DEFAULT_MARKETS = [
   { symbol: 'BTC-USDT', baseAsset: 'BTC', quoteAsset: 'USDT', minPrice: '1', maxPrice: '1000000', tickSize: '0.01', minAmount: '0.00001', stepSize: '0.00001', makerFee: '0.001', takerFee: '0.001' },
