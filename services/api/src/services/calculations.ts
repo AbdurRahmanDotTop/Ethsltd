@@ -15,13 +15,14 @@ export async function calculateDepositPreview(
   let conversionRateValue = 1;
   
   if (currencyCode !== 'USDT') {
-    const isCrypto = KNOWN_CRYPTOS.includes(currencyCode.toUpperCase());
+    const baseCurrencyCode = currencyCode.split('(')[0].trim().toUpperCase();
+    const isCrypto = KNOWN_CRYPTOS.includes(baseCurrencyCode);
     
     if (isCrypto) {
       // It's a Crypto Asset. Fetch real-time price from Binance (Price in USDT)
-      const realPrice = await getRealPrice(`${currencyCode}-USDT`);
+      const realPrice = await getRealPrice(`${baseCurrencyCode}-USDT`);
       if (!realPrice || realPrice <= 0) {
-        throw new Error(`Real-time price unavailable for ${currencyCode}`);
+        throw new Error(`Real-time price unavailable for ${baseCurrencyCode}`);
       }
       conversionRateValue = realPrice;
       // Formula: 1 BTC = 60000 USDT -> grossUsdt = amount * price
@@ -122,13 +123,14 @@ export async function calculateWithdrawalPreview(
   let finalFiatAmount = netUsdtReceived;
 
   if (currencyCode !== 'USDT') {
-    const isCrypto = KNOWN_CRYPTOS.includes(currencyCode.toUpperCase());
+    const baseCurrencyCode = currencyCode.split('(')[0].trim().toUpperCase();
+    const isCrypto = KNOWN_CRYPTOS.includes(baseCurrencyCode);
     
     if (isCrypto) {
       // It's a Crypto Asset. 
-      const realPrice = await getRealPrice(`${currencyCode}-USDT`);
+      const realPrice = await getRealPrice(`${baseCurrencyCode}-USDT`);
       if (!realPrice || realPrice <= 0) {
-        throw new Error(`Real-time price unavailable for ${currencyCode}`);
+        throw new Error(`Real-time price unavailable for ${baseCurrencyCode}`);
       }
       conversionRateValue = realPrice;
       // Formula: 60000 USDT withdrawal in BTC -> 60000 / 60000 = 1 BTC
