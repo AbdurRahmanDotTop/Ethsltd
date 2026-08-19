@@ -214,6 +214,75 @@ authRoutes.post('/verify-email', async (c) => {
   }
 });
 
+authRoutes.post('/verify-email/request-otp', jwtMiddleware, async (c) => {
+  try {
+    const user = c.get('user');
+    const db = c.get('db');
+    
+    // Check cooldown (e.g. 60 seconds)
+    if (user.verificationExpiresAt) {
+      const timeRemaining = new Date(user.verificationExpiresAt).getTime() - Date.now();
+      // OTPs expire in 15 mins (900s). If > 14 mins (840s) remain, it means it was requested < 60s ago.
+      if (timeRemaining > 14 * 60 * 1000) {
+        return c.json({ success: false, error: 'Please wait 60 seconds before requesting another code.' }, 429);
+      }
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    await db.update(users).set({ 
+      verificationToken: otp,
+      verificationExpiresAt: expiresAt
+    }).where(eq(users.id, user.id));
+
+    const emailService = new EmailService(c.env, db);
+    
+    c.executionCtx.waitUntil((async () => {
+      try {
+        await emailService.sendVerificationOTP(user.email, otp);
+      } catch (e) {
+        console.error("Background OTP email failed", e);
+      }
+    })());
+
+    return c.json({ success: true, message: 'OTP sent successfully' });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+authRoutes.post('/verify-email/confirm-otp', jwtMiddleware, async (c) => {
+  try {
+    const body = await c.req.json();
+    const otp = body.otp;
+    const user = c.get('user');
+    const db = c.get('db');
+
+    if (!otp) return c.json({ success: false, error: 'OTP is required' }, 400);
+
+    const freshUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+    
+    if (!freshUser.verificationToken || freshUser.verificationToken !== otp) {
+      return c.json({ success: false, error: 'Invalid verification code' }, 400);
+    }
+
+    if (freshUser.verificationExpiresAt && new Date(freshUser.verificationExpiresAt).getTime() < Date.now()) {
+      return c.json({ success: false, error: 'Verification code has expired' }, 400);
+    }
+
+    await db.update(users).set({ 
+      emailVerified: true,
+      verificationToken: null,
+      verificationExpiresAt: null
+    }).where(eq(users.id, user.id));
+
+    return c.json({ success: true, message: 'Email successfully verified' });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
 authRoutes.post('/profile/update', jwtMiddleware, async (c) => {
   try {
     const body = await c.req.json();
@@ -221,14 +290,24 @@ authRoutes.post('/profile/update', jwtMiddleware, async (c) => {
     const db = c.get('db');
     const now = new Date();
 
-    await db.update(users)
-      .set({
-        displayName: body.displayName,
-        firstName: body.firstName,
-        lastName: body.lastName,
-        updatedAt: now,
-      })
-      .where(eq(users.id, user.id));
+    const updateData: any = {
+      displayName: body.displayName,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      updatedAt: now,
+    };
+
+    if (body.email && body.email !== user.email) {
+      // Check if new email is already in use
+      const existing = await db.select().from(users).where(eq(users.email, body.email)).get();
+      if (existing) {
+        return c.json({ success: false, error: 'Email already in use by another account' }, 400);
+      }
+      updateData.email = body.email;
+      updateData.emailVerified = false; // Reset verification status
+    }
+
+    await db.update(users).set(updateData).where(eq(users.id, user.id));
 
     const updatedUser = await db.select().from(users).where(eq(users.id, user.id)).get();
     return c.json({ success: true, data: updatedUser });

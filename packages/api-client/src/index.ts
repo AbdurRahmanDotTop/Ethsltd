@@ -118,9 +118,17 @@ export class EthsltdClient {
     return res;
   }
 
-  async resendVerification() {
-    // Placeholder until endpoint exists
-    return { success: true };
+  async requestEmailVerificationOTP() {
+    return this.request<any>('/api/v1/auth/verify-email/request-otp', {
+      method: 'POST',
+    });
+  }
+
+  async confirmEmailVerificationOTP(otp: string) {
+    return this.request<any>('/api/v1/auth/verify-email/confirm-otp', {
+      method: 'POST',
+      body: JSON.stringify({ otp }),
+    });
   }
 
   async requestPasswordReset(email: string) {

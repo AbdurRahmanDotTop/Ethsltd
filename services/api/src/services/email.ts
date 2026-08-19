@@ -86,10 +86,10 @@ export class EmailService {
 
   // EVENT: New User Registration
   async sendAdminNewUserAlert(user: any) {
-    const notifyEnabled = await getSetting(this.dbInstance, 'NOTIFY_ADMIN_NEW_USER', 'true');
+    const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_NEW_USER', 'true');
     if (notifyEnabled !== 'true') return;
 
-    const adminEmail = await getSetting(this.dbInstance, 'ADMIN_EMAIL', 'admin@ethsltd.com');
+    const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
     const html = renderAdminNotificationEmail('New User Registration', {
       'Name': user.displayName || 'N/A',
       'Email': user.email,
@@ -117,7 +117,19 @@ export class EmailService {
       to: email,
       subject: 'Verify your ETHSLTD Email Address',
       html,
-      eventType: 'USER_VERIFY_EMAIL',
+      eventType: 'USER_VERIFY_EMAIL_LINK',
+    });
+  }
+
+  // EVENT: Email Verification OTP
+  async sendVerificationOTP(email: string, otp: string) {
+    const html = renderUserTransactionEmail('Email Verification Code', `Your email verification code is <b>${otp}</b>. It expires in 15 minutes.`, []);
+
+    await this.sendMailWithLog({
+      to: email,
+      subject: `Your ETHSLTD Verification Code: ${otp}`,
+      html,
+      eventType: 'USER_VERIFY_EMAIL_OTP',
     });
   }
 
@@ -139,10 +151,10 @@ export class EmailService {
   // EVENT: Real Deposit (Admin)
   async sendAdminDepositAlert(depositInfo: any) {
     if (depositInfo.mode === 'DEMO') return;
-    const notifyEnabled = await getSetting(this.dbInstance, 'NOTIFY_ADMIN_DEPOSIT', 'true');
+    const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_DEPOSIT', 'true');
     if (notifyEnabled !== 'true') return;
 
-    const adminEmail = await getSetting(this.dbInstance, 'ADMIN_EMAIL', 'admin@ethsltd.com');
+    const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
     const html = renderAdminTransactionEmail('New Deposit Initiated', depositInfo);
 
     await this.sendMailWithLog({
@@ -156,10 +168,10 @@ export class EmailService {
   // EVENT: Real Withdrawal (Admin)
   async sendAdminWithdrawalAlert(withdrawalInfo: any) {
     if (withdrawalInfo.mode === 'DEMO') return;
-    const notifyEnabled = await getSetting(this.dbInstance, 'NOTIFY_ADMIN_WITHDRAWAL', 'true');
+    const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_WITHDRAWAL', 'true');
     if (notifyEnabled !== 'true') return;
 
-    const adminEmail = await getSetting(this.dbInstance, 'ADMIN_EMAIL', 'admin@ethsltd.com');
+    const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
     const html = renderAdminTransactionEmail('New Withdrawal Requested', withdrawalInfo);
 
     await this.sendMailWithLog({

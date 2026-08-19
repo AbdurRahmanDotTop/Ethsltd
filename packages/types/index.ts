@@ -43,9 +43,14 @@ export interface User {
   id: string;
   email: string;
   status: "ACTIVE" | "FROZEN" | "BANNED" | "PENDING_VERIFICATION";
-  role: "USER" | "ADMIN" | "SUPPORT";
+  role: "USER" | "ADMIN" | "SUPPORT" | "SUPER_ADMIN" | "EXPERT" | "COMPLIANCE_ADMIN" | "SUPPORT_ADMIN";
   createdAt: number;
   mfaEnabled: boolean;
+  emailVerified?: boolean;
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
 }
 
 export interface Session {

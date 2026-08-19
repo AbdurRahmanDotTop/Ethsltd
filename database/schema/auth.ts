@@ -9,6 +9,8 @@ export const users = sqliteTable('users', {
   firstName: text('first_name'),
   lastName: text('last_name'),
   emailVerified: integer('email_verified', { mode: 'boolean' }).default(false),
+  verificationToken: text('verification_token'),
+  verificationExpiresAt: integer('verification_expires_at', { mode: 'timestamp' }),
   avatarUrl: text('avatar_url'),
   status: text('status', { enum: ['ACTIVE', 'FROZEN', 'BANNED', 'PENDING_VERIFICATION'] }).notNull().default('ACTIVE'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),

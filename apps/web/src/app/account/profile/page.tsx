@@ -10,11 +10,17 @@ import { profileSchema, ProfileInput } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore();
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [otpSuccess, setOtpSuccess] = useState("");
 
   const {
     register,
@@ -42,6 +48,48 @@ export default function ProfilePage() {
       setSuccess("Profile updated successfully.");
     } catch (err: any) {
       setError(err.message || "Failed to update profile.");
+    }
+  };
+
+  const handleRequestOTP = async () => {
+    try {
+      setOtpError("");
+      setOtpSuccess("");
+      setOtpLoading(true);
+      const res = await apiClient.requestEmailVerificationOTP();
+      if (res.success) {
+        setOtpSuccess(res.message || "OTP sent to your email!");
+        setIsVerifyModalOpen(true);
+      } else {
+        setError(res.error || "Failed to send OTP.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Error requesting OTP.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!otp) {
+      setOtpError("Please enter the 6-digit OTP.");
+      return;
+    }
+    try {
+      setOtpError("");
+      setOtpLoading(true);
+      const res = await apiClient.confirmEmailVerificationOTP(otp);
+      if (res.success) {
+        updateUser({ ...user, emailVerified: true });
+        setIsVerifyModalOpen(false);
+        setSuccess("Email successfully verified!");
+      } else {
+        setOtpError(res.error || "Invalid OTP.");
+      }
+    } catch (err: any) {
+      setOtpError(err.message || "Error verifying OTP.");
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -86,15 +134,24 @@ export default function ProfilePage() {
           <div className="space-y-2">
             <Label>Email Address</Label>
             <div className="flex items-center justify-between p-3 rounded-md border border-border bg-muted/50">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">{user.email}</span>
-                {user.emailVerified && (
-                  <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">
+                {user.emailVerified ? (
+                  <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2.5 py-0.5 rounded-full font-semibold border border-green-200 dark:border-green-800">
                     Verified
                   </span>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2.5 py-0.5 rounded-full font-semibold border border-red-200 dark:border-red-800">
+                      Unverified
+                    </span>
+                    <Button type="button" size="sm" variant="secondary" className="h-6 text-xs px-2" onClick={handleRequestOTP} disabled={otpLoading}>
+                      Verify Now
+                    </Button>
+                  </div>
                 )}
               </div>
-              <Button type="button" variant="link" className="h-auto p-0 text-sm">Change email</Button>
+              <Button type="button" variant="link" className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground">Change email</Button>
             </div>
           </div>
 
@@ -130,6 +187,41 @@ export default function ProfilePage() {
           </div>
         </form>
       </div>
+
+      <Dialog open={isVerifyModalOpen} onOpenChange={setIsVerifyModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verify your email</DialogTitle>
+            <DialogDescription>
+              We've sent a 6-digit code to <strong>{user.email}</strong>. The code expires in 15 minutes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {otpSuccess && <p className="text-sm text-green-600 dark:text-green-400 font-medium">{otpSuccess}</p>}
+            {otpError && <p className="text-sm text-destructive font-medium">{otpError}</p>}
+            <div className="space-y-2">
+              <Label htmlFor="otp">Verification Code</Label>
+              <Input
+                id="otp"
+                placeholder="123456"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                className="text-center text-lg tracking-widest font-mono"
+                maxLength={6}
+              />
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <Button type="button" variant="ghost" onClick={() => handleRequestOTP()} disabled={otpLoading}>
+              Resend Code
+            </Button>
+            <Button type="button" onClick={handleVerifyOTP} disabled={otpLoading || otp.length !== 6}>
+              {otpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Verify Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
