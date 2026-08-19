@@ -21,11 +21,11 @@ async function hashPassword(password: string) {
 }
 
 authRoutes.post('/register', async (c) => {
-  const body = await c.req.json();
-  const db = c.get('db');
-  
   try {
-  if (!body.email || !body.password) {
+    const body = await c.req.json();
+    const db = c.get('db');
+    
+    if (!body.email || !body.password) {
     return c.json({ success: false, error: 'Email and password are required' }, 400);
   }
   
@@ -100,24 +100,31 @@ authRoutes.post('/register', async (c) => {
     domain: getCookieDomain(c),
   });
 
-  const user = await db.select().from(users).where(eq(users.id, userId)).get();
+  // Avoid re-fetching to prevent D1 replication lag issues
+  const userObj = {
+    id: userId,
+    displayId,
+    email: body.email,
+    role: isFirstUser ? 'SUPER_ADMIN' : 'USER',
+    status: 'ACTIVE'
+  } as any;
 
   // Async Email Dispatch
   const emailService = new EmailService(c.env, db);
-  const verifyToken = await sign({ purpose: 'email_verify', userId: user?.id, exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) }, JWT_SECRET);
+  const verifyToken = await sign({ purpose: 'email_verify', userId: userId, exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) }, JWT_SECRET);
   // We determine the origin based on request headers (or a configured APP_URL)
   const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
   
   c.executionCtx.waitUntil((async () => {
     try {
-      await emailService.sendAdminNewUserAlert(user);
-      await emailService.sendVerificationEmail(user!.email, verifyToken, appUrl);
+      await emailService.sendAdminNewUserAlert(userObj);
+      await emailService.sendVerificationEmail(body.email, verifyToken, appUrl);
     } catch (e) {
       console.error("Background email failed", e);
     }
   })());
 
-  return c.json({ success: true, token, data: { user } });
+  return c.json({ success: true, token, data: { user: userObj } });
   } catch (err: any) {
     return c.json({ success: false, error: err.message, stack: err.stack }, 500);
   }
@@ -185,11 +192,11 @@ authRoutes.get('/me', jwtMiddleware, async (c) => {
 });
 
 authRoutes.post('/verify-email', async (c) => {
-  const body = await c.req.json();
-  const token = body.token;
-  if (!token) return c.json({ success: false, error: 'Token required' }, 400);
-
   try {
+    const body = await c.req.json();
+    const token = body.token;
+    if (!token) return c.json({ success: false, error: 'Token required' }, 400);
+
     const { verify } = await import('hono/jwt');
     const payload = await verify(token, JWT_SECRET);
     if (payload.purpose !== 'email_verify' || !payload.userId) {
