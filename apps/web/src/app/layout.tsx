@@ -65,6 +65,8 @@ export default async function RootLayout({
       const res = await fetch(`${appUrl}/api/v1/auth/me`, {
         headers: {
           Cookie: `ethsltd_session=${sessionToken}`,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 ETHSLTD-SSR/1.0",
+          "Accept": "application/json"
         },
         cache: "no-store",
       });

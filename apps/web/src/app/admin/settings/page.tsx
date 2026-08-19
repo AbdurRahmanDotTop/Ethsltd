@@ -34,8 +34,6 @@ export default function AdminSettingsPage() {
     sessionTimeout: "30",
     ipWhitelist: "",
     maxFailedLogins: "5",
-    ipWhitelist: "",
-    maxFailedLogins: "5",
     globalApiStatus: true,
     apiRateLimit: "100",
     

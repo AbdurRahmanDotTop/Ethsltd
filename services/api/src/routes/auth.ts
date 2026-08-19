@@ -90,7 +90,7 @@ authRoutes.post('/register', async (c) => {
 
   setCookie(c, 'ethsltd_session', token, {
     path: '/',
-    secure: true,
+    secure: c.req.url.startsWith('https://'),
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
     sameSite: 'Lax',
@@ -154,7 +154,7 @@ authRoutes.post('/login', async (c) => {
 
   setCookie(c, 'ethsltd_session', token, {
     path: '/',
-    secure: true,
+    secure: c.req.url.startsWith('https://'),
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
     sameSite: 'Lax',

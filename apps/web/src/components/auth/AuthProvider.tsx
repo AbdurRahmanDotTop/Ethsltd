@@ -35,11 +35,15 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
             const res = await apiClient.getMe();
             if (res.success && res.data) {
               store.setUser(res.data);
-            } else {
+            } else if (res.error?.includes('401') || res.error?.includes('Session expired')) {
               store.logout();
+            } else {
+              // Network error or 500, keep the user in loading or authenticated state
+              // if they already have a token, assume they are still valid until a 401 occurs.
+              store.setStatus("authenticated");
             }
           } catch (e) {
-            store.logout();
+            // Do not aggressively log out on network catch errors
           }
         }
       }
