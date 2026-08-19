@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, User } from "lucide-react";
@@ -25,6 +25,7 @@ export default function ProfilePage() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ProfileInput>({
     resolver: zodResolver(profileSchema),
@@ -34,6 +35,16 @@ export default function ProfilePage() {
       lastName: user?.lastName || "",
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      reset({
+        displayName: user.displayName || "",
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+      });
+    }
+  }, [user, reset]);
 
   if (!user) return null;
 
@@ -123,8 +134,8 @@ export default function ProfilePage() {
           <div className="space-y-2">
             <h3 className="font-medium">Profile Photo</h3>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">Upload new</Button>
-              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">Remove</Button>
+              <Button type="button" variant="outline" size="sm">Upload new</Button>
+              <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">Remove</Button>
             </div>
             <p className="text-xs text-muted-foreground">JPG, PNG or WebP. Max size 2MB.</p>
           </div>
@@ -176,11 +187,13 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" {...register("firstName")} />
+              <Input id="firstName" {...register("firstName")} className={errors.firstName ? "border-destructive" : ""} />
+              {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" {...register("lastName")} />
+              <Input id="lastName" {...register("lastName")} className={errors.lastName ? "border-destructive" : ""} />
+              {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
             </div>
           </div>
 
@@ -199,7 +212,14 @@ export default function ProfilePage() {
         </form>
       </div>
 
-      <Dialog open={isVerifyModalOpen} onOpenChange={setIsVerifyModalOpen}>
+      <Dialog open={isVerifyModalOpen} onOpenChange={(open) => {
+        setIsVerifyModalOpen(open);
+        if (!open) {
+          setOtp("");
+          setOtpError("");
+          setOtpSuccess("");
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Verify your email</DialogTitle>
