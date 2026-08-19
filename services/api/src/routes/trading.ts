@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+const runTx = async (db: any, cb: any) => await cb(db);
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { markets, orders, trades, wallets, walletTransactions, positions, binaryOptions, currencyRates } from 'database';
@@ -73,7 +74,7 @@ tradingRoutes.get('/markets', async (c) => {
       };
     } else {
       // Robust Fallback
-      const fallbackPrice = await getRealPrice(m.symbol);
+      const fallbackPrice = await getRealPrice(m.symbol) || 0;
       return {
         id: m.symbol,
         symbol: m.symbol,
@@ -312,7 +313,7 @@ const processOpenLimitOrders = async (db: any, userId: string, mode: 'REAL' | 'D
     const isCrossed = order.side === 'BUY' ? currentPrice.lte(limitPrice) : currentPrice.gte(limitPrice);
     
     if (isCrossed) {
-      await db.transaction(async (tx: any) => {
+      await runTx(db, async (tx: any) => {
         // Re-verify order is still OPEN
         const freshOrder = await tx.select().from(orders).where(eq(orders.id, order.id)).get();
         if (!freshOrder || freshOrder.status !== 'OPEN') return;
@@ -493,7 +494,7 @@ tradingRoutes.post('/orders', async (c) => {
   const orderDisplayId = await generateBusinessId(db, dbUser?.email, 'ORDE');
 
   try {
-    await db.transaction(async (tx: any) => {
+    await runTx(db, async (tx: any) => {
       // Wallet Check (Inside Transaction)
       let spendWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset), eq(wallets.type, mode))).get();
       if (!spendWallet || new Decimal(spendWallet.balance).lt(spendAmount)) {
@@ -627,7 +628,7 @@ tradingRoutes.delete('/orders/:id', async (c) => {
   const orderId = c.req.param('id');
   
   try {
-    await db.transaction(async (tx: any) => {
+    await runTx(db, async (tx: any) => {
       const order = await tx.select().from(orders).where(and(eq(orders.id, orderId), eq(orders.userId, user.id))).get();
       
       if (!order) {
@@ -684,7 +685,7 @@ const processLiquidations = async (db: any, userId: string, mode: 'REAL' | 'DEMO
     if (p.side === 'SHORT' && markPrice.gte(liqPrice)) isLiquidated = true;
 
     if (isLiquidated) {
-      await db.transaction(async (tx: any) => {
+      await runTx(db, async (tx: any) => {
         const currentPos = await tx.select().from(positions).where(eq(positions.id, p.id)).get();
         if (currentPos && currentPos.status === 'OPEN') {
           // Liquidate
@@ -782,7 +783,7 @@ tradingRoutes.post('/futures/order', async (c) => {
     : markPrice.plus(requiredMargin.div(parsedAmount).times(0.9));
 
   try {
-    await db.transaction(async (tx: any) => {
+    await runTx(db, async (tx: any) => {
       // Wallet check for margin in quote asset (USDT)
       let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset), eq(wallets.type, mode))).get();
       if (!quoteWallet || new Decimal(quoteWallet.balance).lt(totalCost)) {
@@ -828,7 +829,7 @@ tradingRoutes.post('/futures/close', async (c) => {
   let totalReturnOut = 0;
 
   try {
-    await db.transaction(async (tx: any) => {
+    await runTx(db, async (tx: any) => {
       const position = await tx.select().from(positions).where(and(eq(positions.id, positionId), eq(positions.userId, user.id))).get();
       if (!position || position.status !== 'OPEN') {
         throw new Error('Position not found or already closed');
@@ -900,7 +901,7 @@ const processOptions = async (db: any, userId: string, mode: 'REAL' | 'DEMO') =>
       else if (opt.direction === 'DOWN' && markPrice.lt(entry)) status = 'WON';
       else if (markPrice.eq(entry)) status = 'TIE';
 
-      await db.transaction(async (tx: any) => {
+      await runTx(db, async (tx: any) => {
         // Re-check status to prevent race conditions
         const freshOpt = await tx.select().from(binaryOptions).where(eq(binaryOptions.id, opt.id)).get();
         if (freshOpt && freshOpt.status === 'PENDING') {
@@ -974,7 +975,7 @@ tradingRoutes.post('/options/order', async (c) => {
   const optionId = `OPT-${Date.now()}`;
 
   try {
-    await db.transaction(async (tx: any) => {
+    await runTx(db, async (tx: any) => {
       let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset), eq(wallets.type, mode))).get();
       if (!quoteWallet || new Decimal(quoteWallet.balance).lt(parsedAmount)) {
         throw new Error('Insufficient balance');

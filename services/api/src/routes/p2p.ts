@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { Decimal } from 'decimal.js';
+const runTx = async (db: any, cb: any) => await cb(db);
 import { eq, and, desc, or, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { p2pAds, p2pOrders, wallets, p2pMessages, users, ledgerAccounts, ledgerTransactions, ledgerEntries, p2pDisputes, notifications } from 'database';
@@ -196,7 +197,7 @@ p2pRoutes.post('/orders', async (c) => {
   try {
     let finalOrderId = '';
     
-    await db.transaction(async (tx: any) => {
+    await runTx(db, async (tx: any) => {
       const ad = await tx.select().from(p2pAds).where(and(eq(p2pAds.id, adId), eq(p2pAds.mode, mode))).get();
       if (!ad || ad.status !== 'ACTIVE') {
         throw new Error('Ad is no longer active.');
@@ -317,7 +318,7 @@ p2pRoutes.get('/orders/:id', async (c) => {
   // Lazy Expiry Enforcement
   if (['CREATED', 'PAYMENT_PENDING'].includes(order.status) && now.getTime() > new Date(order.expiresAt).getTime()) {
     try {
-      await db.transaction(async (tx: any) => {
+      await runTx(db, async (tx: any) => {
         const currentOrder = await tx.select().from(p2pOrders).where(eq(p2pOrders.id, order.id)).get();
         if (!currentOrder || !['CREATED', 'PAYMENT_PENDING'].includes(currentOrder.status)) {
           return; // Already handled
@@ -508,7 +509,7 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
   const orderId = c.req.param('id');
   
   try {
-    await db.transaction(async (tx: any) => {
+    await runTx(db, async (tx: any) => {
       const order = await tx.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
       if (!order || (order.status !== 'BUYER_MARKED_PAID' && order.status !== 'SELLER_PAYMENT_REVIEW')) {
         throw new Error('Order cannot be released in this state.');
@@ -635,7 +636,7 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
   const orderId = c.req.param('id');
   
   try {
-    await db.transaction(async (tx: any) => {
+    await runTx(db, async (tx: any) => {
       const order = await tx.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
       if (!order || !['CREATED', 'PAYMENT_PENDING', 'BUYER_MARKED_PAID'].includes(order.status)) {
         throw new Error('Cannot cancel this order.');
