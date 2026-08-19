@@ -3,6 +3,7 @@
   "name": "ethsltd-web",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-07-27",
+  "workers_dev": true,
   "compatibility_flags": [
     "nodejs_compat"
   ],
@@ -13,7 +14,11 @@
   "observability": {
     "enabled": true
   },
+  "routes": [
+    { "pattern": "ethsltd.com", "custom_domain": true },
+    { "pattern": "www.ethsltd.com", "custom_domain": true }
+  ],
   "vars": {
-    "NEXT_PUBLIC_API_URL": "https://api.ethsltd.workers.dev"
+    "NEXT_PUBLIC_API_URL": "https://api.ethsltd.com"
   }
 }

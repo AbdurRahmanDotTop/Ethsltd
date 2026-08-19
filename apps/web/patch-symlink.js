@@ -20,4 +20,4 @@ fs.symlinkSync = function(target, path, type) {
     }
   }
 }
-import('file:///c:/Users/abdur/Downloads/Clients/Ethsltd/node_modules/.pnpm/@opennextjs+cloudflare@1.20.2_next@16.3.0_@babel+core@7.29.7_@types+node@20.19.43_react-dom@1_xtoenmxwk3cy4uytmzwyt2ysyi/node_modules/@opennextjs/cloudflare/dist/cli/index.js');
+import('file:///c:/Users/abdur/Downloads/Clients/Ethsltd/node_modules/.pnpm/@opennextjs+cloudflare@1.20.2_next@16.3.0_@babel+core@7.29.7_@playwright+test@1.62.1_@types+n_z2lrx4quok3dna7ydnj7gtmdkm/node_modules/@opennextjs/cloudflare/dist/cli/index.js');

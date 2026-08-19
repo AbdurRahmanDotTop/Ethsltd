@@ -21,7 +21,11 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 // Triggering deployment to apply CORS fix
 
 app.use('*', cors({
-  origin: (origin) => origin || 'https://ethsltd.com',
+  origin: (origin) => {
+    if (!origin) return 'https://ethsltd.com';
+    const allowed = ['https://ethsltd.com', 'https://www.ethsltd.com'];
+    return allowed.includes(origin) ? origin : 'https://ethsltd.com';
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-Trading-Mode'],
   credentials: true,
