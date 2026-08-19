@@ -15,15 +15,36 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
 
   // Initialize store synchronously before children render
   if (!initialized.current) {
+    const hasLocalToken = typeof window !== 'undefined' && !!localStorage.getItem('ethsltd_auth_token');
     useAuthStore.setState({
       user: initialUser,
-      status: initialUser ? "authenticated" : "unauthenticated",
+      status: initialUser ? "authenticated" : (hasLocalToken ? "loading" : "unauthenticated"),
       hasHydrated: true,
     });
     initialized.current = true;
   }
 
   useEffect(() => {
+    // Client-side hydration fallback
+    const checkAuth = async () => {
+      const store = useAuthStore.getState();
+      if (!store.user) {
+        const token = localStorage.getItem('ethsltd_auth_token');
+        if (token) {
+          try {
+            const res = await apiClient.getMe();
+            if (res.success && res.data) {
+              store.setUser(res.data);
+            } else {
+              store.logout();
+            }
+          } catch (e) {
+            store.logout();
+          }
+        }
+      }
+    };
+    checkAuth();
     // Listen for global auth required events (e.g. from apiClient interceptors)
     const handleAuthRequired = (e: Event) => {
       const customEvent = e as CustomEvent;

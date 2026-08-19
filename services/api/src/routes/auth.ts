@@ -7,6 +7,8 @@ import { users, sessions, wallets } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
 
+import { getCookieDomain } from '../utils/cookie';
+
 export const authRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 const JWT_SECRET = 'super_secret_jwt_key_replace_me_in_prod';
@@ -92,6 +94,7 @@ authRoutes.post('/register', async (c) => {
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
     sameSite: 'Lax',
+    domain: getCookieDomain(c),
   });
 
   const user = await db.select().from(users).where(eq(users.id, userId)).get();
@@ -140,6 +143,7 @@ authRoutes.post('/login', async (c) => {
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
     sameSite: 'Lax',
+    domain: getCookieDomain(c),
   });
 
   return c.json({ success: true, token, data: { user } });
@@ -228,6 +232,6 @@ authRoutes.post('/logout', jwtMiddleware, async (c) => {
     await db.delete(sessions).where(eq(sessions.id, currentSessionId));
   }
 
-  deleteCookie(c, 'ethsltd_session', { path: '/' });
+  deleteCookie(c, 'ethsltd_session', { path: '/', domain: getCookieDomain(c) });
   return c.json({ success: true });
 });
