@@ -207,53 +207,78 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   const user = c.get('user');
   const now = new Date();
   
-  const deposit = await db.select().from(bankTransfers).where(eq(bankTransfers.id, id)).get();
+  const deposit = await db.select().from(realManualDeposits).where(eq(realManualDeposits.id, id)).get();
   if (!deposit || deposit.status !== 'PENDING') return c.json({ success: false, error: 'Invalid deposit' }, 400);
   
   // Atomic approval
-  await db.update(bankTransfers).set({ status: 'APPROVED', reviewedBy: user.id, reviewedAt: now }).where(eq(bankTransfers.id, id));
+  await db.update(realManualDeposits).set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now }).where(eq(realManualDeposits.id, id));
   
-  // Find or create REAL wallet
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.userId), eq(wallets.assetSymbol, deposit.currency), eq(wallets.type, 'REAL'))).get();
+  // Read from the frozen snapshot in the deposit record
+  const finalAsset = 'USDT';
+  const finalAmount = parseFloat(deposit.net_usdt || deposit.amount.toString());
+  const feeAmount = parseFloat(deposit.total_fees || '0');
+  const isConverted = deposit.original_currency && deposit.original_currency !== 'USDT';
+
+  // Record conversion if applicable
+  if (isConverted) {
+    await db.insert(assetConversions).values({
+      id: crypto.randomUUID(),
+      userId: deposit.user_id,
+      originalAsset: deposit.original_currency as string,
+      originalAmount: deposit.original_amount as string,
+      conversionRate: deposit.conversion_rate as string,
+      grossUsdt: deposit.gross_usdt as string,
+      depositFee: feeAmount.toString(),
+      netUsdt: deposit.net_usdt as string,
+      status: 'COMPLETED',
+      referenceId: deposit.id,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // Find or create REAL wallet for the FINAL asset
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset), eq(wallets.type, 'REAL'))).get();
   if (!wallet) {
     const walletId = crypto.randomUUID();
     const displayId = await generateBusinessId(db, null, 'WALL');
     await db.insert(wallets).values({
-      id: walletId, displayId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
+      id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
     });
-    wallet = { id: walletId, displayId, userId: deposit.userId, assetSymbol: deposit.currency, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
   }
   
   // Update wallet
-  const newBalance = (parseFloat(wallet!.balance) + parseFloat(deposit.amount)).toString();
+  const newBalance = (parseFloat(wallet!.balance) + finalAmount).toString();
   await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
   
   // Ledger
-  const ltDisplayId2 = await generateBusinessId(db, null, 'LTXN');
+  const ltDisplayId = await generateBusinessId(db, null, 'LTXN');
   await db.insert(ledgerTransactions).values({ 
-    id: crypto.randomUUID(), 
-    displayId: ltDisplayId2,
-    idempotencyKey: `BANK_TRANS_APPROVE_${deposit.id}_${now.getTime()}`,
+    id: crypto.randomUUID(),
+    displayId: ltDisplayId,
+    idempotencyKey: `BANK_DEP_APPROVE_${deposit.id}`,
     referenceType: 'DEPOSIT', 
     referenceId: deposit.id,
     environment: 'REAL', 
     status: 'COMMITTED', 
-    createdAt: now 
+    createdAt: now
   });
   
   // Wallet Transaction History
-  const wtDisplayId2 = await generateBusinessId(db, null, 'WTXN');
+  const wtDisplayId = await generateBusinessId(db, null, 'WTXN');
   await db.insert(walletTransactions).values({
     id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-    displayId: wtDisplayId2,
-    userId: deposit.userId,
+    displayId: wtDisplayId,
+    userId: deposit.user_id,
     type: 'DEPOSIT',
     mode: 'REAL',
-    assetSymbol: deposit.currency,
-    amount: deposit.amount.toString(),
+    assetSymbol: finalAsset,
+    amount: finalAmount.toString(),
+    fee: feeAmount.toString(),
     status: 'COMPLETED',
     network: 'Bank Transfer',
-    reference: deposit.bankReference,
+    reference: deposit.payment_reference,
     createdAt: now,
     updatedAt: now,
   });
@@ -266,14 +291,21 @@ adminPaymentRoutes.post('/bank-deposits/:id/reject', async (c) => {
   const db = c.get('db');
   const id = c.req.param('id');
   const user = c.get('user');
-  const { notes } = await c.req.json();
+  const body = await c.req.json();
+  const notes = body.notes;
   const now = new Date();
   
-  const deposit = await db.select().from(bankTransfers).where(eq(bankTransfers.id, id)).get();
+  const deposit = await db.select().from(realManualDeposits).where(eq(realManualDeposits.id, id)).get();
   if (!deposit || deposit.status !== 'PENDING') return c.json({ success: false, error: 'Invalid deposit' }, 400);
   
-  const reason = notes ? `Rejected: ${notes}` : 'Rejected by Admin';
-  await db.update(bankTransfers).set({ status: 'REJECTED', reviewedBy: user.id, reviewedAt: now, bankReference: reason }).where(eq(bankTransfers.id, id));
+  const reason = notes ? notes : 'Rejected by Admin';
+  await db.update(realManualDeposits).set({ 
+    status: 'REJECTED', 
+    reviewed_by: user.id, 
+    reviewed_at: now, 
+    rejection_reason: reason,
+    remarks: reason 
+  }).where(eq(realManualDeposits.id, id));
   
   return c.json({ success: true });
 });
@@ -285,6 +317,6 @@ adminPaymentRoutes.delete('/bank-deposits/:id', async (c) => {
   const admin = c.get('user');
   if (admin.role !== 'SUPER_ADMIN') return c.json({ success: false, error: 'Unauthorized' }, 403);
   
-  await db.delete(bankTransfers).where(eq(bankTransfers.id, id));
+  await db.delete(realManualDeposits).where(eq(realManualDeposits.id, id));
   return c.json({ success: true });
 });
