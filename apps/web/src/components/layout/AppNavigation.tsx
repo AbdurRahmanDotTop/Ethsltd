@@ -21,7 +21,7 @@ export function AppNavigation() {
       isActive: pathname.startsWith("/trade"),
     },
     {
-      name: "Option",
+      name: "P2P",
       href: "/p2p", // Mapping "Option" to P2P/Options
       icon: Zap,
       isActive: pathname.startsWith("/p2p"),
