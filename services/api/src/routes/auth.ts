@@ -93,10 +93,10 @@ authRoutes.post('/register', async (c) => {
 
   setCookie(c, 'ethsltd_session', token, {
     path: '/',
-    secure: c.req.url.startsWith('https://'),
+    secure: true,
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
-    sameSite: 'Lax',
+    sameSite: 'None',
     domain: getCookieDomain(c),
   });
 
@@ -173,10 +173,10 @@ authRoutes.post('/login', async (c) => {
 
   setCookie(c, 'ethsltd_session', token, {
     path: '/',
-    secure: c.req.url.startsWith('https://'),
+    secure: true,
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
-    sameSite: 'Lax',
+    sameSite: 'None',
     domain: getCookieDomain(c),
   });
 

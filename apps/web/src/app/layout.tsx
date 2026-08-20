@@ -112,6 +112,12 @@ export default async function RootLayout({
         <Script id="tawk-to" strategy="afterInteractive">
           {`
             var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+            Tawk_API.customStyle = {
+              visibility: {
+                desktop: { position: 'br', xOffset: '0px', yOffset: '-9999px' },
+                mobile: { position: 'br', xOffset: '0px', yOffset: '-9999px' }
+              }
+            };
             Tawk_API.onLoad = function(){
               Tawk_API.hideWidget();
             };
