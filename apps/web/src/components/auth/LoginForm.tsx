@@ -24,15 +24,9 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
 
   useEffect(() => {
     if (user) {
-      const hasToken = typeof window !== 'undefined' && localStorage.getItem('ethsltd_auth_token');
-      if (hasToken) {
-        const defaultRedirect = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account';
-        const finalRedirect = searchRedirect || defaultRedirect;
-        router.push(finalRedirect);
-      } else {
-        // If SSR authenticated but client lost the token (or has old cookie), break the redirect loop
-        useAuthStore.getState().logout();
-      }
+      const defaultRedirect = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account';
+      const finalRedirect = searchRedirect || defaultRedirect;
+      router.push(finalRedirect);
     }
   }, [user, router, searchRedirect]);
 

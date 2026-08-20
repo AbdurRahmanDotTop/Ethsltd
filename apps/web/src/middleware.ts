@@ -34,11 +34,26 @@ export function middleware(request: NextRequest) {
   if (isProtected && !token) {
     // Redirect unauthenticated users to login with the intended destination
     const redirectUrl = new URL('/login', request.url);
-    redirectUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(redirectUrl);
+    // Preserve any existing search params from the original request
+    const search = request.nextUrl.search;
+    redirectUrl.searchParams.set('redirect', pathname + search);
+    const response = NextResponse.redirect(redirectUrl);
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
+    return response;
   }
 
-  return NextResponse.next();
+  if (isAuthRoute && token) {
+    const redirectParam = request.nextUrl.searchParams.get('redirect');
+    const redirectUrl = redirectParam || '/account';
+    return NextResponse.redirect(new URL(redirectUrl, request.url));
+  }
+
+  const response = NextResponse.next();
+  if (isProtected) {
+    // Prevent browsers from caching protected routes (useful for logout)
+    response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  }
+  return response;
 }
 
 export const config = {

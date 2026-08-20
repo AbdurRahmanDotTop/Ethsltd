@@ -13,6 +13,24 @@ export class EthsltdClient {
     }
   }
 
+  private async syncLocalSession(token: string | null) {
+    if (typeof window !== 'undefined') {
+      try {
+        if (token) {
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+        } else {
+          await fetch('/api/auth/session', { method: 'DELETE' });
+        }
+      } catch (e) {
+        console.error('Failed to sync local session', e);
+      }
+    }
+  }
+
   setToken(token: string | null) {
     this.token = token;
     if (typeof window !== 'undefined') {
@@ -73,6 +91,7 @@ export class EthsltdClient {
       // Handle 401 globally
       if (res.status === 401) {
         this.setToken(null);
+        await this.syncLocalSession(null);
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('auth:required', { detail: { message: data?.error || 'Session expired or invalid' } }));
         }
@@ -96,6 +115,7 @@ export class EthsltdClient {
     
     if (res.success && (res as any).token) {
       this.setToken((res as any).token);
+      await this.syncLocalSession((res as any).token);
     }
     return res;
   }
@@ -103,6 +123,7 @@ export class EthsltdClient {
   async logout() {
     const res = await this.request('/api/v1/auth/logout', { method: 'POST' });
     this.setToken(null);
+    await this.syncLocalSession(null);
     return res;
   }
 
@@ -114,6 +135,7 @@ export class EthsltdClient {
     
     if (res.success && (res as any).token) {
       this.setToken((res as any).token);
+      await this.syncLocalSession((res as any).token);
     }
     return res;
   }
