@@ -38,15 +38,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (isAuthRoute && token) {
-    // Redirect authenticated users away from auth pages to their dashboard/wallet
-    // (If they came to /login with a ?redirect, we could theoretically redirect them there, 
-    // but usually if they visit /login directly while logged in, just send to /account)
-    const redirectParam = request.nextUrl.searchParams.get('redirect');
-    const destination = redirectParam ? redirectParam : '/account';
-    return NextResponse.redirect(new URL(destination, request.url));
-  }
-
   return NextResponse.next();
 }
 
