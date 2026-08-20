@@ -791,14 +791,14 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
 
     if (resolution === 'RELEASE_TO_BUYER') {
       // Deduct from Seller's escrow balance
-      const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+      const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
       if (sellerWallet) {
         const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
         await db.update(wallets).set({ escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
       }
       
       // Add to Buyer's available balance
-      const buyerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.buyerId), eq(wallets.assetSymbol, ad.asset))).get();
+      const buyerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.buyerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
       if (buyerWallet) {
         const finalBalance = new Decimal(buyerWallet.balance).plus(cryptoAmount).toString();
         await db.update(wallets).set({ balance: finalBalance, updatedAt: now }).where(eq(wallets.id, buyerWallet.id));
@@ -828,7 +828,7 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
 
     } else if (resolution === 'REFUND_TO_SELLER') {
       // Return crypto to Seller's available balance from Escrow
-      const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+      const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
       if (sellerWallet) {
         const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
         const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();

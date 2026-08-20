@@ -340,7 +340,7 @@ p2pRoutes.get('/orders/:id', async (c) => {
           const cryptoAmount = new Decimal(order.cryptoAmount);
           if (ad.type === 'BUY' || ad.status === 'CANCELED') {
             // Return crypto to Seller's available balance from Escrow
-            const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+            const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
             if (sellerWallet) {
               const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
               const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
@@ -544,14 +544,14 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
       const cryptoAmount = new Decimal(order.cryptoAmount);
       
       // Deduct from Seller's escrow balance
-      const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+      const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
       if (sellerWallet) {
         const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
         await tx.update(wallets).set({ escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
       }
 
       // Add to Buyer's available balance
-      const buyerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.buyerId), eq(wallets.assetSymbol, ad.asset))).get();
+      const buyerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.buyerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
       if (buyerWallet) {
         const finalBalance = new Decimal(buyerWallet.balance).plus(cryptoAmount).toString();
         await tx.update(wallets).set({ balance: finalBalance, updatedAt: now }).where(eq(wallets.id, buyerWallet.id));
@@ -691,7 +691,7 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
       
       if (ad.type === 'BUY' || ad.status === 'CANCELED') {
         // Return crypto to Seller's available balance from Escrow
-        const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+        const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
         if (sellerWallet) {
           const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
           const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
