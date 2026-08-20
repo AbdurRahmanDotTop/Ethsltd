@@ -583,10 +583,30 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
         createdAt: now,
       });
 
+      const getOrCreateLedgerAccount = async (userId: string) => {
+        let acc = await tx.select().from(ledgerAccounts).where(and(eq(ledgerAccounts.userId, userId), eq(ledgerAccounts.assetSymbol, ad.asset), eq(ledgerAccounts.environment, order.mode))).get();
+        if (!acc) {
+          const id = crypto.randomUUID();
+          await tx.insert(ledgerAccounts).values({
+            id,
+            userId,
+            environment: order.mode,
+            type: 'USER',
+            assetSymbol: ad.asset,
+            createdAt: now,
+          });
+          return id;
+        }
+        return acc.id;
+      };
+
+      const sellerLedgerAccId = await getOrCreateLedgerAccount(order.sellerId);
+      const buyerLedgerAccId = await getOrCreateLedgerAccount(order.buyerId);
+
       await tx.insert(ledgerEntries).values({
         id: crypto.randomUUID(),
         transactionId: txIdSeller,
-        accountId: order.sellerId,
+        accountId: sellerLedgerAccId,
         direction: 'DEBIT',
         assetSymbol: ad.asset,
         amount: cryptoAmount.toString(),
@@ -610,7 +630,7 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
       await tx.insert(ledgerEntries).values({
         id: crypto.randomUUID(),
         transactionId: txIdBuyer,
-        accountId: order.buyerId,
+        accountId: buyerLedgerAccId,
         direction: 'CREDIT',
         assetSymbol: ad.asset,
         amount: cryptoAmount.toString(),

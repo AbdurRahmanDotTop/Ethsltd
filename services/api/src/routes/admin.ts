@@ -772,6 +772,23 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
     const txId = crypto.randomUUID();
     const ltDisplayId = await generateBusinessId(db, null, 'LTXN');
 
+    const getOrCreateLedgerAccount = async (userId: string) => {
+      let acc = await db.select().from(ledgerAccounts).where(and(eq(ledgerAccounts.userId, userId), eq(ledgerAccounts.assetSymbol, ad.asset), eq(ledgerAccounts.environment, order.mode))).get();
+      if (!acc) {
+        const id = crypto.randomUUID();
+        await db.insert(ledgerAccounts).values({
+          id,
+          userId,
+          environment: order.mode,
+          type: 'USER',
+          assetSymbol: ad.asset,
+          createdAt: now,
+        });
+        return id;
+      }
+      return acc.id;
+    };
+
     if (resolution === 'RELEASE_TO_BUYER') {
       // Deduct from Seller's escrow balance
       const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
@@ -801,9 +818,12 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
         environment: order.mode, referenceType: 'P2P_ESCROW_RELEASE', referenceId: order.id, status: 'COMMITTED', createdAt: now,
       });
 
+      const sellerLedgerAccId = await getOrCreateLedgerAccount(order.sellerId);
+      const buyerLedgerAccId = await getOrCreateLedgerAccount(order.buyerId);
+
       await db.insert(ledgerEntries).values([
-        { id: crypto.randomUUID(), transactionId: txId, accountId: order.sellerId, direction: 'DEBIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now },
-        { id: crypto.randomUUID(), transactionId: txId, accountId: order.buyerId, direction: 'CREDIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now }
+        { id: crypto.randomUUID(), transactionId: txId, accountId: sellerLedgerAccId, direction: 'DEBIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now },
+        { id: crypto.randomUUID(), transactionId: txId, accountId: buyerLedgerAccId, direction: 'CREDIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now }
       ]);
 
     } else if (resolution === 'REFUND_TO_SELLER') {
@@ -828,6 +848,11 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
         id: txId, displayId: ltDisplayId, idempotencyKey: `p2p-admin-resolve-refund-${order.id}`,
         environment: order.mode, referenceType: 'P2P_ESCROW_REFUND', referenceId: order.id, status: 'REVERSED', createdAt: now,
       });
+
+      const sellerLedgerAccId = await getOrCreateLedgerAccount(order.sellerId);
+      await db.insert(ledgerEntries).values([
+        { id: crypto.randomUUID(), transactionId: txId, accountId: sellerLedgerAccId, direction: 'CREDIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now }
+      ]);
     }
 
     await db.insert(p2pMessages).values({
