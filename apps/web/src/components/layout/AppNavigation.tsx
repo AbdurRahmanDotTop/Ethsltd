@@ -41,7 +41,7 @@ export function AppNavigation() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 z-[100] w-full bg-[#181A20] border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
+    <div className="fixed bottom-0 left-0 z-40 w-full bg-[#181A20] border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
       <div className="grid h-16 w-full grid-cols-5 max-w-[1280px] mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
