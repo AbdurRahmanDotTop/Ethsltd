@@ -59,8 +59,9 @@ adminCurrencyRateRoutes.post('/', async (c) => {
     });
 
     return c.json({ success: true, message: 'Currency rate added successfully' });
-  } catch (error) {
-    return c.json({ success: false, error: 'Failed to add currency rate' }, 500);
+  } catch (error: any) {
+    console.error('Failed to add currency rate:', error);
+    return c.json({ success: false, error: 'Failed to add currency rate: ' + error.message }, 500);
   }
 });
 
@@ -114,8 +115,9 @@ adminCurrencyRateRoutes.put('/:code', async (c) => {
     }
 
     return c.json({ success: true, message: 'Currency rate updated successfully' });
-  } catch (error) {
-    return c.json({ success: false, error: 'Failed to update currency rate' }, 500);
+  } catch (error: any) {
+    console.error('Failed to update currency rate:', error);
+    return c.json({ success: false, error: 'Failed to update currency rate: ' + error.message }, 500);
   }
 });
 
