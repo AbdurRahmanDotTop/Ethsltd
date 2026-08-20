@@ -541,9 +541,15 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                   ))}
                 </div>
               ) : (
-                <div className="p-4 bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 rounded-md text-sm flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
-                  No bank accounts configured for {bankCurrency}. Please select another currency or contact support.
+                <div className="p-4 bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 rounded-md text-sm flex flex-col items-center justify-center text-center gap-3">
+                  <div className="flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
+                    <span>No bank accounts configured for {bankCurrency}.</span>
+                  </div>
+                  <span className="font-medium block">If bank details not available then Kindly Contact us</span>
+                  <Button type="button" variant="outline" size="sm" onClick={() => router.push('/support')} className="mt-1 border-orange-500/50 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400">
+                    For Bank Details Kindly Contact Us
+                  </Button>
                 </div>
               )}
             </div>
