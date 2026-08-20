@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 
 export function AdminPermissionGuard({ children }: { children: React.ReactNode }) {
   const { user, status, hasHydrated } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     if (!hasHydrated || status === "loading") return;
 
     if (!user) {
-      router.push("/login?redirect=/admin");
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
@@ -24,7 +25,7 @@ export function AdminPermissionGuard({ children }: { children: React.ReactNode }
     }
 
     setAuthorized(true);
-  }, [user, status, hasHydrated, router]);
+  }, [user, status, hasHydrated, router, pathname]);
 
   if (!hasHydrated || !authorized) {
     return (
