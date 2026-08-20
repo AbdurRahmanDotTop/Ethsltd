@@ -82,6 +82,12 @@ walletRoutes.get('/deposit/preview', async (c) => {
     }
 
     const preview = await calculateDepositPreview(db, amount, currency, methodId);
+    
+    const minDeposit = await getLimit(db, 'MIN_DEPOSIT', 0);
+    if (minDeposit > 0 && preview.grossUsdt < minDeposit) {
+      return c.json({ success: false, error: `Minimum deposit amount is ${minDeposit} USDT Equivalent.` }, 400);
+    }
+    
     return c.json({ success: true, data: preview });
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 400);
@@ -103,6 +109,12 @@ walletRoutes.get('/withdrawal/preview', async (c) => {
     }
 
     const preview = await calculateWithdrawalPreview(db, amount, currency, methodId);
+    
+    const minWithdrawal = await getLimit(db, 'MIN_WITHDRAWAL', 0);
+    if (minWithdrawal > 0 && preview.requestedUsdt < minWithdrawal) {
+      return c.json({ success: false, error: `Minimum withdrawal amount is ${minWithdrawal} USDT Equivalent.` }, 400);
+    }
+    
     return c.json({ success: true, data: preview });
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 400);
@@ -391,6 +403,11 @@ walletRoutes.post('/deposit', async (c) => {
 
       // Centralized Calculation Service!
       const preview = await calculateDepositPreview(db, amountNum, assetSymbol, methodId);
+      
+      const minDeposit = await getLimit(db, 'MIN_DEPOSIT', 0);
+      if (minDeposit > 0 && preview.grossUsdt < minDeposit) {
+        return c.json({ success: false, error: `Minimum deposit amount is ${minDeposit} USDT Equivalent.` }, 400);
+      }
       
       if (preview.netUsdt <= 0) {
         return c.json({ success: false, error: 'Deposit amount is too low to cover the required transaction fees.' }, 400);
