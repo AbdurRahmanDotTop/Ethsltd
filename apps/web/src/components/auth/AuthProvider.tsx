@@ -30,18 +30,24 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
     const checkAuth = async () => {
       const store = useAuthStore.getState();
       if (!store.user) {
-        try {
-          const res = await apiClient.getMe();
-          if (res.success && res.data) {
-            store.setUser(res.data);
-          } else if (res.error?.includes('401') || res.error?.includes('Session expired')) {
-            store.logout();
-          } else {
-            // Network error or 500, keep the user in unauthenticated state
-            store.logout();
+        const token = localStorage.getItem('ethsltd_auth_token');
+        if (token) {
+          try {
+            const res = await apiClient.getMe();
+            if (res.success && res.data) {
+              store.setUser(res.data);
+            } else if (res.error?.includes('401') || res.error?.includes('Session expired')) {
+              store.logout();
+            } else {
+              // Network error or 500, keep the user in unauthenticated state
+              store.logout();
+            }
+          } catch (e) {
+            // Do not aggressively log out on network catch errors, just fallback to unauthenticated
+            store.setStatus("unauthenticated");
           }
-        } catch (e) {
-          // Do not aggressively log out on network catch errors, just fallback to unauthenticated
+        } else {
+          // If no local token and no initialUser, we are definitely unauthenticated
           store.setStatus("unauthenticated");
         }
       }
@@ -51,7 +57,9 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
     // Listen for global auth required events (e.g. from apiClient interceptors)
     const handleAuthRequired = (e: Event) => {
       useAuthStore.getState().logout();
-      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+      }
     };
 
     window.addEventListener("auth:required", handleAuthRequired);
