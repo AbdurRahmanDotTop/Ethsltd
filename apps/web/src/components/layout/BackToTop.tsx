@@ -28,7 +28,7 @@ export function BackToTop() {
 
   return (
     <div
-      className={`fixed bottom-24 right-4 md:bottom-8 md:right-8 z-[90] transition-opacity duration-300 ${
+      className={`fixed bottom-24 left-4 md:bottom-8 md:left-8 z-[90] transition-opacity duration-300 ${
         isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >

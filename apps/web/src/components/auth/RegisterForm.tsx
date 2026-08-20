@@ -23,7 +23,13 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
 
   useEffect(() => {
     if (user) {
-      router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account');
+      const hasToken = typeof window !== 'undefined' && localStorage.getItem('ethsltd_auth_token');
+      if (hasToken) {
+        router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account');
+      } else {
+        // If SSR authenticated but client lost the token, break the redirect loop
+        useAuthStore.getState().logout();
+      }
     }
   }, [user, router]);
 
