@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { currencyRates, payment_methods, platformSettings } from 'database';
+import { currencyRates, platformSettings } from 'database';
 import { getRealPrice } from '../utils/price';
 import { getFeeConfig, calculateFee } from './fees';
 import Decimal from 'decimal.js';
@@ -137,7 +137,7 @@ export async function calculateWithdrawalPreview(
   return {
     requestedUsdt: new Decimal(usdtAmount).toDP(4).toNumber(),
     withdrawalFee: withdrawalFee.toDP(4).toNumber(),
-    otherFees: otherFees.toDP(4).toNumber(),
+    otherFees: 0,
     totalFees: totalFees.toDP(4).toNumber(),
     netUsdtReceived: netUsdtReceived.toDP(4).toNumber(),
     currencyCode: currencyCode,
