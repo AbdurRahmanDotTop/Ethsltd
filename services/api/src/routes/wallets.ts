@@ -318,9 +318,9 @@ walletRoutes.get('/transactions', async (c) => {
       mappedTxs.push({
         id: `${conv.id}-OUT`,
         type: 'CONVERT_OUT',
-        asset: conv.fromAsset,
-        amount: -parseFloat(conv.fromAmount),
-        fee: parseFloat(conv.fee),
+        asset: conv.originalAsset,
+        amount: -parseFloat(conv.originalAmount),
+        fee: parseFloat(conv.depositFee),
         status: conv.status,
         createdAt: conv.createdAt.toISOString(),
         updatedAt: conv.createdAt.toISOString(),
@@ -329,8 +329,8 @@ walletRoutes.get('/transactions', async (c) => {
       mappedTxs.push({
         id: `${conv.id}-IN`,
         type: 'CONVERT_IN',
-        asset: conv.toAsset,
-        amount: parseFloat(conv.toAmount),
+        asset: 'USDT',
+        amount: parseFloat(conv.netUsdt),
         fee: 0,
         status: conv.status,
         createdAt: conv.createdAt.toISOString(),
