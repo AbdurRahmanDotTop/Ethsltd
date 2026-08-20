@@ -440,6 +440,7 @@ walletRoutes.post('/deposit', async (c) => {
          net_usdt: preview.netUsdt.toString(),
          expected_wallet_credit: preview.netUsdt.toString(),
          
+         method: mappedDepositMethod,
          remarks: depositMethod, // Used to distinguish between 'BANK' and 'MANUAL'
          
          status: 'PENDING',
