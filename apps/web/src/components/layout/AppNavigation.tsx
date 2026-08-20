@@ -27,10 +27,10 @@ export function AppNavigation() {
       isActive: pathname.startsWith("/p2p"),
     },
     {
-      name: "Trust",
-      href: "/support", // Mapping "Trust" to Support/Trust
+      name: "P2P Orders",
+      href: "/p2p/orders",
       icon: Shield,
-      isActive: pathname.startsWith("/support"),
+      isActive: pathname.startsWith("/p2p/orders"),
     },
     {
       name: "Assets",
