@@ -802,8 +802,8 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
       });
 
       await db.insert(ledgerEntries).values([
-        { id: crypto.randomUUID(), transactionId: txId, accountId: order.sellerId, type: 'DEBIT', asset: ad.asset, amount: cryptoAmount.toString(), description: `Admin Dispute Release - Order ${order.displayId}`, createdAt: now },
-        { id: crypto.randomUUID(), transactionId: txId, accountId: order.buyerId, type: 'CREDIT', asset: ad.asset, amount: cryptoAmount.toString(), description: `Admin Dispute Receive - Order ${order.displayId}`, createdAt: now }
+        { id: crypto.randomUUID(), transactionId: txId, accountId: order.sellerId, direction: 'DEBIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now },
+        { id: crypto.randomUUID(), transactionId: txId, accountId: order.buyerId, direction: 'CREDIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now }
       ]);
 
     } else if (resolution === 'REFUND_TO_SELLER') {

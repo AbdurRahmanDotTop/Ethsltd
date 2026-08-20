@@ -587,10 +587,9 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
         id: crypto.randomUUID(),
         transactionId: txIdSeller,
         accountId: order.sellerId,
-        type: 'DEBIT',
-        asset: ad.asset,
+        direction: 'DEBIT',
+        assetSymbol: ad.asset,
         amount: cryptoAmount.toString(),
-        description: `P2P Order ${order.displayId} Crypto Release`,
         createdAt: now,
       });
 
@@ -612,10 +611,9 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
         id: crypto.randomUUID(),
         transactionId: txIdBuyer,
         accountId: order.buyerId,
-        type: 'CREDIT',
-        asset: ad.asset,
+        direction: 'CREDIT',
+        assetSymbol: ad.asset,
         amount: cryptoAmount.toString(),
-        description: `P2P Order ${order.displayId} Crypto Received`,
         createdAt: now,
       });
       

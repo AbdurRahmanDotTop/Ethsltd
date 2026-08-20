@@ -14,11 +14,30 @@ export function GlobalWalletDashboard() {
   const { user } = useAuthStore();
   const router = useRouter();
 
+  const [transactions, setTransactions] = useState<any[]>([]);
+
   useEffect(() => {
     fetchBalances('REAL');
+    
+    // Fetch user transactions
+    const fetchTx = async () => {
+      try {
+        const res = await apiClient.getWalletTransactions('REAL');
+        if (res.success && res.data) {
+          setTransactions(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch transactions", err);
+      }
+    };
+    fetchTx();
   }, [fetchBalances]);
 
   const totalUsdt = balances.reduce((acc, b) => acc + (b.usdValue || 0), 0);
+  const availableUsdt = balances.reduce((acc, b) => {
+    const price = b.total > 0 ? (b.usdValue || 0) / b.total : 0;
+    return acc + ((b.available || 0) * price);
+  }, 0);
   
   // Provide dummy assets if none exist so it looks like the screenshot
   const displayAssets = balances.length > 0 ? balances : [
@@ -56,13 +75,21 @@ export function GlobalWalletDashboard() {
             {showBalance ? <Eye className="w-5 h-5 text-gray-400" /> : <EyeOff className="w-5 h-5 text-gray-400" />}
           </button>
         </div>
-        <div className="mt-3">
-          <h2 className="text-3xl font-bold">
-            {showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
-          </h2>
-          <p className="text-sm text-gray-400 mt-1">
-            ≈{showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'} USD
-          </p>
+        <div className="mt-3 flex justify-between items-end">
+          <div>
+            <h2 className="text-3xl font-bold">
+              {showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
+            </h2>
+            <p className="text-sm text-gray-400 mt-1">
+              ≈{showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'} USD
+            </p>
+          </div>
+          <div className="text-right">
+             <span className="text-xs text-gray-400 block mb-1">Available Assets(USDT)</span>
+             <h3 className="text-xl font-semibold text-[#00C087]">
+               {showBalance ? availableUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
+             </h3>
+          </div>
         </div>
         <div className="mt-4">
           <span className="text-sm text-gray-400">UID: {user?.id?.substring(0, 8) || 'Loading...'}</span>
@@ -148,6 +175,55 @@ export function GlobalWalletDashboard() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Recent Transactions */}
+      <div className="mt-8 px-4">
+        <h2 className="text-xl font-bold mb-4">All Transactions</h2>
+        <div className="bg-[#1A1C24] border border-white/5 rounded-xl overflow-hidden">
+          {transactions.length === 0 ? (
+            <div className="p-8 text-center text-gray-400">
+              No transactions found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-white/5 text-gray-400">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Date</th>
+                    <th className="px-4 py-3 font-medium">Type</th>
+                    <th className="px-4 py-3 font-medium">Asset</th>
+                    <th className="px-4 py-3 font-medium text-right">Amount</th>
+                    <th className="px-4 py-3 font-medium text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {transactions.map((tx: any, i: number) => (
+                    <tr key={i} className="hover:bg-white/5">
+                      <td className="px-4 py-3 text-gray-300">
+                        {new Date(tx.createdAt).toLocaleDateString()} {new Date(tx.createdAt).toLocaleTimeString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${tx.type === 'DEPOSIT' ? 'bg-green-500/20 text-green-400' : tx.type === 'WITHDRAWAL' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                          {tx.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-bold">{tx.assetSymbol || tx.asset}</td>
+                      <td className={`px-4 py-3 text-right font-medium ${tx.type === 'WITHDRAWAL' ? 'text-red-400' : 'text-green-400'}`}>
+                        {tx.type === 'WITHDRAWAL' ? '-' : '+'}{Number(tx.amount).toFixed(4)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                         <span className={`text-xs ${tx.status === 'COMPLETED' || tx.status === 'APPROVED' ? 'text-green-400' : tx.status === 'PENDING' ? 'text-yellow-400' : 'text-red-400'}`}>
+                           {tx.status}
+                         </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
