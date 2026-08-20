@@ -11,13 +11,7 @@ export default function WalletLayout({ children }: { children: React.ReactNode }
   const { status, hasHydrated } = useAuthStore();
   const router = useRouter();
 
-  useEffect(() => {
-    if (hasHydrated && status === "unauthenticated") {
-      router.push("/login?redirect=/wallet");
-    }
-  }, [status, hasHydrated, router]);
-
-  if (!hasHydrated || status === "loading" || status === "unauthenticated") {
+  if (!hasHydrated || status === "loading") {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-[500px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />

@@ -33,15 +33,10 @@ export default function MyAdsPage() {
   };
 
   useEffect(() => {
-    if (hasHydrated && status === "unauthenticated") {
-      router.push("/login?callbackUrl=/p2p/my-ads");
-      return;
-    }
-
     if (status === "authenticated" && user) {
       fetchMyAds();
     }
-  }, [user, status, router, mode]);
+  }, [user, status, mode]);
 
   const handleCloseAd = async (adId: string) => {
     if (!confirm("Are you sure you want to close this ad?")) return;

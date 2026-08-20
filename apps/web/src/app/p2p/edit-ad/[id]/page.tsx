@@ -56,11 +56,6 @@ export default function EditAdPage() {
   const [showDepositPopup, setShowDepositPopup] = useState(false);
 
   useEffect(() => {
-    if (hasHydrated && status === "unauthenticated") {
-      router.push("/login?callbackUrl=/p2p/post-ad");
-      return;
-    }
-
     if (hasHydrated && status === "authenticated") {
       async function checkBalance() {
         try {

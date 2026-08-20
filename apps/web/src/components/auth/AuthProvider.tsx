@@ -15,10 +15,11 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
 
   // Initialize store synchronously before children render
   if (!initialized.current) {
-    const hasLocalToken = typeof window !== 'undefined' && !!localStorage.getItem('ethsltd_auth_token');
+    // We don't rely strictly on localStorage anymore since the true source is the httpOnly cookie.
+    // If initialUser is missing (e.g. SSR fetch failed), we assume "loading" until proven otherwise.
     useAuthStore.setState({
       user: initialUser,
-      status: initialUser ? "authenticated" : (hasLocalToken ? "loading" : "unauthenticated"),
+      status: initialUser ? "authenticated" : "loading",
       hasHydrated: true,
     });
     initialized.current = true;
@@ -29,32 +30,28 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
     const checkAuth = async () => {
       const store = useAuthStore.getState();
       if (!store.user) {
-        const token = localStorage.getItem('ethsltd_auth_token');
-        if (token) {
-          try {
-            const res = await apiClient.getMe();
-            if (res.success && res.data) {
-              store.setUser(res.data);
-            } else if (res.error?.includes('401') || res.error?.includes('Session expired')) {
-              store.logout();
-            } else {
-              // Network error or 500, keep the user in loading or authenticated state
-              // if they already have a token, assume they are still valid until a 401 occurs.
-              store.setStatus("authenticated");
-            }
-          } catch (e) {
-            // Do not aggressively log out on network catch errors
+        try {
+          const res = await apiClient.getMe();
+          if (res.success && res.data) {
+            store.setUser(res.data);
+          } else if (res.error?.includes('401') || res.error?.includes('Session expired')) {
+            store.logout();
+          } else {
+            // Network error or 500, keep the user in unauthenticated state
+            store.logout();
           }
+        } catch (e) {
+          // Do not aggressively log out on network catch errors, just fallback to unauthenticated
+          store.setStatus("unauthenticated");
         }
       }
     };
     checkAuth();
+    
     // Listen for global auth required events (e.g. from apiClient interceptors)
     const handleAuthRequired = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const message = customEvent.detail?.message || "Your session has expired. Please log in again.";
       useAuthStore.getState().logout();
-      useAuthStore.getState().openAuthModal(message);
+      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
     };
 
     window.addEventListener("auth:required", handleAuthRequired);

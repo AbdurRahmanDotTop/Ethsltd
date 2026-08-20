@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/account";
+  const searchRedirect = searchParams.get("redirect");
   const setUser = useAuthStore((state) => state.setUser);
   const user = useAuthStore((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
@@ -24,9 +24,11 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
 
   useEffect(() => {
     if (user) {
-      router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : redirectUrl);
+      const defaultRedirect = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account';
+      const finalRedirect = searchRedirect || defaultRedirect;
+      router.push(finalRedirect);
     }
-  }, [user, router, redirectUrl]);
+  }, [user, router, searchRedirect]);
 
   const {
     register,
@@ -48,7 +50,8 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
       if (onSuccess) {
         onSuccess();
       } else {
-        router.push(redirectUrl);
+        const defaultRedirect = response.data?.user?.role === 'SUPER_ADMIN' || response.data?.user?.role === 'ADMIN' ? '/admin' : '/account';
+        router.push(searchRedirect || defaultRedirect);
       }
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred during login.");

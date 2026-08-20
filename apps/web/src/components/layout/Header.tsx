@@ -27,6 +27,7 @@ export function Header() {
   const handleLogout = async () => {
     await apiClient.logout()
     logout()
+    window.location.href = '/login'
     setDropdownOpen(false)
   }
 

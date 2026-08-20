@@ -221,9 +221,14 @@ export function AdminHeader() {
               
               <div className="border-t border-border py-1">
                 <button 
-                  onClick={() => {
+                  onClick={async () => {
                     setIsDropdownOpen(false);
+                    try {
+                      const { apiClient } = await import('@ethsltd/api-client');
+                      await apiClient.logout();
+                    } catch(e) {}
                     logout();
+                    window.location.href = '/login';
                   }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors text-left"
                 >

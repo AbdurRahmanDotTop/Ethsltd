@@ -11,25 +11,19 @@ import { useAuthStore } from "@/stores/auth-store";
 import { apiClient } from "@ethsltd/api-client";
 
 export default function ExpertDashboardLayout({ children }: { children: React.ReactNode }) {
-  const requireAuth = useRequireAuth();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
   const { logout } = useAuthStore();
+  const { hasHydrated, status } = useAuthStore();
 
   const handleLogout = async () => {
-    await apiClient.logout();
+    try {
+      await apiClient.logout();
+    } catch(e) {}
     logout();
-    router.push('/login');
+    window.location.href = '/login';
   };
 
-  useEffect(() => {
-    requireAuth(() => {
-      setIsAuthenticated(true);
-    });
-  }, [requireAuth]);
-
-  if (!isAuthenticated) {
+  if (!hasHydrated || status === "loading") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
