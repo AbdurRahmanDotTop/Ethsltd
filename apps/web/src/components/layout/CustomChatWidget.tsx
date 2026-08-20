@@ -16,7 +16,7 @@ export function CustomChatWidget() {
           }
         }
       }}
-      className="fixed z-[9999] flex items-center justify-center bg-[#00C087] text-[#121212] shadow-2xl hover:bg-[#00A070] active:scale-95 transition-all cursor-pointer right-0 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-l-xl md:bottom-8 md:right-8 md:top-auto md:translate-y-0 md:rounded-full md:p-4"
+      className="fixed z-[9999] flex items-center justify-center bg-[#00C087] text-[#121212] shadow-2xl hover:bg-[#00A070] active:scale-95 transition-all cursor-pointer right-0 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-l-xl md:bottom-[calc(79px+env(safe-area-inset-bottom))] md:right-8 md:top-auto md:translate-y-0 md:rounded-full md:p-4"
       aria-label="Open Live Chat"
       style={{ touchAction: 'manipulation' }}
     >

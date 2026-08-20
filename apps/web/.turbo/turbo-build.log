@@ -8,7 +8,7 @@
 ⚠ Invalid next.config.ts options detected: 
 ⚠     Unrecognized key(s) in object: 'eslint'
 ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
-✓ Running next.config.ts took 33ms
+✓ Running next.config.ts took 34ms
 
 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
 
@@ -17,15 +17,15 @@
 
   Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
   Creating an optimized production build ...
-✓ Compiled successfully in 4.5s
+✓ Compiled successfully in 1623ms
   Skipping validation of types
-  Finished TypeScript config validation in 10ms ...
+  Finished TypeScript config validation in 8ms ...
   Collecting page data using 7 workers ...
   Generating static pages using 7 workers (0/5) ...
   Generating static pages using 7 workers (1/5) 
   Generating static pages using 7 workers (2/5) 
   Generating static pages using 7 workers (3/5) 
-✓ Generating static pages using 7 workers (5/5) in 140ms
+✓ Generating static pages using 7 workers (5/5) in 124ms
   Finalizing page optimization ...
 
 Route (app)
