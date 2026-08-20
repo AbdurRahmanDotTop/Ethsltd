@@ -47,7 +47,9 @@ walletRoutes.get('/deposit-settings', async (c) => {
   const bankCurrencies = rates.filter(r => r.isBank).map(r => r.code);
   const activeCryptoAssets = rates.filter(r => r.isAsset).map(r => r.code);
   
-  return c.json({ success: true, activeMethods, manualAddresses, bankCurrencies, activeCryptoAssets });
+  const activeBankAccounts = await db.select().from(bank_accounts).where(eq(bank_accounts.active, true)).all();
+  
+  return c.json({ success: true, activeMethods, manualAddresses, bankCurrencies, activeCryptoAssets, bankAccounts: activeBankAccounts });
 });
 
 walletRoutes.get('/deposit/preview', async (c) => {

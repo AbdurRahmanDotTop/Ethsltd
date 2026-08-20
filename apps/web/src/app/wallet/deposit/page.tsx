@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { use } from "react";
 
-export default function DepositPage({ searchParams }: { searchParams: Promise<{ asset?: string }> }) {
-  const params = use(searchParams);
+export default async function DepositPage({ searchParams }: { searchParams: Promise<{ asset?: string }> }) {
+  const params = await searchParams;
   
   return (
     <div className="space-y-6">

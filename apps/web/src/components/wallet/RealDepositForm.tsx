@@ -23,7 +23,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   const [activeMethods, setActiveMethods] = useState<string[]>([]);
-
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   useEffect(() => {
     fetchDepositSettings();
   }, []);
@@ -71,6 +71,9 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
         
         if (res.manualAddresses) {
           setManualAddresses(res.manualAddresses);
+        }
+        if (res.bankAccounts) {
+          setBankAccounts(res.bankAccounts);
         }
       }
     } catch (e) {
@@ -467,17 +470,83 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
               <Building2 className="w-8 h-8 text-primary dark:text-primary" />
             </div>
             <h4 className="font-semibold text-xl mb-2 text-foreground">Direct Bank Transfer</h4>
-            <p className="text-muted-foreground mb-4 max-w-md mx-auto text-sm">
-              If you want to deposit via direct bank transfer, please contact our support team. We will provide you with the necessary bank details for the transfer.
-            </p>
-            <div className="w-full max-w-md h-px bg-border my-4"></div>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm italic">
-              Agar aap direct bank transfer se deposit karna chahte hain to hamse contact kijiye, ham aap ko Direct bank transfer ke liye Bank Details bhejenge.
-            </p>
-            <Button onClick={() => router.push('/support')} className="w-full sm:w-auto px-8 py-6 text-base bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 whitespace-normal h-auto">
-              <MessageCircle className="w-5 h-5 mr-2 shrink-0" />
-              Contact Support for Bank Details
-            </Button>
+            
+            <div className="w-full mt-4 text-left border border-primary/20 bg-background rounded-lg p-4">
+              <div className="flex justify-between items-center mb-4 border-b border-border pb-2">
+                <h5 className="font-medium text-foreground">Bank Details</h5>
+                <select 
+                  value={bankCurrency} 
+                  onChange={e => setBankCurrency(e.target.value)}
+                  className="border border-border bg-background rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {bankCurrenciesList.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {loadingAddresses ? (
+                <div className="flex items-center justify-center py-6 text-muted-foreground">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading bank details...
+                </div>
+              ) : bankAccounts.filter(b => b.currency === bankCurrency).length > 0 ? (
+                <div className="space-y-6 max-h-[300px] overflow-y-auto pr-2">
+                  {bankAccounts.filter(b => b.currency === bankCurrency).map((bank, idx) => (
+                    <div key={idx} className="space-y-3 bg-muted/50 p-4 rounded-md border border-border">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground font-medium">Bank Name</span>
+                        <div className="flex items-center gap-2 font-semibold">
+                           {bank.bank_name}
+                           <button type="button" onClick={() => copyToClipboard(bank.bank_name, 'Bank Name')}><Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" /></button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground font-medium">Account Name</span>
+                        <div className="flex items-center gap-2 font-semibold">
+                           {bank.account_holder}
+                           <button type="button" onClick={() => copyToClipboard(bank.account_holder, 'Account Name')}><Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" /></button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground font-medium">Account Number</span>
+                        <div className="flex items-center gap-2 font-semibold">
+                           {bank.account_number}
+                           <button type="button" onClick={() => copyToClipboard(bank.account_number, 'Account Number')}><Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" /></button>
+                        </div>
+                      </div>
+                      {bank.ifsc && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground font-medium">IFSC / Routing</span>
+                          <div className="flex items-center gap-2 font-semibold">
+                             {bank.ifsc}
+                             <button type="button" onClick={() => copyToClipboard(bank.ifsc, 'IFSC / Routing')}><Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" /></button>
+                          </div>
+                        </div>
+                      )}
+                      {bank.swift && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground font-medium">SWIFT Code</span>
+                          <div className="flex items-center gap-2 font-semibold">
+                             {bank.swift}
+                             <button type="button" onClick={() => copyToClipboard(bank.swift, 'SWIFT Code')}><Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" /></button>
+                          </div>
+                        </div>
+                      )}
+                      {bank.instructions && (
+                        <div className="text-sm mt-3 pt-3 border-t border-border">
+                          <p className="text-muted-foreground whitespace-pre-wrap">{bank.instructions}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 rounded-md text-sm flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
+                  No bank accounts configured for {bankCurrency}. Please select another currency or contact support.
+                </div>
+              )}
+            </div>
             
             <div className="w-full mt-8 text-left border-t border-primary/20 pt-6">
               <h5 className="font-medium text-foreground mb-4 text-center">Already transferred? Submit details here:</h5>
@@ -485,16 +554,10 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 <div className="space-y-1">
                   <label className="text-sm font-medium">Deposit Amount</label>
                   <div className="flex gap-2">
-                    <Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
-                    <select 
-                      value={bankCurrency} 
-                      onChange={e => setBankCurrency(e.target.value)}
-                      className="border border-border bg-background rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      {bankCurrenciesList.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
+                    <Input type="number" step="any" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
+                    <div className="flex items-center px-3 border border-border bg-muted rounded-md text-sm font-medium">
+                      {bankCurrency}
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-1">

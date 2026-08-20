@@ -289,29 +289,7 @@ export default function AdminPaymentSettingsPage() {
         )}
       </div>
 
-      <div className="space-y-6">
-        <div className="flex justify-between items-center flex-wrap gap-y-4">
-          <h3 className="text-xl font-semibold">Bank Accounts</h3>
-          <Button onClick={() => handleOpenBankModal()}>Add Bank Account</Button>
-        </div>
-        {loading ? <p>Loading...</p> : banks.map(bank => (
-          <div key={bank.id} className="p-4 border border-border rounded-lg bg-card flex justify-between items-center flex-wrap gap-y-4">
-            <div>
-              <h4 className="font-semibold">{bank.bank_name}</h4>
-              <p className="text-sm text-muted-foreground">{bank.account_holder} - {bank.currency}</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => handleOpenBankModal(bank)}>Edit</Button>
-              <Button variant="destructive" onClick={() => handleDeleteBank(bank.id)}>Delete</Button>
-            </div>
-          </div>
-        ))}
-        {banks.length === 0 && !loading && (
-          <div className="p-4 border border-border rounded-lg bg-muted text-center text-sm">
-            No bank accounts configured.
-          </div>
-        )}
-      </div>
+
 
       {/* Edit Method Modal */}
       <Dialog open={!!editingMethod} onOpenChange={(open) => !open && setEditingMethod(null)}>
@@ -387,6 +365,31 @@ export default function AdminPaymentSettingsPage() {
                   <Button type="button" variant="outline" className="w-full border-dashed" onClick={() => setCryptoAddresses([...cryptoAddresses, { asset: "", address: "" }])}>
                     + Add Another Asset
                   </Button>
+                </div>
+              ) : editingMethod?.method === 'BANK_TRANSFER' ? (
+                <div className="space-y-4 bg-muted/50 p-4 rounded-lg border border-border">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-semibold text-sm">Configured Bank Accounts</h4>
+                    <Button size="sm" type="button" onClick={() => handleOpenBankModal()}>+ Add Bank</Button>
+                  </div>
+                  <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
+                    {banks.length === 0 ? (
+                      <div className="text-center text-sm text-muted-foreground py-4 border rounded bg-background">No bank accounts configured.</div>
+                    ) : (
+                      banks.map(bank => (
+                        <div key={bank.id} className="p-3 bg-background border rounded-md flex justify-between items-center gap-2">
+                          <div>
+                            <div className="font-medium text-sm">{bank.bank_name} <span className="text-xs text-muted-foreground">({bank.currency})</span></div>
+                            <div className="text-xs text-muted-foreground">{bank.account_number}</div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => handleOpenBankModal(bank)}>Edit</Button>
+                            <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleDeleteBank(bank.id)}>Delete</Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               ) : (
                 <textarea 
