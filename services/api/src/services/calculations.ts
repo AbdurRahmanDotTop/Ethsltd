@@ -54,23 +54,27 @@ export async function calculateDepositPreview(
   }
 
   let depositFee = new Decimal(0);
+  let hasMethodFee = false;
   if (paymentMethodId && !['AUTO', 'MANUAL', 'BANK_TRANSFER'].includes(paymentMethodId)) {
     const pm = await db.select().from(payment_methods).where(eq(payment_methods.id, paymentMethodId)).get();
     if (pm) {
+      hasMethodFee = true;
       if (pm.fee_type === 'FIXED') {
-        depositFee = new Decimal(pm.fee_value);
+        depositFee = new Decimal(pm.fee_value || 0);
       } else if (pm.fee_type === 'PERCENTAGE' || pm.fee_type === 'PERCENTAGE_AND_FIXED') {
-        depositFee = grossUsdt.times(pm.fee_value).div(100);
+        depositFee = grossUsdt.times(pm.fee_value || 0).div(100);
       }
     }
   }
 
   let otherFees = new Decimal(0);
-  try {
-    const feeConfig = await getFeeConfig(db, 'DEPOSIT_FEE', { type: 'FIXED', amount: 0, percentage: 0 });
-    otherFees = new Decimal(calculateFee(grossUsdt.toNumber(), feeConfig));
-  } catch(e) {
-    console.error("Failed to calculate global deposit fee", e);
+  if (!hasMethodFee) {
+    try {
+      const feeConfig = await getFeeConfig(db, 'DEPOSIT_FEE', { type: 'FIXED', amount: 0, percentage: 0 });
+      otherFees = new Decimal(calculateFee(grossUsdt.toNumber(), feeConfig));
+    } catch(e) {
+      console.error("Failed to calculate global deposit fee", e);
+    }
   }
 
   const totalFees = depositFee.plus(otherFees);
@@ -95,23 +99,27 @@ export async function calculateWithdrawalPreview(
   paymentMethodId: string | null
 ) {
   let withdrawalFee = new Decimal(0);
+  let hasMethodFee = false;
   if (paymentMethodId) {
     const pm = await db.select().from(payment_methods).where(eq(payment_methods.id, paymentMethodId)).get();
     if (pm) {
+      hasMethodFee = true;
       if (pm.fee_type === 'FIXED') {
-        withdrawalFee = new Decimal(pm.fee_value);
+        withdrawalFee = new Decimal(pm.fee_value || 0);
       } else if (pm.fee_type === 'PERCENTAGE' || pm.fee_type === 'PERCENTAGE_AND_FIXED') {
-        withdrawalFee = new Decimal(usdtAmount).times(pm.fee_value).div(100);
+        withdrawalFee = new Decimal(usdtAmount).times(pm.fee_value || 0).div(100);
       }
     }
   }
 
   let otherFees = new Decimal(0);
-  try {
-    const feeConfig = await getFeeConfig(db, 'WITHDRAWAL_FEE', { type: 'FIXED', amount: 0, percentage: 0 });
-    otherFees = new Decimal(calculateFee(usdtAmount, feeConfig));
-  } catch(e) {
-    console.error("Failed to calculate global withdrawal fee", e);
+  if (!hasMethodFee) {
+    try {
+      const feeConfig = await getFeeConfig(db, 'WITHDRAWAL_FEE', { type: 'FIXED', amount: 0, percentage: 0 });
+      otherFees = new Decimal(calculateFee(usdtAmount, feeConfig));
+    } catch(e) {
+      console.error("Failed to calculate global withdrawal fee", e);
+    }
   }
 
   const totalFees = withdrawalFee.plus(otherFees);

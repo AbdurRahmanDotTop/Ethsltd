@@ -57,13 +57,11 @@ walletRoutes.get('/deposit-settings', async (c) => {
   // Get dynamic currencies
   const rates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
   
-  // Only include bank currencies if they are marked as isBank and have a configured bank account
-  const availableBankCurrencies = new Set(activeBankAccounts.map(b => b.currency));
-  const bankCurrencies = rates.filter(r => r.isBank && availableBankCurrencies.has(r.code)).map(r => r.code);
+  // Only include bank currencies if they are marked as isBank
+  const bankCurrencies = rates.filter(r => r.isBank).map(r => r.code);
   
-  // Only include crypto assets if they are marked as isAsset and have a configured manual address
-  const availableCryptoAssets = new Set(Object.keys(manualAddresses));
-  const activeCryptoAssets = rates.filter(r => r.isAsset && availableCryptoAssets.has(r.code)).map(r => r.code);
+  // Only include crypto assets if they are marked as isAsset
+  const activeCryptoAssets = rates.filter(r => r.isAsset).map(r => r.code);
   
   return c.json({ success: true, activeMethods, manualAddresses, bankCurrencies, activeCryptoAssets, bankAccounts: activeBankAccounts });
 });
