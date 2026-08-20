@@ -33,22 +33,38 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   }, []);
 
   useEffect(() => {
-    const fetchOrderData = async () => {
+    let timeoutId: NodeJS.Timeout;
+    let isSubscribed = true;
+
+    const fetchOrderData = async (isPolling = false) => {
       try {
         const res = await apiClient.getP2pOrder(orderId);
-        if (res.success && res.data) {
+        if (res.success && res.data && isSubscribed) {
           setOrder(res.data);
           if (res.merchant) {
             setMerchant(res.merchant);
+          }
+          
+          // Poll every 10 seconds if order is active
+          if (['CREATED', 'PAYMENT_PENDING', 'BUYER_MARKED_PAID', 'SELLER_PAYMENT_REVIEW'].includes(res.data.status)) {
+            timeoutId = setTimeout(() => fetchOrderData(true), 10000);
           }
         }
       } catch(e) {
         console.error("Failed to load order", e);
       } finally {
-        setIsLoading(false);
+        if (!isPolling && isSubscribed) {
+          setIsLoading(false);
+        }
       }
     };
+    
     fetchOrderData();
+
+    return () => {
+      isSubscribed = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [orderId]);
 
   // Countdown timer logic

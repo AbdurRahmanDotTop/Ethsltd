@@ -724,7 +724,7 @@ p2pRoutes.post('/orders/:id/dispute', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const orderId = c.req.param('id');
-  const body = await c.req.json();
+  const body = await c.req.json().catch(() => ({}));
   
   const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
   if (!order || !['BUYER_MARKED_PAID', 'SELLER_PAYMENT_REVIEW'].includes(order.status)) {
