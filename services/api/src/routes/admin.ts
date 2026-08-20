@@ -254,6 +254,10 @@ adminRoutes.delete('/users/:id', async (c) => {
 
   try {
     const { eq, or, inArray } = require('drizzle-orm');
+    const { assetConversions, expertServices, expertBookings, expertReviews, expertMessages, emailDeliveryLogs } = require('database');
+
+    const targetUser = await db.select().from(users).where(eq(users.id, userId)).get();
+    if (!targetUser) return c.json({ success: false, error: 'User not found' });
 
     const queries: any[] = [];
 
@@ -318,6 +322,25 @@ adminRoutes.delete('/users/:id', async (c) => {
     if (p2pMessages) queries.push(db.delete(p2pMessages).where(eq(p2pMessages.senderId, userId)));
     if (p2pDisputes) queries.push(db.delete(p2pDisputes).where(or(eq(p2pDisputes.openerId, userId), eq(p2pDisputes.assignedAdminId, userId))));
     if (p2pAds) queries.push(db.delete(p2pAds).where(eq(p2pAds.userId, userId)));
+
+    // Experts
+    if (expertProfiles && expertServices && expertBookings && expertReviews && expertMessages) {
+      queries.push(db.delete(expertMessages).where(eq(expertMessages.senderId, userId)));
+      queries.push(db.delete(expertReviews).where(eq(expertReviews.userId, userId)));
+      queries.push(db.delete(expertBookings).where(eq(expertBookings.userId, userId)));
+      
+      const uExp = await db.select({ id: expertProfiles.id }).from(expertProfiles).where(eq(expertProfiles.userId, userId)).get();
+      if (uExp) {
+        queries.push(db.delete(expertReviews).where(eq(expertReviews.expertId, uExp.id)));
+        queries.push(db.delete(expertBookings).where(eq(expertBookings.expertId, uExp.id)));
+        queries.push(db.delete(expertServices).where(eq(expertServices.expertId, uExp.id)));
+        queries.push(db.delete(expertProfiles).where(eq(expertProfiles.id, uExp.id)));
+      }
+    }
+
+    // Others
+    if (assetConversions) queries.push(db.delete(assetConversions).where(eq(assetConversions.userId, userId)));
+    if (emailDeliveryLogs && targetUser.email) queries.push(db.delete(emailDeliveryLogs).where(eq(emailDeliveryLogs.recipient, targetUser.email)));
 
     // Finally User
     queries.push(db.delete(users).where(eq(users.id, userId)));

@@ -14,6 +14,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [deleteTargetUser, setDeleteTargetUser] = useState<any | null>(null);
   
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -56,6 +57,22 @@ export default function AdminUsersPage() {
       clearTimeout(timer);
     };
   }, [page, status, search]);
+
+  const confirmDeleteUser = async () => {
+    if (!deleteTargetUser) return;
+    try {
+      const res = await apiClient.adminDeleteUser(deleteTargetUser.id);
+      if (res.success) {
+        window.location.reload();
+      } else {
+        alert("Error deleting user: " + res.error);
+      }
+    } catch (err) {
+      alert("Failed to delete user");
+    } finally {
+      setDeleteTargetUser(null);
+    }
+  };
 
   const columns: Column<any>[] = [
     {
@@ -138,20 +155,9 @@ export default function AdminUsersPage() {
           </select>
           {user?.role === 'SUPER_ADMIN' && (
             <button
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.stopPropagation();
-                if (confirm("Are you sure you want to COMPLETELY DELETE this user? All their data across the platform will be wiped.")) {
-                  try {
-                    const res = await apiClient.adminDeleteUser(row.id);
-                    if (res.success) {
-                      window.location.reload();
-                    } else {
-                      alert("Error deleting user: " + res.error);
-                    }
-                  } catch (err) {
-                    alert("Failed to delete user");
-                  }
-                }
+                setDeleteTargetUser(row);
               }}
               className="p-1.5 rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors ml-1"
               title="Completely Delete User"
@@ -215,6 +221,49 @@ export default function AdminUsersPage() {
           onRowClick={(row) => router.push(`/admin/users/${row.id}`)}
         />
       </div>
+
+      {deleteTargetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="bg-card border border-red-500/30 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="mx-auto w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
+                <ShieldAlert className="w-8 h-8 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-red-500">CRITICAL WARNING</h2>
+              <p className="text-foreground text-lg">
+                Are you absolutely sure you want to delete user <span className="font-bold font-mono bg-muted px-2 py-0.5 rounded">{deleteTargetUser.displayId || deleteTargetUser.id}</span>?
+              </p>
+              <div className="bg-red-500/10 p-4 rounded-lg text-left text-sm text-red-400 space-y-2">
+                <p><strong>This action is PERMANENT and IRREVERSIBLE.</strong></p>
+                <p>The following data will be COMPLETELY DESTROYED:</p>
+                <ul className="list-disc list-inside ml-2">
+                  <li>User account, profile, and KYC documents</li>
+                  <li>All Wallets, Balances, and Ledger Entries</li>
+                  <li>All Trading Orders, Positions, and Options</li>
+                  <li>All P2P Ads, Orders, Messages, and Feedback</li>
+                  <li>All Support Tickets and Messages</li>
+                  <li>All related deposit/withdrawal records</li>
+                  <li>Expert profiles, services, and bookings (if any)</li>
+                </ul>
+              </div>
+            </div>
+            <div className="bg-muted p-4 flex gap-3 justify-end">
+              <button 
+                onClick={() => setDeleteTargetUser(null)}
+                className="px-4 py-2 rounded-md font-medium text-foreground bg-background hover:bg-border transition-colors border border-border"
+              >
+                Cancel, Keep User
+              </button>
+              <button 
+                onClick={confirmDeleteUser}
+                className="px-4 py-2 rounded-md font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+              >
+                Yes, Delete Completely
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
