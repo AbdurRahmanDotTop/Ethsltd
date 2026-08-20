@@ -138,13 +138,13 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
           {/* Merchant Info */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 font-bold flex items-center justify-center text-lg">
+              <div className="w-12 h-12 rounded-full bg-primary dark:bg-primary/10 text-primary dark:text-primary font-bold flex items-center justify-center text-lg">
                 {merchant.displayName.charAt(0)}
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold text-lg">{merchant.displayName}</span>
-                  {merchant.verified && <CheckCircle2 className="w-4 h-4 text-brand-500" />}
+                  {merchant.verified && <CheckCircle2 className="w-4 h-4 text-primary" />}
                 </div>
                 <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                   <span className="text-green-600 dark:text-green-500 font-medium">{merchant.completionRate}% completion</span>
@@ -158,7 +158,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
           <div className="grid grid-cols-2 gap-y-4 gap-x-6 pt-4 border-t border-border">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Price</p>
-              <p className="font-display font-bold text-xl text-brand-600 dark:text-brand-400">
+              <p className="font-display font-bold text-xl text-primary dark:text-primary">
                 {fiatSymbol}{ad.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
@@ -238,7 +238,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
                         key={methodId}
                         className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                           useWatch({ control, name: "paymentMethod" }) === method
-                            ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20"
+                            ? "border-primary bg-primary dark:bg-primary/10"
                             : "border-border hover:bg-muted"
                         }`}
                       >
@@ -246,7 +246,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
                           type="radio" 
                           value={method} 
                           {...register("paymentMethod")} 
-                          className="text-brand-600 focus:ring-brand-500 h-4 w-4"
+                          className="text-primary focus:ring-primary h-4 w-4"
                         />
                         <span className="text-sm font-medium">{method.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
                       </label>

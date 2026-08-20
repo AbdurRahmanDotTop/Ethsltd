@@ -87,7 +87,7 @@ export function AssetTable({ balances }: { balances: AssetBalance[] }) {
                 <tr key={b.assetId} className="hover:bg-muted/30 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold flex items-center justify-center text-sm border border-brand-500/20">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary dark:text-primary font-bold flex items-center justify-center text-sm border border-primary/20">
                         {b.symbol.charAt(0)}
                       </div>
                       <span className="font-semibold text-foreground">{b.symbol}</span>

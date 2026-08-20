@@ -4,11 +4,11 @@ import { BookOpen, TrendingUp, Shield, Lightbulb, PieChart } from "lucide-react"
 
 export default function LearnHome() {
   const topics = [
-    { href: "/learn/crypto-basics", title: "Crypto Basics", desc: "Start here to understand blockchain, wallets, and the fundamentals of crypto.", icon: <Lightbulb className="w-8 h-8 text-brand-500" /> },
-    { href: "/learn/trading", title: "Trading Guide", desc: "Learn about market orders, limit orders, order books, and trading strategies.", icon: <TrendingUp className="w-8 h-8 text-brand-500" /> },
-    { href: "/learn/demo-trading", title: "Demo Trading", desc: "Practice trading in a risk-free environment using virtual funds.", icon: <PieChart className="w-8 h-8 text-brand-500" /> },
-    { href: "/learn/security", title: "Security Education", desc: "How to keep your account, funds, and personal data secure.", icon: <Shield className="w-8 h-8 text-brand-500" /> },
-    { href: "/learn/market-insights", title: "Market Insights", desc: "Read the latest simulated market updates and overviews.", icon: <BookOpen className="w-8 h-8 text-brand-500" /> },
+    { href: "/learn/crypto-basics", title: "Crypto Basics", desc: "Start here to understand blockchain, wallets, and the fundamentals of crypto.", icon: <Lightbulb className="w-8 h-8 text-primary" /> },
+    { href: "/learn/trading", title: "Trading Guide", desc: "Learn about market orders, limit orders, order books, and trading strategies.", icon: <TrendingUp className="w-8 h-8 text-primary" /> },
+    { href: "/learn/demo-trading", title: "Demo Trading", desc: "Practice trading in a risk-free environment using virtual funds.", icon: <PieChart className="w-8 h-8 text-primary" /> },
+    { href: "/learn/security", title: "Security Education", desc: "How to keep your account, funds, and personal data secure.", icon: <Shield className="w-8 h-8 text-primary" /> },
+    { href: "/learn/market-insights", title: "Market Insights", desc: "Read the latest simulated market updates and overviews.", icon: <BookOpen className="w-8 h-8 text-primary" /> },
   ]
 
   return (
@@ -20,11 +20,11 @@ export default function LearnHome() {
       
       <div className="grid md:grid-cols-2 gap-4">
         {topics.map(t => (
-          <Link key={t.href} href={t.href} className="group block p-6 border border-border rounded-lg bg-card hover:border-brand-500/50 transition-colors">
-            <div className="mb-4 bg-muted w-16 h-16 rounded-full flex items-center justify-center group-hover:bg-brand-500/10 transition-colors">
+          <Link key={t.href} href={t.href} className="group block p-6 border border-border rounded-lg bg-card hover:border-primary/20 transition-colors">
+            <div className="mb-4 bg-muted w-16 h-16 rounded-full flex items-center justify-center group-hover:bg-primary/10 transition-colors">
               {t.icon}
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-brand-500 transition-colors">{t.title}</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">{t.title}</h3>
             <p className="text-sm text-muted-foreground">{t.desc}</p>
           </Link>
         ))}

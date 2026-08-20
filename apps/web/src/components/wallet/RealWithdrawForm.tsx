@@ -128,7 +128,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
 
   if (isConfirming) {
     return (
-      <div className="max-w-xl mx-auto bg-card border border-red-500/20 rounded-xl shadow-sm p-6 space-y-6">
+      <div className="w-full max-w-xl mx-auto bg-card border border-red-500/20 rounded-xl shadow-sm p-4 sm:p-6 space-y-6">
         <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
           <ShieldAlert className="w-6 h-6 text-red-500" />
           Review Real Withdrawal
@@ -142,7 +142,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
         <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border relative">
           {previewLoading && (
             <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-lg z-10">
-              <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
             </div>
           )}
           <div className="flex justify-between items-center text-sm flex-wrap gap-y-4">
@@ -165,7 +165,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
           </div>
           <div className="pt-4 border-t border-border flex justify-between items-center flex-wrap gap-y-4">
             <span className="font-semibold text-foreground">You Will Receive</span>
-            <span className="font-mono font-bold text-xl text-brand-600 dark:text-brand-400">
+            <span className="font-mono font-bold text-xl text-primary dark:text-primary">
               {preview ? preview.netUsdtReceived.toLocaleString() : '0'} USDT
             </span>
           </div>
@@ -192,8 +192,8 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
   }
 
   return (
-    <div className="max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-border bg-amber-50/50 dark:bg-amber-900/10">
+    <div className="w-full max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+      <div className="p-4 sm:p-6 border-b border-border bg-amber-50/50 dark:bg-amber-900/10">
         <div className="flex items-start gap-3">
           <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
           <div>
@@ -205,7 +205,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
         </div>
       </div>
 
-      <form onSubmit={form.handleSubmit(onReview)} className="p-6 space-y-6">
+      <form onSubmit={form.handleSubmit(onReview)} className="p-4 sm:p-6 space-y-6">
         <div className="space-y-2">
           <div className="flex justify-between items-center flex-wrap gap-y-4">
             <label className="text-sm font-medium text-foreground">Asset</label>
@@ -221,7 +221,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
                 onClick={() => form.setValue("asset", asset)}
                 className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors whitespace-nowrap flex-grow sm:flex-grow-0 text-center ${
                   selectedAsset === asset
-                    ? "bg-brand-500 text-white border-brand-500"
+                    ? "bg-primary text-white border-primary"
                     : "bg-background text-muted-foreground border-border hover:bg-muted"
                 }`}
               >
@@ -256,7 +256,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
               <button 
                 type="button"
                 onClick={() => form.setValue("amount", Math.max(0, availableAmount - fee))}
-                className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                className="text-xs font-semibold text-primary hover:text-primary"
               >
                 MAX
               </button>
@@ -279,7 +279,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
         <div className="bg-muted/30 p-4 rounded-lg border border-border space-y-2 text-sm relative">
           {previewLoading && (
             <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-lg z-10">
-              <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
             </div>
           )}
           {preview ? (

@@ -55,8 +55,8 @@ export function DemoDepositForm({ defaultAsset = "USD" }: { defaultAsset?: strin
   const isFiat = selectedAsset === "USD";
 
   return (
-    <div className="max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-border bg-blue-50/50 dark:bg-blue-900/10">
+    <div className="w-full max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+      <div className="p-4 sm:p-6 border-b border-border bg-blue-50/50 dark:bg-blue-900/10">
         <div className="flex items-start gap-3">
           <Info className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
           <div>
@@ -68,7 +68,7 @@ export function DemoDepositForm({ defaultAsset = "USD" }: { defaultAsset?: strin
         </div>
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 sm:p-6 space-y-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Choose Asset</label>
           <div className="flex flex-wrap gap-2">
@@ -79,7 +79,7 @@ export function DemoDepositForm({ defaultAsset = "USD" }: { defaultAsset?: strin
                 onClick={() => form.setValue("asset", asset)}
                 className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors whitespace-nowrap flex-grow sm:flex-grow-0 text-center ${
                   selectedAsset === asset
-                    ? "bg-brand-500 text-white border-brand-500"
+                    ? "bg-primary text-white border-primary"
                     : "bg-background text-muted-foreground border-border hover:bg-muted"
                 }`}
               >

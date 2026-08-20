@@ -263,6 +263,8 @@ authRoutes.post('/verify-email/confirm-otp', jwtMiddleware, async (c) => {
 
     const freshUser = await db.select().from(users).where(eq(users.id, user.id)).get();
     
+    if (!freshUser) return c.json({ success: false, error: 'User not found' }, 404);
+
     if (!freshUser.verificationToken || freshUser.verificationToken !== otp) {
       return c.json({ success: false, error: 'Invalid verification code' }, 400);
     }

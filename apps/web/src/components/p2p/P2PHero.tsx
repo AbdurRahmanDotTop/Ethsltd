@@ -14,7 +14,7 @@ export function P2PHero() {
 
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-12 md:py-16">
         <div className="max-w-2xl">
-          <p className="text-sm font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-3">
+          <p className="text-sm font-bold text-primary dark:text-primary uppercase tracking-wider mb-3">
             ETHSLTD P2P MARKETPLACE
           </p>
           <h1 className="text-3xl md:text-5xl font-display font-bold tracking-tight mb-4 text-foreground">

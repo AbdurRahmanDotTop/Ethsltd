@@ -20,7 +20,7 @@ export default function WalletLayout({ children }: { children: React.ReactNode }
   if (!hasHydrated || status === "loading" || status === "unauthenticated") {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-[500px]">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-500 mb-4" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
         <p className="text-muted-foreground text-sm animate-pulse">Loading wallet...</p>
       </div>
     );

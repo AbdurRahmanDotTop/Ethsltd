@@ -19,7 +19,7 @@ export function ExpertServiceCard({ service, onBook }: ExpertServiceCardProps) {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-5 hover:border-brand-500/50 transition-colors flex flex-col h-full">
+    <div className="bg-card border border-border rounded-xl p-5 hover:border-primary/20 transition-colors flex flex-col h-full">
       <div className="flex items-start justify-between mb-2">
         <h3 className="font-semibold text-lg text-foreground line-clamp-2">{service.title}</h3>
       </div>

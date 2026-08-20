@@ -22,7 +22,7 @@ export function EmailVerification() {
   const handleResend = async () => {
     try {
       setIsResending(true);
-      await apiClient.resendVerification();
+      const res = await apiClient.requestEmailVerificationOTP();
       setTimeLeft(45);
     } finally {
       setIsResending(false);
@@ -58,7 +58,7 @@ export function EmailVerification() {
 
   return (
     <div className="text-center space-y-6">
-      <div className="w-16 h-16 bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="w-16 h-16 bg-primary dark:bg-primary/10 text-primary dark:text-primary rounded-full flex items-center justify-center mx-auto mb-4">
         <Mail className="w-8 h-8" />
       </div>
       <p className="text-muted-foreground text-sm">

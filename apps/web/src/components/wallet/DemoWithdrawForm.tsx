@@ -100,7 +100,7 @@ export function DemoWithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: stri
           </div>
           <div className="pt-4 border-t border-border flex justify-between items-center flex-wrap gap-y-4">
             <span className="font-semibold text-foreground">You Receive</span>
-            <span className="font-mono font-bold text-xl text-brand-600 dark:text-brand-400">
+            <span className="font-mono font-bold text-xl text-primary dark:text-primary">
               {amount.toLocaleString()} {selectedAsset}
             </span>
           </div>
@@ -156,7 +156,7 @@ export function DemoWithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: stri
                 onClick={() => form.setValue("asset", asset)}
                 className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors whitespace-nowrap flex-grow sm:flex-grow-0 text-center ${
                   selectedAsset === asset
-                    ? "bg-brand-500 text-white border-brand-500"
+                    ? "bg-primary text-white border-primary"
                     : "bg-background text-muted-foreground border-border hover:bg-muted"
                 }`}
               >
@@ -191,7 +191,7 @@ export function DemoWithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: stri
               <button 
                 type="button"
                 onClick={() => form.setValue("amount", availableAmount * 0.999)} // Leave a tiny bit for fee if needed
-                className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                className="text-xs font-semibold text-primary hover:text-primary"
               >
                 MAX
               </button>

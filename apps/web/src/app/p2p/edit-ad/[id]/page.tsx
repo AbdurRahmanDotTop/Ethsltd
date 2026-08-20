@@ -455,7 +455,7 @@ export default function EditAdPage() {
                         }
                         setPaymentMethods(newMethods);
                       }}
-                      className="w-full max-w-[200px] border rounded-md px-3 py-2 text-sm bg-background font-medium text-brand-600"
+                      className="w-full max-w-[200px] border rounded-md px-3 py-2 text-sm bg-background font-medium text-primary"
                     >
                       <option value="Bank Transfer">Bank Transfer</option>
                       <option value="UPI">UPI</option>

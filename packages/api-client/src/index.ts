@@ -348,7 +348,7 @@ export class EthsltdClient {
   async closeP2pAd(adId: string) {
     return this.request<any>(`/api/v1/p2p/ads/${adId}/status`, {
       method: 'PUT',
-      body: JSON.stringify({ status: 'CLOSED' }),
+      body: JSON.stringify({ status: 'CANCELED' }),
     });
   }
 

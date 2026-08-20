@@ -255,18 +255,18 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   };
 
   return (
-    <div className="max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-border bg-brand-50/50 dark:bg-brand-900/10">
-        <h3 className="font-semibold text-brand-900 dark:text-brand-100 flex items-center gap-2">
+    <div className="w-full max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+      <div className="p-4 sm:p-6 border-b border-border bg-primary/10 dark:bg-primary/10">
+        <h3 className="font-semibold text-primary dark:text-primary flex items-center gap-2">
           <Wallet className="w-5 h-5" />
           Real Money Deposit
         </h3>
-        <p className="text-sm text-brand-700 dark:text-brand-300 mt-1">
+        <p className="text-sm text-primary dark:text-primary mt-1">
           Deposit actual funds into your account. Please ensure you select the correct network.
         </p>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Select Payment Method</label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -276,7 +276,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 onClick={() => handleTabChange('MANUAL')}
                 className={`py-3 px-2 text-sm font-medium rounded-md border flex flex-col items-center justify-center gap-2 transition-colors break-words text-center h-auto min-h-[80px] ${
                   method === 'MANUAL'
-                    ? "bg-brand-900 text-white border-brand-900"
+                    ? "bg-primary text-white border-primary"
                     : "bg-background text-muted-foreground border-border hover:bg-muted"
                 }`}
               >
@@ -291,7 +291,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 onClick={() => handleTabChange('CRYPTO')}
                 className={`py-3 px-2 text-sm font-medium rounded-md border flex flex-col items-center justify-center gap-2 transition-colors break-words text-center h-auto min-h-[80px] ${
                   method === 'CRYPTO'
-                    ? "bg-brand-900 text-white border-brand-900"
+                    ? "bg-primary text-white border-primary"
                     : "bg-background text-muted-foreground border-border hover:bg-muted"
                 }`}
               >
@@ -306,7 +306,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 onClick={() => handleTabChange('BANK')}
                 className={`py-3 px-2 text-sm font-medium rounded-md border flex flex-col items-center justify-center gap-2 transition-colors break-words text-center h-auto min-h-[80px] ${
                   method === 'BANK'
-                    ? "bg-brand-900 text-white border-brand-900"
+                    ? "bg-primary text-white border-primary"
                     : "bg-background text-muted-foreground border-border hover:bg-muted"
                 }`}
               >
@@ -329,7 +329,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
               <Input type="number" step="any" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 100.00" required />
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base bg-emerald-600 hover:bg-emerald-700 text-white whitespace-normal h-auto py-3" disabled={isSubmitting}>
+            <Button type="submit" className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white whitespace-normal h-auto py-3" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="w-5 h-5 animate-spin mr-2 shrink-0" />}
               <span>Checkout with Ethsltd</span>
             </Button>
@@ -338,7 +338,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
 
         {method === 'MANUAL' && (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-4 p-4 border border-brand-500/30 bg-brand-500/5 rounded-lg">
+            <div className="space-y-4 p-4 border border-primary/20 bg-primary/10 rounded-lg">
               <h4 className="font-semibold">Submit Manual Deposit Details</h4>
               <div className="space-y-3">
                 <div className="space-y-1">
@@ -351,7 +351,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                         onClick={() => setSelectedAsset(asset)}
                         className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors whitespace-nowrap flex-grow sm:flex-grow-0 text-center ${
                           selectedAsset === asset
-                            ? "bg-brand-500 text-white border-brand-500"
+                            ? "bg-primary text-white border-primary"
                             : "bg-background text-muted-foreground border-border hover:bg-muted"
                         }`}
                       >
@@ -364,8 +364,8 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 {loadingAddresses ? (
                   <div className="flex items-center justify-center p-4 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading deposit details...</div>
                 ) : manualAddresses[selectedAsset] ? (
-                  <div className="p-4 bg-brand-500/10 border border-brand-500/20 rounded-lg space-y-2">
-                    <label className="text-sm font-semibold text-brand-600 dark:text-brand-400 block">Deposit Address for {selectedAsset}</label>
+                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg space-y-2">
+                    <label className="text-sm font-semibold text-primary dark:text-primary block">Deposit Address for {selectedAsset}</label>
                     <div className="flex items-center justify-between gap-2 p-3 bg-background border rounded-md group flex-wrap gap-y-4">
                       <span className="font-mono text-sm break-all font-medium">{manualAddresses[selectedAsset]}</span>
                       <button type="button" onClick={() => copyToClipboard(manualAddresses[selectedAsset], `${selectedAsset} Address`)} className="p-2 hover:bg-muted rounded-md shrink-0 transition-colors">
@@ -395,10 +395,10 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 
                 {/* Real-time Calculation Breakdown */}
                 {amount && Number(amount) > 0 && (
-                  <div className="bg-brand-50/50 dark:bg-brand-900/10 border border-brand-500/20 rounded-md p-4 space-y-2 mt-4 text-sm relative">
+                  <div className="bg-primary/10 dark:bg-primary/10 border border-primary/20 rounded-md p-4 space-y-2 mt-4 text-sm relative">
                     {previewLoading && (
                       <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-md z-10">
-                        <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
                       </div>
                     )}
                     <h5 className="font-semibold mb-3">Deposit Breakdown</h5>
@@ -415,8 +415,8 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                               <span className="text-muted-foreground">Exchange Rate:</span>
                               <span className="font-medium">1 {preview.originalCurrency} = {preview.conversionRate} USDT</span>
                             </div>
-                            <div className="flex justify-between text-brand-600 dark:text-brand-400">
-                              <span className="text-muted-foreground text-brand-600 dark:text-brand-400">Converted Value:</span>
+                            <div className="flex justify-between text-primary dark:text-primary">
+                              <span className="text-muted-foreground text-primary dark:text-primary">Converted Value:</span>
                               <span className="font-medium">{preview.grossUsdt.toFixed(2)} USDT</span>
                             </div>
                           </>
@@ -446,9 +446,9 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
         )}
 
         {method === 'BANK' && (
-          <div className="space-y-4 p-6 border border-brand-500/30 bg-brand-500/5 rounded-lg text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-brand-500/10 rounded-full flex items-center justify-center mb-2">
-              <Building2 className="w-8 h-8 text-brand-600 dark:text-brand-400" />
+          <div className="space-y-4 p-6 border border-primary/20 bg-primary/10 rounded-lg text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+              <Building2 className="w-8 h-8 text-primary dark:text-primary" />
             </div>
             <h4 className="font-semibold text-xl mb-2 text-foreground">Direct Bank Transfer</h4>
             <p className="text-muted-foreground mb-4 max-w-md mx-auto text-sm">
@@ -458,12 +458,12 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
             <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm italic">
               Agar aap direct bank transfer se deposit karna chahte hain to hamse contact kijiye, ham aap ko Direct bank transfer ke liye Bank Details bhejenge.
             </p>
-            <Button onClick={() => router.push('/support')} className="w-full sm:w-auto px-8 py-6 text-base bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-500/20">
-              <MessageCircle className="w-5 h-5 mr-2" />
+            <Button onClick={() => router.push('/support')} className="w-full sm:w-auto px-8 py-6 text-base bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 whitespace-normal h-auto">
+              <MessageCircle className="w-5 h-5 mr-2 shrink-0" />
               Contact Support for Bank Details
             </Button>
             
-            <div className="w-full mt-8 text-left border-t border-brand-500/20 pt-6">
+            <div className="w-full mt-8 text-left border-t border-primary/20 pt-6">
               <h5 className="font-medium text-foreground mb-4 text-center">Already transferred? Submit details here:</h5>
               <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md mx-auto text-left">
                 <div className="space-y-1">
@@ -473,7 +473,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                     <select 
                       value={bankCurrency} 
                       onChange={e => setBankCurrency(e.target.value)}
-                      className="border border-border bg-background rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                      className="border border-border bg-background rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                     >
                       <option value="USD">USD</option>
                       <option value="EUR">EUR</option>
@@ -493,10 +493,10 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 
                 {/* Real-time Calculation Breakdown */}
                 {amount && Number(amount) > 0 && (
-                  <div className="bg-brand-50/50 dark:bg-brand-900/10 border border-brand-500/20 rounded-md p-4 space-y-2 mt-4 text-sm relative">
+                  <div className="bg-primary/10 dark:bg-primary/10 border border-primary/20 rounded-md p-4 space-y-2 mt-4 text-sm relative">
                     {previewLoading && (
                       <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-md z-10">
-                        <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
                       </div>
                     )}
                     <h5 className="font-semibold mb-3">Deposit Breakdown</h5>
@@ -513,8 +513,8 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                               <span className="text-muted-foreground">Exchange Rate:</span>
                               <span className="font-medium">1 {preview.originalCurrency} = {preview.conversionRate} USDT</span>
                             </div>
-                            <div className="flex justify-between text-brand-600 dark:text-brand-400">
-                              <span className="text-muted-foreground text-brand-600 dark:text-brand-400">Converted Value:</span>
+                            <div className="flex justify-between text-primary dark:text-primary">
+                              <span className="text-muted-foreground text-primary dark:text-primary">Converted Value:</span>
                               <span className="font-medium">{preview.grossUsdt.toFixed(2)} USDT</span>
                             </div>
                           </>
@@ -561,7 +561,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
           <div className="w-full space-y-3 mb-6 relative">
             {previewLoading && (
               <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center rounded-md z-10">
-                <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
               </div>
             )}
             <div className="flex justify-between items-start sm:items-center text-sm gap-2">
@@ -580,7 +580,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
           </div>
           
           <div className="flex w-full gap-3">
-            <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleCheckoutConfirm} disabled={isSubmitting}>
+            <Button className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={handleCheckoutConfirm} disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Proceed to Payment
             </Button>
@@ -598,7 +598,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
           </div>
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center w-full mb-2">Service Notice</DialogTitle>
-            <DialogDescription className="text-center w-full text-brand-700 dark:text-brand-300">
+            <DialogDescription className="text-center w-full text-primary dark:text-primary">
               The automated payment gateway is temporarily unavailable. 
               <br /><br />
               To ensure your funds are deposited securely, please use the Manual Deposit method. We have transferred your requested amount to the manual flow.
@@ -607,7 +607,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
           
           <div className="flex w-full gap-3 mt-4">
             <Button 
-              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-6" 
+              className="w-full bg-primary hover:bg-primary text-white font-semibold py-6" 
               onClick={() => {
                 setShowAutoDepositError(false);
                 handleTabChange('MANUAL');

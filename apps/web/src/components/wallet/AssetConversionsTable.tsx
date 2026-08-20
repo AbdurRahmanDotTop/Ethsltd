@@ -40,7 +40,7 @@ export function AssetConversionsTable({ conversions }: { conversions: any[] }) {
                   <td className="px-6 py-4 text-right text-destructive">
                     {parseFloat(conv.depositFee) > 0 ? `-${parseFloat(conv.depositFee).toFixed(2)} USDT` : '0.00'}
                   </td>
-                  <td className="px-6 py-4 text-right font-medium text-brand-500">
+                  <td className="px-6 py-4 text-right font-medium text-primary">
                     +{parseFloat(conv.netUsdt).toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
                   </td>
                   <td className="px-6 py-4 text-right">

@@ -81,7 +81,7 @@ export function Header() {
       )}
       {/* Announcement Bar */}
       {announcementVisible && (
-        <div className="bg-brand-700 text-white px-4 py-2 text-sm flex justify-center items-center relative">
+        <div className="bg-primary text-white px-4 py-2 text-sm flex justify-center items-center relative">
           <span>ETHSLTD Markets are live — Explore the latest digital assets &rarr;</span>
           <button
             onClick={() => setAnnouncementVisible(false)}
@@ -155,7 +155,7 @@ export function Header() {
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     className="flex items-center gap-2 hover:bg-muted/50 py-1.5 px-3 rounded-full transition-colors border border-transparent hover:border-border"
                   >
-                    <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center overflow-hidden">
+                    <div className="w-7 h-7 rounded-full bg-primary dark:bg-primary/10 text-primary dark:text-primary flex items-center justify-center overflow-hidden">
                       {user.avatarUrl ? (
                         <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
@@ -261,7 +261,7 @@ export function Header() {
                     className="w-full flex items-center justify-between py-2 flex-wrap gap-y-4"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center overflow-hidden">
+                      <div className="w-10 h-10 rounded-full bg-primary dark:bg-primary/10 text-primary dark:text-primary flex items-center justify-center overflow-hidden">
                         {user.avatarUrl ? (
                           <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (

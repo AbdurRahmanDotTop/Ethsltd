@@ -184,9 +184,9 @@ export default function ExpertSettingsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {formData.categories.map(cat => (
-                <span key={cat} className="inline-flex items-center gap-1.5 bg-brand-500/10 text-brand-700 px-3 py-1.5 rounded-md text-xs font-semibold uppercase border border-brand-500/20">
+                <span key={cat} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-md text-xs font-semibold uppercase border border-primary/20">
                   {cat}
-                  <button type="button" onClick={() => removeCategory(cat)} className="text-brand-700 hover:text-red-500 ml-1">
+                  <button type="button" onClick={() => removeCategory(cat)} className="text-primary hover:text-red-500 ml-1">
                     &times;
                   </button>
                 </span>

@@ -152,6 +152,18 @@ p2pRoutes.put('/ads/:id/status', async (c) => {
     const existingAd = await db.select().from(p2pAds).where(and(eq(p2pAds.id, adId), eq(p2pAds.userId, user.id))).get();
     if (!existingAd) return c.json({ success: false, error: 'Ad not found' }, 404);
 
+    if (status === 'CANCELED' && existingAd.status !== 'CANCELED' && existingAd.type === 'SELL') {
+      const wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, existingAd.asset), eq(wallets.type, existingAd.mode))).get();
+      if (wallet) {
+        const amountToRefund = new Decimal(existingAd.availableAmount);
+        if (amountToRefund.greaterThan(0)) {
+          const finalBalance = new Decimal(wallet.balance).plus(amountToRefund).toString();
+          const finalEscrow = new Decimal(wallet.escrowBalance).minus(amountToRefund).toString();
+          await db.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: new Date() }).where(eq(wallets.id, wallet.id)).run();
+        }
+      }
+    }
+
     await db.update(p2pAds).set({ status, updatedAt: new Date() }).where(eq(p2pAds.id, adId)).run();
     return c.json({ success: true });
   } catch (err) {
@@ -326,16 +338,20 @@ p2pRoutes.get('/orders/:id', async (c) => {
         
         if (ad) {
           const cryptoAmount = new Decimal(order.cryptoAmount);
-          // Return crypto to Seller's available balance from Escrow
-          const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
-          if (sellerWallet) {
-            const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
-            const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
-            await tx.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+          if (ad.type === 'BUY' || ad.status === 'CANCELED') {
+            // Return crypto to Seller's available balance from Escrow
+            const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+            if (sellerWallet) {
+              const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
+              const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
+              await tx.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+            }
           }
-          // Restore ad available amount
-          const newAvailable = new Decimal(ad.availableAmount).plus(cryptoAmount).toString();
-          await tx.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
+          if (ad.status !== 'CANCELED') {
+            // Restore ad available amount
+            const newAvailable = new Decimal(ad.availableAmount).plus(cryptoAmount).toString();
+            await tx.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
+          }
         }
         
         await tx.update(p2pOrders).set({ status: 'EXPIRED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
@@ -655,17 +671,21 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
       const now = new Date();
       const cryptoAmount = new Decimal(order.cryptoAmount);
       
-      // Return crypto to Seller's available balance from Escrow
-      const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
-      if (sellerWallet) {
-        const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
-        const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
-        await tx.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+      if (ad.type === 'BUY' || ad.status === 'CANCELED') {
+        // Return crypto to Seller's available balance from Escrow
+        const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+        if (sellerWallet) {
+          const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
+          const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
+          await tx.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+        }
       }
 
-      // Restore ad available amount if it was an active ad
-      const newAvailable = new Decimal(ad.availableAmount).plus(cryptoAmount).toString();
-      await tx.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
+      if (ad.status !== 'CANCELED') {
+        // Restore ad available amount if it was an active ad
+        const newAvailable = new Decimal(ad.availableAmount).plus(cryptoAmount).toString();
+        await tx.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
+      }
 
       // Ledger Reversal
       const txId = crypto.randomUUID();

@@ -69,7 +69,7 @@ export default function ExpertEarningsPage() {
         {walletBalance.length > 0 ? walletBalance.map((wallet: any) => (
            <div key={wallet.assetSymbol} className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-600">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                   <Wallet className="w-5 h-5" />
                 </div>
                 <div>

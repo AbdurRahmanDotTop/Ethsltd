@@ -135,7 +135,7 @@ export default function ExpertMessagesPage() {
   };
 
   if (loading) {
-    return <div className="p-10 flex justify-center"><div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div></div>;
+    return <div className="p-10 flex justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
   }
 
   return (
@@ -214,9 +214,9 @@ export default function ExpertMessagesPage() {
                   const isMe = msg.senderId === currentUser.id;
                   return (
                     <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${isMe ? 'bg-brand-600 text-white rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm'}`}>
+                      <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${isMe ? 'bg-primary text-white rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm'}`}>
                         <div className="text-[15px] whitespace-pre-wrap">{msg.content}</div>
-                        <div className={`text-[10px] mt-1 text-right ${isMe ? 'text-brand-200' : 'text-muted-foreground'}`}>
+                        <div className={`text-[10px] mt-1 text-right ${isMe ? 'text-primary' : 'text-muted-foreground'}`}>
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
@@ -236,12 +236,12 @@ export default function ExpertMessagesPage() {
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder={isChatClosed ? "Chat is locked" : "Type a message..."}
                   disabled={isChatClosed}
-                  className="flex-1 bg-background border border-border rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-background border border-border rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   type="submit"
                   disabled={isChatClosed || !inputText.trim() || sending}
-                  className="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                  className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 >
                   <Send className="w-4 h-4 ml-0.5" />
                 </button>

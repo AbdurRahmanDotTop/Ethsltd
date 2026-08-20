@@ -52,7 +52,7 @@ export function P2PSection() {
                 'Dispute management'
               ].map((item, i) => (
                 <li key={i} className="flex items-center text-muted-foreground">
-                  <div className="w-5 h-5 rounded-full bg-brand-500/20 text-[var(--brand-foreground)] flex items-center justify-center mr-3 text-xs">✓</div>
+                  <div className="w-5 h-5 rounded-full bg-primary/10 text-[var(--brand-foreground)] flex items-center justify-center mr-3 text-xs">✓</div>
                   {item}
                 </li>
               ))}

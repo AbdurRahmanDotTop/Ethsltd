@@ -60,8 +60,8 @@ export default function ExpertDashboardOverview() {
           return (
             <div key={stat.name} className="bg-card border border-border rounded-xl p-6">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-y-4">
-                <div className="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-brand-600" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-primary" />
                 </div>
                 <span className="text-xs font-medium px-2 py-1 rounded-full bg-muted text-muted-foreground">
                   {stat.trend}

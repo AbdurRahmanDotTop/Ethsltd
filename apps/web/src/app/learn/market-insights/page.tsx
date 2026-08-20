@@ -23,15 +23,15 @@ export default function MarketInsights() {
       
       <h2 className="text-3xl font-bold text-foreground mb-6">Market Insights</h2>
       
-      <div className="bg-brand-500/10 border border-brand-500/20 p-4 rounded-lg mb-8">
-        <p className="text-sm text-brand-200">
+      <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg mb-8">
+        <p className="text-sm text-primary">
           <strong>Note:</strong> The articles below are simulated content for the demo-trading environment and do not represent actual financial advice.
         </p>
       </div>
 
       <div className="space-y-4">
         {articles.map((article, i) => (
-          <div key={i} className="p-4 border border-border rounded-lg bg-card hover:border-brand-500/50 transition-colors">
+          <div key={i} className="p-4 border border-border rounded-lg bg-card hover:border-primary/20 transition-colors">
             <div className="flex gap-2 items-center mb-2">
               <span className="text-xs font-semibold px-2 py-0.5 rounded bg-muted text-muted-foreground">{article.category}</span>
               <span className="text-xs text-muted-foreground">{article.date}</span>

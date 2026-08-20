@@ -46,7 +46,7 @@ export function TradingExperience() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24">
           {features.map((feature, i) => (
-            <Card key={i} className="bg-card border-border p-6 hover:border-brand-500/30 transition-colors">
+            <Card key={i} className="bg-card border-border p-6 hover:border-primary/20 transition-colors">
               <div className="w-10 h-10 rounded-lg bg-foreground/5 flex items-center justify-center mb-6">
                 {feature.icon}
               </div>

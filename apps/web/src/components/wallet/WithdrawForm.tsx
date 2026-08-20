@@ -78,7 +78,7 @@ export function WithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: string }
 
   if (isConfirming) {
     return (
-      <div className="max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm p-6 space-y-6">
+      <div className="w-full max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm p-4 sm:p-6 space-y-6">
         <h3 className="text-xl font-bold text-foreground">Review Withdrawal</h3>
         
         <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border">
@@ -100,7 +100,7 @@ export function WithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: string }
           </div>
           <div className="pt-4 border-t border-border flex justify-between items-center flex-wrap gap-y-4">
             <span className="font-semibold text-foreground">You Receive</span>
-            <span className="font-mono font-bold text-xl text-brand-600 dark:text-brand-400">
+            <span className="font-mono font-bold text-xl text-primary dark:text-primary">
               {amount.toLocaleString()} {selectedAsset}
             </span>
           </div>
@@ -127,8 +127,8 @@ export function WithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: string }
   }
 
   return (
-    <div className="max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-border bg-blue-50/50 dark:bg-blue-900/10">
+    <div className="w-full max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+      <div className="p-4 sm:p-6 border-b border-border bg-blue-50/50 dark:bg-blue-900/10">
         <div className="flex items-start gap-3">
           <Info className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
           <div>
@@ -140,7 +140,7 @@ export function WithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: string }
         </div>
       </div>
 
-      <form onSubmit={form.handleSubmit(onReview)} className="p-6 space-y-6">
+      <form onSubmit={form.handleSubmit(onReview)} className="p-4 sm:p-6 space-y-6">
         <div className="space-y-2">
           <div className="flex justify-between items-center flex-wrap gap-y-4">
             <label className="text-sm font-medium text-foreground">Asset</label>
@@ -156,7 +156,7 @@ export function WithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: string }
                 onClick={() => form.setValue("asset", asset)}
                 className={`py-2 text-sm font-medium rounded-md border transition-colors ${
                   selectedAsset === asset
-                    ? "bg-brand-500 text-white border-brand-500"
+                    ? "bg-primary text-white border-primary"
                     : "bg-background text-muted-foreground border-border hover:bg-muted"
                 }`}
               >
@@ -191,7 +191,7 @@ export function WithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: string }
               <button 
                 type="button"
                 onClick={() => form.setValue("amount", availableAmount * 0.999)} // Leave a tiny bit for fee if needed
-                className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                className="text-xs font-semibold text-primary hover:text-primary"
               >
                 MAX
               </button>

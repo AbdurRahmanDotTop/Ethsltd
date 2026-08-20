@@ -109,8 +109,8 @@ export default function AdminWalletsPage() {
           <div key={symbol} className="bg-card border border-border rounded-xl p-5 shadow-sm">
             <div className="flex justify-between items-start">
               <span className="text-sm font-medium text-muted-foreground">Total {symbol} Held</span>
-              <div className="p-2 rounded-md bg-brand-500/10">
-                <HardDrive className="w-4 h-4 text-brand-500" />
+              <div className="p-2 rounded-md bg-primary/10">
+                <HardDrive className="w-4 h-4 text-primary" />
               </div>
             </div>
             <div className="mt-4">

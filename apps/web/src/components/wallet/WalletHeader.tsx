@@ -14,7 +14,7 @@ export function WalletHeader() {
         <div className="flex items-center gap-2 mb-1">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Your Wallet</h1>
           {mode === 'DEMO' && (
-            <span className="bg-brand-500/10 text-brand-600 dark:text-brand-400 text-xs font-semibold px-2 py-0.5 rounded-full border border-brand-500/20">
+            <span className="bg-primary/10 text-primary dark:text-primary text-xs font-semibold px-2 py-0.5 rounded-full border border-primary/20">
               Demo Trading
             </span>
           )}

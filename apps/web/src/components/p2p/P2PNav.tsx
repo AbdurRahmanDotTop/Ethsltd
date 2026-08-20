@@ -28,7 +28,7 @@ export function P2PNav() {
                 href={link.href}
                 className={`py-4 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                   isActive
-                    ? "border-brand-600 text-foreground"
+                    ? "border-primary text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >

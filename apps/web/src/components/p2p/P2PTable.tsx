@@ -102,13 +102,13 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                     {/* Merchant Column */}
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 font-bold flex items-center justify-center text-sm">
+                        <div className="w-8 h-8 rounded-full bg-primary dark:bg-primary/10 text-primary dark:text-primary font-bold flex items-center justify-center text-sm">
                           {merchant.displayName.charAt(0)}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="font-semibold text-foreground">{merchant.displayName}</span>
-                            {merchant.verified && <CheckCircle2 className="w-3.5 h-3.5 text-brand-500" />}
+                            {merchant.verified && <CheckCircle2 className="w-3.5 h-3.5 text-primary" />}
                           </div>
                           <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                             <span>{merchant.completionRate}% completion</span>

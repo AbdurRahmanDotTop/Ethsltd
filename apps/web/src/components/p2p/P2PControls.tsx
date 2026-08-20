@@ -22,7 +22,7 @@ export function P2PControls() {
           onClick={() => setQuery({ side: "buy" })}
           className={`px-8 py-2 rounded-md font-medium transition-colors ${
             query.side === "buy"
-              ? "bg-brand-600 text-white shadow-sm"
+              ? "bg-primary text-white shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
           }`}
         >
@@ -32,7 +32,7 @@ export function P2PControls() {
           onClick={() => setQuery({ side: "sell" })}
           className={`px-8 py-2 rounded-md font-medium transition-colors ${
             query.side === "sell"
-              ? "bg-brand-600 text-white shadow-sm"
+              ? "bg-primary text-white shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
           }`}
         >

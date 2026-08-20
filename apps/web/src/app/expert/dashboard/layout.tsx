@@ -32,7 +32,7 @@ export default function ExpertDashboardLayout({ children }: { children: React.Re
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-500 mb-4" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
         <p className="text-muted-foreground">Authenticating Expert Session...</p>
       </div>
     );
@@ -67,7 +67,7 @@ export default function ExpertDashboardLayout({ children }: { children: React.Re
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   isActive 
-                    ? "bg-brand-500/10 text-brand-600 font-medium" 
+                    ? "bg-primary/10 text-primary font-medium" 
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >

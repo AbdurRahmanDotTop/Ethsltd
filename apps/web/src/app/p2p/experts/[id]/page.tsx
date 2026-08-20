@@ -47,7 +47,7 @@ export default function ExpertProfilePage({ params }: { params: Promise<{ id: st
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 pb-24">
-        <Loader2 className="w-8 h-8 animate-spin mb-4 text-brand-500" />
+        <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary" />
         <p className="text-muted-foreground">Loading expert profile...</p>
       </div>
     );
@@ -90,7 +90,7 @@ export default function ExpertProfilePage({ params }: { params: Promise<{ id: st
                   {expert.avatar ? (
                     <img src={expert.avatar} alt={expert.displayName} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-brand-900/30 text-brand-500 font-bold text-3xl">
+                    <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-3xl">
                       {expert.displayName.charAt(0)}
                     </div>
                   )}
@@ -99,7 +99,7 @@ export default function ExpertProfilePage({ params }: { params: Promise<{ id: st
                 <h1 className="text-2xl font-bold text-foreground flex items-center justify-center gap-2">
                   {expert.displayName}
                   {expert.verificationStatus === "VERIFIED" && (
-                    <BadgeCheck className="w-5 h-5 text-brand-500" />
+                    <BadgeCheck className="w-5 h-5 text-primary" />
                   )}
                 </h1>
                 

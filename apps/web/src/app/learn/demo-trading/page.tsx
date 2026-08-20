@@ -34,8 +34,8 @@ export default function DemoTradingGuide() {
           </ul>
         </section>
         
-        <div className="bg-brand-500/10 border border-brand-500/20 p-4 rounded-lg my-6">
-          <p className="text-sm text-brand-200">
+        <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg my-6">
+          <p className="text-sm text-primary">
             <strong>Note:</strong> Currently, the entire ETHSLTD platform operates in a simulated (demo trading) environment. Any funds shown in your Wallet or Trade pages are virtual and hold no real-world value.
           </p>
         </div>

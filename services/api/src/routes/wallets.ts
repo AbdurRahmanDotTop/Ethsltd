@@ -364,8 +364,9 @@ walletRoutes.post('/deposit', async (c) => {
         return c.json({ success: false, error: 'Invalid amount' }, 400);
       }
 
-      // We need methodId to calculate fee. We can fetch it by depositMethod string
-      const pm = await db.select().from(payment_methods).where(eq(payment_methods.method, depositMethod)).get();
+      const mappedDepositMethod = depositMethod === 'BANK' ? 'BANK_TRANSFER' : depositMethod === 'CRYPTO' ? 'AUTO' : depositMethod;
+      // We need methodId to calculate fee. We can fetch it by mappedDepositMethod string
+      const pm = await db.select().from(payment_methods).where(eq(payment_methods.method, mappedDepositMethod)).get();
       const methodId = pm ? pm.id : null;
 
       // Centralized Calculation Service!

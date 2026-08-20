@@ -82,7 +82,7 @@ export default function ExpertsPage() {
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin mb-4 text-brand-500" />
+            <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary" />
             <p>Loading verified experts...</p>
           </div>
         ) : filteredExperts.length > 0 ? (

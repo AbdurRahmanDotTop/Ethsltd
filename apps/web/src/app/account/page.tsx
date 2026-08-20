@@ -41,7 +41,7 @@ export default function AccountOverviewPage() {
         {/* Profile Card */}
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-primary dark:bg-primary/10 text-primary dark:text-primary flex items-center justify-center">
               <User className="w-6 h-6" />
             </div>
             <div className="min-w-0 flex-1">

@@ -230,7 +230,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                 <span className="text-muted-foreground text-sm">
                   {isBuy ? "You Need To Pay" : "You Should Receive"}
                 </span>
-                <span className="text-xl font-bold font-display text-brand-600 dark:text-brand-400">
+                <span className="text-xl font-bold font-display text-primary dark:text-primary">
                   {fiatSymbol}{parseFloat(order.fiatAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {order.fiatCurrency}
                 </span>
               </div>
@@ -251,7 +251,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
             </div>
 
             <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border">
-              <h4 className="font-semibold text-sm flex items-center gap-2 text-brand-600 dark:text-brand-400">
+              <h4 className="font-semibold text-sm flex items-center gap-2 text-primary dark:text-primary">
                 <Info className="w-4 h-4" /> {mode === 'DEMO' ? 'SIMULATED ' : ''}PAYMENT DETAILS
               </h4>
               <p className="text-xs text-muted-foreground mb-4">

@@ -11,7 +11,7 @@ interface ExpertCardProps {
 
 export function ExpertCard({ expert }: ExpertCardProps) {
   return (
-    <div className="bg-card border border-border rounded-xl p-5 hover:border-brand-500/50 transition-colors flex flex-col h-full">
+    <div className="bg-card border border-border rounded-xl p-5 hover:border-primary/20 transition-colors flex flex-col h-full">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -19,7 +19,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
               {expert.avatar ? (
                 <img src={expert.avatar} alt={expert.displayName} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-brand-900/30 text-brand-500 font-bold text-lg">
+                <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
                   {expert.displayName.charAt(0)}
                 </div>
               )}
@@ -38,7 +38,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
             <div className="flex items-center gap-1.5">
               <h3 className="font-semibold text-foreground">{expert.displayName}</h3>
               {expert.verificationStatus === "VERIFIED" && (
-                <BadgeCheck className="w-4 h-4 text-brand-500" />
+                <BadgeCheck className="w-4 h-4 text-primary" />
               )}
             </div>
             <div className="flex items-center gap-1 text-sm text-muted-foreground mt-0.5">

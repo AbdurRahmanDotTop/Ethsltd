@@ -12,7 +12,7 @@ export function DemoTrading() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="order-2 lg:order-1">
             <div className="bg-card rounded-2xl border border-border p-8 shadow-2xl relative">
-              <div className="absolute -top-3 -right-3 bg-brand-500 text-foreground text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              <div className="absolute -top-3 -right-3 bg-primary text-foreground text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                 Simulated
               </div>
               <h4 className="text-xl font-medium text-foreground mb-2">Demo Trading</h4>

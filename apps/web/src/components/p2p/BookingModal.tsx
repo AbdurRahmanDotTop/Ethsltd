@@ -122,8 +122,8 @@ export function BookingModal({ expert, service, onClose }: BookingModalProps) {
                         onClick={() => setSelectedDate(date)}
                         className={`p-2 rounded-lg border text-sm flex flex-col items-center justify-center transition-colors ${
                           isSelected 
-                            ? "border-brand-600 bg-brand-600/10 text-brand-600 font-medium" 
-                            : "border-border hover:border-brand-500/50 text-muted-foreground"
+                            ? "border-primary bg-primary/10 text-primary font-medium" 
+                            : "border-border hover:border-primary/20 text-muted-foreground"
                         }`}
                       >
                         <span className="text-xs">{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
@@ -144,8 +144,8 @@ export function BookingModal({ expert, service, onClose }: BookingModalProps) {
                         onClick={() => setSelectedTime(time)}
                         className={`py-2 rounded-lg border text-sm text-center transition-colors ${
                           selectedTime === time
-                            ? "border-brand-600 bg-brand-600/10 text-brand-600 font-medium"
-                            : "border-border hover:border-brand-500/50 text-muted-foreground"
+                            ? "border-primary bg-primary/10 text-primary font-medium"
+                            : "border-border hover:border-primary/20 text-muted-foreground"
                         }`}
                       >
                         {time}
@@ -176,10 +176,10 @@ export function BookingModal({ expert, service, onClose }: BookingModalProps) {
                 </div>
               </div>
 
-              <div className="bg-brand-500/10 p-4 rounded-xl border border-brand-500/20 text-sm">
+              <div className="bg-primary/10 p-4 rounded-xl border border-primary/20 text-sm">
                 <div className="flex justify-between font-medium mb-1">
                   <span className="text-foreground">Total Amount</span>
-                  <span className="text-brand-600 text-lg">{formatCurrency(service.price, service.currency)}</span>
+                  <span className="text-primary text-lg">{formatCurrency(service.price, service.currency)}</span>
                 </div>
                 <p className="text-muted-foreground text-xs mt-2">
                   This amount will be locked in escrow from your funding wallet until the service is completed.

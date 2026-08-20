@@ -39,7 +39,7 @@ export default function PreferencesPage() {
               <button
                 onClick={() => setTheme("light")}
                 className={`flex flex-col items-center justify-center p-4 rounded-md border-2 transition-all ${
-                  theme === "light" ? "border-brand-500 bg-brand-50 dark:bg-transparent" : "border-border hover:border-muted-foreground"
+                  theme === "light" ? "border-primary bg-primary dark:bg-transparent" : "border-border hover:border-muted-foreground"
                 }`}
               >
                 <div className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm mb-2" />
@@ -48,7 +48,7 @@ export default function PreferencesPage() {
               <button
                 onClick={() => setTheme("dark")}
                 className={`flex flex-col items-center justify-center p-4 rounded-md border-2 transition-all ${
-                  theme === "dark" ? "border-brand-500 bg-brand-900/20" : "border-border hover:border-muted-foreground"
+                  theme === "dark" ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground"
                 }`}
               >
                 <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-700 shadow-sm mb-2" />
@@ -57,7 +57,7 @@ export default function PreferencesPage() {
               <button
                 onClick={() => setTheme("system")}
                 className={`flex flex-col items-center justify-center p-4 rounded-md border-2 transition-all ${
-                  theme === "system" ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20" : "border-border hover:border-muted-foreground"
+                  theme === "system" ? "border-primary bg-primary dark:bg-primary/10" : "border-border hover:border-muted-foreground"
                 }`}
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-900 to-white border border-gray-300 dark:border-zinc-700 shadow-sm mb-2" />

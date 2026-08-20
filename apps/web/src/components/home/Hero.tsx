@@ -30,7 +30,7 @@ export function Hero() {
           </Button>
         </div>
         
-        <Link href="/markets" className="mt-8 text-sm font-medium text-[var(--brand-foreground)] hover:text-brand-200 flex items-center transition-colors">
+        <Link href="/markets" className="mt-8 text-sm font-medium text-[var(--brand-foreground)] hover:text-primary flex items-center transition-colors">
           Explore Markets <span className="ml-2">&rarr;</span>
         </Link>
 

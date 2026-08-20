@@ -53,7 +53,7 @@ export default function SessionsPage() {
             {sessions.map((session) => (
               <div key={session.id} className="p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${session.isCurrentSession ? 'bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400' : 'bg-muted text-muted-foreground'}`}>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${session.isCurrentSession ? 'bg-primary dark:bg-primary/10 text-primary dark:text-primary' : 'bg-muted text-muted-foreground'}`}>
                     {session.device === "Mobile" ? <Smartphone className="w-6 h-6" /> : <Monitor className="w-6 h-6" />}
                   </div>
                   <div>

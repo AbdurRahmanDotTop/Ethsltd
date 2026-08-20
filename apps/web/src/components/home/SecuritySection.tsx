@@ -17,8 +17,8 @@ export function SecuritySection() {
 
         {/* Security Diagram/Cards */}
         <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden group hover:border-brand-500/50 transition-colors">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl group-hover:bg-brand-500/20 transition-all" />
+          <div className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden group hover:border-primary/20 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/10 transition-all" />
             <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center mb-6 relative z-10">
               <KeyRound className="w-6 h-6 text-[var(--brand-foreground)]" />
             </div>
@@ -31,8 +31,8 @@ export function SecuritySection() {
             </ul>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden group hover:border-brand-500/50 transition-colors">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl group-hover:bg-brand-500/20 transition-all" />
+          <div className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden group hover:border-primary/20 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/10 transition-all" />
             <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center mb-6 relative z-10">
               <ShieldAlert className="w-6 h-6 text-[var(--brand-foreground)]" />
             </div>
@@ -45,8 +45,8 @@ export function SecuritySection() {
             </ul>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden group hover:border-brand-500/50 transition-colors">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl group-hover:bg-brand-500/20 transition-all" />
+          <div className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden group hover:border-primary/20 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/10 transition-all" />
             <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center mb-6 relative z-10">
               <Activity className="w-6 h-6 text-[var(--brand-foreground)]" />
             </div>

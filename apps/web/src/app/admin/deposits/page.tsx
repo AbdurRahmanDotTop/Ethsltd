@@ -108,7 +108,7 @@ export default function AdminDepositsPage() {
       ) 
     },
     { header: "Ref / Notes", accessor: "payment_reference", className: "font-mono text-xs max-w-[150px] truncate" },
-    { header: "Proof", accessor: (row) => row.proof_file_url ? <a href={row.proof_file_url} target="_blank" className="text-brand-500 underline text-xs">View Proof</a> : "No Proof" },
+    { header: "Proof", accessor: (row) => row.proof_file_url ? <a href={row.proof_file_url} target="_blank" className="text-primary underline text-xs">View Proof</a> : "No Proof" },
     { header: "Status", accessor: (row) => {
         const isRejected = row.status === 'REJECTED';
         const isApproved = row.status === 'APPROVED';
@@ -153,7 +153,7 @@ export default function AdminDepositsPage() {
       ) 
     },
     { header: "Ref / Notes", accessor: "bankReference", className: "font-mono text-xs max-w-[150px] truncate" },
-    { header: "Proof", accessor: (row) => row.proofDocumentUrl ? <a href={row.proofDocumentUrl} target="_blank" className="text-brand-500 underline text-xs">View Proof</a> : "No Proof" },
+    { header: "Proof", accessor: (row) => row.proofDocumentUrl ? <a href={row.proofDocumentUrl} target="_blank" className="text-primary underline text-xs">View Proof</a> : "No Proof" },
     { header: "Status", accessor: (row) => {
         const isRejected = row.status === 'REJECTED';
         const isApproved = row.status === 'APPROVED';
@@ -214,19 +214,19 @@ export default function AdminDepositsPage() {
       <div className="flex space-x-2 border-b border-border overflow-x-auto">
         <button 
           onClick={() => setActiveTab("MANUAL")} 
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === "MANUAL" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === "MANUAL" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
         >
           Manual Crypto Deposits ({manualDeposits.length})
         </button>
         <button 
           onClick={() => setActiveTab("BANK")} 
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === "BANK" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === "BANK" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
         >
           Bank Transfers ({bankDeposits.length})
         </button>
         <button 
           onClick={() => setActiveTab("AUTO")} 
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === "AUTO" ? "border-brand-500 text-brand-500" : "border-transparent text-muted-foreground"}`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === "AUTO" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
         >
           Auto Deposits (Cregis) ({cregisDeposits.length})
         </button>

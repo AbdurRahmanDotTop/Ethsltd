@@ -44,11 +44,11 @@ export function AccountSidebar() {
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
               isActive 
-                ? "bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400" 
+                ? "bg-primary text-primary dark:bg-primary/10 dark:text-primary" 
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <Icon className={cn("w-4 h-4", isActive ? "text-brand-600 dark:text-brand-400" : "text-muted-foreground")} />
+            <Icon className={cn("w-4 h-4", isActive ? "text-primary dark:text-primary" : "text-muted-foreground")} />
             {item.name}
           </Link>
         );

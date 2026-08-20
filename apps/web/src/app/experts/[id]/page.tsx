@@ -286,7 +286,7 @@ export default function ExpertProfilePage() {
                 <h3 className="font-bold text-foreground mb-4">Expertise</h3>
                 <div className="flex flex-wrap gap-2">
                   {(expert.categories || []).map((cat: string) => (
-                    <span key={cat} className="bg-brand-500/10 text-brand-700 px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide uppercase border border-brand-500/20">
+                    <span key={cat} className="bg-primary/10 text-primary px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide uppercase border border-primary/20">
                       {cat}
                     </span>
                   ))}
@@ -324,7 +324,7 @@ export default function ExpertProfilePage() {
               <div className="bg-muted/30 p-4 rounded-xl border border-border">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold text-foreground">{selectedService.title}</h4>
-                  <span className="font-display font-bold text-brand-600">
+                  <span className="font-display font-bold text-primary">
                     {selectedService.price} {selectedService.currency}
                   </span>
                 </div>

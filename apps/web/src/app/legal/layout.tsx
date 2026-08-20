@@ -45,8 +45,8 @@ export default function LegalLayout({
         
         <main className="flex-1 min-w-0">
           <div className="bg-card border border-border rounded-xl p-6 md:p-8 min-h-[500px]">
-            <div className="bg-brand-500/10 border border-brand-500/20 p-4 rounded-lg mb-8">
-              <p className="text-sm text-brand-200">
+            <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg mb-8">
+              <p className="text-sm text-primary">
                 <strong>Disclaimer:</strong> This content is for demonstrative purposes within the simulated trading environment. These documents should not be construed as legally binding agreements for a real-world financial institution until approved by appropriate legal counsel.
               </p>
             </div>

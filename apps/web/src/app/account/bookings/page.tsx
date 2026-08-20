@@ -187,7 +187,7 @@ export default function UserBookingsPage() {
                       {!['CANCELLED', 'REFUNDED', 'PENDING_PAYMENT'].includes(b.status) && (
                         <Link 
                           href={`/account/bookings/${b.id}/chat`}
-                          className="mt-2 text-xs font-semibold text-brand-500 bg-brand-500/10 hover:bg-brand-500/20 px-3 py-1.5 rounded-md inline-flex items-center gap-1 transition-colors"
+                          className="mt-2 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/10 px-3 py-1.5 rounded-md inline-flex items-center gap-1 transition-colors"
                         >
                           <MessageCircle className="w-3 h-3" />
                           Chat
