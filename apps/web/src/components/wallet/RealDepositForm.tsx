@@ -19,7 +19,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   const [copied, setCopied] = useState(false);
   const [manualAddresses, setManualAddresses] = useState<Record<string, string>>({});
   const [cryptoAssets, setCryptoAssets] = useState<string[]>(CRYPTO_ASSETS);
-  const [bankCurrenciesList, setBankCurrenciesList] = useState<string[]>(['USD', 'EUR', 'GBP', 'INR']);
+  const [bankCurrenciesList, setBankCurrenciesList] = useState<string[]>([]);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   const [activeMethods, setActiveMethods] = useState<string[]>([]);
@@ -49,16 +49,16 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
           }
         }
         
-        if (res.bankCurrencies && res.bankCurrencies.length > 0) {
+        if (res.bankCurrencies) {
           setBankCurrenciesList(res.bankCurrencies);
-          if (!res.bankCurrencies.includes(bankCurrency)) {
+          if (res.bankCurrencies.length > 0 && !res.bankCurrencies.includes(bankCurrency)) {
             setBankCurrency(res.bankCurrencies[0]);
           }
         }
         
-        if (res.activeCryptoAssets && res.activeCryptoAssets.length > 0) {
+        if (res.activeCryptoAssets) {
           setCryptoAssets(res.activeCryptoAssets);
-          if (!res.activeCryptoAssets.includes(selectedAsset) && !res.manualAddresses?.[selectedAsset]) {
+          if (res.activeCryptoAssets.length > 0 && !res.activeCryptoAssets.includes(selectedAsset) && !res.manualAddresses?.[selectedAsset]) {
              setSelectedAsset(res.activeCryptoAssets[0]);
           }
         } else if (res.manualAddresses) {

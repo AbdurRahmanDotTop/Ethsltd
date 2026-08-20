@@ -394,6 +394,10 @@ walletRoutes.post('/deposit', async (c) => {
       // Centralized Calculation Service!
       const preview = await calculateDepositPreview(db, amountNum, assetSymbol, methodId);
       
+      if (preview.netUsdt <= 0) {
+        return c.json({ success: false, error: 'Deposit amount is too low to cover the required transaction fees.' }, 400);
+      }
+      
       if (depositMethod === 'BANK') {
         // We will store bank transfers in real_manual_deposits as well since we added breakdown fields there,
         // or we store in bankTransfers. We will use bankTransfers but wait, we didn't add breakdown to bankTransfers.

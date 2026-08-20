@@ -76,10 +76,6 @@ export async function calculateDepositPreview(
   const totalFees = depositFee.plus(otherFees);
   const netUsdt = grossUsdt.minus(totalFees);
 
-  if (netUsdt.lte(0)) {
-    throw new Error('Deposit amount after fees is too low.');
-  }
-
   return {
     originalAmount: amount,
     originalCurrency: currencyCode,
@@ -120,10 +116,6 @@ export async function calculateWithdrawalPreview(
 
   const totalFees = withdrawalFee.plus(otherFees);
   const netUsdtReceived = new Decimal(usdtAmount).minus(totalFees);
-
-  if (netUsdtReceived.lte(0)) {
-    throw new Error('Withdrawal amount after fees is too low.');
-  }
 
   let conversionRateValue = 1;
   let finalFiatAmount = netUsdtReceived;
