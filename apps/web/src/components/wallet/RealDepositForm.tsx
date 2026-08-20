@@ -547,7 +547,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                     <span>No bank accounts configured for {bankCurrency}.</span>
                   </div>
                   <span className="font-medium block">If bank details not available then Kindly Contact us</span>
-                  <Button type="button" variant="outline" size="sm" onClick={() => router.push('/support')} className="mt-1 border-orange-500/50 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400">
+                  <Button type="button" variant="outline" size="sm" onClick={() => router.push('/support')} className="mt-1 border-orange-500/50 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 h-auto py-2 px-3 whitespace-normal text-wrap max-w-full text-xs sm:text-sm">
                     For Bank Details Kindly Contact Us
                   </Button>
                 </div>
