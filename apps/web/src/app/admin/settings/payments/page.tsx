@@ -362,18 +362,18 @@ export default function AdminPaymentSettingsPage() {
                     <Button size="sm" type="button" onClick={() => handleOpenBankModal()}>+ Add Bank</Button>
                   </div>
                   <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
-                    {banks.length === 0 ? (
+                    {bankAccountsList.length === 0 ? (
                       <div className="text-center text-sm text-muted-foreground py-4 border rounded bg-background">No bank accounts configured.</div>
                     ) : (
-                      banks.map(bank => (
-                        <div key={bank.id} className="p-3 bg-background border rounded-md flex justify-between items-center gap-2">
+                      bankAccountsList.map((bank, index) => (
+                        <div key={bank.id || index} className="p-3 bg-background border rounded-md flex justify-between items-center gap-2">
                           <div>
                             <div className="font-medium text-sm">{bank.bank_name} <span className="text-xs text-muted-foreground">({bank.currency})</span></div>
                             <div className="text-xs text-muted-foreground">{bank.account_number}</div>
                           </div>
                           <div className="flex gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => handleOpenBankModal(bank)}>Edit</Button>
-                            <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleDeleteBank(bank.id)}>Delete</Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleOpenBankModal(index)}>Edit</Button>
+                            <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleDeleteBankFromLocalList(index)}>Delete</Button>
                           </div>
                         </div>
                       ))
@@ -497,7 +497,7 @@ export default function AdminPaymentSettingsPage() {
       <Dialog open={isBankModalOpen} onOpenChange={setIsBankModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingBank ? "Edit" : "Add"} Bank Account</DialogTitle>
+            <DialogTitle>{editingBankIndex !== null ? "Edit" : "Add"} Bank Account</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto px-2">
             <div className="space-y-2">
