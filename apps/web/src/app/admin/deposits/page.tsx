@@ -93,6 +93,7 @@ export default function AdminDepositsPage() {
   };
 
   const manualColumns: Column<any>[] = [
+    { header: "Date", accessor: (row) => new Date(row.created_at).toLocaleString(), className: "text-xs text-muted-foreground" },
     { header: "ID", accessor: (row: any) => row.displayId || row.id, className: "font-mono text-xs" },
     { header: "User", accessor: "user_id", className: "font-mono text-xs" },
     { header: "Amount", accessor: (row) => (
@@ -138,11 +139,12 @@ export default function AdminDepositsPage() {
   ];
 
   const bankColumns: Column<any>[] = [
+    { header: "Date", accessor: (row) => new Date(row.created_at).toLocaleString(), className: "text-xs text-muted-foreground" },
     { header: "ID", accessor: (row: any) => row.displayId || row.id, className: "font-mono text-xs" },
-    { header: "User", accessor: "userId", className: "font-mono text-xs" },
+    { header: "User", accessor: "user_id", className: "font-mono text-xs" },
     { header: "Amount", accessor: (row) => (
         <div className="flex flex-col">
-          <span className="font-bold text-foreground">+{row.amount} {row.currency}</span>
+          <span className="font-bold text-foreground">+{row.amount} {row.asset || row.currency}</span>
           {row.net_usdt && (
             <span className="text-xs text-emerald-500 font-medium mt-0.5">Net: {Number(row.net_usdt).toFixed(2)} USDT</span>
           )}
@@ -152,8 +154,8 @@ export default function AdminDepositsPage() {
         </div>
       ) 
     },
-    { header: "Ref / Notes", accessor: "bankReference", className: "font-mono text-xs max-w-[150px] truncate" },
-    { header: "Proof", accessor: (row) => row.proofDocumentUrl ? <a href={row.proofDocumentUrl} target="_blank" className="text-primary underline text-xs">View Proof</a> : "No Proof" },
+    { header: "Ref / Notes", accessor: "payment_reference", className: "font-mono text-xs max-w-[150px] truncate" },
+    { header: "Proof", accessor: (row) => row.proof_file_url ? <a href={row.proof_file_url} target="_blank" className="text-primary underline text-xs">View Proof</a> : "No Proof" },
     { header: "Status", accessor: (row) => {
         const isRejected = row.status === 'REJECTED';
         const isApproved = row.status === 'APPROVED';
@@ -163,7 +165,7 @@ export default function AdminDepositsPage() {
     { 
       header: "Action", 
       accessor: (row) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           {row.status === 'PENDING' && (
             <>
               <Button size="sm" onClick={() => handleApprove(row.id, "BANK")} className="h-8 bg-green-500/20 text-green-500 hover:bg-green-500/30">Approve</Button>
