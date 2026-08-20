@@ -21,6 +21,7 @@ export const real_manual_deposits = sqliteTable("real_manual_deposits", {
     total_fees: text("total_fees"),
     net_usdt: text("net_usdt"),
     expected_wallet_credit: text("expected_wallet_credit"),
+    method: text("method").default("MANUAL"), // "MANUAL" or "BANK"
     
     status: text("status", { enum: ["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED"] }).default("PENDING").notNull(),
     reviewed_by: text("reviewed_by"),

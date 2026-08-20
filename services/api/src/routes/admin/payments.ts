@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or, isNull } from 'drizzle-orm';
 import { Bindings, Variables } from '../../db';
 import { bank_accounts as bankAccounts, payment_methods as paymentMethods, real_manual_deposits as realManualDeposits, bankTransfers, wallets, walletTransactions, ledgerEntries, ledgerTransactions, cregisDeposits, currencyRates, assetConversions } from 'database';
 import { getFeeConfig, calculateFee } from '../../services/fees';
@@ -59,8 +59,19 @@ adminPaymentRoutes.delete('/methods/:id', async (c) => {
 // Get pending deposits (manual + bank) and history for Cregis
 adminPaymentRoutes.get('/pending-deposits', async (c) => {
   const db = c.get('db');
-  const manual = await db.select().from(realManualDeposits).where(eq(realManualDeposits.status, 'PENDING')).all();
-  const bank = await db.select().from(bankTransfers).where(eq(bankTransfers.status, 'PENDING')).all();
+  const manual = await db.select().from(realManualDeposits).where(
+    and(
+      eq(realManualDeposits.status, 'PENDING'),
+      or(eq(realManualDeposits.remarks, 'MANUAL'), isNull(realManualDeposits.remarks))
+    )
+  ).all();
+  
+  const bank = await db.select().from(realManualDeposits).where(
+    and(
+      eq(realManualDeposits.status, 'PENDING'),
+      eq(realManualDeposits.remarks, 'BANK')
+    )
+  ).all();
   
   // For Cregis, we just want to see recent deposits regardless of status
   const cregis = await db.select().from(cregisDeposits).orderBy(cregisDeposits.createdAt).limit(100).all();
