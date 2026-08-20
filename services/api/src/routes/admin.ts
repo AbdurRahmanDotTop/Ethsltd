@@ -3,7 +3,7 @@ import { eq, desc, sql, and } from 'drizzle-orm';
 import { getFeeConfig, calculateFee } from '../services/fees';
 import { generateBusinessId } from '../services/id-generator';
 import { Bindings, Variables } from '../db';
-import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, ledgerEntries, bankTransfers, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions, expertProfiles } from 'database';
+import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, ledgerEntries, bankTransfers, bank_accounts, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions, expertProfiles } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const adminRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -576,18 +576,115 @@ adminRoutes.put('/deposit-settings/:id', async (c) => {
   }
 
   try {
+    const updateData: any = {
+      updated_at: new Date(),
+      updated_by: admin.id
+    };
+    
+    if (body.enabled !== undefined) updateData.enabled = body.enabled;
+    if (body.instructions !== undefined) updateData.instructions = body.instructions;
+    if (body.min_amount !== undefined) updateData.min_amount = body.min_amount;
+    if (body.max_amount !== undefined) updateData.max_amount = body.max_amount;
+    if (body.fee_type !== undefined) updateData.fee_type = body.fee_type;
+    if (body.fee_value !== undefined) updateData.fee_value = body.fee_value;
+    if (body.supported_assets !== undefined) updateData.supported_assets = body.supported_assets;
+    if (body.maintenance_mode !== undefined) updateData.maintenance_mode = body.maintenance_mode;
+
     await db.update(payment_methods)
-      .set({
-        enabled: body.enabled,
-        instructions: body.instructions !== undefined ? body.instructions : undefined,
-        updated_at: new Date(),
-        updated_by: admin.id
-      })
+      .set(updateData)
       .where(eq(payment_methods.id, id));
       
     return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message || 'Failed to update deposit setting' }, 500);
+  }
+});
+
+// GET /api/v1/admin/bank-accounts
+adminRoutes.get('/bank-accounts', async (c) => {
+  const db = c.get('db');
+  try {
+    const accounts = await db.select().from(bank_accounts).all();
+    return c.json({ success: true, data: accounts });
   } catch (error) {
-    return c.json({ success: false, error: 'Failed to update deposit setting' }, 500);
+    return c.json({ success: false, error: 'Failed to fetch bank accounts' }, 500);
+  }
+});
+
+// POST /api/v1/admin/bank-accounts
+adminRoutes.post('/bank-accounts', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  if (admin.role !== 'SUPER_ADMIN') return c.json({ success: false, error: 'Unauthorized' }, 403);
+  
+  try {
+    const body = await c.req.json();
+    const id = crypto.randomUUID();
+    const now = new Date();
+    await db.insert(bank_accounts).values({
+      id,
+      bank_name: body.bank_name,
+      account_holder: body.account_holder,
+      account_number: body.account_number,
+      ifsc: body.ifsc || null,
+      swift: body.swift || null,
+      branch: body.branch || null,
+      currency: body.currency,
+      country: body.country || null,
+      instructions: body.instructions || null,
+      active: body.active !== undefined ? body.active : true,
+      default_account: body.default_account || false,
+      created_at: now,
+      updated_at: now
+    });
+    return c.json({ success: true, data: { id } });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// PUT /api/v1/admin/bank-accounts/:id
+adminRoutes.put('/bank-accounts/:id', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  if (admin.role !== 'SUPER_ADMIN') return c.json({ success: false, error: 'Unauthorized' }, 403);
+  
+  try {
+    const id = c.req.param('id');
+    const body = await c.req.json();
+    const updateData: any = { updated_at: new Date() };
+    
+    if (body.bank_name !== undefined) updateData.bank_name = body.bank_name;
+    if (body.account_holder !== undefined) updateData.account_holder = body.account_holder;
+    if (body.account_number !== undefined) updateData.account_number = body.account_number;
+    if (body.ifsc !== undefined) updateData.ifsc = body.ifsc;
+    if (body.swift !== undefined) updateData.swift = body.swift;
+    if (body.branch !== undefined) updateData.branch = body.branch;
+    if (body.currency !== undefined) updateData.currency = body.currency;
+    if (body.country !== undefined) updateData.country = body.country;
+    if (body.instructions !== undefined) updateData.instructions = body.instructions;
+    if (body.active !== undefined) updateData.active = body.active;
+    if (body.default_account !== undefined) updateData.default_account = body.default_account;
+
+    await db.update(bank_accounts).set(updateData).where(eq(bank_accounts.id, id));
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// DELETE /api/v1/admin/bank-accounts/:id
+adminRoutes.delete('/bank-accounts/:id', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  if (admin.role !== 'SUPER_ADMIN') return c.json({ success: false, error: 'Unauthorized' }, 403);
+  
+  try {
+    const id = c.req.param('id');
+    await db.delete(bank_accounts).where(eq(bank_accounts.id, id));
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
   }
 });
 

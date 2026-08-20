@@ -194,14 +194,21 @@ adminPaymentRoutes.post('/manual-deposits/:id/reject', async (c) => {
   const db = c.get('db');
   const id = c.req.param('id');
   const user = c.get('user');
-  const { notes } = await c.req.json();
+  const body = await c.req.json();
+  const notes = body.notes;
   const now = new Date();
   
   const deposit = await db.select().from(realManualDeposits).where(eq(realManualDeposits.id, id)).get();
   if (!deposit || deposit.status !== 'PENDING') return c.json({ success: false, error: 'Invalid deposit' }, 400);
   
-  const reason = notes ? `Rejected: ${notes}` : 'Rejected by Admin';
-  await db.update(realManualDeposits).set({ status: 'REJECTED', reviewed_by: user.id, reviewed_at: now, payment_reference: reason }).where(eq(realManualDeposits.id, id));
+  const reason = notes ? notes : 'Rejected by Admin';
+  await db.update(realManualDeposits).set({ 
+    status: 'REJECTED', 
+    reviewed_by: user.id, 
+    reviewed_at: now, 
+    rejection_reason: reason,
+    remarks: reason 
+  }).where(eq(realManualDeposits.id, id));
   
   return c.json({ success: true });
 });

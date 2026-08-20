@@ -687,10 +687,35 @@ export class EthsltdClient {
     return this.request<any>('/api/v1/admin/deposit-settings');
   }
 
-  async adminUpdateDepositSettings(id: string, data: { enabled?: boolean; instructions?: string }) {
+  async adminUpdateDepositSettings(id: string, data: any) {
     return this.request<any>(`/api/v1/admin/deposit-settings/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  }
+
+  // Admin Bank Accounts
+  async adminGetBankAccounts() {
+    return this.request<any>('/api/v1/admin/bank-accounts');
+  }
+
+  async adminCreateBankAccount(data: any) {
+    return this.request<any>('/api/v1/admin/bank-accounts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async adminUpdateBankAccount(id: string, data: any) {
+    return this.request<any>(`/api/v1/admin/bank-accounts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async adminDeleteBankAccount(id: string) {
+    return this.request<any>(`/api/v1/admin/bank-accounts/${id}`, {
+      method: 'DELETE',
     });
   }
 
