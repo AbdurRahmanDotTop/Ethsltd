@@ -51,7 +51,7 @@ export function GlobalWalletDashboard() {
     <div className="flex flex-col min-h-screen bg-[#121212] text-white font-sans w-full max-w-[1280px] mx-auto pb-24">
       {/* Top Bar */}
       <div className="px-4 py-3">
-        <div className="bg-[#1A1C24] border border-white/10 rounded-lg flex items-center justify-between px-3 py-2">
+        <div className="bg-[#121212] border border-white/10 rounded-lg flex items-center justify-between px-3 py-2">
           <Star className="w-5 h-5 text-gray-400" />
           <span className="text-sm font-medium">ETHSLTD</span>
           <button onClick={() => fetchBalances('REAL')}><RefreshCw className="w-4 h-4 text-gray-400" /></button>
@@ -61,34 +61,42 @@ export function GlobalWalletDashboard() {
       <h1 className="text-center font-bold text-lg mt-1 mb-4">Assets</h1>
 
       {/* Sub-navigation Tabs */}
-      <div className="flex bg-[#1A1C24]">
+      <div className="flex bg-[#121212] border-b border-white/5">
         <button className="flex-1 py-3 text-sm font-bold bg-[#00C087] text-[#121212]">Currency Account</button>
         <button className="flex-1 py-3 text-sm font-medium text-gray-400">Contract Account</button>
         <button className="flex-1 py-3 text-sm font-medium text-gray-400 hidden sm:block">Options Account</button>
       </div>
 
-      {/* Total Assets Overview */}
+      {/* Assets Overview */}
       <div className="px-4 py-6 border-b border-white/5">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-300">Total Assets(USDT)</span>
+          <span className="text-sm text-gray-300">Available Assets (USDT)</span>
           <button onClick={() => setShowBalance(!showBalance)}>
             {showBalance ? <Eye className="w-5 h-5 text-gray-400" /> : <EyeOff className="w-5 h-5 text-gray-400" />}
           </button>
         </div>
         <div className="mt-3 flex justify-between items-end">
           <div>
-            <h2 className="text-3xl font-bold">
-              {showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
+            <h2 className="text-3xl font-bold text-[#00C087]">
+              {showBalance ? availableUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
             </h2>
             <p className="text-sm text-gray-400 mt-1">
-              ≈{showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'} USD
+              ≈{showBalance ? availableUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'} USD
             </p>
           </div>
-          <div className="text-right">
-             <span className="text-xs text-gray-400 block mb-1">Available Assets(USDT)</span>
-             <h3 className="text-xl font-semibold text-[#00C087]">
-               {showBalance ? availableUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
-             </h3>
+          <div className="text-right flex gap-6">
+             <div>
+               <span className="text-xs text-gray-400 block mb-1">On Order / Hold</span>
+               <h3 className="text-sm font-semibold text-white">
+                 {showBalance ? (totalUsdt - availableUsdt).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
+               </h3>
+             </div>
+             <div>
+               <span className="text-xs text-gray-400 block mb-1">Total Assets (USDT)</span>
+               <h3 className="text-sm font-semibold text-white">
+                 {showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
+               </h3>
+             </div>
           </div>
         </div>
         <div className="mt-4">
@@ -98,7 +106,7 @@ export function GlobalWalletDashboard() {
 
       {/* Currency Account Card */}
       <div className="px-4 mt-6">
-        <div className="bg-gradient-to-b from-[#2A2D38] to-[#1A1C24] rounded-xl overflow-hidden shadow-lg border border-white/5 relative">
+        <div className="bg-[#121212] rounded-xl overflow-hidden shadow-lg border border-white/10 relative">
           <div className="absolute top-0 right-0 bg-[#00C087] text-[#121212] px-3 py-1 rounded-bl-lg text-xs font-bold">
             Currency Account
           </div>
@@ -106,7 +114,7 @@ export function GlobalWalletDashboard() {
           <div className="p-5 border-b border-white/5">
             <span className="text-xs text-gray-300">Asset valuations (USDT)</span>
             <div className="mt-2">
-              <h3 className="text-2xl font-bold text-[#00C087]">
+              <h3 className="text-2xl font-bold text-white">
                 {showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
               </h3>
               <p className="text-xs text-gray-400 mt-1">
@@ -152,7 +160,7 @@ export function GlobalWalletDashboard() {
       {/* Asset List Items */}
       <div className="mt-4 px-4 flex flex-col gap-3">
         {displayAssets.map((asset: any, i: number) => (
-          <div key={i} className="bg-[#1A1C24] border border-white/5 rounded-xl p-4">
+          <div key={i} className="bg-[#121212] border border-white/10 rounded-xl p-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#00C087] font-bold text-xs">
@@ -180,7 +188,7 @@ export function GlobalWalletDashboard() {
       {/* Recent Transactions */}
       <div className="mt-8 px-4">
         <h2 className="text-xl font-bold mb-4">All Transactions</h2>
-        <div className="bg-[#1A1C24] border border-white/5 rounded-xl overflow-hidden">
+        <div className="bg-[#121212] border border-white/10 rounded-xl overflow-hidden">
           {transactions.length === 0 ? (
             <div className="p-8 text-center text-gray-400">
               No transactions found.
