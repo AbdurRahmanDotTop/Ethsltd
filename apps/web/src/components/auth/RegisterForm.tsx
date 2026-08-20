@@ -18,6 +18,7 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [globalError, setGlobalError] = useState("");
@@ -53,8 +54,11 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
       if (onSuccess) {
         onSuccess();
       } else {
-        // Redirect to verification flow
-        router.push("/verify-email");
+        if (response.data?.user) {
+          setUser(response.data.user);
+        } else {
+          router.push("/verify-email");
+        }
       }
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred during registration.");
