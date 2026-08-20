@@ -46,9 +46,10 @@ export const adminNavGroups = [
     items: [
       { name: "Wallets", href: "/admin/wallets", icon: Wallet },
       { name: "Deposits", href: "/admin/deposits", icon: ArrowDownToLine },
-      { name: "Deposit Settings", href: "/admin/deposits/settings", icon: Settings },
       { name: "Withdrawals", href: "/admin/withdrawals", icon: ArrowUpFromLine },
-      { name: "Transactions", href: "/admin/transactions", icon: ListOrdered }
+      { name: "Transactions", href: "/admin/transactions", icon: ListOrdered },
+      { name: "Payment Settings", href: "/admin/settings/payments", icon: Wallet },
+      { name: "Currency Rates", href: "/admin/currency-rates", icon: Settings }
     ]
   },
   {
@@ -65,8 +66,6 @@ export const adminNavGroups = [
     items: [
       { name: "Audit Logs", href: "/admin/audit", icon: ShieldCheck },
       { name: "Settings", href: "/admin/settings", icon: Settings },
-      { name: "Global Currency Rates", href: "/admin/currency-rates", icon: Settings },
-      { name: "Payment Settings", href: "/admin/settings/payments", icon: Wallet },
       { name: "System", href: "/admin/system", icon: Server }
     ]
   },

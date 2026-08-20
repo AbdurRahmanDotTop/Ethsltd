@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc, and } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users } from 'database';
+import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users, currencyRates } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
 import { getFeeConfig, calculateFee, getLimit } from '../services/fees';
@@ -42,8 +42,12 @@ walletRoutes.get('/deposit-settings', async (c) => {
       console.error('Failed to parse manual deposit instructions as JSON', e);
     }
   }
+  // Get dynamic currencies
+  const rates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
+  const bankCurrencies = rates.filter(r => r.isBank).map(r => r.code);
+  const activeCryptoAssets = rates.filter(r => r.isAsset).map(r => r.code);
   
-  return c.json({ success: true, activeMethods, manualAddresses });
+  return c.json({ success: true, activeMethods, manualAddresses, bankCurrencies, activeCryptoAssets });
 });
 
 walletRoutes.get('/deposit/preview', async (c) => {

@@ -8,6 +8,8 @@ export const currencyRates = sqliteTable('currency_rates', {
   symbol: text('symbol').notNull(), // e.g., '₹', '$'
   ratePerUsdt: text('rate_per_usdt').notNull(), // Stored as text to maintain precision, e.g., '98.80'
   decimalPrecision: integer('decimal_precision').notNull().default(2),
+  isAsset: integer('is_asset', { mode: 'boolean' }).notNull().default(false),
+  isBank: integer('is_bank', { mode: 'boolean' }).notNull().default(true),
   status: text('status', { enum: ['ACTIVE', 'INACTIVE'] }).notNull().default('ACTIVE'),
   lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull(),
   updatedBy: text('updated_by').notNull().references(() => users.id),

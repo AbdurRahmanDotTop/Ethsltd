@@ -30,7 +30,7 @@ adminCurrencyRateRoutes.post('/', async (c) => {
     return c.json({ success: false, error: 'Unauthorized: Only Super Admins can add currency rates' }, 403);
   }
 
-  const { code, name, symbol, ratePerUsdt, decimalPrecision, status } = await c.req.json();
+  const { code, name, symbol, ratePerUsdt, decimalPrecision, status, isAsset, isBank } = await c.req.json();
   const now = new Date();
 
   try {
@@ -41,6 +41,8 @@ adminCurrencyRateRoutes.post('/', async (c) => {
       symbol,
       ratePerUsdt: ratePerUsdt.toString(),
       decimalPrecision: decimalPrecision || 2,
+      isAsset: isAsset !== undefined ? isAsset : false,
+      isBank: isBank !== undefined ? isBank : true,
       status: status || 'ACTIVE',
       lastUpdated: now,
       updatedBy: user.id
@@ -72,7 +74,7 @@ adminCurrencyRateRoutes.put('/:code', async (c) => {
     return c.json({ success: false, error: 'Unauthorized: Only Super Admins can update currency rates' }, 403);
   }
 
-  const { name, symbol, ratePerUsdt, decimalPrecision } = await c.req.json();
+  const { name, symbol, ratePerUsdt, decimalPrecision, isAsset, isBank } = await c.req.json();
   const now = new Date();
 
   try {
@@ -89,6 +91,8 @@ adminCurrencyRateRoutes.put('/:code', async (c) => {
     if (name) updates.name = name;
     if (symbol) updates.symbol = symbol;
     if (decimalPrecision !== undefined) updates.decimalPrecision = decimalPrecision;
+    if (isAsset !== undefined) updates.isAsset = isAsset;
+    if (isBank !== undefined) updates.isBank = isBank;
     
     let rateChanged = false;
     if (ratePerUsdt && ratePerUsdt.toString() !== existing.ratePerUsdt) {

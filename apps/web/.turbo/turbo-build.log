@@ -8,18 +8,24 @@
 ⚠ Invalid next.config.ts options detected: 
 ⚠     Unrecognized key(s) in object: 'eslint'
 ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
-✓ Running next.config.ts took 54ms
+✓ Running next.config.ts took 33ms
 
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
+
+  To migrate automatically, run:
+  npx @next/codemod@canary middleware-to-proxy .
+
+  Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
   Creating an optimized production build ...
-✓ Compiled successfully in 2.5s
+✓ Compiled successfully in 4.5s
   Skipping validation of types
-  Finished TypeScript config validation in 16ms ...
+  Finished TypeScript config validation in 10ms ...
   Collecting page data using 7 workers ...
-  Generating static pages using 7 workers (0/4) ...
-  Generating static pages using 7 workers (1/4) 
-  Generating static pages using 7 workers (2/4) 
-  Generating static pages using 7 workers (3/4) 
-✓ Generating static pages using 7 workers (4/4) in 197ms
+  Generating static pages using 7 workers (0/5) ...
+  Generating static pages using 7 workers (1/5) 
+  Generating static pages using 7 workers (2/5) 
+  Generating static pages using 7 workers (3/5) 
+✓ Generating static pages using 7 workers (5/5) in 140ms
   Finalizing page optimization ...
 
 Route (app)
@@ -44,7 +50,6 @@ Route (app)
 ├ ƒ /admin/contracts
 ├ ƒ /admin/currency-rates
 ├ ƒ /admin/deposits
-├ ƒ /admin/deposits/settings
 ├ ƒ /admin/experts
 ├ ƒ /admin/kyc
 ├ ƒ /admin/notifications
@@ -64,6 +69,7 @@ Route (app)
 ├ ƒ /admin/users/[id]
 ├ ƒ /admin/wallets
 ├ ƒ /admin/withdrawals
+├ ƒ /api/auth/session
 ├ ƒ /developers
 ├ ƒ /developers/docs
 ├ ƒ /developers/playground
@@ -115,6 +121,8 @@ Route (app)
 ├ ƒ /wallet/history
 └ ƒ /wallet/withdraw
 
+
+ƒ Proxy (Middleware)
 
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand

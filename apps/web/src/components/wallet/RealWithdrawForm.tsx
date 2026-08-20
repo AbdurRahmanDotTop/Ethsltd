@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, ArrowUpFromLine, AlertCircle, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
-const CRYPTO_ASSETS = ["USDT", "USDC", "BTC", "ETH", "SOL"];
+const FALLBACK_ASSETS = ["USDT", "USDC", "BTC", "ETH", "SOL"];
 
 const withdrawSchema = z.object({
   asset: z.string().min(1, "Asset is required"),
@@ -27,10 +27,12 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
+  const [cryptoAssets, setCryptoAssets] = useState<string[]>(FALLBACK_ASSETS);
+
   const form = useForm<z.infer<typeof withdrawSchema>>({
     resolver: zodResolver(withdrawSchema),
     defaultValues: {
-      asset: CRYPTO_ASSETS.includes(defaultAsset.toUpperCase()) ? defaultAsset.toUpperCase() : "USDT",
+      asset: FALLBACK_ASSETS.includes(defaultAsset.toUpperCase()) ? defaultAsset.toUpperCase() : "USDT",
       amount: 10,
       destination: "",
     },
@@ -47,7 +49,17 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
     if (mode === 'REAL') {
       apiClient.getWalletBalances(mode).then(res => setBalances(res.data || []));
     }
-  }, [mode]);
+    apiClient.getDepositSettings().then((res: any) => {
+      if (res.success && res.activeCryptoAssets && res.activeCryptoAssets.length > 0) {
+        setCryptoAssets(res.activeCryptoAssets);
+        if (res.activeCryptoAssets.includes(defaultAsset.toUpperCase())) {
+          form.setValue("asset", defaultAsset.toUpperCase());
+        } else {
+          form.setValue("asset", res.activeCryptoAssets[0]);
+        }
+      }
+    });
+  }, [mode, defaultAsset, form]);
 
   useEffect(() => {
     const fetchPreview = async () => {
@@ -214,7 +226,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {CRYPTO_ASSETS.map((asset) => (
+            {cryptoAssets.map((asset) => (
               <button
                 key={asset}
                 type="button"

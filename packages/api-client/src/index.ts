@@ -709,10 +709,23 @@ export class EthsltdClient {
     return this.request<any>('/api/v1/admin/deposit-settings');
   }
 
+  async adminCreateDepositSettings(data: any) {
+    return this.request<any>('/api/v1/admin/deposit-settings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async adminUpdateDepositSettings(id: string, data: any) {
     return this.request<any>(`/api/v1/admin/deposit-settings/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  }
+
+  async adminDeleteDepositSettings(id: string) {
+    return this.request<any>(`/api/v1/admin/deposit-settings/${id}`, {
+      method: 'DELETE',
     });
   }
 

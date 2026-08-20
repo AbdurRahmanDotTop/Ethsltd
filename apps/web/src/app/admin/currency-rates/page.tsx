@@ -10,6 +10,8 @@ type CurrencyRate = {
   symbol: string;
   ratePerUsdt: string;
   decimalPrecision: number;
+  isAsset: boolean;
+  isBank: boolean;
   status: 'ACTIVE' | 'INACTIVE';
   lastUpdated: string;
   updatedBy: string;
@@ -44,6 +46,8 @@ export default function CurrencyRatesAdminPage() {
     symbol: '',
     ratePerUsdt: '',
     decimalPrecision: 2,
+    isAsset: false,
+    isBank: true,
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE'
   });
 
@@ -90,7 +94,9 @@ export default function CurrencyRatesAdminPage() {
         name: formData.name,
         symbol: formData.symbol,
         ratePerUsdt: formData.ratePerUsdt,
-        decimalPrecision: formData.decimalPrecision
+        decimalPrecision: formData.decimalPrecision,
+        isAsset: formData.isAsset,
+        isBank: formData.isBank
       });
       if (res.success) {
         setIsEditModalOpen(false);
@@ -155,6 +161,8 @@ export default function CurrencyRatesAdminPage() {
       symbol: rate.symbol,
       ratePerUsdt: rate.ratePerUsdt,
       decimalPrecision: rate.decimalPrecision,
+      isAsset: rate.isAsset || false,
+      isBank: rate.isBank !== undefined ? rate.isBank : true,
       status: rate.status
     });
     setIsEditModalOpen(true);
@@ -169,7 +177,7 @@ export default function CurrencyRatesAdminPage() {
         </div>
         <button 
           onClick={() => {
-            setFormData({ code: '', name: '', symbol: '', ratePerUsdt: '', decimalPrecision: 2, status: 'ACTIVE' });
+            setFormData({ code: '', name: '', symbol: '', ratePerUsdt: '', decimalPrecision: 2, isAsset: false, isBank: true, status: 'ACTIVE' });
             setIsAddModalOpen(true);
           }}
           className="bg-brand-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-brand-primary/90 flex items-center gap-2"
@@ -192,6 +200,7 @@ export default function CurrencyRatesAdminPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Currency</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Rate (per USDT)</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Features</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Last Updated</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Actions</th>
@@ -218,6 +227,12 @@ export default function CurrencyRatesAdminPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap font-mono">
                       {parseFloat(rate.ratePerUsdt).toFixed(rate.decimalPrecision)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex gap-2">
+                        {rate.isBank && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 uppercase">Bank</span>}
+                        {rate.isAsset && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 uppercase">Crypto/Asset</span>}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -309,6 +324,16 @@ export default function CurrencyRatesAdminPage() {
                   <option value={8}>8</option>
                 </select>
               </div>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input type="checkbox" checked={formData.isBank} onChange={e => setFormData({...formData, isBank: e.target.checked})} className="w-4 h-4" />
+                  Available for Bank Transfers
+                </label>
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input type="checkbox" checked={formData.isAsset} onChange={e => setFormData({...formData, isAsset: e.target.checked})} className="w-4 h-4" />
+                  Available as Crypto Asset
+                </label>
+              </div>
               <div className="pt-4 flex justify-end gap-2">
                 <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 border rounded-md">Cancel</button>
                 <button type="submit" className="px-4 py-2 bg-brand-primary text-primary-foreground rounded-md flex items-center gap-2">
@@ -352,6 +377,16 @@ export default function CurrencyRatesAdminPage() {
                   <option value={6}>6</option>
                   <option value={8}>8</option>
                 </select>
+              </div>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input type="checkbox" checked={formData.isBank} onChange={e => setFormData({...formData, isBank: e.target.checked})} className="w-4 h-4" />
+                  Available for Bank Transfers
+                </label>
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input type="checkbox" checked={formData.isAsset} onChange={e => setFormData({...formData, isAsset: e.target.checked})} className="w-4 h-4" />
+                  Available as Crypto Asset
+                </label>
               </div>
               <div className="pt-4 flex justify-end gap-2">
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 border rounded-md">Cancel</button>

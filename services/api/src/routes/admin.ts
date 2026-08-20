@@ -600,6 +600,56 @@ adminRoutes.put('/deposit-settings/:id', async (c) => {
   }
 });
 
+// POST /api/v1/admin/deposit-settings
+adminRoutes.post('/deposit-settings', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can manage deposit settings' }, 403);
+  }
+
+  try {
+    const id = crypto.randomUUID();
+    await db.insert(payment_methods).values({
+      id,
+      method: body.method || 'MANUAL',
+      enabled: body.enabled !== undefined ? body.enabled : true,
+      min_amount: body.min_amount || 0,
+      fee_type: body.fee_type || 'ZERO',
+      fee_value: body.fee_value || 0,
+      display_order: body.display_order || 1,
+      instructions: body.instructions || '{}',
+      environment: 'REAL',
+      created_at: new Date(),
+      updated_at: new Date(),
+      updated_by: admin.id
+    });
+    return c.json({ success: true, data: { id } });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message || 'Failed to create deposit setting' }, 500);
+  }
+});
+
+// DELETE /api/v1/admin/deposit-settings/:id
+adminRoutes.delete('/deposit-settings/:id', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const id = c.req.param('id');
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized: Only Super Admins can manage deposit settings' }, 403);
+  }
+
+  try {
+    await db.delete(payment_methods).where(eq(payment_methods.id, id));
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message || 'Failed to delete deposit setting' }, 500);
+  }
+});
+
 // GET /api/v1/admin/bank-accounts
 adminRoutes.get('/bank-accounts', async (c) => {
   const db = c.get('db');

@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { apiClient } from "@ethsltd/api-client";
 import { Loader2 } from "lucide-react";
 
 export default function AdminPaymentSettingsPage() {
   const [methods, setMethods] = useState<any[]>([]);
   const [banks, setBanks] = useState<any[]>([]);
+  const [currencyRates, setCurrencyRates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Edit Method State
@@ -50,16 +52,20 @@ export default function AdminPaymentSettingsPage() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("ethsltd_auth_token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      console.log("fetchSettings using API URL:", apiUrl);
-      const res = await fetch(`${apiUrl}/api/v1/admin/payments/settings`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r => r.json());
+      const [resSettings, resBanks, resRates] = await Promise.all([
+        apiClient.adminGetDepositSettings(),
+        apiClient.adminGetBankAccounts(),
+        apiClient.adminGetCurrencyRates()
+      ]);
       
-      if (res.success) {
-        setMethods(res.paymentMethods || []);
-        setBanks(res.bankAccounts || []);
+      if (resSettings.success && resSettings.data) {
+        setMethods(resSettings.data || []);
+      }
+      if (resBanks.success && resBanks.data) {
+        setBanks(resBanks.data || []);
+      }
+      if (resRates.success && resRates.data) {
+        setCurrencyRates(resRates.data || []);
       }
     } catch (e) {
       console.error(e);
@@ -111,19 +117,11 @@ export default function AdminPaymentSettingsPage() {
         finalInstructions = JSON.stringify(obj);
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${apiUrl}/api/v1/admin/payments/methods/${editingMethod.id}`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ 
-          instructions: finalInstructions,
-          enabled: editingMethod.enabled,
-          min_amount: editingMethod.min_amount
-        })
-      }).then(r => r.json());
+      const res = await apiClient.adminUpdateDepositSettings(editingMethod.id, { 
+        instructions: finalInstructions,
+        enabled: editingMethod.enabled,
+        min_amount: editingMethod.min_amount
+      });
 
       if (res.success) {
         toast.success("Payment method updated!");
@@ -142,13 +140,7 @@ export default function AdminPaymentSettingsPage() {
   const handleDeleteMethod = async (methodId: string) => {
     if (!confirm("Are you sure you want to delete this payment method?")) return;
     try {
-      const token = localStorage.getItem("ethsltd_auth_token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${apiUrl}/api/v1/admin/payments/methods/${methodId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r => r.json());
-
+      const res = await apiClient.adminDeleteDepositSettings(methodId);
       if (res.success) {
         toast.success("Payment method deleted");
         fetchSettings();
@@ -182,12 +174,7 @@ export default function AdminPaymentSettingsPage() {
         finalAddMethodForm.instructions = JSON.stringify(obj);
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${apiUrl}/api/v1/admin/payments/methods`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(finalAddMethodForm)
-      }).then(r => r.json());
+      const res = await apiClient.adminCreateDepositSettings(finalAddMethodForm);
 
       if (res.success) {
         toast.success("Payment method added!");
@@ -228,22 +215,9 @@ export default function AdminPaymentSettingsPage() {
   const handleSaveBank = async () => {
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("ethsltd_auth_token");
-      const isEdit = !!editingBank;
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      console.log("handleSaveBank using API URL:", apiUrl);
-      const endpoint = isEdit 
-        ? `${apiUrl}/api/v1/admin/payments/banks/${editingBank.id}`
-        : `${apiUrl}/api/v1/admin/payments/banks`;
-      
-      const res = await fetch(endpoint, {
-        method: isEdit ? "PUT" : "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify(bankForm)
-      }).then(r => r.json());
+      const res = isEdit
+        ? await apiClient.adminUpdateBankAccount(editingBank.id, bankForm)
+        : await apiClient.adminCreateBankAccount(bankForm);
 
       if (res.success) {
         toast.success(isEdit ? "Bank account updated!" : "Bank account added!");
@@ -262,12 +236,7 @@ export default function AdminPaymentSettingsPage() {
   const handleDeleteBank = async (bankId: string) => {
     if (!confirm("Are you sure you want to delete this bank account?")) return;
     try {
-      const token = localStorage.getItem("ethsltd_auth_token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${apiUrl}/api/v1/admin/payments/banks/${bankId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r => r.json());
+      const res = await apiClient.adminDeleteBankAccount(bankId);
 
       if (res.success) {
         toast.success("Bank account deleted");
@@ -548,7 +517,15 @@ export default function AdminPaymentSettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>Currency *</Label>
-              <Input value={bankForm.currency} onChange={e => setBankForm({...bankForm, currency: e.target.value})} />
+              <select 
+                value={bankForm.currency}
+                onChange={e => setBankForm({...bankForm, currency: e.target.value})}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {currencyRates.filter(c => c.isBank).map(c => (
+                  <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

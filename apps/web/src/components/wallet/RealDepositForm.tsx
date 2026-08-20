@@ -19,6 +19,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
   const [copied, setCopied] = useState(false);
   const [manualAddresses, setManualAddresses] = useState<Record<string, string>>({});
   const [cryptoAssets, setCryptoAssets] = useState<string[]>(CRYPTO_ASSETS);
+  const [bankCurrenciesList, setBankCurrenciesList] = useState<string[]>(['USD', 'EUR', 'GBP', 'INR']);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   const [activeMethods, setActiveMethods] = useState<string[]>([]);
@@ -48,13 +49,28 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
           }
         }
         
-        if (res.manualAddresses) {
-          setManualAddresses(res.manualAddresses);
+        if (res.bankCurrencies && res.bankCurrencies.length > 0) {
+          setBankCurrenciesList(res.bankCurrencies);
+          if (!res.bankCurrencies.includes(bankCurrency)) {
+            setBankCurrency(res.bankCurrencies[0]);
+          }
+        }
+        
+        if (res.activeCryptoAssets && res.activeCryptoAssets.length > 0) {
+          setCryptoAssets(res.activeCryptoAssets);
+          if (!res.activeCryptoAssets.includes(selectedAsset) && !res.manualAddresses?.[selectedAsset]) {
+             setSelectedAsset(res.activeCryptoAssets[0]);
+          }
+        } else if (res.manualAddresses) {
           const assets = Object.keys(res.manualAddresses);
           if (assets.length > 0) {
             setCryptoAssets(assets);
             if (!assets.includes(selectedAsset)) setSelectedAsset(assets[0]);
           }
+        }
+        
+        if (res.manualAddresses) {
+          setManualAddresses(res.manualAddresses);
         }
       }
     } catch (e) {
@@ -475,10 +491,9 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                       onChange={e => setBankCurrency(e.target.value)}
                       className="border border-border bg-background rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                      <option value="GBP">GBP</option>
-                      <option value="INR">INR</option>
+                      {bankCurrenciesList.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
