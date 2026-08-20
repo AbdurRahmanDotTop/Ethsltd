@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, or } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users, currencyRates } from 'database';
+import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users, currencyRates, p2pOrders, p2pAds, expertBookings, expertProfiles, orders as tradingOrders } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
 import { getFeeConfig, calculateFee, getLimit } from '../services/fees';
@@ -265,12 +265,12 @@ walletRoutes.get('/transactions', async (c) => {
   const user = c.get('user');
   const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
+  // 1. Wallet Transactions (Deposits, Withdrawals)
   const transactions = await db.select().from(walletTransactions)
     .where(and(eq(walletTransactions.userId, user.id), eq(walletTransactions.mode, mode)))
-    .orderBy(desc(walletTransactions.createdAt))
     .all();
     
-  const mappedTxs = transactions.map(tx => ({
+  const mappedTxs: any[] = transactions.map(tx => ({
     id: tx.id,
     type: tx.type,
     asset: tx.assetSymbol,
@@ -283,7 +283,118 @@ walletRoutes.get('/transactions', async (c) => {
     createdAt: tx.createdAt.toISOString(),
     updatedAt: tx.updatedAt.toISOString(),
   }));
+
+  // 2. P2P Orders
+  const p2pRows = await db.select({ order: p2pOrders, ad: p2pAds }).from(p2pOrders)
+    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
+    .where(and(
+      or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id)),
+      eq(p2pOrders.mode, mode)
+    )).all();
+
+  p2pRows.forEach(row => {
+    const isBuyer = row.order.buyerId === user.id;
+    mappedTxs.push({
+      id: row.order.id,
+      type: isBuyer ? 'P2P_BUY' : 'P2P_SELL',
+      asset: row.ad?.asset || 'Unknown',
+      amount: parseFloat(row.order.cryptoAmount),
+      fee: 0,
+      status: row.order.status === 'COMPLETED' ? 'COMPLETED' : (row.order.status === 'CANCELLED' ? 'FAILED' : 'PENDING'),
+      reference: row.order.displayId,
+      createdAt: row.order.createdAt.toISOString(),
+      updatedAt: row.order.updatedAt.toISOString(),
+    });
+  });
+
+  // 3. Asset Conversions (Only in REAL mode usually, but we include them if requested mode is REAL)
+  if (mode === 'REAL') {
+    const conversions = await db.select().from(assetConversions)
+      .where(eq(assetConversions.userId, user.id))
+      .all();
     
+    conversions.forEach(conv => {
+      // Add debit side
+      mappedTxs.push({
+        id: `${conv.id}-OUT`,
+        type: 'CONVERT_OUT',
+        asset: conv.fromAsset,
+        amount: -parseFloat(conv.fromAmount),
+        fee: parseFloat(conv.fee),
+        status: conv.status,
+        createdAt: conv.createdAt.toISOString(),
+        updatedAt: conv.createdAt.toISOString(),
+      });
+      // Add credit side
+      mappedTxs.push({
+        id: `${conv.id}-IN`,
+        type: 'CONVERT_IN',
+        asset: conv.toAsset,
+        amount: parseFloat(conv.toAmount),
+        fee: 0,
+        status: conv.status,
+        createdAt: conv.createdAt.toISOString(),
+        updatedAt: conv.createdAt.toISOString(),
+      });
+    });
+  }
+
+  // 4. Trading Orders
+  const userOrders = await db.select().from(tradingOrders)
+    .where(and(
+      eq(tradingOrders.userId, user.id),
+      eq(tradingOrders.mode, mode),
+      eq(tradingOrders.status, 'FILLED')
+    )).all();
+    
+  userOrders.forEach(order => {
+    const isBuy = order.side === 'BUY';
+    const baseAsset = order.marketSymbol.split('-')[0];
+    const quoteAsset = order.marketSymbol.split('-')[1];
+    
+    // The asset the user received
+    mappedTxs.push({
+      id: order.id,
+      type: 'TRADE',
+      asset: isBuy ? baseAsset : quoteAsset,
+      amount: parseFloat(order.filledAmount) * (isBuy ? 1 : parseFloat(order.price || '0')),
+      fee: 0,
+      status: 'COMPLETED',
+      reference: order.displayId,
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
+    });
+  });
+
+  // 5. Expert Bookings (Only REAL mode)
+  if (mode === 'REAL') {
+    const eProfile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+    const bookings = await db.select().from(expertBookings)
+      .where(
+        eProfile 
+          ? or(eq(expertBookings.userId, user.id), eq(expertBookings.expertId, eProfile.id))
+          : eq(expertBookings.userId, user.id)
+      ).all();
+      
+    bookings.forEach(booking => {
+      const isClient = booking.userId === user.id;
+      mappedTxs.push({
+        id: booking.id,
+        type: isClient ? 'SERVICE_PAYMENT' : 'SERVICE_EARNING',
+        asset: booking.currency,
+        amount: isClient ? -parseFloat(booking.price) : parseFloat(booking.expertEarnings),
+        fee: isClient ? 0 : parseFloat(booking.platformFee),
+        status: booking.status === 'SETTLED' ? 'COMPLETED' : 'PENDING',
+        reference: booking.displayId,
+        createdAt: booking.createdAt.toISOString(),
+        updatedAt: booking.updatedAt.toISOString(),
+      });
+    });
+  }
+
+  // Sort by date descending
+  mappedTxs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   return c.json({ success: true, data: mappedTxs });
 });
 
