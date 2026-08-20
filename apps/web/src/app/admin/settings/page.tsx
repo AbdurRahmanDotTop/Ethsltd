@@ -185,7 +185,6 @@ export default function AdminSettingsPage() {
         <div className="w-full lg:w-64 flex flex-col gap-1 bg-card border border-border p-2 rounded-xl sticky top-24">
           {[
             { id: "platform", label: "Platform", icon: Server },
-            { id: "fees", label: "Fees & Limits", icon: Coins },
             { id: "security", label: "Security & Access", icon: Shield },
             { id: "api", label: "API & Webhooks", icon: Globe },
             { id: "notifications", label: "Email Notifications", icon: Mail },
@@ -253,106 +252,6 @@ export default function AdminSettingsPage() {
             </div>
           )}
 
-          {/* FEES & LIMITS */}
-          {activeTab === "fees" && (
-            <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
-              <div className="px-6 py-4 border-b border-border bg-muted/20">
-                <h3 className="text-lg font-medium">Fees & Limits</h3>
-                <p className="text-sm text-muted-foreground">Configure global platform fees, trading fees, and transaction limits.</p>
-              </div>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                
-                {/* Withdrawal Fee */}
-                <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
-                  <h4 className="font-semibold border-b border-border pb-2">Withdrawal Fee</h4>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Fee Type</label>
-                    <select 
-                      value={formData.withdrawalFeeType}
-                      onChange={(e) => handleInputChange('withdrawalFeeType', e.target.value)}
-                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
-                    >
-                      <option value="FIXED">Fixed Amount</option>
-                      <option value="PERCENTAGE">Percentage (%)</option>
-                      <option value="BOTH">Fixed + Percentage</option>
-                    </select>
-                  </div>
-                  {(formData.withdrawalFeeType === 'FIXED' || formData.withdrawalFeeType === 'BOTH') && (
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Fixed Amount (USD Eq.)</label>
-                      <input type="number" step="0.01" value={formData.withdrawalFeeAmount} onChange={(e) => handleInputChange('withdrawalFeeAmount', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
-                    </div>
-                  )}
-                  {(formData.withdrawalFeeType === 'PERCENTAGE' || formData.withdrawalFeeType === 'BOTH') && (
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Percentage (%)</label>
-                      <input type="number" step="0.01" value={formData.withdrawalFeePercentage} onChange={(e) => handleInputChange('withdrawalFeePercentage', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Deposit Fee */}
-                <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
-                  <h4 className="font-semibold border-b border-border pb-2">Deposit Fee</h4>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Fee Type</label>
-                    <select 
-                      value={formData.depositFeeType}
-                      onChange={(e) => handleInputChange('depositFeeType', e.target.value)}
-                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
-                    >
-                      <option value="FIXED">Fixed Amount</option>
-                      <option value="PERCENTAGE">Percentage (%)</option>
-                      <option value="BOTH">Fixed + Percentage</option>
-                    </select>
-                  </div>
-                  {(formData.depositFeeType === 'FIXED' || formData.depositFeeType === 'BOTH') && (
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Fixed Amount (USD Eq.)</label>
-                      <input type="number" step="0.01" value={formData.depositFeeAmount} onChange={(e) => handleInputChange('depositFeeAmount', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
-                    </div>
-                  )}
-                  {(formData.depositFeeType === 'PERCENTAGE' || formData.depositFeeType === 'BOTH') && (
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Percentage (%)</label>
-                      <input type="number" step="0.01" value={formData.depositFeePercentage} onChange={(e) => handleInputChange('depositFeePercentage', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Trading Fees */}
-                <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
-                  <h4 className="font-semibold border-b border-border pb-2">Trading Fees</h4>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Maker Fee (%)</label>
-                    <input type="number" step="0.01" value={formData.makerFee} onChange={(e) => handleInputChange('makerFee', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Taker Fee (%)</label>
-                    <input type="number" step="0.01" value={formData.takerFee} onChange={(e) => handleInputChange('takerFee', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
-                  </div>
-                </div>
-
-                {/* Transaction Limits */}
-                <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
-                  <h4 className="font-semibold border-b border-border pb-2">Limits</h4>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Min Withdrawal (USD Eq.)</label>
-                    <input type="number" value={formData.minWithdrawal} onChange={(e) => handleInputChange('minWithdrawal', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Daily Withdrawal Limit (USD Eq.)</label>
-                    <input type="number" value={formData.dailyWithdrawalLimit} onChange={(e) => handleInputChange('dailyWithdrawalLimit', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Min Deposit Amount (USD Eq.)</label>
-                    <input type="number" value={formData.minDeposit} onChange={(e) => handleInputChange('minDeposit', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          )}
 
           {/* SECURITY & ACCESS */}
           {activeTab === "security" && (

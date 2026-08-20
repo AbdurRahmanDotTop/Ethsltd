@@ -42,12 +42,28 @@ walletRoutes.get('/deposit-settings', async (c) => {
       console.error('Failed to parse manual deposit instructions as JSON', e);
     }
   }
+
+  const bankMethod = activeMethods.find(m => m.method === 'BANK_TRANSFER');
+  let activeBankAccounts: any[] = [];
+  if (bankMethod?.instructions) {
+    try {
+      activeBankAccounts = JSON.parse(bankMethod.instructions);
+      if (!Array.isArray(activeBankAccounts)) activeBankAccounts = [];
+    } catch(e) {
+      console.error('Failed to parse bank transfer instructions as JSON', e);
+    }
+  }
+
   // Get dynamic currencies
   const rates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
-  const bankCurrencies = rates.filter(r => r.isBank).map(r => r.code);
-  const activeCryptoAssets = rates.filter(r => r.isAsset).map(r => r.code);
   
-  const activeBankAccounts = await db.select().from(bank_accounts).where(eq(bank_accounts.active, true)).all();
+  // Only include bank currencies if they are marked as isBank and have a configured bank account
+  const availableBankCurrencies = new Set(activeBankAccounts.map(b => b.currency));
+  const bankCurrencies = rates.filter(r => r.isBank && availableBankCurrencies.has(r.code)).map(r => r.code);
+  
+  // Only include crypto assets if they are marked as isAsset and have a configured manual address
+  const availableCryptoAssets = new Set(Object.keys(manualAddresses));
+  const activeCryptoAssets = rates.filter(r => r.isAsset && availableCryptoAssets.has(r.code)).map(r => r.code);
   
   return c.json({ success: true, activeMethods, manualAddresses, bankCurrencies, activeCryptoAssets, bankAccounts: activeBankAccounts });
 });

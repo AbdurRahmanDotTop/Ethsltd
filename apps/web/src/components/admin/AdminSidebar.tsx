@@ -49,7 +49,8 @@ export const adminNavGroups = [
       { name: "Withdrawals", href: "/admin/withdrawals", icon: ArrowUpFromLine },
       { name: "Transactions", href: "/admin/transactions", icon: ListOrdered },
       { name: "Payment Settings", href: "/admin/settings/payments", icon: Wallet },
-      { name: "Currency Rates", href: "/admin/currency-rates", icon: Settings }
+      { name: "Currency Rates", href: "/admin/currency-rates", icon: Settings },
+      { name: "Fees & Limits", href: "/admin/fees", icon: Wallet }
     ]
   },
   {

@@ -2,7 +2,6 @@ import { DepositFormWrapper } from "@/components/wallet/DepositFormWrapper";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { use } from "react";
 
 export default async function DepositPage({ searchParams }: { searchParams: Promise<{ asset?: string }> }) {
   const params = await searchParams;

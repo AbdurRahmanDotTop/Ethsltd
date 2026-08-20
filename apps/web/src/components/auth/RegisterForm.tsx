@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,22 +16,17 @@ import { PasswordStrength } from "./PasswordStrength";
 
 export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
+  const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [globalError, setGlobalError] = useState("");
 
   useEffect(() => {
-    if (user) {
-      const hasToken = typeof window !== 'undefined' && localStorage.getItem('ethsltd_auth_token');
-      if (hasToken) {
-        router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account');
-      } else {
-        // If SSR authenticated but client lost the token, break the redirect loop
-        useAuthStore.getState().logout();
-      }
+    if (user && pathname === '/register') {
+      router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account');
     }
-  }, [user, router]);
+  }, [user, router, pathname]);
 
   const {
     register,

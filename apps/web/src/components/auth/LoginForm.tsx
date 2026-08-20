@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -22,13 +22,15 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const [showPassword, setShowPassword] = useState(false);
   const [globalError, setGlobalError] = useState("");
 
+  const pathname = usePathname();
+
   useEffect(() => {
-    if (user) {
+    if (user && pathname === '/login') {
       const defaultRedirect = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account';
       const finalRedirect = searchRedirect || defaultRedirect;
       router.push(finalRedirect);
     }
-  }, [user, router, searchRedirect]);
+  }, [user, router, searchRedirect, pathname]);
 
   const {
     register,

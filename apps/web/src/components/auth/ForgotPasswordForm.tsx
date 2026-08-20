@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -18,11 +18,13 @@ export function ForgotPasswordForm() {
   const [globalError, setGlobalError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const pathname = usePathname();
+
   useEffect(() => {
-    if (user) {
+    if (user && pathname === '/forgot-password') {
       router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account');
     }
-  }, [user, router]);
+  }, [user, router, pathname]);
 
   const {
     register,

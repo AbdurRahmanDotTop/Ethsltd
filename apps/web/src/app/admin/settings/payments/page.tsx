@@ -11,7 +11,6 @@ import { Loader2 } from "lucide-react";
 
 export default function AdminPaymentSettingsPage() {
   const [methods, setMethods] = useState<any[]>([]);
-  const [banks, setBanks] = useState<any[]>([]);
   const [currencyRates, setCurrencyRates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -35,10 +34,12 @@ export default function AdminPaymentSettingsPage() {
     instructions: "{}"
   });
 
-  // Bank Account State
-  const [editingBank, setEditingBank] = useState<any | null>(null);
+  // Dynamic Bank Accounts State (for BANK_TRANSFER method)
+  const [bankAccountsList, setBankAccountsList] = useState<any[]>([]);
+  const [editingBankIndex, setEditingBankIndex] = useState<number | null>(null);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [bankForm, setBankForm] = useState({
+    id: "",
     bank_name: "",
     account_holder: "",
     account_number: "",
@@ -52,18 +53,16 @@ export default function AdminPaymentSettingsPage() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const [resSettings, resBanks, resRates] = await Promise.all([
+      const [resSettings, resRates] = await Promise.all([
         apiClient.adminGetDepositSettings(),
-        apiClient.adminGetBankAccounts(),
+        
         apiClient.adminGetCurrencyRates()
       ]);
       
       if (resSettings.success && resSettings.data) {
         setMethods(resSettings.data || []);
       }
-      if (resBanks.success && resBanks.data) {
-        setBanks(resBanks.data || []);
-      }
+      
       if (resRates.success && resRates.data) {
         setCurrencyRates(resRates.data || []);
       }
@@ -89,8 +88,20 @@ export default function AdminPaymentSettingsPage() {
       } catch (e) {
         setCryptoAddresses([{ asset: "USDT", address: "" }]);
       }
+    } else if (method.method === 'BANK_TRANSFER' && method.instructions) {
+      try {
+        const parsed = JSON.parse(method.instructions);
+        if (Array.isArray(parsed)) {
+          setBankAccountsList(parsed);
+        } else {
+          setBankAccountsList([]);
+        }
+      } catch (e) {
+        setBankAccountsList([]);
+      }
     } else {
       setEditInstructions(method.instructions || "");
+      setBankAccountsList([]);
     }
   };
 
@@ -115,6 +126,8 @@ export default function AdminPaymentSettingsPage() {
           return;
         }
         finalInstructions = JSON.stringify(obj);
+      } else if (editingMethod.method === 'BANK_TRANSFER') {
+        finalInstructions = JSON.stringify(bankAccountsList);
       }
 
       const res = await apiClient.adminUpdateDepositSettings(editingMethod.id, { 
@@ -172,6 +185,8 @@ export default function AdminPaymentSettingsPage() {
           return;
         }
         finalAddMethodForm.instructions = JSON.stringify(obj);
+      } else if (addMethodForm.method === 'BANK_TRANSFER') {
+        finalAddMethodForm.instructions = JSON.stringify(bankAccountsList);
       }
 
       const res = await apiClient.adminCreateDepositSettings(finalAddMethodForm);
@@ -190,64 +205,34 @@ export default function AdminPaymentSettingsPage() {
     }
   };
 
-  const handleOpenBankModal = (bank: any = null) => {
-    if (bank) {
-      setEditingBank(bank);
-      setBankForm({
-        bank_name: bank.bank_name || "",
-        account_holder: bank.account_holder || "",
-        account_number: bank.account_number || "",
-        currency: bank.currency || "USD",
-        ifsc: bank.ifsc || "",
-        swift: bank.swift || "",
-        branch: bank.branch || "",
-        instructions: bank.instructions || ""
-      });
+  const handleOpenBankModal = (index: number | null = null) => {
+    if (index !== null) {
+      setEditingBankIndex(index);
+      setBankForm({ ...bankAccountsList[index] });
     } else {
-      setEditingBank(null);
-      setBankForm({
-        bank_name: "", account_holder: "", account_number: "", currency: "USD", ifsc: "", swift: "", branch: "", instructions: ""
-      });
+      setEditingBankIndex(null);
+      setBankForm({ id: crypto.randomUUID(), bank_name: "", account_holder: "", account_number: "", currency: "USD", ifsc: "", swift: "", branch: "", instructions: "" });
     }
     setIsBankModalOpen(true);
   };
 
-  const handleSaveBank = async () => {
-    setIsSaving(true);
-    try {
-      const isEdit = !!editingBank;
-      const res = isEdit
-        ? await apiClient.adminUpdateBankAccount(editingBank.id, bankForm)
-        : await apiClient.adminCreateBankAccount(bankForm);
-
-      if (res.success) {
-        toast.success(isEdit ? "Bank account updated!" : "Bank account added!");
-        setIsBankModalOpen(false);
-        fetchSettings();
-      } else {
-        toast.error(res.error || "Failed to save bank account");
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Error saving");
-    } finally {
-      setIsSaving(false);
+  const handleSaveBankToLocalList = () => {
+    if (!bankForm.bank_name || !bankForm.account_number) return;
+    const newList = [...bankAccountsList];
+    if (editingBankIndex !== null) {
+      newList[editingBankIndex] = bankForm;
+    } else {
+      newList.push(bankForm);
     }
+    setBankAccountsList(newList);
+    setIsBankModalOpen(false);
   };
 
-  const handleDeleteBank = async (bankId: string) => {
-    if (!confirm("Are you sure you want to delete this bank account?")) return;
-    try {
-      const res = await apiClient.adminDeleteBankAccount(bankId);
-
-      if (res.success) {
-        toast.success("Bank account deleted");
-        fetchSettings();
-      } else {
-        toast.error(res.error || "Failed to delete");
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Error deleting");
-    }
+  const handleDeleteBankFromLocalList = (index: number) => {
+    if (!confirm("Are you sure you want to remove this bank account?")) return;
+    const newList = [...bankAccountsList];
+    newList.splice(index, 1);
+    setBankAccountsList(newList);
   };
 
   useEffect(() => {
@@ -564,7 +549,7 @@ export default function AdminPaymentSettingsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsBankModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveBank} disabled={isSaving || !bankForm.bank_name || !bankForm.account_number}>
+            <Button onClick={handleSaveBankToLocalList} disabled={!bankForm.bank_name || !bankForm.account_number}>
               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save Account
             </Button>
           </DialogFooter>

@@ -16,9 +16,8 @@ adminPaymentRoutes.use('*', adminMiddleware);
 adminPaymentRoutes.get('/settings', async (c) => {
   const db = c.get('db');
   const methods = await db.select().from(paymentMethods).all();
-  const accounts = await db.select().from(bankAccounts).all();
   
-  return c.json({ success: true, paymentMethods: methods, bankAccounts: accounts });
+  return c.json({ success: true, paymentMethods: methods });
 });
 
 // Create payment method
@@ -56,40 +55,6 @@ adminPaymentRoutes.delete('/methods/:id', async (c) => {
   return c.json({ success: true });
 });
 
-// Create bank account
-adminPaymentRoutes.post('/banks', async (c) => {
-  const db = c.get('db');
-  const body = await c.req.json();
-  const now = new Date();
-  
-  await db.insert(bankAccounts).values({ 
-    id: crypto.randomUUID(),
-    ...body, 
-    created_at: now, 
-    updated_at: now 
-  });
-  return c.json({ success: true });
-});
-
-// Update bank account
-adminPaymentRoutes.put('/banks/:id', async (c) => {
-  const db = c.get('db');
-  const id = c.req.param('id');
-  const body = await c.req.json();
-  const now = new Date();
-  
-  await db.update(bankAccounts).set({ ...body, updated_at: now }).where(eq(bankAccounts.id, id));
-  return c.json({ success: true });
-});
-
-// Delete bank account
-adminPaymentRoutes.delete('/banks/:id', async (c) => {
-  const db = c.get('db');
-  const id = c.req.param('id');
-  
-  await db.delete(bankAccounts).where(eq(bankAccounts.id, id));
-  return c.json({ success: true });
-});
 
 // Get pending deposits (manual + bank) and history for Cregis
 adminPaymentRoutes.get('/pending-deposits', async (c) => {

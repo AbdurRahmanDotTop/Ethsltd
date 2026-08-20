@@ -20,14 +20,19 @@ export async function calculateDepositPreview(
     const isCrypto = KNOWN_CRYPTOS.includes(baseCurrencyCode);
     
     if (isCrypto) {
-      // It's a Crypto Asset. Fetch real-time price from Binance (Price in USDT)
-      const realPrice = await getRealPrice(`${baseCurrencyCode}-USDT`);
-      if (!realPrice || realPrice <= 0) {
-        throw new Error(`Real-time price unavailable for ${baseCurrencyCode}`);
+      if (baseCurrencyCode === 'USDT' || baseCurrencyCode === 'USDC') {
+        conversionRateValue = 1;
+        grossUsdt = new Decimal(amount);
+      } else {
+        // It's a Crypto Asset. Fetch real-time price from Binance (Price in USDT)
+        const realPrice = await getRealPrice(`${baseCurrencyCode}-USDT`);
+        if (!realPrice || realPrice <= 0) {
+          throw new Error(`Real-time price unavailable for ${baseCurrencyCode}`);
+        }
+        conversionRateValue = realPrice;
+        // Formula: 1 BTC = 60000 USDT -> grossUsdt = amount * price
+        grossUsdt = new Decimal(amount).times(conversionRateValue);
       }
-      conversionRateValue = realPrice;
-      // Formula: 1 BTC = 60000 USDT -> grossUsdt = amount * price
-      grossUsdt = new Decimal(amount).times(conversionRateValue);
     } else {
       // It's a Fiat Asset. Fetch from admin-managed currencyRates table
       const rateRecord = await db.select().from(currencyRates).where(eq(currencyRates.code, currencyCode)).get();
@@ -128,14 +133,19 @@ export async function calculateWithdrawalPreview(
     const isCrypto = KNOWN_CRYPTOS.includes(baseCurrencyCode);
     
     if (isCrypto) {
-      // It's a Crypto Asset. 
-      const realPrice = await getRealPrice(`${baseCurrencyCode}-USDT`);
-      if (!realPrice || realPrice <= 0) {
-        throw new Error(`Real-time price unavailable for ${baseCurrencyCode}`);
+      if (baseCurrencyCode === 'USDT' || baseCurrencyCode === 'USDC') {
+        conversionRateValue = 1;
+        finalFiatAmount = netUsdtReceived;
+      } else {
+        // It's a Crypto Asset. 
+        const realPrice = await getRealPrice(`${baseCurrencyCode}-USDT`);
+        if (!realPrice || realPrice <= 0) {
+          throw new Error(`Real-time price unavailable for ${baseCurrencyCode}`);
+        }
+        conversionRateValue = realPrice;
+        // Formula: 60000 USDT withdrawal in BTC -> 60000 / 60000 = 1 BTC
+        finalFiatAmount = netUsdtReceived.div(conversionRateValue);
       }
-      conversionRateValue = realPrice;
-      // Formula: 60000 USDT withdrawal in BTC -> 60000 / 60000 = 1 BTC
-      finalFiatAmount = netUsdtReceived.div(conversionRateValue);
     } else {
       // It's a Fiat Asset.
       const rateRecord = await db.select().from(currencyRates).where(eq(currencyRates.code, currencyCode)).get();

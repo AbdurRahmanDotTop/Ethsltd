@@ -54,6 +54,33 @@ tradingRoutes.get('/markets', async (c) => {
     console.warn('MEXC API error:', e);
   }
 
+  // Fallback to Binance 24hr if MEXC failed or partial
+  if (Object.keys(tickerData).length === 0) {
+    try {
+      const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr`);
+      if (res.ok) {
+        const data = await res.json() as any[];
+        if (Array.isArray(data)) {
+          data.forEach(item => {
+            const origSymbol = allMarkets.find(m => m.symbol.replace('-', '') === item.symbol)?.symbol;
+            if (origSymbol) {
+               tickerData[origSymbol] = {
+                 lastPrice: item.lastPrice,
+                 priceChangePercent: parseFloat(item.priceChangePercent) / 100, // Binance returns percentage, we need fraction to match MEXC logic below
+                 highPrice: item.highPrice,
+                 lowPrice: item.lowPrice,
+                 volume: item.volume,
+                 openPrice: item.openPrice
+               };
+            }
+          });
+        }
+      }
+    } catch(e) {
+      console.warn('Binance API error:', e);
+    }
+  }
+
   // Format for frontend
   const formattedMarkets = await Promise.all(allMarkets.map(async m => {
     const bData = tickerData[m.symbol];
