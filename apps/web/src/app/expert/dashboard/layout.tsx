@@ -42,7 +42,7 @@ export default function ExpertDashboardLayout({ children }: { children: React.Re
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-16">
+    <div className="fixed inset-0 pb-[calc(64px+env(safe-area-inset-bottom))] bg-background flex flex-col z-0">
       <Header />
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}

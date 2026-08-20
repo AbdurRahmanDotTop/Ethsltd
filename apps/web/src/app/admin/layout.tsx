@@ -15,7 +15,7 @@ export default function AdminLayout({
 }) {
   return (
     <AdminPermissionGuard>
-      <div className="h-screen overflow-hidden bg-background flex flex-col pb-16">
+      <div className="fixed inset-0 pb-[calc(64px+env(safe-area-inset-bottom))] overflow-hidden bg-background flex flex-col z-0">
         <AdminHeader />
         <div className="flex flex-1 overflow-hidden">
           <AdminSidebar />
