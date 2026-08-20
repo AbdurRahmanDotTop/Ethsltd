@@ -330,16 +330,20 @@ export default function AdminPaymentSettingsPage() {
                   <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
                     {cryptoAddresses.map((item, idx) => (
                       <div key={idx} className="flex gap-2 items-center bg-background p-2 rounded-md border border-border">
-                        <Input 
-                          placeholder="Asset (e.g. USDT TRC20)" 
+                        <select 
                           value={item.asset} 
                           onChange={e => {
                             const newAddresses = [...cryptoAddresses];
-                            newAddresses[idx].asset = e.target.value.toUpperCase();
+                            newAddresses[idx].asset = e.target.value;
                             setCryptoAddresses(newAddresses);
                           }}
-                          className="w-1/3"
-                        />
+                          className="flex h-10 w-1/3 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="">Select Asset</option>
+                          {currencyRates.filter(c => c.isAsset).map(c => (
+                            <option key={c.code} value={c.code}>{c.code}</option>
+                          ))}
+                        </select>
                         <Input 
                           placeholder="Wallet Address" 
                           value={item.address} 
@@ -445,16 +449,20 @@ export default function AdminPaymentSettingsPage() {
                   <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
                     {cryptoAddresses.map((item, idx) => (
                       <div key={idx} className="flex gap-2 items-center bg-background p-2 rounded-md border border-border">
-                        <Input 
-                          placeholder="Asset (e.g. USDT TRC20)" 
+                        <select 
                           value={item.asset} 
                           onChange={e => {
                             const newAddresses = [...cryptoAddresses];
-                            newAddresses[idx].asset = e.target.value.toUpperCase();
+                            newAddresses[idx].asset = e.target.value;
                             setCryptoAddresses(newAddresses);
                           }}
-                          className="w-1/3"
-                        />
+                          className="flex h-10 w-1/3 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="">Select Asset</option>
+                          {currencyRates.filter(c => c.isAsset).map(c => (
+                            <option key={c.code} value={c.code}>{c.code}</option>
+                          ))}
+                        </select>
                         <Input 
                           placeholder="Wallet Address" 
                           value={item.address} 
