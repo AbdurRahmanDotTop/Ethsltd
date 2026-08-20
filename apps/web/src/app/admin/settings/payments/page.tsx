@@ -337,7 +337,7 @@ export default function AdminPaymentSettingsPage() {
                             newAddresses[idx].asset = e.target.value;
                             setCryptoAddresses(newAddresses);
                           }}
-                          className="flex h-10 w-1/3 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          className="flex h-10 w-1/3 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                         >
                           <option value="">Select Asset</option>
                           {currencyRates.filter(c => c.isAsset).map(c => (
@@ -427,7 +427,7 @@ export default function AdminPaymentSettingsPage() {
               <select 
                 value={addMethodForm.method}
                 onChange={e => setAddMethodForm({...addMethodForm, method: e.target.value})}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
               >
                 <option value="MANUAL">MANUAL (Crypto)</option>
                 <option value="BANK_TRANSFER">BANK TRANSFER</option>
@@ -456,7 +456,7 @@ export default function AdminPaymentSettingsPage() {
                             newAddresses[idx].asset = e.target.value;
                             setCryptoAddresses(newAddresses);
                           }}
-                          className="flex h-10 w-1/3 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          className="flex h-10 w-1/3 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                         >
                           <option value="">Select Asset</option>
                           {currencyRates.filter(c => c.isAsset).map(c => (
@@ -532,7 +532,7 @@ export default function AdminPaymentSettingsPage() {
               <select 
                 value={bankForm.currency}
                 onChange={e => setBankForm({...bankForm, currency: e.target.value})}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
               >
                 {currencyRates.filter(c => c.isBank).map(c => (
                   <option key={c.code} value={c.code}>{c.code} - {c.name}</option>

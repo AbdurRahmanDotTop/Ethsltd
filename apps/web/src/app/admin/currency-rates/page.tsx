@@ -316,7 +316,7 @@ export default function CurrencyRatesAdminPage() {
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium">Decimal Precision</label>
-                <select className="w-full border rounded-md px-3 py-2" value={formData.decimalPrecision} onChange={e => setFormData({...formData, decimalPrecision: parseInt(e.target.value)})}>
+                <select className="w-full border rounded-md px-3 py-2 bg-background text-foreground" value={formData.decimalPrecision} onChange={e => setFormData({...formData, decimalPrecision: parseInt(e.target.value)})}>
                   <option value={0}>0</option>
                   <option value={2}>2</option>
                   <option value={4}>4</option>
@@ -370,7 +370,7 @@ export default function CurrencyRatesAdminPage() {
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium">Decimal Precision</label>
-                <select className="w-full border rounded-md px-3 py-2" value={formData.decimalPrecision} onChange={e => setFormData({...formData, decimalPrecision: parseInt(e.target.value)})}>
+                <select className="w-full border rounded-md px-3 py-2 bg-background text-foreground" value={formData.decimalPrecision} onChange={e => setFormData({...formData, decimalPrecision: parseInt(e.target.value)})}>
                   <option value={0}>0</option>
                   <option value={2}>2</option>
                   <option value={4}>4</option>
