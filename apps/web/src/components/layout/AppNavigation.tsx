@@ -41,8 +41,8 @@ export function AppNavigation() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 z-[100] w-full h-16 bg-[#181A20] border-t border-white/5 safe-area-bottom">
-      <div className="grid h-full w-full grid-cols-5 max-w-[1280px] mx-auto">
+    <div className="fixed bottom-0 left-0 z-[100] w-full bg-[#181A20] border-t border-white/5 pb-[env(safe-area-inset-bottom)] md:hidden">
+      <div className="grid h-16 w-full grid-cols-5 max-w-[1280px] mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const activeClass = item.isActive ? "text-[#00C087]" : "text-muted-foreground hover:text-[#00C087]/70";

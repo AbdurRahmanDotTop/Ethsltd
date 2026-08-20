@@ -5,55 +5,55 @@ import { eq } from 'drizzle-orm';
 import { users, sessions } from 'database';
 
 export async function jwtMiddleware(c: Context, next: Next) {
-  let token = '';
-
+  let bearerToken = '';
   const authHeader = c.req.header('Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
-  } else {
-    token = getCookie(c, 'ethsltd_session') || '';
+    bearerToken = authHeader.split(' ')[1];
   }
-
-  if (!token) {
+  
+  const cookieToken = getCookie(c, 'ethsltd_session') || '';
+  
+  if (!bearerToken && !cookieToken) {
     return c.json({ success: false, error: 'Missing or invalid token' }, 401);
   }
 
   const secret = 'super_secret_jwt_key_replace_me_in_prod'; // Use env variable in prod
+  const db = c.get('db');
 
-  try {
-    const payload = await verify(token, secret, "HS256");
-    
-    const db = c.get('db');
-    
-    // Verify session in database
-    const sessionId = payload.sessionId as string;
-    if (!sessionId) {
-      return c.json({ success: false, error: 'Invalid token structure' }, 401);
+  const verifyToken = async (token: string) => {
+    try {
+      if (!token) return null;
+      const payload = await verify(token, secret, "HS256");
+      const sessionId = payload.sessionId as string;
+      if (!sessionId) return null;
+      
+      const session = await db.select().from(sessions).where(eq(sessions.id, sessionId)).get();
+      if (!session || new Date(session.expiresAt) < new Date()) return null;
+      
+      const user = await db.select().from(users).where(eq(users.id, payload.id as string)).get();
+      if (!user || user.status !== 'ACTIVE') return null;
+      
+      return { user, payload };
+    } catch (e) {
+      return null;
     }
-    
-    const session = await db.select().from(sessions).where(eq(sessions.id, sessionId)).get();
-    if (!session || new Date(session.expiresAt) < new Date()) {
-      return c.json({ success: false, error: 'Session expired or invalid' }, 401);
-    }
-    
-    // Find user in database
-    const user = await db.select().from(users).where(eq(users.id, payload.id as string)).get();
-    
-    if (!user) {
-      return c.json({ success: false, error: 'User not found' }, 401);
-    }
+  };
 
-    if (user.status !== 'ACTIVE') {
-      return c.json({ success: false, error: 'Account is not active' }, 403);
-    }
-
-    // Set user in context for downstream handlers
-    c.set('user', user);
-    c.set('jwtPayload', payload);
-
-  } catch (error) {
-    return c.json({ success: false, error: 'Invalid or expired token' }, 401);
+  // 1. Prioritize HTTP-only cookie as source of truth for browsers
+  let validSession = await verifyToken(cookieToken);
+  
+  // 2. Fallback to Bearer token for mobile apps or desynced local storage
+  if (!validSession && bearerToken) {
+    validSession = await verifyToken(bearerToken);
   }
+
+  if (!validSession) {
+    return c.json({ success: false, error: 'Session expired or invalid' }, 401);
+  }
+
+  // Set user in context for downstream handlers
+  c.set('user', validSession.user);
+  c.set('jwtPayload', validSession.payload);
 
   // Await next outside try...catch so we don't hide downstream errors
   await next();

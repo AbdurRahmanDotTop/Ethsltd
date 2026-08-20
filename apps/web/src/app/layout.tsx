@@ -100,7 +100,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider initialUser={initialUser}>
-            <div className="flex-1 pb-16">
+            <div className="flex-1 pb-24 md:pb-0">
               {children}
             </div>
             <AppNavigation />

@@ -49,15 +49,7 @@ export function Header() {
     apiClient.setMode(mode);
   }, [mode]);
 
-  // Check token sync
-  useEffect(() => {
-    if (mounted && status === 'authenticated') {
-      const token = localStorage.getItem('ethsltd_auth_token');
-      if (!token) {
-        logout(); // Token was lost, force logout
-      }
-    }
-  }, [mounted, status, logout]);
+  // removed strict localStorage sync check
 
   const renderToggle = () => (
     <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-border">
