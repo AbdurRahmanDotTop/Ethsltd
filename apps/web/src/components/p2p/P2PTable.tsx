@@ -25,9 +25,30 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
           // Filter ads based on query locally for MVP
           const filteredAds = res.data.filter((ad: any) => {
             const requiredAdType = query.side === "buy" ? "sell" : "buy";
-            return ad.type.toLowerCase() === requiredAdType &&
-                   ad.asset === query.asset &&
-                   ad.fiat === query.fiat;
+            const typeMatch = ad.type.toLowerCase() === requiredAdType;
+            const assetMatch = ad.asset === query.asset;
+            const fiatMatch = ad.fiat === query.fiat;
+            
+            let amountMatch = true;
+            if (query.amount && query.amount > 0) {
+              const amount = Number(query.amount);
+              amountMatch = amount >= Number(ad.minLimit) && amount <= Number(ad.maxLimit);
+            }
+
+            let paymentMatch = true;
+            if (query.paymentMethod && query.paymentMethod !== 'all') {
+              let pm = ad.paymentMethods;
+              if (typeof pm === 'string') {
+                try { pm = JSON.parse(pm); } catch(e) { pm = []; }
+              }
+              if (!Array.isArray(pm)) pm = [];
+              paymentMatch = pm.some((method: any) => {
+                const type = typeof method === 'string' ? method : method.type;
+                return type === query.paymentMethod;
+              });
+            }
+
+            return typeMatch && assetMatch && fiatMatch && amountMatch && paymentMatch;
           });
           setAds(filteredAds);
           
