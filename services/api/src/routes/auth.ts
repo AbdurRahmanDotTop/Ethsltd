@@ -91,12 +91,13 @@ authRoutes.post('/register', async (c) => {
 
   const token = await sign({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, JWT_SECRET);
 
+  const isSecure = c.req.url.startsWith('https://') || c.req.header('x-forwarded-proto') === 'https';
   setCookie(c, 'ethsltd_session', token, {
     path: '/',
-    secure: true,
+    secure: isSecure,
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
-    sameSite: 'None',
+    sameSite: isSecure ? 'None' : 'Lax',
     domain: getCookieDomain(c),
   });
 
@@ -171,12 +172,13 @@ authRoutes.post('/login', async (c) => {
 
   const token = await sign({ id: user.id, email: user.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, JWT_SECRET);
 
+  const isSecure = c.req.url.startsWith('https://') || c.req.header('x-forwarded-proto') === 'https';
   setCookie(c, 'ethsltd_session', token, {
     path: '/',
-    secure: true,
+    secure: isSecure,
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
-    sameSite: 'None',
+    sameSite: isSecure ? 'None' : 'Lax',
     domain: getCookieDomain(c),
   });
 
