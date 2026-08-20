@@ -215,6 +215,7 @@ export default function AdminPaymentSettingsPage() {
   const handleSaveBank = async () => {
     setIsSaving(true);
     try {
+      const isEdit = !!editingBank;
       const res = isEdit
         ? await apiClient.adminUpdateBankAccount(editingBank.id, bankForm)
         : await apiClient.adminCreateBankAccount(bankForm);
