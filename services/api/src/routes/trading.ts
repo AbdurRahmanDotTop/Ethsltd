@@ -33,29 +33,30 @@ tradingRoutes.get('/markets', async (c) => {
     allMarkets = await db.select().from(markets).all();
   }
   
-  // Fetch real data from Binance
-  let binanceData: Record<string, any> = {};
+  // Fetch real data from MEXC (more reliable on Cloudflare workers than Binance)
+  let tickerData: Record<string, any> = {};
   try {
-    const symbolsParam = allMarkets.map(m => `"${m.symbol.replace('-', '')}"`).join(',');
-    const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=[${symbolsParam}]`);
+    const res = await fetch(`https://api.mexc.com/api/v3/ticker/24hr`);
     if (res.ok) {
       const data = await res.json() as any[];
       if (Array.isArray(data)) {
         data.forEach(item => {
-          const origSymbol = allMarkets.find(m => m.symbol.replace('-', '') === item.symbol)?.symbol || item.symbol;
-          binanceData[origSymbol] = item;
+          const origSymbol = allMarkets.find(m => m.symbol.replace('-', '') === item.symbol)?.symbol;
+          if (origSymbol) {
+             tickerData[origSymbol] = item;
+          }
         });
       }
     } else {
-      console.warn("Binance API returned status", res.status);
+      console.warn("MEXC API returned status", res.status);
     }
   } catch(e) {
-    console.warn('Binance API error:', e);
+    console.warn('MEXC API error:', e);
   }
 
   // Format for frontend
   const formattedMarkets = await Promise.all(allMarkets.map(async m => {
-    const bData = binanceData[m.symbol];
+    const bData = tickerData[m.symbol];
     if (bData) {
       const price = parseFloat(bData.lastPrice);
       return {
@@ -65,7 +66,8 @@ tradingRoutes.get('/markets', async (c) => {
         baseAsset: m.baseAsset,
         quoteAsset: m.quoteAsset,
         price: price,
-        priceChange24h: parseFloat(bData.priceChange),
+        // MEXC priceChangePercent is a decimal fraction (e.g. 0.05 for 5%), so multiply by 100
+        priceChange24h: parseFloat(bData.priceChangePercent) * 100, 
         high24h: parseFloat(bData.highPrice),
         low24h: parseFloat(bData.lowPrice),
         volume24h: parseFloat(bData.volume),
