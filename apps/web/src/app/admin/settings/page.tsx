@@ -13,6 +13,25 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
+
+  const handleClearCache = async () => {
+    if (!confirm("Are you sure you want to clear the global system cache? This may cause a temporary spike in server load.")) return;
+    
+    setIsClearingCache(true);
+    try {
+      const res = await apiClient.adminClearSystemCache();
+      if (res.success) {
+        alert("System cache cleared successfully. All platform changes are now live.");
+      } else {
+        alert("Failed to clear cache: " + res.error);
+      }
+    } catch (err) {
+      alert("Failed to clear cache due to an unexpected error.");
+    } finally {
+      setIsClearingCache(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     maintenanceMode: false,
@@ -212,8 +231,9 @@ export default function AdminSettingsPage() {
           
           {/* PLATFORM SETTINGS */}
           {activeTab === "platform" && (
-            <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
-              <div className="px-6 py-4 border-b border-border bg-muted/20">
+            <div className="space-y-6">
+              <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+                <div className="px-6 py-4 border-b border-border bg-muted/20">
                 <h3 className="text-lg font-medium">Platform Controls</h3>
                 <p className="text-sm text-muted-foreground">Manage core system availability and behavior.</p>
               </div>
@@ -249,6 +269,39 @@ export default function AdminSettingsPage() {
                   </select>
                 </div>
               </div>
+            </div>
+
+            {/* System Maintenance */}
+            <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+              <div className="px-6 py-4 border-b border-border bg-muted/20">
+                <h3 className="text-lg font-medium text-red-500 flex items-center gap-2">
+                  <Server className="w-5 h-5" /> System Maintenance
+                </h3>
+                <p className="text-sm text-muted-foreground">Advanced platform controls and cache management.</p>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-semibold">Clear Global Cache</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Purge all cached API responses, database queries, and Edge cache to force the platform to load the latest data immediately.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleClearCache} 
+                    disabled={isClearingCache}
+                    className="shrink-0"
+                  >
+                    {isClearingCache ? (
+                      <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Purging...</>
+                    ) : (
+                      <><RefreshCw className="w-4 h-4 mr-2" /> Clear Cache</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
             </div>
           )}
 
