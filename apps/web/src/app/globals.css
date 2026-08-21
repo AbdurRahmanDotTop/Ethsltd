@@ -95,14 +95,17 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-accordion-content-height);
     }
   }
+
   @keyframes accordion-up {
     from {
       height: var(--radix-accordion-content-height);
     }
+
     to {
       height: 0;
     }
@@ -167,15 +170,15 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 
   table td {
-    max-width: 200px;
+    max-width: 100px;
     word-wrap: break-word;
     word-break: break-word;
     white-space: normal !important;
   }
 }
-
