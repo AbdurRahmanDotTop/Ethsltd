@@ -99,7 +99,7 @@ export class EmailService {
   }
 
   // EVENT: New User Registration
-  async sendAdminNewUserAlert(user: any) {
+  async sendAdminNewUserAlert(user: any, baseUrl: string = 'https://ethsltd.com') {
     const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_NEW_USER', 'true');
     if (notifyEnabled !== 'true') return;
 
@@ -109,7 +109,7 @@ export class EmailService {
       'Email': user.email,
       'User ID': user.id,
       'Timestamp': new Date().toISOString()
-    });
+    }, `${baseUrl}/admin/users`, 'View Users');
 
     await this.sendMailWithLog({
       to: adminEmail,
@@ -136,8 +136,8 @@ export class EmailService {
   }
 
   // EVENT: Email Verification OTP
-  async sendVerificationOTP(email: string, otp: string) {
-    const html = renderUserTransactionEmail('Email Verification Code', `Your email verification code is <b>${otp}</b>. It expires in 15 minutes.`, []);
+  async sendVerificationOTP(email: string, otp: string, baseUrl: string = 'https://ethsltd.com') {
+    const html = renderUserTransactionEmail('Email Verification Code', `Your email verification code is <b>${otp}</b>. It expires in 15 minutes.`, [], `${baseUrl}/verify-email`, 'Enter Code Now');
 
     await this.sendMailWithLog({
       to: email,
@@ -163,13 +163,13 @@ export class EmailService {
   }
 
   // EVENT: Real Deposit (Admin)
-  async sendAdminDepositAlert(depositInfo: any) {
+  async sendAdminDepositAlert(depositInfo: any, baseUrl: string = 'https://ethsltd.com') {
     if (depositInfo.mode === 'DEMO') return;
     const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_DEPOSIT', 'true');
     if (notifyEnabled !== 'true') return;
 
     const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
-    const html = renderAdminTransactionEmail('New Deposit Initiated', depositInfo);
+    const html = renderAdminTransactionEmail('New Deposit Initiated', depositInfo, `${baseUrl}/admin/deposits`, 'View Deposits');
 
     await this.sendMailWithLog({
       to: adminEmail,
@@ -180,13 +180,13 @@ export class EmailService {
   }
 
   // EVENT: Real Withdrawal (Admin)
-  async sendAdminWithdrawalAlert(withdrawalInfo: any) {
+  async sendAdminWithdrawalAlert(withdrawalInfo: any, baseUrl: string = 'https://ethsltd.com') {
     if (withdrawalInfo.mode === 'DEMO') return;
     const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_WITHDRAWAL', 'true');
     if (notifyEnabled !== 'true') return;
 
     const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
-    const html = renderAdminTransactionEmail('New Withdrawal Requested', withdrawalInfo);
+    const html = renderAdminTransactionEmail('New Withdrawal Requested', withdrawalInfo, `${baseUrl}/admin/withdrawals`, 'View Withdrawals');
 
     await this.sendMailWithLog({
       to: adminEmail,

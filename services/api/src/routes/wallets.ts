@@ -563,13 +563,14 @@ walletRoutes.post('/deposit', async (c) => {
       const emailService = new EmailService(c.env, db);
       c.executionCtx.waitUntil((async () => {
         try {
+          const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
           await emailService.sendAdminDepositAlert({
             id: transactionId,
             userId: user.id,
             amount: amountNum.toString(),
             asset: assetSymbol,
             mode: 'REAL',
-          });
+          }, appUrl);
         } catch (e) {
           console.error("Background email failed for deposit", e);
         }
@@ -697,13 +698,14 @@ walletRoutes.post('/withdraw', async (c) => {
       const emailService = new EmailService(c.env, db);
       c.executionCtx.waitUntil((async () => {
         try {
+          const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
           await emailService.sendAdminWithdrawalAlert({
             id: transactionId,
             userId: user.id,
             amount: parsedAmount.toString(),
             asset: assetSymbol,
             mode: 'REAL',
-          });
+          }, appUrl);
         } catch (e) {
           console.error("Background email failed for withdrawal", e);
         }

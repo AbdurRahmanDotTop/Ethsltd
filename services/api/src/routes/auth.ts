@@ -118,7 +118,7 @@ authRoutes.post('/register', async (c) => {
   
   c.executionCtx.waitUntil((async () => {
     try {
-      await emailService.sendAdminNewUserAlert(userObj);
+      await emailService.sendAdminNewUserAlert(userObj, appUrl);
       await emailService.sendVerificationEmail(body.email, verifyToken, appUrl);
     } catch (e) {
       console.error("Background email failed", e);
@@ -242,7 +242,8 @@ authRoutes.post('/verify-email/request-otp', jwtMiddleware, async (c) => {
     
     c.executionCtx.waitUntil((async () => {
       try {
-        await emailService.sendVerificationOTP(user.email, otp);
+        const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
+        await emailService.sendVerificationOTP(user.email, otp, appUrl);
       } catch (e) {
         console.error("Background OTP email failed", e);
       }

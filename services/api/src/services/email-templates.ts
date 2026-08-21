@@ -1,4 +1,4 @@
-export function renderAdminNotificationEmail(title: string, data: Record<string, any>) {
+export function renderAdminNotificationEmail(title: string, data: Record<string, any>, actionUrl?: string, actionText?: string) {
   let tableRows = '';
   for (const [key, value] of Object.entries(data)) {
     tableRows += `<tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>${key}</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${value}</td></tr>`;
@@ -10,6 +10,10 @@ export function renderAdminNotificationEmail(title: string, data: Record<string,
       <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
         ${tableRows}
       </table>
+      ${actionUrl && actionText ? `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${actionUrl}" style="background-color: #00FFC2; color: #05070A; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">${actionText}</a>
+      </div>` : ''}
       <p style="font-size: 12px; color: #777; margin-top: 30px;">
         This is an automated system notification from ETHSLTD. Do not reply to this email.
       </p>
@@ -17,7 +21,7 @@ export function renderAdminNotificationEmail(title: string, data: Record<string,
   `;
 }
 
-export function renderAdminTransactionEmail(title: string, txData: any) {
+export function renderAdminTransactionEmail(title: string, txData: any, actionUrl?: string, actionText?: string) {
   return renderAdminNotificationEmail(title, {
     'Transaction ID': txData.id,
     'User ID': txData.userId,
@@ -27,7 +31,7 @@ export function renderAdminTransactionEmail(title: string, txData: any) {
     'Status': txData.status || 'PENDING',
     'Mode': txData.mode || 'REAL',
     'Timestamp': new Date().toISOString()
-  });
+  }, actionUrl, actionText);
 }
 
 export function renderVerificationEmail(verificationLink: string) {
@@ -47,7 +51,7 @@ export function renderVerificationEmail(verificationLink: string) {
   `;
 }
 
-export function renderUserTransactionEmail(title: string, message: string, details: {key: string, value: string}[]) {
+export function renderUserTransactionEmail(title: string, message: string, details: {key: string, value: string}[], actionUrl?: string, actionText?: string) {
   let tableRows = '';
   for (const item of details) {
     tableRows += `<tr><td style="padding: 8px 0; color: #555;"><strong>${item.key}</strong></td><td style="padding: 8px 0; text-align: right;">${item.value}</td></tr>`;
@@ -61,6 +65,10 @@ export function renderUserTransactionEmail(title: string, message: string, detai
       <table style="width: 100%; border-collapse: collapse;">
         ${tableRows}
       </table>
+      ${actionUrl && actionText ? `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${actionUrl}" style="background-color: #00FFC2; color: #05070A; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">${actionText}</a>
+      </div>` : ''}
       <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;" />
       <p style="font-size: 12px; color: #777; text-align: center;">
         ETHSLTD Support<br/>
