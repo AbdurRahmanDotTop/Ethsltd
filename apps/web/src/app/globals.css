@@ -174,10 +174,4 @@
   body {
     @apply bg-background text-foreground;
   }
-
-  table td {
-    max-width: 15ch;
-    word-break: break-all;
-    white-space: normal !important;
-  }
 }

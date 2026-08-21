@@ -51,13 +51,16 @@ export function AdminDataTable<T>({
                   onClick={() => onRowClick?.(row)}
                   className={`hover:bg-muted/30 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
                 >
-                  {columns.map((col, j) => (
-                    <td key={j} className={`px-4 py-3 whitespace-normal break-all max-w-[15ch] ${col.className || ''}`}>
-                      {typeof col.accessor === 'function' 
-                        ? col.accessor(row) 
-                        : (row[col.accessor] as React.ReactNode)}
-                    </td>
-                  ))}
+                  {columns.map((col, j) => {
+                    const isIdColumn = col.header.toLowerCase().includes('id');
+                    return (
+                      <td key={j} className={`px-4 py-3 whitespace-normal ${isIdColumn ? 'break-all max-w-[15ch]' : 'break-words max-w-[300px]'} ${col.className || ''}`}>
+                        {typeof col.accessor === 'function' 
+                          ? col.accessor(row) 
+                          : (row[col.accessor] as React.ReactNode)}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))
             )}
