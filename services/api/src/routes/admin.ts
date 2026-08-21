@@ -76,6 +76,48 @@ adminRoutes.get('/stats', async (c) => {
   }
 });
 
+// GET /api/v1/admin/stats/volume-chart
+adminRoutes.get('/stats/volume-chart', async (c) => {
+  const db = c.get('db');
+  
+  try {
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    
+    const trades = await db.select({
+      amount: orders.filledAmount,
+      price: orders.price,
+      createdAt: orders.createdAt
+    }).from(orders).where(and(eq(orders.mode, 'REAL'), eq(orders.status, 'FILLED'), sql`created_at >= ${new Date(sevenDaysAgo).toISOString()}`));
+    
+    const dailyVolume: Record<string, number> = {};
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now - i * 24 * 60 * 60 * 1000);
+      const dateStr = d.toISOString().split('T')[0];
+      dailyVolume[dateStr] = 0;
+    }
+    
+    trades.forEach((trade) => {
+      if (!trade.createdAt) return;
+      const dateStr = new Date(trade.createdAt).toISOString().split('T')[0];
+      if (dailyVolume[dateStr] !== undefined) {
+        dailyVolume[dateStr] += Number(trade.amount) * Number(trade.price);
+      }
+    });
+    
+    const result = Object.keys(dailyVolume).map(date => ({
+      date,
+      volume: dailyVolume[date]
+    }));
+    
+    return c.json({ success: true, data: result });
+  } catch (error) {
+    console.error("Volume chart error:", error);
+    return c.json({ success: false, error: 'Failed to fetch volume data' }, 500);
+  }
+});
+
 // GET /api/v1/admin/users
 adminRoutes.get('/users', async (c) => {
   const db = c.get('db');

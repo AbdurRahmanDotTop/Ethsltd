@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Users, Activity, Wallet, ArrowDownToLine, Handshake, AlertTriangle, UserCheck, Server, Loader2 } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
-import { useAdminEnvStore } from "@/stores/admin-env-store";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 function StatCard({ 
   title, 
@@ -37,13 +37,17 @@ function StatCard({
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [activity, setActivity] = useState<any[]>([]);
-  const { adminMode, setAdminMode } = useAdminEnvStore();
+  const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchStats() {
       try {
         const statsRes = await apiClient.getAdminStats();
         if (statsRes.success) setStats(statsRes.data);
+        
+        const chartRes = await apiClient.getAdminVolumeChart();
+        if (chartRes.success) setChartData(chartRes.data);
+
         // We haven't built the recent activity endpoint yet
         setActivity([]);
       } catch (err) {
@@ -90,34 +94,10 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col justify-between items-start gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
           <p className="text-muted-foreground mt-1 text-sm">Platform performance and operational health.</p>
-        </div>
-        
-        {/* Real / Demo Toggle */}
-        <div className="flex bg-muted/50 p-1 rounded-md border border-border/50 self-start sm:self-auto">
-          <button
-            onClick={() => setAdminMode('REAL')}
-            className={`px-4 py-1.5 text-sm font-medium rounded transition-all ${
-              adminMode === 'REAL'
-                ? 'bg-brand-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Real
-          </button>
-          <button
-            onClick={() => setAdminMode('DEMO')}
-            className={`px-4 py-1.5 text-sm font-medium rounded transition-all ${
-              adminMode === 'DEMO'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Demo
-          </button>
         </div>
       </div>
 
@@ -177,10 +157,54 @@ export default function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-card border border-border rounded-lg p-6 flex flex-col items-center justify-center min-h-[300px]">
-             <Activity className="w-10 h-10 text-muted-foreground mb-4 opacity-50" />
-             <h3 className="text-lg font-medium text-muted-foreground">Volume Chart (Mock)</h3>
-             <p className="text-xs text-muted-foreground">Real-time charting implementation pending</p>
+          <div className="bg-card border border-border rounded-lg p-6 min-h-[300px] flex flex-col">
+             <h3 className="text-lg font-bold mb-4">7-Day Trading Volume (USD)</h3>
+             <div className="flex-1 w-full h-[300px]">
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#145B8C" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#145B8C" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" opacity={0.2} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#888888" 
+                        fontSize={12} 
+                        tickLine={false} 
+                        axisLine={false}
+                        tickFormatter={(value) => {
+                          const date = new Date(value);
+                          return `${date.getMonth()+1}/${date.getDate()}`;
+                        }}
+                      />
+                      <YAxis 
+                        stroke="#888888" 
+                        fontSize={12} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                        width={60}
+                      />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid #333', borderRadius: '8px' }}
+                        itemStyle={{ color: '#00FFC2' }}
+                        formatter={(value: any) => [formatUSD(value), 'Volume']}
+                        labelFormatter={(label: any) => new Date(label).toLocaleDateString()}
+                      />
+                      <Area type="monotone" dataKey="volume" stroke="#145B8C" strokeWidth={2} fillOpacity={1} fill="url(#colorVolume)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
+                    <Activity className="w-10 h-10 mb-4" />
+                    <p>No volume data available</p>
+                  </div>
+                )}
+             </div>
           </div>
         </div>
 

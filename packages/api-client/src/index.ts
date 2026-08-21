@@ -548,6 +548,11 @@ export class EthsltdClient {
     return this.request<any[]>('/api/v1/admin/contracts');
   }
 
+  // Admin Risk
+  async getAdminRiskSummary() {
+    return this.request<any>('/api/v1/admin/risk/summary');
+  }
+
   async getAdminRiskAlerts() {
     return this.request<any[]>('/api/v1/admin/risk');
   }
@@ -978,6 +983,14 @@ export class EthsltdClient {
     return this.request<any[]>(`/api/v1/admin/currency-rates/${code}/history`);
   }
 
+  // Admin Users
+  async adminUpdateUserStatus(userId: string, status: string) {
+    return this.request<any>(`/api/v1/admin/users/${userId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status })
+    });
+  }
+
   // Admin P2P
   async adminGetP2POrders() {
     return this.request<any[]>('/api/v1/admin/p2p/orders');
@@ -994,6 +1007,11 @@ export class EthsltdClient {
     });
   }
   // Admin Trading (Phase 1 Dynamic Isolation)
+
+  async getAdminVolumeChart() {
+    return this.request<any>('/api/v1/admin/stats/volume-chart');
+  }
+
   async adminGetMarkets(params: { mode?: 'REAL' | 'DEMO' } = {}) {
     const query = new URLSearchParams(params as any).toString();
     return this.request<any[]>(`/api/v1/admin/trading/markets?${query}`);

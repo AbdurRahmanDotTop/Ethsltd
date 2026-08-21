@@ -10,40 +10,59 @@ import { Button } from "@/components/ui/button";
 
 import { useEffect } from "react";
 import { apiClient } from "@ethsltd/api-client";
-const FLAGGED_USERS = [
-  { id: "USR-882", email: "suspicious@mail.com", score: 92, reason: "Multiple IPs, High Volume", status: "active", exposure: "$150,000" },
-  { id: "USR-105", email: "trader_x@example.com", score: 75, reason: "Margin Call Risk - High Leverage", status: "active", exposure: "$45,200" },
-  { id: "USR-999", email: "unknown_proxy@web.net", score: 98, reason: "AML Flag: Sanctioned Region IP", status: "frozen", exposure: "$0" },
-  { id: "USR-412", email: "retail_bot@api.com", score: 65, reason: "API Rate Limit Abuse", status: "active", exposure: "$1,200" },
-];
+import { Loader2 } from "lucide-react";
 
 export default function AdminRiskPage() {
-  const [users, setUsers] = useState(FLAGGED_USERS);
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAlerts = async () => {
+    const fetchSummary = async () => {
       try {
-        const res = await apiClient.getAdminRiskAlerts();
-        if (res.success) setAlerts(res.data || []);
+        const res = await apiClient.getAdminRiskSummary();
+        if (res.success) {
+          setSummary(res.data);
+        }
       } catch (err) {
         console.error(err);
       }
     };
-    fetchAlerts();
+    fetchSummary();
   }, []);
 
-  const handleAction = (userId: string, action: 'freeze' | 'unfreeze' | 'reset') => {
+  if (!summary) {
+    return (
+      <div className="p-6 md:p-8 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+      </div>
+    );
+  }
+
+  const kpis = summary.kpis || {};
+  const users = summary.flaggedUsers || [];
+  const alerts = summary.alerts || [];
+
+  const handleAction = async (userId: string, action: 'freeze' | 'unfreeze' | 'reset') => {
     setIsProcessing(userId);
-    setTimeout(() => {
+    try {
       if (action === 'freeze' || action === 'unfreeze') {
-        setUsers(prev => prev.map(u => 
-          u.id === userId ? { ...u, status: action === 'freeze' ? 'frozen' : 'active' } : u
-        ));
+        const newStatus = action === 'freeze' ? 'FROZEN' : 'ACTIVE';
+        const res = await apiClient.adminUpdateUserStatus(userId, newStatus);
+        
+        if (res.success) {
+          setSummary((prev: any) => ({
+            ...prev,
+            flaggedUsers: prev.flaggedUsers.map((u: any) => 
+              u.id === userId ? { ...u, status: newStatus.toLowerCase() } : u
+            )
+          }));
+        }
       }
+    } catch (err) {
+      console.error(err);
+    } finally {
       setIsProcessing(null);
-    }, 1500);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -78,8 +97,7 @@ export default function AdminRiskPage() {
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <h3 className="text-2xl font-bold">12</h3>
-            <span className="text-xs text-yellow-500 font-medium flex items-center"><ArrowUpRight className="w-3 h-3"/> +3 in last hour</span>
+            <h3 className="text-2xl font-bold">{kpis.activeLiquidations || 0}</h3>
           </div>
         </div>
 
@@ -91,8 +109,8 @@ export default function AdminRiskPage() {
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <h3 className="text-2xl font-bold">$2.4M</h3>
-            <span className="text-xs text-red-500 font-medium">Pending Manual Review</span>
+            <h3 className="text-2xl font-bold">${(kpis.flaggedWithdrawals || 0).toLocaleString()}</h3>
+            <span className="text-xs text-red-500 font-medium">Pending Review</span>
           </div>
         </div>
 
@@ -104,7 +122,7 @@ export default function AdminRiskPage() {
             </div>
           </div>
           <div className="mt-4">
-            <h3 className="text-2xl font-bold">45</h3>
+            <h3 className="text-2xl font-bold">{kpis.suspiciousLogins || 0}</h3>
             <span className="text-xs text-muted-foreground">Past 24 hours</span>
           </div>
         </div>
@@ -117,8 +135,7 @@ export default function AdminRiskPage() {
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <h3 className="text-2xl font-bold">Safe</h3>
-            <span className="text-xs text-green-500 font-medium">Margin Ratio: 145%</span>
+            <h3 className="text-2xl font-bold">{kpis.platformExposure || 'Safe'}</h3>
           </div>
         </div>
       </div>
@@ -140,13 +157,13 @@ export default function AdminRiskPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {users.map((user) => (
+                  {users.length > 0 ? users.map((user: any) => (
                     <tr key={user.id} className={`transition-colors ${user.status === 'frozen' ? 'bg-red-500/5 opacity-75' : 'hover:bg-muted/30'}`}>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
                           {user.status === 'frozen' && <Lock className="w-3 h-3 text-red-500" />}
                           <div>
-                            <p className="font-semibold text-foreground">{user.id}</p>
+                            <p className="font-semibold text-foreground">{user.id.split('-').pop()?.slice(0, 8)}</p>
                             <p className="text-xs text-muted-foreground">{user.email}</p>
                           </div>
                         </div>
@@ -185,7 +202,13 @@ export default function AdminRiskPage() {
                         )}
                       </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                        No flagged users found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -202,7 +225,7 @@ export default function AdminRiskPage() {
             </span>
           </h3>
           <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden divide-y divide-border">
-            {alerts.length > 0 ? alerts.map((alert) => (
+            {alerts.length > 0 ? alerts.map((alert: any) => (
               <div key={alert.id} className="p-4 flex gap-3 hover:bg-muted/30 transition-colors">
                 <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${
                   alert.severity === 'critical' ? 'text-red-500' :
