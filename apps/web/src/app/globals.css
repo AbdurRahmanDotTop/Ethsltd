@@ -170,4 +170,12 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  table td {
+    max-width: 200px;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal !important;
+  }
 }
+
