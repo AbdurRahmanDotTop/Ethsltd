@@ -62,6 +62,9 @@ export default function AdminSettingsPage() {
     EMAIL_NOTIFY_NEW_USER: true,
     EMAIL_NOTIFY_DEPOSIT: true,
     EMAIL_NOTIFY_WITHDRAWAL: true,
+    EMAIL_NOTIFY_P2P: true,
+    EMAIL_NOTIFY_TRADE: true,
+    EMAIL_NOTIFY_TRANSFER: true,
   });
 
   useEffect(() => {
@@ -104,6 +107,9 @@ export default function AdminSettingsPage() {
           EMAIL_NOTIFY_NEW_USER: sysRes.data.EMAIL_NOTIFY_NEW_USER !== 'false',
           EMAIL_NOTIFY_DEPOSIT: sysRes.data.EMAIL_NOTIFY_DEPOSIT !== 'false',
           EMAIL_NOTIFY_WITHDRAWAL: sysRes.data.EMAIL_NOTIFY_WITHDRAWAL !== 'false',
+          EMAIL_NOTIFY_P2P: sysRes.data.EMAIL_NOTIFY_P2P !== 'false',
+          EMAIL_NOTIFY_TRADE: sysRes.data.EMAIL_NOTIFY_TRADE !== 'false',
+          EMAIL_NOTIFY_TRANSFER: sysRes.data.EMAIL_NOTIFY_TRANSFER !== 'false',
         }));
       }
     } catch (err) {
@@ -147,6 +153,9 @@ export default function AdminSettingsPage() {
           EMAIL_NOTIFY_NEW_USER: formData.EMAIL_NOTIFY_NEW_USER.toString(),
           EMAIL_NOTIFY_DEPOSIT: formData.EMAIL_NOTIFY_DEPOSIT.toString(),
           EMAIL_NOTIFY_WITHDRAWAL: formData.EMAIL_NOTIFY_WITHDRAWAL.toString(),
+          EMAIL_NOTIFY_P2P: formData.EMAIL_NOTIFY_P2P.toString(),
+          EMAIL_NOTIFY_TRADE: formData.EMAIL_NOTIFY_TRADE.toString(),
+          EMAIL_NOTIFY_TRANSFER: formData.EMAIL_NOTIFY_TRANSFER.toString(),
         })
       ];
       await Promise.all(updates);
@@ -450,6 +459,24 @@ export default function AdminSettingsPage() {
                       description="Send an email to the Admin when a user requests a withdrawal."
                       checked={formData.EMAIL_NOTIFY_WITHDRAWAL} 
                       onChange={(c) => handleInputChange('EMAIL_NOTIFY_WITHDRAWAL', c)} 
+                    />
+                    <CustomSwitch 
+                      label="New P2P Orders" 
+                      description="Send an email to the Admin when a new P2P order is created or updated."
+                      checked={formData.EMAIL_NOTIFY_P2P} 
+                      onChange={(c) => handleInputChange('EMAIL_NOTIFY_P2P', c)} 
+                    />
+                    <CustomSwitch 
+                      label="New Spot Trades" 
+                      description="Send an email to the Admin when a spot trade is executed."
+                      checked={formData.EMAIL_NOTIFY_TRADE} 
+                      onChange={(c) => handleInputChange('EMAIL_NOTIFY_TRADE', c)} 
+                    />
+                    <CustomSwitch 
+                      label="Internal Transfers" 
+                      description="Send an email to the Admin when a user transfers funds between wallets."
+                      checked={formData.EMAIL_NOTIFY_TRANSFER} 
+                      onChange={(c) => handleInputChange('EMAIL_NOTIFY_TRANSFER', c)} 
                     />
                   </div>
                 </div>

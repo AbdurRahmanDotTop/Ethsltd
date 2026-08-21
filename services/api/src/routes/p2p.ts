@@ -3,6 +3,7 @@ import { Decimal } from 'decimal.js';
 const runTx = async (db: any, cb: any) => await cb(db);
 import { eq, and, desc, or, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
+import { EmailService } from '../services/email';
 import { p2pAds, p2pOrders, wallets, p2pMessages, users, ledgerAccounts, ledgerTransactions, ledgerEntries, p2pDisputes, notifications } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
@@ -294,6 +295,53 @@ p2pRoutes.post('/orders', async (c) => {
         createdAt: now,
       });
     });
+
+    // Async Email Dispatch
+    const emailService = new EmailService(c.env, db);
+    c.executionCtx.waitUntil((async () => {
+      try {
+        const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
+        const orderData = await db.select().from(p2pOrders).where(eq(p2pOrders.id, finalOrderId)).get();
+        if (orderData) {
+          await emailService.sendAdminP2PAlert(orderData, appUrl);
+          
+          // Send to Taker
+          await emailService.sendUserTransactionAlert(
+            user.email,
+            'New P2P Order Initiated',
+            `You have initiated a new P2P order for ${cryptoAmount} Crypto / ${fiatAmount} Fiat.`,
+            [
+              { key: 'Order ID', value: orderData.displayId },
+              { key: 'Crypto Amount', value: cryptoAmount.toString() },
+              { key: 'Fiat Amount', value: fiatAmount.toString() },
+              { key: 'Status', value: orderData.status }
+            ],
+            `${appUrl}/p2p/order/${orderData.id}`,
+            'View Order'
+          );
+
+          // Get Maker Email
+          const maker = await db.select().from(users).where(eq(users.id, orderData.sellerId === user.id ? orderData.buyerId : orderData.sellerId)).get();
+          if (maker) {
+            await emailService.sendUserTransactionAlert(
+              maker.email,
+              'Your P2P Ad was Taken',
+              `A user has taken your P2P ad. Order ${orderData.displayId} created for ${fiatAmount} Fiat.`,
+              [
+                { key: 'Order ID', value: orderData.displayId },
+                { key: 'Crypto Amount', value: cryptoAmount.toString() },
+                { key: 'Fiat Amount', value: fiatAmount.toString() },
+                { key: 'Status', value: orderData.status }
+              ],
+              `${appUrl}/p2p/order/${orderData.id}`,
+              'View Order'
+            );
+          }
+        }
+      } catch (e) {
+        console.error("Failed to send P2P email", e);
+      }
+    })());
 
     return c.json({ success: true, orderId: finalOrderId });
   } catch (err: any) {

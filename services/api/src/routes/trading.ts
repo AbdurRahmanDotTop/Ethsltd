@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 const runTx = async (db: any, cb: any) => await cb(db);
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
+import { EmailService } from '../services/email';
 import { markets, orders, trades, wallets, walletTransactions, positions, binaryOptions, currencyRates } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
@@ -647,6 +648,36 @@ tradingRoutes.post('/orders', async (c) => {
   } catch (error: any) {
     return c.json({ success: false, error: error.message || 'Transaction failed' }, 400);
   }
+
+  const emailService = new EmailService(c.env, db);
+  c.executionCtx.waitUntil((async () => {
+    try {
+      const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
+      const orderData = await db.select().from(orders).where(eq(orders.id, orderId)).get();
+      if (orderData) {
+        if (orderData.mode === 'REAL') {
+          await emailService.sendAdminTradeAlert(orderData, appUrl);
+        }
+        await emailService.sendUserTransactionAlert(
+          user.email,
+          'Trade Order Created',
+          `Your ${side} order for ${amount} ${marketInfo.baseAsset} has been placed.`,
+          [
+            { key: 'Order ID', value: orderData.displayId },
+            { key: 'Market', value: market },
+            { key: 'Side', value: side },
+            { key: 'Amount', value: `${amount} ${marketInfo.baseAsset}` },
+            { key: 'Price', value: type === 'MARKET' ? 'Market Price' : `${price} ${marketInfo.quoteAsset}` },
+            { key: 'Status', value: orderData.status }
+          ],
+          `${appUrl}/trade/${market.replace('-', '_')}`,
+          'View Trade'
+        );
+      }
+    } catch (e) {
+      console.error("Failed to send trade email", e);
+    }
+  })());
 
   return c.json({ success: true, orderId });
 });

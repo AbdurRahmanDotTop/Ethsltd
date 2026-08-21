@@ -571,6 +571,20 @@ walletRoutes.post('/deposit', async (c) => {
             asset: assetSymbol,
             mode: 'REAL',
           }, appUrl);
+
+          await emailService.sendUserTransactionAlert(
+            user.email,
+            'Deposit Request Submitted',
+            `Your deposit request for ${amountNum} ${assetSymbol} via ${depositMethod} has been submitted successfully and is awaiting review.`,
+            [
+              { key: 'Transaction ID', value: transactionId },
+              { key: 'Amount', value: `${amountNum} ${assetSymbol}` },
+              { key: 'Method', value: depositMethod },
+              { key: 'Status', value: 'PENDING' }
+            ],
+            `${appUrl}/wallet/history`,
+            'View Deposit History'
+          );
         } catch (e) {
           console.error("Background email failed for deposit", e);
         }
@@ -699,20 +713,38 @@ walletRoutes.post('/withdraw', async (c) => {
       c.executionCtx.waitUntil((async () => {
         try {
           const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
-          await emailService.sendAdminWithdrawalAlert({
-            id: transactionId,
-            userId: user.id,
-            amount: parsedAmount.toString(),
-            asset: assetSymbol,
-            mode: 'REAL',
-          }, appUrl);
-        } catch (e) {
-          console.error("Background email failed for withdrawal", e);
-        }
-      })());
+    
+    // Admin Alert
+    c.executionCtx.waitUntil(emailService.sendAdminWithdrawalAlert({
+      id: transactionId,
+      userId: user.id,
+      amount: parsedAmount.toString(),
+      asset: assetSymbol,
+      mode: mode,
+    }, appUrl).catch(e => console.error(e)));
 
-      return c.json({ 
-        success: true, 
+    // User Alert
+    c.executionCtx.waitUntil(emailService.sendUserTransactionAlert(
+      user.email,
+      'Withdrawal Request Submitted',
+      `Your withdrawal request for ${parsedAmount} ${assetSymbol} has been successfully submitted and is being processed.`,
+      [
+        { key: 'Transaction ID', value: transactionId },
+        { key: 'Amount', value: `${parsedAmount} ${assetSymbol}` },
+        { key: 'Destination', value: destination },
+        { key: 'Network/Bank', value: network },
+        { key: 'Status', value: 'PENDING' }
+      ],
+      `${appUrl}/wallet/history`,
+      'View Withdrawal History'
+    ).catch(e => console.error(e)));
+  } catch (e) {
+    console.error("Background email failed for withdrawal", e);
+  }
+})());
+
+return c.json({ 
+  success: true, 
         transactionId,
         message: 'Withdrawal initiated successfully. It will be processed by the network shortly.'
       });

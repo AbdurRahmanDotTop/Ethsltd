@@ -27,10 +27,10 @@ adminRiskRouter.get('/summary', async (c) => {
     const flaggedWithdrawalsTotal = pendingWithdrawals[0]?.total || 0;
 
     // Suspicious Logins (Last 24h FAILED_LOGIN from auditLogs)
-    const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
+    const oneDayAgo = new Date(Date.now() - 86400000);
     const suspiciousLogins = await db.select({ count: sql<number>`count(*)` })
       .from(auditLogs)
-      .where(and(eq(auditLogs.action, 'FAILED_LOGIN'), sql`created_at >= ${oneDayAgo}`));
+      .where(and(eq(auditLogs.action, 'FAILED_LOGIN'), sql`created_at >= ${oneDayAgo.getTime()}`));
     const suspiciousLoginsCount = suspiciousLogins[0]?.count || 0;
 
     // Platform Exposure (Ratio of locked balance vs total balance, simplified)

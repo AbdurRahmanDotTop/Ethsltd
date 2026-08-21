@@ -1334,6 +1334,74 @@ adminRoutes.put('/platform-settings/:key', async (c) => {
     return c.json({ success: false, error: 'Failed to update platform setting' }, 500);
   }
 });
+
+// GET /api/v1/admin/system-settings
+adminRoutes.get('/system-settings', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+
+  if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    const { platformSettings } = require('database');
+    const settingsList = await db.select().from(platformSettings).all();
+    const systemKeys = [
+      'EMAIL_ADMIN', 'EMAIL_SUPPORT', 
+      'EMAIL_NOTIFY_NEW_USER', 'EMAIL_NOTIFY_DEPOSIT', 'EMAIL_NOTIFY_WITHDRAWAL',
+      'EMAIL_NOTIFY_P2P', 'EMAIL_NOTIFY_TRADE', 'EMAIL_NOTIFY_TRANSFER'
+    ];
+    
+    const result: Record<string, string> = {};
+    for (const setting of settingsList) {
+      if (systemKeys.includes(setting.key)) {
+        result[setting.key] = setting.value;
+      }
+    }
+    return c.json({ success: true, data: result });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch system settings' }, 500);
+  }
+});
+
+// POST /api/v1/admin/system-settings
+adminRoutes.post('/system-settings', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const body = await c.req.json();
+
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    const { platformSettings } = require('database');
+    
+    for (const [key, value] of Object.entries(body)) {
+      const existing = await db.select().from(platformSettings).where(eq(platformSettings.key, key)).get();
+      if (existing) {
+        await db.update(platformSettings).set({ 
+          value: String(value), 
+          updatedAt: new Date(),
+          updatedBy: admin.id
+        }).where(eq(platformSettings.key, key)).run();
+      } else {
+        await db.insert(platformSettings).values({
+          id: `sys_${crypto.randomUUID().replace(/-/g, '').substring(0, 10)}`,
+          key,
+          value: String(value),
+          description: 'System setting',
+          updatedAt: new Date(),
+          updatedBy: admin.id
+        }).run();
+      }
+    }
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to update system settings' }, 500);
+  }
+});
 // PUT /api/v1/admin/experts/bookings/:id/chat-toggle
 adminRoutes.put('/experts/bookings/:id/chat-toggle', async (c) => {
   const db = c.get('db');

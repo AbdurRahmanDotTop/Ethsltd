@@ -195,4 +195,57 @@ export class EmailService {
       eventType: 'ADMIN_WITHDRAWAL',
     });
   }
+
+  // EVENT: User Transaction (Generic)
+  async sendUserTransactionAlert(email: string, title: string, message: string, details: {key: string, value: string}[], actionUrl?: string, actionText?: string) {
+    const html = renderUserTransactionEmail(title, message, details, actionUrl, actionText);
+    await this.sendMailWithLog({
+      to: email,
+      subject: title,
+      html,
+      eventType: 'USER_TRANSACTION',
+    });
+  }
+
+  // EVENT: P2P Order (Admin)
+  async sendAdminP2PAlert(orderInfo: any, baseUrl: string = 'https://ethsltd.com') {
+    const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_P2P', 'true');
+    if (notifyEnabled !== 'true') return;
+    const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
+    const html = renderAdminTransactionEmail('New P2P Order Activity', orderInfo, `${baseUrl}/admin/p2p`, 'View P2P Orders');
+    await this.sendMailWithLog({
+      to: adminEmail,
+      subject: `P2P Alert: Order ${orderInfo.id}`,
+      html,
+      eventType: 'ADMIN_P2P',
+    });
+  }
+
+  // EVENT: Trade (Admin)
+  async sendAdminTradeAlert(tradeInfo: any, baseUrl: string = 'https://ethsltd.com') {
+    const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_TRADE', 'true');
+    if (notifyEnabled !== 'true') return;
+    const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
+    const html = renderAdminTransactionEmail('New Trade Executed', tradeInfo, `${baseUrl}/admin/orders`, 'View Trades');
+    await this.sendMailWithLog({
+      to: adminEmail,
+      subject: `Trade Alert: ${tradeInfo.amount} ${tradeInfo.asset}`,
+      html,
+      eventType: 'ADMIN_TRADE',
+    });
+  }
+
+  // EVENT: Transfer (Admin)
+  async sendAdminTransferAlert(transferInfo: any, baseUrl: string = 'https://ethsltd.com') {
+    const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_TRANSFER', 'true');
+    if (notifyEnabled !== 'true') return;
+    const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
+    const html = renderAdminTransactionEmail('New Internal Transfer', transferInfo, `${baseUrl}/admin/transactions`, 'View Transfers');
+    await this.sendMailWithLog({
+      to: adminEmail,
+      subject: `Transfer Alert: ${transferInfo.amount} ${transferInfo.asset}`,
+      html,
+      eventType: 'ADMIN_TRANSFER',
+    });
+  }
 }
