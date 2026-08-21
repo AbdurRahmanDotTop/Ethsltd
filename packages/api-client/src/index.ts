@@ -148,6 +148,13 @@ export class EthsltdClient {
     return res;
   }
 
+  async verifyEmailWithToken(token: string) {
+    return this.request<any>('/api/v1/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token })
+    });
+  }
+
   async requestEmailVerificationOTP() {
     return this.request<any>('/api/v1/auth/verify-email/request-otp', {
       method: 'POST',

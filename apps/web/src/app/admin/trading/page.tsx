@@ -4,9 +4,11 @@ import { useState } from "react";
 import { 
   Activity, TrendingUp, PauseCircle, PlayCircle, 
   Settings2, Search, Filter, AlertTriangle, CheckCircle,
-  Zap, ArrowRightLeft, Layers, Server
+  Zap, ArrowRightLeft, Layers, Server, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { apiClient } from "@ethsltd/api-client";
+import { useEffect } from "react";
 
 // Types
 type PairStatus = 'active' | 'suspended' | 'maintenance';
@@ -23,20 +25,42 @@ interface TradingPair {
   status: PairStatus;
 }
 
-// Mock Data
-const MOCK_PAIRS: TradingPair[] = [
-  { id: "pair-1", symbol: "BTC/USDT", baseAsset: "BTC", quoteAsset: "USDT", price: 64230.50, volume24h: 1250400000, makerFee: 0.1, takerFee: 0.1, status: "active" },
-  { id: "pair-2", symbol: "ETH/USDT", baseAsset: "ETH", quoteAsset: "USDT", price: 3450.25, volume24h: 840500000, makerFee: 0.1, takerFee: 0.1, status: "active" },
-  { id: "pair-3", symbol: "SOL/USDT", baseAsset: "SOL", quoteAsset: "USDT", price: 142.80, volume24h: 320100000, makerFee: 0.1, takerFee: 0.15, status: "active" },
-  { id: "pair-4", symbol: "XRP/USDT", baseAsset: "XRP", quoteAsset: "USDT", price: 0.58, volume24h: 150000000, makerFee: 0.1, takerFee: 0.1, status: "maintenance" },
-  { id: "pair-5", symbol: "PEPE/USDT", baseAsset: "PEPE", quoteAsset: "USDT", price: 0.000008, volume24h: 45000000, makerFee: 0.2, takerFee: 0.2, status: "suspended" },
-];
-
 export default function AdminTradingPage() {
-  const [pairs, setPairs] = useState<TradingPair[]>(MOCK_PAIRS);
+  const [pairs, setPairs] = useState<TradingPair[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadMarkets();
+  }, []);
+
+  const loadMarkets = async () => {
+    try {
+      setIsLoading(true);
+      const res = await apiClient.getMarkets();
+      if (res && res.success && res.data) {
+        setPairs(res.data.map((m: any) => ({
+          id: m.symbol,
+          symbol: m.symbol,
+          baseAsset: m.baseAsset,
+          quoteAsset: m.quoteAsset,
+          price: m.price || 0,
+          volume24h: m.volume24h || 0,
+          makerFee: m.makerFee || 0.1,
+          takerFee: m.takerFee || 0.1,
+          status: m.status?.toLowerCase() || 'active',
+        })));
+      } else {
+        // Handle no data or fallback
+      }
+    } catch (error) {
+      console.error("Failed to load markets:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredPairs = pairs.filter(p => {
     const matchesSearch = p.symbol.toLowerCase().includes(searchTerm.toLowerCase());
@@ -66,6 +90,9 @@ export default function AdminTradingPage() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   };
 
+  const totalVolume = pairs.reduce((sum, p) => sum + p.volume24h, 0);
+  const totalLiquidity = pairs.reduce((sum, p) => sum + (p.price * 1000), 0); // Mock approximation for liquidity
+
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
       
@@ -89,7 +116,7 @@ export default function AdminTradingPage() {
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <h3 className="text-2xl font-bold">{formatCurrency(2600000000)}</h3>
+            <h3 className="text-2xl font-bold">{formatCurrency(totalVolume || 0)}</h3>
           </div>
         </div>
 
@@ -127,7 +154,7 @@ export default function AdminTradingPage() {
             </div>
           </div>
           <div className="mt-4">
-            <h3 className="text-2xl font-bold">{formatCurrency(450000000)}</h3>
+            <h3 className="text-2xl font-bold">{formatCurrency(totalLiquidity || 0)}</h3>
             <span className="text-xs text-muted-foreground">Total platform liquidity</span>
           </div>
         </div>
@@ -179,13 +206,20 @@ export default function AdminTradingPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredPairs.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground">Loading trading markets...</p>
+                  </td>
+                </tr>
+              ) : filteredPairs.length > 0 ? (
                 filteredPairs.map((pair) => (
                   <tr key={pair.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
-                          {pair.baseAsset[0]}
+                          {pair.baseAsset?.[0] || '?'}
                         </div>
                         <div>
                           <p className="font-bold text-foreground">{pair.symbol}</p>
@@ -194,7 +228,7 @@ export default function AdminTradingPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="font-medium text-foreground">${pair.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</p>
+                      <p className="font-medium text-foreground">${(pair.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-foreground">{formatCurrency(pair.volume24h)}</p>

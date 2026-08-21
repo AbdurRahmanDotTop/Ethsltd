@@ -1,16 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Mail } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { Button } from "@/components/ui/button";
 
 export function EmailVerification() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
   const [timeLeft, setTimeLeft] = useState(45);
   const [isResending, setIsResending] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(!!token);
+  const [errorMsg, setErrorMsg] = useState("");
+  const effectRan = useRef(false);
 
   useEffect(() => {
     if (timeLeft > 0 && !isVerified) {
@@ -29,15 +34,26 @@ export function EmailVerification() {
     }
   };
 
-  // Mocking verification after 5 seconds just for UI demonstration
   useEffect(() => {
-    if (!isVerified) {
-      const timer = setTimeout(() => {
-        setIsVerified(true);
-      }, 5000);
-      return () => clearTimeout(timer);
+    if (token && !effectRan.current) {
+      effectRan.current = true;
+      setIsVerifying(true);
+      apiClient.verifyEmailWithToken(token)
+        .then((res) => {
+          if (res.success) {
+            setIsVerified(true);
+          } else {
+            setErrorMsg(res.error || "Failed to verify email");
+          }
+        })
+        .catch(() => {
+          setErrorMsg("An unexpected error occurred while verifying");
+        })
+        .finally(() => {
+          setIsVerifying(false);
+        });
     }
-  }, [isVerified]);
+  }, [token]);
 
   if (isVerified) {
     return (
@@ -56,11 +72,27 @@ export function EmailVerification() {
     );
   }
 
+  if (isVerifying) {
+    return (
+      <div className="text-center space-y-6 py-8">
+        <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+        <h2 className="text-xl font-bold">Verifying email...</h2>
+        <p className="text-muted-foreground text-sm">Please wait while we verify your email link.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="text-center space-y-6">
-      <div className="w-16 h-16 bg-primary dark:bg-primary/10 text-primary dark:text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-        <Mail className="w-8 h-8" />
-      </div>
+      {errorMsg ? (
+        <div className="bg-red-500/10 text-red-500 border border-red-500/20 rounded-md p-3 mb-4 text-sm">
+          {errorMsg}
+        </div>
+      ) : (
+        <div className="w-16 h-16 bg-primary dark:bg-primary/10 text-primary dark:text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+          <Mail className="w-8 h-8" />
+        </div>
+      )}
       <p className="text-muted-foreground text-sm">
         We've sent a verification link to your email address.
         Verify your email to continue using your ETHSLTD account.

@@ -4,6 +4,9 @@ import { EmailVerification } from "@/components/auth/EmailVerification";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
 export const metadata: Metadata = {
   title: "ETHSLTD | Verify Email",
   description: "Verify your ETHSLTD account email address.",
@@ -22,7 +25,9 @@ export default function VerifyEmailPage() {
         title="Check your email"
         subtitle=""
       >
-        <EmailVerification />
+        <Suspense fallback={<div className="flex justify-center p-6"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+          <EmailVerification />
+        </Suspense>
       </AuthCard>
       </main>
       <Footer />
