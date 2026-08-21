@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { Bindings, Variables } from '../db';
+import { jwtMiddleware as requireAuth, adminMiddleware } from '../middleware/jwt';
 
-const adminSystemRouter = new Hono();
+const adminSystemRouter = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 adminSystemRouter.use('*', requireAuth);
+adminSystemRouter.use('*', adminMiddleware);
 
 adminSystemRouter.get('/', async (c) => {
-  // Return dynamic real-time status (without necessarily hitting the DB)
   return c.json({
     success: true,
     data: {
