@@ -25,7 +25,8 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
 
   useEffect(() => {
     if (user && pathname === '/register') {
-      router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account');
+      const finalRedirect = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account';
+      window.location.href = finalRedirect;
     }
   }, [user, router, pathname]);
 
@@ -57,7 +58,7 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
         if (response.data?.user) {
           setUser(response.data.user);
         } else {
-          router.push("/verify-email");
+          window.location.href = "/verify-email";
         }
       }
     } catch (err: any) {

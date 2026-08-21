@@ -65,7 +65,7 @@ export function EmailVerification() {
         <p className="text-muted-foreground text-sm">
           Your email has been successfully verified.
         </p>
-        <Button onClick={() => router.push("/account")} className="w-full mt-4">
+        <Button onClick={() => window.location.href = "/account"} className="w-full mt-4">
           Continue to ETHSLTD
         </Button>
       </div>

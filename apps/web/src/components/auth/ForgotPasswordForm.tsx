@@ -22,7 +22,8 @@ export function ForgotPasswordForm() {
 
   useEffect(() => {
     if (user && pathname === '/forgot-password') {
-      router.push(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account');
+      const finalRedirect = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account';
+      window.location.href = finalRedirect;
     }
   }, [user, router, pathname]);
 
