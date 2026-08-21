@@ -401,3 +401,69 @@ authRoutes.post('/logout', jwtMiddleware, async (c) => {
     return c.json({ success: false, error: err.message }, 500);
   }
 });
+
+authRoutes.post('/forgot-password', async (c) => {
+  try {
+    const body = await c.req.json();
+    const db = c.get('db');
+    if (!body.email) return c.json({ success: false, error: 'Email is required' }, 400);
+
+    const user = await db.select().from(users).where(eq(users.email, body.email)).get();
+    if (!user) {
+      // Return success anyway to prevent enumeration
+      return c.json({ success: true, message: 'If an account exists, an email was sent.' });
+    }
+
+    const { sign } = await import('hono/jwt');
+    const resetToken = await sign({ purpose: 'password_reset', userId: user.id, exp: Math.floor(Date.now() / 1000) + (15 * 60) }, JWT_SECRET);
+    
+    const emailService = new EmailService(c.env, db);
+    const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
+    
+    c.executionCtx.waitUntil((async () => {
+      try {
+        await emailService.sendPasswordResetEmail(user.email, resetToken, appUrl);
+      } catch (e) {
+        console.error("Background password reset email failed", e);
+      }
+    })());
+
+    return c.json({ success: true, message: 'If an account exists, an email was sent.' });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+authRoutes.post('/reset-password', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { token, password } = body;
+    if (!token || !password) return c.json({ success: false, error: 'Token and password are required' }, 400);
+
+    const { verify } = await import('hono/jwt');
+    let payload;
+    try {
+      payload = await verify(token, JWT_SECRET, "HS256");
+    } catch (e) {
+      return c.json({ success: false, error: 'Token expired or invalid' }, 400);
+    }
+
+    if (payload.purpose !== 'password_reset' || !payload.userId) {
+      return c.json({ success: false, error: 'Invalid token type' }, 400);
+    }
+
+    const db = c.get('db');
+    const user = await db.select().from(users).where(eq(users.id, payload.userId as string)).get();
+    if (!user) return c.json({ success: false, error: 'User not found' }, 404);
+
+    const hashedPassword = await hashPassword(password);
+    await db.update(users).set({ passwordHash: hashedPassword }).where(eq(users.id, user.id));
+
+    // Revoke all existing sessions to secure the account
+    await db.delete(sessions).where(eq(sessions.userId, user.id));
+
+    return c.json({ success: true, message: 'Password has been reset successfully' });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});

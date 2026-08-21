@@ -154,13 +154,17 @@ export class EthsltdClient {
   }
 
   async requestPasswordReset(email: string) {
-    // Placeholder until endpoint exists
-    return { success: true };
+    return this.request<any>('/api/v1/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
   }
 
   async resetPassword(password: string, token: string) {
-    // Placeholder until endpoint exists
-    return { success: true };
+    return this.request<any>('/api/v1/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ password, token }),
+    });
   }
 
 

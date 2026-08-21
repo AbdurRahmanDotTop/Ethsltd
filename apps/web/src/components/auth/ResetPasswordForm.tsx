@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -14,6 +14,8 @@ import { PasswordStrength } from "./PasswordStrength";
 
 export function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [globalError, setGlobalError] = useState("");
@@ -31,9 +33,13 @@ export function ResetPasswordForm() {
   const passwordValue = useWatch({ control, name: "password" });
 
   const onSubmit = async (data: ResetPasswordInput) => {
+    if (!token) {
+      setGlobalError("Invalid or missing reset token. Please request a new password reset link.");
+      return;
+    }
     try {
       setGlobalError("");
-      await apiClient.resetPassword(data.password, "mock-token");
+      await apiClient.resetPassword(data.password, token);
       setSuccess(true);
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred.");
