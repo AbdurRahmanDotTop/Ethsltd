@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { sign } from 'hono/jwt';
-import { setCookie, deleteCookie } from 'hono/cookie';
+import { setCookie, deleteCookie, getCookie } from 'hono/cookie';
 import { eq, and, sql } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { users, sessions, wallets } from 'database';
@@ -385,14 +385,21 @@ authRoutes.post('/sessions/revoke-all', jwtMiddleware, async (c) => {
   }
 });
 
-authRoutes.post('/logout', jwtMiddleware, async (c) => {
+authRoutes.post('/logout', async (c) => {
   try {
     const db = c.get('db');
-    const jwtPayload = c.get('jwtPayload') as any;
-    const currentSessionId = jwtPayload?.sessionId;
-
-    if (currentSessionId) {
-      await db.delete(sessions).where(eq(sessions.id, currentSessionId));
+    const token = getCookie(c, 'ethsltd_session') || c.req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (token) {
+      try {
+        const { decode } = await import('hono/jwt');
+        const { payload } = decode(token);
+        if (payload && payload.sessionId) {
+          await db.delete(sessions).where(eq(sessions.id, payload.sessionId as string));
+        }
+      } catch (e) {
+        // Ignore decode/verification errors, token is already expired or invalid
+      }
     }
 
     deleteCookie(c, 'ethsltd_session', { path: '/', secure: c.req.url.startsWith('https://'), sameSite: 'Lax', domain: getCookieDomain(c) });

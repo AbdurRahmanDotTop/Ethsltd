@@ -92,6 +92,14 @@ export class EthsltdClient {
       if (res.status === 401) {
         this.setToken(null);
         await this.syncLocalSession(null);
+        
+        // Explicitly clear the server-side cookie by calling logout endpoint (without awaiting the redirect loop)
+        try {
+          await fetch(`${this.baseUrl}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        } catch (e) {
+          // ignore
+        }
+
         if (typeof window !== 'undefined' && !options?.skipGlobal401) {
           window.dispatchEvent(new CustomEvent('auth:required', { detail: { message: data?.error || 'Session expired or invalid' } }));
         }
@@ -968,6 +976,11 @@ export class EthsltdClient {
     const query = new URLSearchParams(params as any).toString();
     return this.request<{data: any[], total: number}>(`/api/v1/admin/trading/trades?${query}`);
   }
+
+  async adminClearSystemCache() {
+    return this.request<any>('/api/v1/admin/system/clear-cache', { method: 'POST' });
+  }
 }
+
 
 export const apiClient = new EthsltdClient();

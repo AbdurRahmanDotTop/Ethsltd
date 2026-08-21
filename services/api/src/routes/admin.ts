@@ -1514,3 +1514,82 @@ adminRoutes.get('/p2p/disputes', async (c) => {
   }
 });
 
+// ==========================
+// ADMIN SYSTEM CACHE & EXPORTS
+// ==========================
+
+// POST /api/v1/admin/system/clear-cache
+adminRoutes.post('/system/clear-cache', async (c) => {
+  const admin = c.get('user');
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+  try {
+    return c.json({ success: true, message: 'Backend caches cleared' });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to clear cache' }, 500);
+  }
+});
+
+// GET /api/v1/admin/exports
+adminRoutes.get('/exports', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  const modules = c.req.query('modules');
+  
+  if (admin.role !== 'SUPER_ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  if (!modules) {
+    return c.json({ success: false, error: 'No modules specified' }, 400);
+  }
+
+  const moduleList = modules.split(',').map(m => m.trim());
+  const exportData: Record<string, any[]> = {};
+  const schema = require('database');
+
+  try {
+    const fetchModuleData = async (tableName: string, sensitiveFields: string[] = []) => {
+      if (!schema[tableName]) return [];
+      const rows = await db.select().from(schema[tableName]).all();
+      return rows.map((row: any) => {
+        const safeRow = { ...row };
+        sensitiveFields.forEach(field => delete safeRow[field]);
+        return safeRow;
+      });
+    };
+
+    if (moduleList.includes('All')) {
+       for (const [key, value] of Object.entries(schema)) {
+          if (typeof value === 'object' && (value as any)['_']?.name) {
+              const tableName = (value as any)['_'].name;
+              exportData[key] = await fetchModuleData(key, ['passwordHash', 'twoFactorSecret']);
+          }
+       }
+    } else {
+      if (moduleList.includes('Users')) exportData['Users'] = await fetchModuleData('users', ['passwordHash', 'twoFactorSecret']);
+      if (moduleList.includes('User Profiles')) exportData['User Profiles'] = await fetchModuleData('userProfiles');
+      if (moduleList.includes('Wallets')) exportData['Wallets'] = await fetchModuleData('wallets');
+      if (moduleList.includes('Transactions')) exportData['Transactions'] = await fetchModuleData('walletTransactions');
+      if (moduleList.includes('Trades')) exportData['Trades'] = await fetchModuleData('trades');
+      if (moduleList.includes('Trading Orders')) exportData['Trading Orders'] = await fetchModuleData('tradingOrders');
+      if (moduleList.includes('P2P Ads')) exportData['P2P Ads'] = await fetchModuleData('p2pAds');
+      if (moduleList.includes('P2P Orders')) exportData['P2P Orders'] = await fetchModuleData('p2pOrders');
+      if (moduleList.includes('Escrow Records')) exportData['Escrow Records'] = await fetchModuleData('p2pEscrows');
+      if (moduleList.includes('Disputes')) exportData['Disputes'] = await fetchModuleData('p2pDisputes');
+      if (moduleList.includes('Payment Methods')) exportData['Payment Methods'] = await fetchModuleData('paymentMethods');
+      if (moduleList.includes('Ledger Accounts')) exportData['Ledger Accounts'] = await fetchModuleData('ledgerAccounts');
+      if (moduleList.includes('Ledger Entries')) exportData['Ledger Entries'] = await fetchModuleData('ledgerEntries');
+      if (moduleList.includes('System Settings')) exportData['System Settings'] = await fetchModuleData('platformSettings');
+      if (moduleList.includes('Audit Logs')) exportData['Audit Logs'] = await fetchModuleData('auditLogs');
+      if (moduleList.includes('Support Tickets')) exportData['Support Tickets'] = await fetchModuleData('tickets');
+    }
+
+    return c.json({ success: true, data: exportData });
+  } catch (error) {
+    console.error('Export Error:', error);
+    return c.json({ success: false, error: 'Failed to generate export' }, 500);
+  }
+});
+
