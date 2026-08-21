@@ -8,14 +8,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Mock Data
-const ALERTS = [
-  { id: 1, type: "critical", message: "Whale Withdrawal Detected: 500 BTC by USR-089", time: "2 mins ago" },
-  { id: 2, type: "warning", message: "High latency in Liquidation Engine (120ms)", time: "15 mins ago" },
-  { id: 3, type: "critical", message: "Multiple failed 2FA attempts for ADMIN-02", time: "45 mins ago" },
-  { id: 4, type: "info", message: "System auto-balanced cold wallet thresholds", time: "2 hours ago" },
-];
-
+import { useEffect } from "react";
+import { apiClient } from "@ethsltd/api-client";
 const FLAGGED_USERS = [
   { id: "USR-882", email: "suspicious@mail.com", score: 92, reason: "Multiple IPs, High Volume", status: "active", exposure: "$150,000" },
   { id: "USR-105", email: "trader_x@example.com", score: 75, reason: "Margin Call Risk - High Leverage", status: "active", exposure: "$45,200" },
@@ -25,7 +19,20 @@ const FLAGGED_USERS = [
 
 export default function AdminRiskPage() {
   const [users, setUsers] = useState(FLAGGED_USERS);
+  const [alerts, setAlerts] = useState<any[]>([]);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const res = await apiClient.getAdminRiskAlerts();
+        if (res.success) setAlerts(res.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchAlerts();
+  }, []);
 
   const handleAction = (userId: string, action: 'freeze' | 'unfreeze' | 'reset') => {
     setIsProcessing(userId);
@@ -195,20 +202,26 @@ export default function AdminRiskPage() {
             </span>
           </h3>
           <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden divide-y divide-border">
-            {ALERTS.map((alert) => (
+            {alerts.length > 0 ? alerts.map((alert) => (
               <div key={alert.id} className="p-4 flex gap-3 hover:bg-muted/30 transition-colors">
                 <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${
-                  alert.type === 'critical' ? 'text-red-500' :
-                  alert.type === 'warning' ? 'text-yellow-500' : 'text-blue-500'
+                  alert.severity === 'critical' ? 'text-red-500' :
+                  alert.severity === 'warning' ? 'text-yellow-500' : 'text-blue-500'
                 }`} />
                 <div>
-                  <p className={`text-sm ${alert.type === 'critical' ? 'font-semibold text-red-500' : 'text-foreground'}`}>
+                  <p className={`text-sm ${alert.severity === 'critical' ? 'font-semibold text-red-500' : 'text-foreground'}`}>
                     {alert.message}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">{alert.time}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(alert.createdAt).toLocaleString()}
+                  </p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="p-8 text-center text-muted-foreground">
+                <p>No active risk alerts.</p>
+              </div>
+            )}
             
             <div className="p-3 text-center bg-muted/20">
               <Button variant="link" size="sm" className="text-xs text-muted-foreground">

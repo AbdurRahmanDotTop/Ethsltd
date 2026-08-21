@@ -18,6 +18,14 @@ import { webhookRoutes } from './routes/webhooks';
 import { expertRoutes } from './routes/experts';
 import { adminCurrencyRateRoutes } from './routes/admin/currency-rates';
 import { publicCurrencyRateRoutes } from './routes/currency-rates';
+
+// New Admin Routes
+import adminApiKeysRouter from './routes/admin-api-keys';
+import adminAuditRouter from './routes/admin-audit';
+import adminContractsRouter from './routes/admin-contracts';
+import adminRiskRouter from './routes/admin-risk';
+import adminSystemRouter from './routes/admin-system';
+
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 // Triggering deployment to apply CORS fix
 
@@ -55,6 +63,11 @@ app.route('/api/v1/notifications', notificationRoutes);
 app.route('/api/v1/experts', expertRoutes);
 app.route('/api/v1/currency-rates', publicCurrencyRateRoutes);
 app.route('/api/v1/admin/currency-rates', adminCurrencyRateRoutes);
+app.route('/api/v1/admin/api-keys', adminApiKeysRouter);
+app.route('/api/v1/admin/audit', adminAuditRouter);
+app.route('/api/v1/admin/contracts', adminContractsRouter);
+app.route('/api/v1/admin/risk', adminRiskRouter);
+app.route('/api/v1/admin/system', adminSystemRouter);
 app.route('/webhooks', webhookRoutes);
 
 export default app;

@@ -7,15 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Mock Data for System Status
-const INITIAL_SERVICES = [
-  { name: "API Gateway", status: "operational", ping: "45ms", icon: Globe },
-  { name: "Trading Engine", status: "operational", ping: "12ms", icon: Activity },
-  { name: "PostgreSQL Database", status: "operational", ping: "8ms", icon: Database },
-  { name: "Redis Cache", status: "operational", ping: "2ms", icon: HardDrive },
-  { name: "WebSocket Server", status: "degraded", ping: "120ms", icon: Server },
-  { name: "Email Service", status: "operational", ping: "35ms", icon: Mail },
-];
+import { apiClient } from "@ethsltd/api-client";
 
 const RECENT_ALERTS = [
   { id: 1, type: "warning", message: "WebSocket server latency spiked above 100ms.", time: "10 mins ago" },
@@ -34,22 +26,38 @@ export default function AdminSystemPage() {
     serverLoad: "1.24"
   });
   
-  const [services, setServices] = useState(INITIAL_SERVICES);
+  const [services, setServices] = useState<any[]>([]);
+
+  const fetchStatus = async () => {
+    try {
+      const res = await apiClient.getAdminSystemStatus();
+      if (res.success && res.data) {
+        setServices(res.data.services || []);
+        if (res.data.metrics) {
+          setMetrics({
+            cpu: res.data.metrics.cpuUsage || 0,
+            ram: res.data.metrics.memoryUsage || 0,
+            disk: 35, // mocked backend disk usage for now
+            uptime: "99.9%",
+            activeConnections: res.data.metrics.activeConnections || 0,
+            serverLoad: (res.data.metrics.requestsPerSecond / 100).toFixed(2)
+          });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+  }, []);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    // Simulate fetching fresh metrics
-    setTimeout(() => {
-      setMetrics({
-        cpu: Math.floor(Math.random() * 40) + 30, // 30-70%
-        ram: Math.floor(Math.random() * 20) + 60, // 60-80%
-        disk: 35, // Static mostly
-        uptime: "99.99%",
-        activeConnections: Math.floor(Math.random() * 500) + 1000,
-        serverLoad: (Math.random() * 2).toFixed(2)
-      });
-      setIsRefreshing(false);
-    }, 1500);
+    fetchStatus();
   };
 
   const getStatusColor = (status: string) => {
@@ -136,7 +144,13 @@ export default function AdminSystemPage() {
           <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="divide-y divide-border">
               {services.map((service, idx) => {
-                const Icon = service.icon;
+                let Icon = Server;
+                if (service.name.includes("API")) Icon = Globe;
+                if (service.name.includes("Trading") || service.name.includes("Engine")) Icon = Activity;
+                if (service.name.includes("Database") || service.name.includes("D1")) Icon = Database;
+                if (service.name.includes("WebSocket")) Icon = Server;
+                if (service.name.includes("Email")) Icon = Mail;
+                
                 return (
                   <div key={idx} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors flex-wrap gap-y-4">
                     <div className="flex items-center gap-4">
@@ -145,7 +159,7 @@ export default function AdminSystemPage() {
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-foreground">{service.name}</h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">Latency: {service.ping}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Latency: {service.latency || service.ping}</p>
                       </div>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-semibold capitalize border ${getStatusColor(service.status)}`}>

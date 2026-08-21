@@ -524,6 +524,31 @@ export class EthsltdClient {
     return this.request<any>(`/api/v1/admin/wallets/users${query}`);
   }
 
+  // New Admin API Methods
+  async getAdminApiKeys() {
+    return this.request<any[]>('/api/v1/admin/api-keys');
+  }
+
+  async revokeAdminApiKey(id: string) {
+    return this.request<any>(`/api/v1/admin/api-keys/${id}/revoke`, { method: 'POST' });
+  }
+
+  async getAdminAuditLogs() {
+    return this.request<any[]>('/api/v1/admin/audit');
+  }
+
+  async getAdminContracts() {
+    return this.request<any[]>('/api/v1/admin/contracts');
+  }
+
+  async getAdminRiskAlerts() {
+    return this.request<any[]>('/api/v1/admin/risk');
+  }
+
+  async getAdminSystemStatus() {
+    return this.request<any>('/api/v1/admin/system');
+  }
+
   // Admin Deposits & Payments Methods
   async adminGetPendingDeposits() {
     return this.request<any>('/api/v1/admin/payments/pending-deposits');

@@ -21,30 +21,39 @@ interface Contract {
   signatureIp?: string;
 }
 
-// Mock Data
-const MOCK_CONTRACTS: Contract[] = [
-  { id: "CNT-8902", userId: "USR-102", userEmail: "institutions@whale.io", type: "OTC Master Agreement", status: "pending_approval", issuedAt: "2026-08-12T10:00:00Z", signedAt: "2026-08-14T09:15:22Z", signatureIp: "198.51.100.42" },
-  { id: "CNT-8903", userId: "USR-441", userEmail: "margin_trader@example.com", type: "Margin Trading Facility", status: "pending_signature", issuedAt: "2026-08-13T14:30:00Z" },
-  { id: "CNT-8901", userId: "USR-089", userEmail: "alpha_fund@hedge.net", type: "OTC Master Agreement", status: "approved", issuedAt: "2026-08-01T09:00:00Z", signedAt: "2026-08-05T11:20:00Z", signatureIp: "203.0.113.88" },
-  { id: "CNT-8904", userId: "USR-992", userEmail: "retail_pro@mail.com", type: "High Withdrawal Limit Addendum", status: "rejected", issuedAt: "2026-08-10T11:00:00Z", signedAt: "2026-08-11T16:45:00Z", signatureIp: "192.0.2.14" },
-  { id: "CNT-8905", userId: "USR-115", userEmail: "market_maker@mm.org", type: "Liquidity Provider Agreement", status: "pending_approval", issuedAt: "2026-08-13T08:00:00Z", signedAt: "2026-08-14T11:05:10Z", signatureIp: "45.22.19.88" },
-];
+import { useEffect } from "react";
+import { apiClient } from "@ethsltd/api-client";
 
 export default function AdminContractsPage() {
-  const [contracts, setContracts] = useState<Contract[]>(MOCK_CONTRACTS);
+  const [contracts, setContracts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState(true);
   
   // Modal State
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [selectedContract, setSelectedContract] = useState<any | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        const res = await apiClient.getAdminContracts();
+        if (res.success) setContracts(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchContracts();
+  }, []);
 
   // Filter Logic
   const filteredContracts = contracts.filter(c => {
     const matchesSearch = 
-      c.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      c.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.userEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      (c.id && c.id.toLowerCase().includes(searchTerm.toLowerCase())) || 
+      (c.userId && c.userId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (c.userEmail && c.userEmail.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = filterStatus === "all" || c.status === filterStatus;
 
@@ -137,11 +146,11 @@ export default function AdminContractsPage() {
                       <p className="text-xs text-muted-foreground font-mono mt-0.5">{contract.id}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="font-medium text-foreground">{contract.userId}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{contract.userEmail}</p>
+                      <p className="font-medium text-foreground">{contract.userId || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{contract.userEmail || ''}</p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-muted-foreground text-xs">
-                      {new Date(contract.issuedAt).toLocaleDateString()}
+                      {new Date(contract.createdAt || contract.issuedAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       {getStatusBadge(contract.status)}
@@ -208,7 +217,7 @@ export default function AdminContractsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Date Issued</p>
-                  <p className="font-medium text-sm">{new Date(selectedContract.issuedAt).toLocaleString()}</p>
+                  <p className="font-medium text-sm">{new Date(selectedContract.createdAt || selectedContract.issuedAt).toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Current Status</p>

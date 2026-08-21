@@ -3,34 +3,42 @@
 import { useState } from "react";
 import { 
   Search, Download, Filter, ShieldAlert, CheckCircle, 
-  Settings, UserCheck, AlertTriangle, Info, Calendar
+  Settings, UserCheck, AlertTriangle, Info, Calendar, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Mock Audit Logs Data
-const MOCK_LOGS = [
-  { id: "LOG-001", timestamp: "2026-08-14T10:15:00Z", type: "admin_action", action: "WITHDRAWAL_APPROVED", actor: "ADMIN-001 (SUPER_ADMIN)", ip: "192.168.1.1", target: "Withdrawal WD-1004", severity: "info" },
-  { id: "LOG-002", timestamp: "2026-08-14T10:05:22Z", type: "admin_action", action: "KYC_REJECTED", actor: "ADMIN-002 (KYC_ADMIN)", ip: "10.0.0.5", target: "User USR-882", severity: "warning" },
-  { id: "LOG-003", timestamp: "2026-08-14T09:45:10Z", type: "system_event", action: "SYSTEM_SETTINGS_CHANGED", actor: "ADMIN-001 (SUPER_ADMIN)", ip: "192.168.1.1", target: "Platform Settings", severity: "info" },
-  { id: "LOG-004", timestamp: "2026-08-14T09:30:00Z", type: "security_alert", action: "FAILED_LOGIN_ATTEMPT", actor: "Unknown IP", ip: "45.22.19.88", target: "ADMIN-001 Account", severity: "critical" },
-  { id: "LOG-005", timestamp: "2026-08-14T08:15:45Z", type: "user_event", action: "PASSWORD_CHANGED", actor: "USR-912", ip: "112.55.33.12", target: "Self", severity: "info" },
-  { id: "LOG-006", timestamp: "2026-08-14T07:50:00Z", type: "admin_action", action: "FEE_SCHEDULE_UPDATED", actor: "ADMIN-001 (SUPER_ADMIN)", ip: "192.168.1.1", target: "Global Trading Fees", severity: "warning" },
-  { id: "LOG-007", timestamp: "2026-08-14T06:20:15Z", type: "security_alert", action: "API_RATE_LIMIT_EXCEEDED", actor: "System", ip: "104.22.19.1", target: "Public API Gateway", severity: "warning" },
-  { id: "LOG-008", timestamp: "2026-08-13T23:55:00Z", type: "admin_action", action: "USER_SUSPENDED", actor: "ADMIN-003 (RISK_ADMIN)", ip: "10.0.0.12", target: "User USR-741", severity: "critical" },
-];
+import { useEffect } from "react";
+import { apiClient } from "@ethsltd/api-client";
 
 export default function AdminAuditPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [isExporting, setIsExporting] = useState(false);
 
+  const [logs, setLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const res = await apiClient.getAdminAuditLogs();
+        if (res.success) setLogs(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLogs();
+  }, []);
+
   // Filter Logic
-  const filteredLogs = MOCK_LOGS.filter(log => {
+  const filteredLogs = logs.filter(log => {
     const matchesSearch = 
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      log.actor.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      log.target.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.ip.includes(searchTerm);
+      (log.action && log.action.toLowerCase().includes(searchTerm.toLowerCase())) || 
+      (log.actor && log.actor.toLowerCase().includes(searchTerm.toLowerCase())) || 
+      (log.target && log.target.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.ip && log.ip.includes(searchTerm));
     
     const matchesType = filterType === "all" || log.type === filterType;
 
@@ -143,11 +151,17 @@ export default function AdminAuditPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredLogs.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+                  </td>
+                </tr>
+              ) : filteredLogs.length > 0 ? (
                 filteredLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-muted-foreground font-mono text-xs">
-                      {new Date(log.timestamp).toLocaleString()}
+                      {new Date(log.createdAt || log.timestamp).toLocaleString()}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">

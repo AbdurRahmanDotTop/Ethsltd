@@ -17,3 +17,7 @@ export * from './currency_rates';
 export * from './asset_conversions';
 export * from './sequences';
 export * from './email_logs';
+export * from './api_keys';
+export * from './audit_logs';
+export * from './risk_alerts';
+export * from './smart_contracts';

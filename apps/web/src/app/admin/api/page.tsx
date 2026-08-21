@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Search, Loader2, Code, ShieldAlert, Activity, AlertTriangle, KeyRound } from "lucide-react";
-import { MockApiKeyProvider } from "@/lib/providers/mock-api-key-provider";
-import { ApiKey } from "@/lib/api/types";
+import { apiClient } from "@ethsltd/api-client";
 import { Button } from "@/components/ui/button";
 
 export default function AdminApiDashboard() {
-  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [keys, setKeys] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [revokingId, setRevokingId] = useState<string | null>(null);
@@ -16,9 +15,12 @@ export default function AdminApiDashboard() {
   useEffect(() => {
     const fetchKeys = async () => {
       try {
-        // We use 'ADMIN' to fetch all keys across the platform in the mock provider
-        const data = await MockApiKeyProvider.getKeys("ADMIN");
-        setKeys(data);
+        const res = await apiClient.getAdminApiKeys();
+        if (res.success) {
+          setKeys(res.data || []);
+        } else {
+          console.error(res.error);
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -31,8 +33,10 @@ export default function AdminApiDashboard() {
   const handleRevoke = async (id: string) => {
     setRevokingId(id);
     try {
-      await MockApiKeyProvider.revokeKey(id);
-      setKeys(keys.map(k => k.id === id ? { ...k, status: "REVOKED" } : k));
+      const res = await apiClient.revokeAdminApiKey(id);
+      if (res.success) {
+        setKeys(keys.map(k => k.id === id ? { ...k, status: "REVOKED" } : k));
+      }
     } finally {
       setRevokingId(null);
     }
@@ -45,8 +49,8 @@ export default function AdminApiDashboard() {
   );
 
   const activeKeysCount = keys.filter(k => k.status === "ACTIVE").length;
-  const liveKeysCount = keys.filter(k => k.environment === "LIVE" && k.status === "ACTIVE").length;
-  const withdrawalKeysCount = keys.filter(k => k.permissions.includes("WITHDRAW") && k.status === "ACTIVE").length;
+  const liveKeysCount = keys.filter(k => k.status === "ACTIVE").length;
+  const withdrawalKeysCount = keys.filter(k => k.permissions && k.permissions.includes("WITHDRAW") && k.status === "ACTIVE").length;
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
@@ -119,11 +123,7 @@ export default function AdminApiDashboard() {
                     <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{k.userId}</td>
                     <td className="px-6 py-4 font-medium">{k.name}</td>
                     <td className="px-6 py-4">
-                      {k.environment === "LIVE" ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-green-500/10 text-green-600">LIVE</span>
-                      ) : (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-amber-500/10 text-amber-600">TEST</span>
-                      )}
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-green-500/10 text-green-600">LIVE</span>
                     </td>
                     <td className="px-6 py-4">
                       {k.status === "ACTIVE" ? (
@@ -134,7 +134,7 @@ export default function AdminApiDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1 max-w-[150px]">
-                        {k.permissions.map(p => (
+                        {k.permissions?.split(',').map((p: string) => (
                           <span key={p} className={`text-[9px] px-1.5 py-0.5 rounded ${
                             p === 'WITHDRAW' ? 'bg-red-500/10 text-red-600' : 'bg-muted'
                           }`}>
