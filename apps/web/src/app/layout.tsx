@@ -92,6 +92,9 @@ export default async function RootLayout({
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `window.__name = window.__name || function(t, v) { return Object.defineProperty(t, "name", { value: v, configurable: true }); };` }} />
+      </head>
       <body className="min-h-screen flex flex-col font-sans overflow-x-hidden">
         <ThemeProvider
           attribute="class"

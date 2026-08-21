@@ -46,7 +46,7 @@ export class EthsltdClient {
     this.mode = mode;
   }
 
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<{ success: boolean; data?: T; error?: any }> {
+  private async request<T>(endpoint: string, options?: RequestInit & { skipGlobal401?: boolean }): Promise<{ success: boolean; data?: T; error?: any }> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...((options?.headers as Record<string, string>) || {}),
@@ -92,7 +92,7 @@ export class EthsltdClient {
       if (res.status === 401) {
         this.setToken(null);
         await this.syncLocalSession(null);
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && !options?.skipGlobal401) {
           window.dispatchEvent(new CustomEvent('auth:required', { detail: { message: data?.error || 'Session expired or invalid' } }));
         }
       }
@@ -104,7 +104,7 @@ export class EthsltdClient {
   }
 
   async getMe() {
-    return this.request<User>('/api/v1/auth/me');
+    return this.request<User>('/api/v1/auth/me', { skipGlobal401: true });
   }
 
   async login(email: string, password: string) {
