@@ -90,8 +90,11 @@ export class EmailService {
           createdAt: new Date(),
         });
       } catch(dbErr) {
-        console.error("Failed to write email error log:", dbErr);
+        console.error("Failed to write email error log to database (ensure emailDeliveryLogs table exists):", dbErr);
       }
+      
+      // We must throw the error here so the caller knows the email failed to send
+      throw error;
     }
   }
 
