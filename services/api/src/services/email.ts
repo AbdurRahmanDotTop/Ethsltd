@@ -1,4 +1,3 @@
-import nodemailer from 'nodemailer';
 import { Bindings } from '../db';
 import { platformSettings, emailDeliveryLogs } from 'database';
 import { eq } from 'drizzle-orm';
@@ -30,40 +29,45 @@ async function getSetting(dbInstance: any, key: string, defaultValue: string = '
 }
 
 export class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
+  private apiKey: string | null = null;
   private dbInstance: any;
 
   constructor(private env: Bindings, dbInstance: any) {
     this.dbInstance = dbInstance;
-    if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
-      this.transporter = nodemailer.createTransport({
-        host: env.SMTP_HOST,
-        port: Number(env.SMTP_PORT) || 465,
-        secure: Number(env.SMTP_PORT) === 465,
-        auth: {
-          user: env.SMTP_USER,
-          pass: env.SMTP_PASS,
-        },
-      });
+    if (env.BREVO_API_KEY) {
+      this.apiKey = env.BREVO_API_KEY;
     } else {
-      console.warn("SMTP credentials not configured in environment variables.");
+      console.warn("BREVO_API_KEY not configured in environment variables.");
     }
   }
 
   private async sendMailWithLog(options: { to: string; subject: string; html: string; eventType: string }) {
-    if (!this.transporter) {
+    if (!this.apiKey) {
       console.log(`[Mock Email] To: ${options.to} | Subject: ${options.subject}`);
       return;
     }
 
     const logId = crypto.randomUUID();
     try {
-      await this.transporter.sendMail({
-        from: `"ETHSLTD" <${this.env.SMTP_USER}>`,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': this.apiKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: "ETHSLTD", email: "support@ethsltd.com" },
+          to: [{ email: options.to }],
+          subject: options.subject,
+          htmlContent: options.html,
+        }),
       });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Brevo API Error: ${response.status} ${errText}`);
+      }
 
       await this.dbInstance.insert(emailDeliveryLogs).values({
         id: logId,

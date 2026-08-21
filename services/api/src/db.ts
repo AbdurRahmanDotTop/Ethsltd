@@ -10,10 +10,7 @@ export type Bindings = {
   CREGIS_PE_PROJECT_ID: string;
   CREGIS_PROXY_URL?: string;
   CREGIS_PROXY_SECRET?: string;
-  SMTP_HOST?: string;
-  SMTP_PORT?: string;
-  SMTP_USER?: string;
-  SMTP_PASS?: string;
+  BREVO_API_KEY?: string;
 };
 
 export type Variables = {
