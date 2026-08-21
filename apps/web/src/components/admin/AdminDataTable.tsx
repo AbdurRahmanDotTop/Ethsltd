@@ -52,7 +52,7 @@ export function AdminDataTable<T>({
                   className={`hover:bg-muted/30 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
                 >
                   {columns.map((col, j) => (
-                    <td key={j} className={`px-4 py-3 whitespace-normal break-words max-w-[200px] sm:max-w-[250px] ${col.className || ''}`}>
+                    <td key={j} className={`px-4 py-3 whitespace-normal break-all max-w-[15ch] ${col.className || ''}`}>
                       {typeof col.accessor === 'function' 
                         ? col.accessor(row) 
                         : (row[col.accessor] as React.ReactNode)}
