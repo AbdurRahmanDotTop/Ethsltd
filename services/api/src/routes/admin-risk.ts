@@ -94,9 +94,9 @@ adminRiskRouter.get('/summary', async (c) => {
         }))
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Risk summary error:", error);
-    return c.json({ success: false, error: 'Failed to fetch risk summary' }, 500);
+    return c.json({ success: false, error: 'Failed to fetch risk summary', details: error.message, stack: error.stack }, 500);
   }
 });
 
