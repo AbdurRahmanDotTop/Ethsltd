@@ -10,6 +10,8 @@ import { Loader2, AlertCircle, Copy, CheckCircle2, Clock, Check, Info } from "lu
 import { Button } from "@/components/ui/button";
 import { useTradingModeStore } from "@/stores/trading-mode-store";
 
+import { useAuthStore } from "@/stores/auth-store";
+
 interface P2POrderWorkspaceProps {
   orderId: string;
 }
@@ -18,21 +20,13 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   const router = useRouter();
   const { fiats } = useCurrencies();
   const { mode } = useTradingModeStore();
+  const { user: currentUser } = useAuthStore();
   const [order, setOrder] = useState<any>(null);
   const [merchant, setMerchant] = useState<P2PMerchant | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    // Get current user to determine roles
-    const userStr = localStorage.getItem('ethsltd_auth_user');
-    if (userStr) {
-      setCurrentUser(JSON.parse(userStr));
-    }
-  }, []);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
