@@ -34,6 +34,12 @@ adminCurrencyRateRoutes.post('/', async (c) => {
   const now = new Date();
 
   try {
+    // Check if currency code already exists
+    const existing = await db.select().from(currencyRates).where(eq(currencyRates.code, code.toUpperCase())).get();
+    if (existing) {
+      return c.json({ success: false, error: `Currency rate with code '${code.toUpperCase()}' already exists.` }, 400);
+    }
+
     await db.insert(currencyRates).values({
       id: crypto.randomUUID(),
       code: code.toUpperCase(),
@@ -61,7 +67,14 @@ adminCurrencyRateRoutes.post('/', async (c) => {
     return c.json({ success: true, message: 'Currency rate added successfully' });
   } catch (error: any) {
     console.error('Failed to add currency rate:', error);
-    return c.json({ success: false, error: 'Failed to add currency rate: ' + error.message }, 500);
+    
+    // Sanitize database error messages to prevent leaking schema
+    let errorMessage = 'An unexpected error occurred while adding the currency rate.';
+    if (error.message && error.message.includes('UNIQUE constraint failed')) {
+      errorMessage = 'Currency code already exists.';
+    }
+    
+    return c.json({ success: false, error: errorMessage }, 500);
   }
 });
 
@@ -117,7 +130,14 @@ adminCurrencyRateRoutes.put('/:code', async (c) => {
     return c.json({ success: true, message: 'Currency rate updated successfully' });
   } catch (error: any) {
     console.error('Failed to update currency rate:', error);
-    return c.json({ success: false, error: 'Failed to update currency rate: ' + error.message }, 500);
+    
+    // Sanitize database error messages to prevent leaking schema
+    let errorMessage = 'An unexpected error occurred while updating the currency rate.';
+    if (error.message && error.message.includes('UNIQUE constraint failed')) {
+      errorMessage = 'Currency code already exists.';
+    }
+    
+    return c.json({ success: false, error: errorMessage }, 500);
   }
 });
 
