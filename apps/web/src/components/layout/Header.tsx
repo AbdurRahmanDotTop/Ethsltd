@@ -22,7 +22,6 @@ export function Header() {
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const { user, status, logout } = useAuthStore()
-  const { mode, toggleMode } = useTradingModeStore()
 
   const handleLogout = async () => {
     await apiClient.logout()
@@ -33,8 +32,7 @@ export function Header() {
 
   useEffect(() => {
     setMounted(true)
-    apiClient.setMode(mode)
-  }, [mode])
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,34 +42,8 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // Sync mode with API client and reload page if needed or invalidate queries
-  useEffect(() => {
-    apiClient.setMode(mode);
-  }, [mode]);
-
-  // removed strict localStorage sync check
-
-  const renderToggle = () => (
-    <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-border">
-      <span className={`text-xs font-medium ${mode === 'REAL' ? 'text-green-500' : 'text-muted-foreground'}`}>Real</span>
-      <button
-        onClick={toggleMode}
-        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${mode === 'DEMO' ? 'bg-orange-500' : 'bg-muted-foreground/30'}`}
-      >
-        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${mode === 'DEMO' ? 'translate-x-4.5' : 'translate-x-1'}`} />
-      </button>
-      <span className={`text-xs font-medium ${mode === 'DEMO' ? 'text-orange-500' : 'text-muted-foreground'}`}>Demo</span>
-    </div>
-  );
-
   return (
     <header className="sticky top-0 z-50 w-full flex flex-col">
-      {/* Demo Trading Banner */}
-      {mode === 'DEMO' && (
-        <div className="bg-orange-500 text-white px-4 py-1.5 text-[10px] sm:text-xs font-bold flex justify-center items-center tracking-wider sm:tracking-widest uppercase">
-          ⚠️ YOU ARE IN DEMO TRADING MODE — NO REAL FUNDS AT RISK ⚠️
-        </div>
-      )}
       {/* Announcement Bar */}
       {announcementVisible && (
         <div className="bg-primary text-white px-8 sm:px-12 py-2 text-xs sm:text-sm flex justify-center items-center relative text-center min-h-[40px]">
@@ -137,8 +109,7 @@ export function Header() {
           <div className="hidden lg:flex items-center gap-4">
             <ThemeToggle />
 
-            {/* Demo Trading Toggle */}
-            {renderToggle()}
+            {/* Removed Demo Trading Toggle */}
 
             {status === "authenticated" && user ? (
               <>

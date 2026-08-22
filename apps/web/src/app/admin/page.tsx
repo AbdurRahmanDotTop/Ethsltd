@@ -59,12 +59,10 @@ export default function AdminDashboardPage() {
 
   // Helper for USD formatting
   const formatUSD = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return val.toLocaleString('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(val);
+    }) + ' USDT';
   };
 
   if (!stats) {

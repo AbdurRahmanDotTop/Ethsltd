@@ -47,7 +47,7 @@ export function PortfolioAllocation({ allocations }: { allocations: AssetAllocat
     if (fiatCurrency === 'INR') {
       return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(usd * exchangeRate);
     }
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(usd);
+    return usd.toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' USDT';
   };
 
   return (

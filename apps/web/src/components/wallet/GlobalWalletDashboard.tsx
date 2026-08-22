@@ -84,7 +84,7 @@ export function GlobalWalletDashboard() {
               {showBalance ? availableUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
             </h2>
             <p className="text-sm text-gray-400 mt-1">
-              ≈{showBalance ? availableUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'} USD
+              ≈{showBalance ? availableUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'} USDT
             </p>
           </div>
           <div className="text-right flex gap-6">
@@ -121,7 +121,7 @@ export function GlobalWalletDashboard() {
                 {showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'}
               </h3>
               <p className="text-xs text-gray-400 mt-1">
-                ≈{showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'} USD
+                ≈{showBalance ? totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '********'} USDT
               </p>
             </div>
           </div>
@@ -183,7 +183,7 @@ export function GlobalWalletDashboard() {
               </div>
               <div className="text-right">
                 <p className="font-bold">{showBalance ? Number(asset.total || 0).toFixed(8) : '********'}</p>
-                <p className="text-xs text-gray-400">≈{showBalance ? Number(asset.usdValue || 0).toFixed(4) : '********'} USD</p>
+                <p className="text-xs text-gray-400">≈{showBalance ? Number(asset.usdValue || 0).toFixed(4) : '********'} USDT</p>
               </div>
             </div>
             <div className="flex items-center justify-between pt-3 text-xs text-gray-400">

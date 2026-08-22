@@ -63,7 +63,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
 
   const formatUSD = (val: number | string | undefined | null) => {
     const num = parseFloat(val as any);
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(isNaN(num) ? 0 : num);
+    return (isNaN(num) ? 0 : num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' USDT';
   };
 
   const statusColors: Record<string, string> = {
@@ -195,21 +195,13 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
 
         {/* Right Column: Financials & Activity */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-brand-background-lighter p-4 rounded-lg border border-white/5">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Wallet className="w-4 h-4" />
                 <span className="text-sm font-medium">Real Balance</span>
               </div>
               <div className="text-2xl font-bold">{formatUSD(user.balanceUsd)}</div>
-            </div>
-            
-            <div className="bg-brand-background-lighter p-4 rounded-lg border border-white/5">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Wallet className="w-4 h-4 text-brand-primary" />
-                <span className="text-sm font-medium text-brand-primary">Demo Balance</span>
-              </div>
-              <div className="text-2xl font-bold">{formatUSD(user.demoBalanceUsd)}</div>
             </div>
 
             <div className="bg-brand-background-lighter p-4 rounded-lg border border-white/5">
