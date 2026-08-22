@@ -20,12 +20,7 @@ export function CustomChatWidget() {
       aria-label="Open Live Chat"
       style={{ touchAction: 'manipulation' }}
     >
-      {/* Mobile Icon */}
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 sm:w-6 sm:h-6 md:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="m15 18-6-6 6-6"/>
-      </svg>
-      {/* Desktop Icon */}
-      <MessageCircle className="hidden md:block w-7 h-7" />
+      <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
     </button>
   );
 }
