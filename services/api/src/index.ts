@@ -25,6 +25,7 @@ import adminAuditRouter from './routes/admin-audit';
 import adminContractsRouter from './routes/admin-contracts';
 import adminRiskRouter from './routes/admin-risk';
 import adminSystemRouter from './routes/admin-system';
+import adminNotificationsRouter from './routes/admin-notifications';
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 // Triggering deployment to apply CORS fix
@@ -68,6 +69,7 @@ app.route('/api/v1/admin/audit', adminAuditRouter);
 app.route('/api/v1/admin/contracts', adminContractsRouter);
 app.route('/api/v1/admin/risk', adminRiskRouter);
 app.route('/api/v1/admin/system', adminSystemRouter);
+app.route('/api/v1/admin/notifications', adminNotificationsRouter);
 app.route('/webhooks', webhookRoutes);
 
 export default app;

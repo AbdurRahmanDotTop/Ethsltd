@@ -1030,7 +1030,18 @@ export class EthsltdClient {
   async adminClearSystemCache() {
     return this.request<any>('/api/v1/admin/system/clear-cache', { method: 'POST' });
   }
-}
 
+  // ===== ADMIN NOTIFICATIONS =====
+  async getAdminNotifications() {
+    return this.request<any[]>('/api/v1/admin/notifications');
+  }
+
+  async sendAnnouncement(data: { title: string, message: string, type?: string, target?: string, userId?: string }) {
+    return this.request<any>('/api/v1/admin/notifications/announce', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+}
 
 export const apiClient = new EthsltdClient();
