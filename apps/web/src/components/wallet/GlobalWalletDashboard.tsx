@@ -10,7 +10,8 @@ import { useRouter } from "next/navigation";
 export function GlobalWalletDashboard() {
   const { balances, fetchBalances } = useWalletStore();
   const [showBalance, setShowBalance] = useState(true);
-  const [hideSmallAssets, setHideSmallAssets] = useState(false);
+  const [hideSmallAssets, setHideSmallAssets] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuthStore();
   const router = useRouter();
 
@@ -38,15 +39,17 @@ export function GlobalWalletDashboard() {
     const price = b.total > 0 ? (b.usdValue || 0) / b.total : 0;
     return acc + ((b.available || 0) * price);
   }, 0);
-  
-  // Provide dummy assets if none exist so it looks like the screenshot
-  const displayAssets = balances.length > 0 ? balances : [
-    { symbol: "BTC", available: 0, locked: 0, total: 0, usdValue: 0 },
-    { symbol: "ETH", available: 0, locked: 0, total: 0, usdValue: 0 },
-  ];
-
-
-
+  const filteredAssets = balances.filter(asset => {
+    // Hide small assets logic (hide if total is 0)
+    if (hideSmallAssets && asset.total === 0) {
+      return false;
+    }
+    // Search logic
+    if (searchQuery.trim()) {
+      return asset.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    return true;
+  });
   return (
     <div className="flex flex-col min-h-screen bg-[#121212] text-white font-sans w-full max-w-[1280px] mx-auto pb-24">
       {/* Top Bar */}
@@ -142,9 +145,15 @@ export function GlobalWalletDashboard() {
 
       {/* Asset List Controls */}
       <div className="px-4 mt-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Search className="w-5 h-5 text-gray-400" />
-          <span className="text-sm text-gray-400">Search</span>
+        <div className="flex items-center gap-2 flex-1 max-w-[200px] border-b border-white/20 pb-1">
+          <Search className="w-4 h-4 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="Search" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-transparent border-none outline-none text-sm text-white w-full placeholder:text-gray-500"
+          />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-400">Hide small assets</span>
@@ -159,7 +168,11 @@ export function GlobalWalletDashboard() {
 
       {/* Asset List Items */}
       <div className="mt-4 px-4 flex flex-col gap-3">
-        {displayAssets.map((asset: any, i: number) => (
+        {filteredAssets.length === 0 ? (
+          <div className="text-center py-8 text-sm text-gray-500 border border-white/5 rounded-xl border-dashed">
+            No assets found.
+          </div>
+        ) : filteredAssets.map((asset: any, i: number) => (
           <div key={i} className="bg-[#121212] border border-white/10 rounded-xl p-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <div className="flex items-center gap-2">
