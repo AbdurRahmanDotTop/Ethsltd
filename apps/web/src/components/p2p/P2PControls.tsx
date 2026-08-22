@@ -47,10 +47,11 @@ export function P2PControls() {
         <div className="space-y-1.5 lg:col-span-1">
           <label className="text-xs font-medium text-muted-foreground">Asset</label>
           <select 
-            value={query.asset}
+            value={query.asset || "all"}
             onChange={(e) => setQuery({ asset: e.target.value })}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
+            <option value="all">All Assets</option>
             {ASSETS.map((asset) => (
               <option key={asset.symbol} value={asset.symbol}>
                 {asset.icon} {asset.symbol}
@@ -63,10 +64,11 @@ export function P2PControls() {
         <div className="space-y-1.5 lg:col-span-1">
           <label className="text-xs font-medium text-muted-foreground">Fiat</label>
           <select 
-            value={query.fiat}
+            value={query.fiat || "all"}
             onChange={(e) => setQuery({ fiat: e.target.value })}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
+            <option value="all">All Fiat</option>
             {FIAT_CURRENCIES.map((fiat) => (
               <option key={fiat.code} value={fiat.code}>
                 {fiat.code}
@@ -84,7 +86,7 @@ export function P2PControls() {
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <option value="all">All Methods</option>
-            {PAYMENT_METHODS.filter(m => m.currency.includes(query.fiat || "USD")).map((method) => (
+            {PAYMENT_METHODS.filter(m => query.fiat === 'all' || m.currency.includes(query.fiat || "USD")).map((method) => (
               <option key={method.id} value={method.id}>
                 {method.name}
               </option>
@@ -97,7 +99,7 @@ export function P2PControls() {
           <label className="text-xs font-medium text-muted-foreground">I want to {query.side === "buy" ? "spend" : "sell"}</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-              {FIAT_CURRENCIES.find(f => f.code === query.fiat)?.symbol || "$"}
+              {query.fiat === 'all' ? '$' : FIAT_CURRENCIES.find(f => f.code === query.fiat)?.symbol || "$"}
             </span>
             <Input 
               type="number" 

@@ -27,9 +27,24 @@ p2pRoutes.get('/ads', async (c) => {
     .orderBy(desc(p2pAds.createdAt))
     .all();
 
-// Removed fake data seeding block
+  const userIds = [...new Set(adsWithUsers.map(a => a.ad.userId))];
+  let merchantOrders: any[] = [];
+  if (userIds.length > 0) {
+    merchantOrders = await db.select().from(p2pOrders).where(
+      or(
+        inArray(p2pOrders.buyerId, userIds),
+        inArray(p2pOrders.sellerId, userIds)
+      )
+    ).all();
+  }
 
   const formattedAds = adsWithUsers.map(({ ad, user }) => {
+    // Calculate real stats
+    const userOrders = merchantOrders.filter(o => o.buyerId === ad.userId || o.sellerId === ad.userId);
+    const totalOrders = userOrders.length;
+    const completedOrders = userOrders.filter(o => o.status === 'COMPLETED').length;
+    const completionRate = totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 100;
+
     return {
       ...ad,
       paymentMethods: JSON.parse(ad.paymentMethods),
@@ -39,8 +54,8 @@ p2pRoutes.get('/ads', async (c) => {
         username: user?.email ? user.email.split('@')[0] : `user_${ad.userId.substring(0,4)}`,
         verified: user?.status === 'ACTIVE',
         isMerchant: user?.isMerchant || false,
-        completionRate: user?.p2pCompletionRate || "0",
-        totalOrders: user?.p2pTotalOrders || 0,
+        completionRate: completionRate.toString(),
+        totalOrders: totalOrders,
         positiveFeedback: user?.p2pPositiveFeedback || 0,
         negativeFeedback: user?.p2pNegativeFeedback || 0,
         joinedAt: user?.createdAt || new Date().toISOString(),
