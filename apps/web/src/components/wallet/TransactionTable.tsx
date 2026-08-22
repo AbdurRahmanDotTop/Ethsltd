@@ -89,8 +89,6 @@ export function TransactionTable({ transactions }: { transactions: WalletTransac
               </tr>
             ) : (
               filteredTxs.map((tx) => {
-                const isPositive = tx.amount > 0;
-                
                 return (
                   <tr key={tx.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
@@ -117,8 +115,8 @@ export function TransactionTable({ transactions }: { transactions: WalletTransac
                       <span className="font-semibold text-foreground">{tx.asset}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className={`font-mono font-medium ${isPositive ? 'text-green-500' : 'text-foreground'}`}>
-                        {isPositive ? '+' : ''}{tx.amount.toLocaleString(undefined, { maximumFractionDigits: 6 })} {tx.asset}
+                      <div className={`font-mono font-medium ${tx.amount > 0 ? 'text-green-500' : tx.amount < 0 ? 'text-red-500' : 'text-foreground'}`}>
+                        {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString(undefined, { maximumFractionDigits: 6 })} {tx.asset}
                       </div>
                       {tx.fee > 0 && (
                         <div className="text-xs text-muted-foreground mt-0.5">Fee: {tx.fee} {tx.asset}</div>

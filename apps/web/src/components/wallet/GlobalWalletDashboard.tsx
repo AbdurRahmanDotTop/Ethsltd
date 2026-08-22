@@ -230,8 +230,8 @@ export function GlobalWalletDashboard() {
                         </span>
                       </td>
                       <td className="px-4 py-3 font-bold">{tx.assetSymbol || tx.asset}</td>
-                      <td className={`px-4 py-3 text-right font-medium ${tx.type === 'WITHDRAWAL' ? 'text-red-400' : 'text-green-400'}`}>
-                        {tx.type === 'WITHDRAWAL' ? '-' : '+'}{Number(tx.amount).toFixed(4)}
+                      <td className={`px-4 py-3 text-right font-medium ${Number(tx.amount) < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                        {Number(tx.amount) > 0 ? '+' : ''}{Number(tx.amount).toFixed(4)}
                       </td>
                       <td className="px-4 py-3 text-right">
                          <span className={`text-xs ${tx.status === 'COMPLETED' || tx.status === 'APPROVED' ? 'text-green-400' : tx.status === 'PENDING' ? 'text-yellow-400' : 'text-red-400'}`}>
