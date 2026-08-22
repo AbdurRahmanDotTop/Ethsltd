@@ -212,10 +212,21 @@ export class EmailService {
     const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_P2P', 'true');
     if (notifyEnabled !== 'true') return;
     const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
-    const html = renderAdminTransactionEmail('New P2P Order Activity', orderInfo, `${baseUrl}/admin/p2p`, 'View P2P Orders');
+    
+    const mappedInfo = {
+      id: orderInfo.displayId || orderInfo.id,
+      userId: orderInfo.buyerId || 'N/A',
+      type: 'P2P Order',
+      asset: orderInfo.asset || 'Crypto/Fiat',
+      amount: `${orderInfo.cryptoAmount} (Fiat: ${orderInfo.fiatAmount})`,
+      status: orderInfo.status,
+      mode: orderInfo.mode
+    };
+    
+    const html = renderAdminTransactionEmail('New P2P Order Activity', mappedInfo, `${baseUrl}/admin/p2p`, 'View P2P Orders');
     await this.sendMailWithLog({
       to: adminEmail,
-      subject: `P2P Alert: Order ${orderInfo.id}`,
+      subject: `P2P Alert: Order ${mappedInfo.id}`,
       html,
       eventType: 'ADMIN_P2P',
     });
@@ -226,10 +237,21 @@ export class EmailService {
     const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_TRADE', 'true');
     if (notifyEnabled !== 'true') return;
     const adminEmail = await getSetting(this.dbInstance, 'EMAIL_ADMIN', 'admin@ethsltd.com');
-    const html = renderAdminTransactionEmail('New Trade Executed', tradeInfo, `${baseUrl}/admin/orders`, 'View Trades');
+    
+    const mappedTradeInfo = {
+      id: tradeInfo.displayId || tradeInfo.id,
+      userId: 'System Matched',
+      type: 'Trade Execution',
+      asset: tradeInfo.marketSymbol || tradeInfo.asset,
+      amount: tradeInfo.amount,
+      status: tradeInfo.status || 'FILLED',
+      mode: tradeInfo.mode
+    };
+    
+    const html = renderAdminTransactionEmail('New Trade Executed', mappedTradeInfo, `${baseUrl}/admin/orders`, 'View Trades');
     await this.sendMailWithLog({
       to: adminEmail,
-      subject: `Trade Alert: ${tradeInfo.amount} ${tradeInfo.asset}`,
+      subject: `Trade Alert: ${mappedTradeInfo.amount} ${mappedTradeInfo.asset}`,
       html,
       eventType: 'ADMIN_TRADE',
     });
@@ -243,7 +265,7 @@ export class EmailService {
     const html = renderAdminTransactionEmail('New Internal Transfer', transferInfo, `${baseUrl}/admin/transactions`, 'View Transfers');
     await this.sendMailWithLog({
       to: adminEmail,
-      subject: `Transfer Alert: ${transferInfo.amount} ${transferInfo.asset}`,
+      subject: `Transfer Alert: ${transferInfo.amount} ${transferInfo.assetSymbol || transferInfo.asset}`,
       html,
       eventType: 'ADMIN_TRANSFER',
     });
