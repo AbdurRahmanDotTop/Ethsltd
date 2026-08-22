@@ -74,11 +74,11 @@ export function Header() {
       )}
       {/* Announcement Bar */}
       {announcementVisible && (
-        <div className="bg-primary text-white px-4 py-2 text-sm flex justify-center items-center relative">
-          <span>ETHSLTD Markets are live — Explore the latest digital assets &rarr;</span>
+        <div className="bg-primary text-white px-8 sm:px-12 py-2 text-xs sm:text-sm flex justify-center items-center relative text-center min-h-[40px]">
+          <span className="truncate sm:whitespace-normal">ETHSLTD Markets are live — Explore the latest digital assets &rarr;</span>
           <button
             onClick={() => setAnnouncementVisible(false)}
-            className="absolute right-4 text-white/80 hover:text-white"
+            className="absolute right-2 sm:right-4 text-white/80 hover:text-white p-1"
           >
             <X className="h-4 w-4" />
           </button>
