@@ -2,14 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Bell, Search, Filter, Loader2, Send, X } from "lucide-react";
+import { Search, Filter, Loader2, Send, X } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
+interface SystemNotification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export default function AdminNotificationsPage() {
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -65,7 +74,7 @@ export default function AdminNotificationsPage() {
       } else {
         toast.error(res.error || "Failed to send announcement");
       }
-    } catch (e) {
+    } catch (e: any) {
       toast.error("An error occurred");
     } finally {
       setIsSending(false);
