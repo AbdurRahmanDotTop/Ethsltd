@@ -31,6 +31,7 @@ export default function AdminTradingPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [apiLatency, setApiLatency] = useState<number | null>(null);
 
   useEffect(() => {
     loadMarkets();
@@ -39,7 +40,10 @@ export default function AdminTradingPage() {
   const loadMarkets = async () => {
     try {
       setIsLoading(true);
+      const startTime = performance.now();
       const res = await apiClient.getMarkets();
+      const endTime = performance.now();
+      setApiLatency(Math.round(endTime - startTime));
       if (res && res.success && res.data) {
         setPairs(res.data.map((m: any) => ({
           id: m.symbol,
@@ -91,7 +95,6 @@ export default function AdminTradingPage() {
   };
 
   const totalVolume = pairs.reduce((sum, p) => sum + p.volume24h, 0);
-  const totalLiquidity = pairs.reduce((sum, p) => sum + (p.price * 1000), 0); // Mock approximation for liquidity
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
@@ -129,7 +132,9 @@ export default function AdminTradingPage() {
           </div>
           <div className="mt-4">
             <h3 className="text-2xl font-bold text-green-500">Operational</h3>
-            <span className="text-xs text-muted-foreground font-medium">Latency: 12ms</span>
+            <span className="text-xs text-muted-foreground font-medium">
+              Latency: {apiLatency !== null ? `${apiLatency}ms` : '...'}
+            </span>
           </div>
         </div>
 
@@ -148,14 +153,14 @@ export default function AdminTradingPage() {
 
         <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
           <div className="flex justify-between items-start">
-            <span className="text-sm font-medium text-muted-foreground">Order Book Depth</span>
+            <span className="text-sm font-medium text-muted-foreground">Total Markets</span>
             <div className="p-2 rounded-md bg-orange-500/10">
               <Layers className="w-4 h-4 text-orange-500" />
             </div>
           </div>
           <div className="mt-4">
-            <h3 className="text-2xl font-bold">{formatCurrency(totalLiquidity || 0)}</h3>
-            <span className="text-xs text-muted-foreground">Total platform liquidity</span>
+            <h3 className="text-2xl font-bold">{pairs.length}</h3>
+            <span className="text-xs text-muted-foreground">Available trading pairs</span>
           </div>
         </div>
       </div>
