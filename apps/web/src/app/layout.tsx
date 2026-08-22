@@ -107,7 +107,7 @@ export default async function RootLayout({
               {children}
             </div>
             <AppNavigation />
-            <Toaster richColors position="top-right" />
+            <Toaster richColors position="top-right" closeButton duration={30000} />
             <AuthModal />
             <BackToTop />
           </AuthProvider>
