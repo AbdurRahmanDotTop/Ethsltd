@@ -72,7 +72,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
 
   if (!ad || !merchant) return null;
 
-  const isBuy = ad.type === "SELL"; // If ad is SELL, user is BUYING
+  const isBuy = ad.side === "sell"; // If ad is SELL, user is BUYING
   const fiatSymbol = fiats.find(f => f.code === ad.fiat)?.symbol || "$";
   const [activeTab, setActiveTab] = useState<"fiat" | "crypto">("fiat");
   const userSideLabel = query.side === "buy" ? "Pay" : "Sell";
