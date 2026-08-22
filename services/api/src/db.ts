@@ -11,6 +11,9 @@ export type Bindings = {
   CREGIS_PROXY_URL?: string;
   CREGIS_PROXY_SECRET?: string;
   BREVO_API_KEY?: string;
+  CLOUDFLARE_API_KEY?: string;
+  CLOUDFLARE_ZONE_ID?: string;
+  CLOUDFLARE_EMAIL?: string;
 };
 
 export type Variables = {

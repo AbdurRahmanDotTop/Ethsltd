@@ -4,6 +4,7 @@ export class EthsltdClient {
   private baseUrl: string;
   private token: string | null = null;
   private mode: 'REAL' | 'DEMO' = 'REAL';
+  private isLoggingOut = false;
 
   constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') {
     this.baseUrl = baseUrl;
@@ -20,10 +21,11 @@ export class EthsltdClient {
           await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token })
+            body: JSON.stringify({ token }),
+            keepalive: true
           });
         } else {
-          await fetch('/api/auth/session', { method: 'DELETE' });
+          await fetch('/api/auth/session', { method: 'DELETE', keepalive: true });
         }
       } catch (e) {
         console.error('Failed to sync local session', e);
@@ -89,19 +91,27 @@ export class EthsltdClient {
       }
       
       // Handle 401 globally
-      if (res.status === 401) {
-        this.setToken(null);
-        await this.syncLocalSession(null);
-        
-        // Explicitly clear the server-side cookie by calling logout endpoint (without awaiting the redirect loop)
-        try {
-          await fetch(`${this.baseUrl}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        } catch (e) {
-          // ignore
-        }
+      if (res.status === 401 && !options?.skipGlobal401) {
+        if (!this.isLoggingOut) {
+          this.isLoggingOut = true;
+          this.setToken(null);
+          await this.syncLocalSession(null);
+          
+          // Explicitly clear the server-side cookie by calling logout endpoint (without awaiting the redirect loop)
+          try {
+            await fetch(`${this.baseUrl}/api/v1/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true });
+          } catch (e) {
+            // ignore
+          }
 
-        if (typeof window !== 'undefined' && !options?.skipGlobal401) {
-          window.dispatchEvent(new CustomEvent('auth:required', { detail: { message: data?.error || 'Session expired or invalid' } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('auth:required', { detail: { message: data?.error || 'Session expired or invalid' } }));
+          }
+          
+          // Release lock after a short delay in case redirect didn't happen
+          setTimeout(() => {
+            this.isLoggingOut = false;
+          }, 2000);
         }
       }
 
@@ -1030,6 +1040,10 @@ export class EthsltdClient {
 
   async adminClearSystemCache() {
     return this.request<any>('/api/v1/admin/system/clear-cache', { method: 'POST' });
+  }
+
+  async adminClearCache(type: 'cdn' | 'api' | 'db') {
+    return this.request<any>(`/api/v1/admin/system/clear-cache/${type}`, { method: 'POST' });
   }
 
   // ===== ADMIN NOTIFICATIONS =====

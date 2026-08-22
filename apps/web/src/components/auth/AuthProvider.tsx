@@ -52,7 +52,7 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
     const handleAuthRequired = (e: Event) => {
       useAuthStore.getState().logout();
       if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        window.location.replace(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       }
     };
 
