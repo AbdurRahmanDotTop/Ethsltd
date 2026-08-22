@@ -8,21 +8,24 @@ adminSystemRouter.use('*', requireAuth);
 adminSystemRouter.use('*', adminMiddleware);
 
 adminSystemRouter.get('/', async (c) => {
+  // Real DB Ping
+  const dbStart = performance.now();
+  let dbStatus = 'Operational';
+  let dbLatency = 0;
+  try {
+    await c.env.DB.prepare('SELECT 1').run();
+    dbLatency = Math.round(performance.now() - dbStart);
+  } catch (e) {
+    dbStatus = 'Down';
+  }
+
   return c.json({
     success: true,
     data: {
       services: [
-        { name: 'API Gateway', status: 'Operational', uptime: '99.9%', latency: '45ms' },
-        { name: 'Database (D1)', status: 'Operational', uptime: '99.9%', latency: '22ms' },
-        { name: 'Matching Engine', status: 'Operational', uptime: '99.9%', latency: '12ms' },
-        { name: 'WebSockets', status: 'Operational', uptime: '99.9%', latency: '30ms' },
+        { name: 'API Edge (Cloudflare Workers)', status: 'Operational', latency: null }, // Client will measure this
+        { name: 'Database (D1)', status: dbStatus, latency: `${dbLatency}ms` },
       ],
-      metrics: {
-        cpuUsage: 35,
-        memoryUsage: 45,
-        activeConnections: 1250,
-        requestsPerSecond: 342,
-      },
       activeIncidents: []
     }
   });
