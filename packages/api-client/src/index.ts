@@ -119,6 +119,7 @@ export class EthsltdClient {
     const res = await this.request<{ token: string; user: User }>('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
+      skipGlobal401: true,
     });
     
     if (res.success && (res as any).token) {
