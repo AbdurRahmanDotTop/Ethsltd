@@ -107,12 +107,12 @@ export default function P2POrdersPage() {
                           {order.cryptoAmount.toLocaleString()} {order.asset}
                         </td>
                         <td className="px-6 py-5">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                             order.status === "COMPLETED" ? "bg-green-100 text-green-700" :
                             order.status === "CANCELLED" || order.status === "EXPIRED" ? "bg-red-100 text-red-700" :
                             "bg-yellow-100 text-yellow-800"
                           }`}>
-                            {order.status.replace("_", " ")}
+                            {order.status.replace(/_/g, " ")}
                           </span>
                         </td>
                         <td className="px-6 py-5 text-right">
