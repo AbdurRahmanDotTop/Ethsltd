@@ -345,9 +345,9 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
 
           {/* Action Buttons */}
           {perms.canMarkPaid && (
-            <div className="p-6 bg-muted/10 border-t border-border flex flex-col sm:flex-row gap-4 items-center justify-end">
+            <div className="p-6 bg-muted/10 border-t border-border flex flex-col sm:flex-row gap-4 items-center justify-end w-full">
               {perms.canCancel && (
-                <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+                <Button variant="outline" className="w-full sm:w-auto" onClick={handleCancel} disabled={isSubmitting}>
                   Cancel Order
                 </Button>
               )}
@@ -393,11 +393,11 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                   Please log in directly to your bank or payment account to verify that you have received exactly <strong>{fiatSymbol}{parseFloat(order.fiatAmount).toLocaleString()} {order.fiatCurrency}</strong>. Do not rely solely on screenshots provided by the buyer.
                 </p>
               </div>
-              <div className="flex gap-4 mt-2">
+              <div className="flex flex-col sm:flex-row gap-4 mt-2 w-full sm:w-auto justify-center">
                 {perms.canDispute && (
-                  <Button variant="outline" size="lg" onClick={handleDispute} disabled={isSubmitting}>Open Dispute</Button>
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto" onClick={handleDispute} disabled={isSubmitting}>Open Dispute</Button>
                 )}
-                <Button size="lg" disabled={isSubmitting} onClick={async () => {
+                <Button size="lg" className="w-full sm:w-auto" disabled={isSubmitting} onClick={async () => {
                   if (isSubmitting) return;
                   setIsSubmitting(true);
                   try {
