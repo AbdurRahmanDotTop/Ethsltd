@@ -108,11 +108,12 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                 const merchantId = ad.userId || ad.merchant?.id || ad.merchantId || "unknown";
                 const merchant = ad.merchant || merchants[merchantId] || {
                   id: merchantId,
-                  displayName: `User_${String(merchantId).substring(0,4)}`,
+                  displayName: merchantId,
                   verified: false,
                   completionRate: 100,
-                  totalOrders: 0
                 };
+                
+                const currentFiatSymbol = fiats.find(f => f.code === ad.fiat)?.symbol || (ad.fiat === 'INR' ? '₹' : (ad.fiat === 'USD' ? '$' : ad.fiat));
                 
                 // Ensure paymentMethods is an array of strings
                 let pm = ad.paymentMethods || [];
@@ -146,7 +147,7 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                     {/* Price Column */}
                     <td className="px-6 py-5">
                       <div className="font-display text-xl font-bold text-foreground">
-                        {fiatSymbol}{Number(ad.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {currentFiatSymbol}{Number(ad.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {query.fiat} / {query.asset}
@@ -161,7 +162,7 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                       </div>
                       <div className="flex items-center text-sm gap-4">
                         <span className="text-muted-foreground w-16">Limit</span>
-                        <span className="font-mono text-foreground">{fiatSymbol}{Number(ad.minLimit).toLocaleString()} - {fiatSymbol}{Number(ad.maxLimit).toLocaleString()}</span>
+                        <span className="font-mono text-foreground">{currentFiatSymbol}{Number(ad.minLimit).toLocaleString()} - {currentFiatSymbol}{Number(ad.maxLimit).toLocaleString()}</span>
                       </div>
                     </td>
 
@@ -195,7 +196,7 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                         variant={query.side === "buy" ? "default" : "destructive"} 
                         onClick={() => onSelectAd(ad, merchant)}
                       >
-                        {query.side === "buy" ? `Buy ${query.asset}` : `Sell ${query.asset}`}
+                        {query.side === "buy" ? 'Buy' : 'Sell'}
                       </Button>
                     </td>
                   </tr>

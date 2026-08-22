@@ -102,8 +102,8 @@ export function GlobalWalletDashboard() {
              </div>
           </div>
         </div>
-        <div className="mt-4">
-          <span className="text-sm text-gray-400">UID: {user?.id?.substring(0, 8) || 'Loading...'}</span>
+        <div className="mt-4 flex items-center gap-2 text-sm text-gray-400 break-all">
+          <span>UID: {user?.id || 'Loading...'}</span>
         </div>
       </div>
 

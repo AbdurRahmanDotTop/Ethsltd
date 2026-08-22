@@ -101,12 +101,12 @@ export function P2PControls() {
           <label className="text-xs font-medium text-muted-foreground">I want to {query.side === "buy" ? "spend" : "sell"}</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-              {query.fiat === 'all' ? '$' : fiats.find(f => f.code === query.fiat)?.symbol || "$"}
+              {query.fiat === 'all' ? '' : fiats.find(f => f.code === query.fiat)?.symbol || ""}
             </span>
             <Input 
               type="number" 
               placeholder="Enter amount" 
-              className="pl-8"
+              className={query.fiat === 'all' ? "pl-3" : "pl-8"}
               value={query.amount || ""}
               onChange={handleAmountChange}
             />
