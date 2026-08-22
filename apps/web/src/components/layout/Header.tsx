@@ -172,9 +172,6 @@ export function Header() {
           </div>
 
           <div className="lg:hidden flex items-center gap-2 sm:gap-4">
-            <div className="scale-90 origin-right">
-              {renderToggle()}
-            </div>
             <ThemeToggle />
             <button
               className="text-foreground"
