@@ -29,6 +29,7 @@ export default function EditAdPage() {
   const { assets, fiats } = useCurrencies();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingAd, setIsFetchingAd] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -126,6 +127,8 @@ export default function EditAdPage() {
           }
         } catch (e) {
           console.error(e);
+        } finally {
+          setIsFetchingAd(false);
         }
       }
       fetchAd();
