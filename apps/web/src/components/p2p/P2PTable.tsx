@@ -150,7 +150,7 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                         {currentFiatSymbol}{Number(ad.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {query.fiat} / {query.asset}
+                        {ad.fiat} / {ad.asset}
                       </div>
                     </td>
 
@@ -158,7 +158,7 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
                     <td className="px-6 py-5 space-y-1.5 whitespace-nowrap">
                       <div className="flex items-center text-sm gap-4">
                         <span className="text-muted-foreground w-16">Available</span>
-                        <span className="font-mono text-foreground font-medium">{Number(ad.availableAmount).toLocaleString()} {query.asset}</span>
+                        <span className="font-mono text-foreground font-medium">{Number(ad.availableAmount).toLocaleString()} {ad.asset}</span>
                       </div>
                       <div className="flex items-center text-sm gap-4">
                         <span className="text-muted-foreground w-16">Limit</span>
