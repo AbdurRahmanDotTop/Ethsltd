@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@ethsltd/api-client";
 import { P2PAdvertisement, P2PMerchant } from "@/lib/p2p/types";
 import { useP2PStore } from "@/stores/p2p-store";
+import { useCurrencies } from "@/hooks/use-currencies";
 import { Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FIAT_CURRENCIES } from "@/lib/p2p/constants";
 import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, merchant: P2PMerchant) => void }) {
+  const { fiats } = useCurrencies();
   const { query } = useP2PStore();
   const { mode } = useTradingModeStore();
   const [ads, setAds] = useState<P2PAdvertisement[]>([]);
@@ -26,8 +27,8 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
           const filteredAds = res.data.filter((ad: any) => {
             const requiredAdType = query.side === "buy" ? "sell" : "buy";
             const typeMatch = ad.type.toLowerCase() === requiredAdType;
-            const assetMatch = ad.asset === query.asset;
-            const fiatMatch = ad.fiat === query.fiat;
+            const assetMatch = query.asset === 'all' || ad.asset === query.asset;
+            const fiatMatch = query.fiat === 'all' || ad.fiat === query.fiat;
             
             let amountMatch = true;
             if (query.amount && query.amount > 0) {
@@ -71,7 +72,9 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
     fetchData();
   }, [query, mode]);
 
-  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === query.fiat)?.symbol || "$";
+  const isBuyMode = query.side === "buy";
+  
+  const fiatSymbol = fiats.find(f => f.code === query.fiat)?.symbol || "$";
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">

@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { p2pOrderSchema, P2POrderInput } from "@/lib/validation/p2p";
 import { useP2PStore } from "@/stores/p2p-store";
-import { FIAT_CURRENCIES } from "@/lib/p2p/constants";
+import { useCurrencies } from "@/hooks/use-currencies";
 import { X, CheckCircle2, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,9 +25,10 @@ interface P2POrderDrawerProps {
 
 export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
   const router = useRouter();
+  const { fiats } = useCurrencies();
+  const { mode } = useTradingModeStore();
   const requireAuth = useRequireAuth();
   const { query } = useP2PStore();
-  const { mode } = useTradingModeStore();
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const {
@@ -71,7 +72,9 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
 
   if (!ad || !merchant) return null;
 
-  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === ad.fiat)?.symbol || "$";
+  const isBuy = ad.type === "SELL"; // If ad is SELL, user is BUYING
+  const fiatSymbol = fiats.find(f => f.code === ad.fiat)?.symbol || "$";
+  const [activeTab, setActiveTab] = useState<"fiat" | "crypto">("fiat");
   const userSideLabel = query.side === "buy" ? "Pay" : "Sell";
   const userReceiveLabel = query.side === "buy" ? "Receive" : "Receive";
 

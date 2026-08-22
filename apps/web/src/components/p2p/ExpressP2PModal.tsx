@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useP2PStore } from "@/stores/p2p-store";
-import { ASSETS, FIAT_CURRENCIES, PAYMENT_METHODS } from "@/lib/p2p/constants";
+import { PAYMENT_METHODS } from "@/lib/p2p/constants";
+import { useCurrencies } from "@/hooks/use-currencies";
 import { Zap, CreditCard, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -17,13 +18,14 @@ interface ExpressP2PModalProps {
 export function ExpressP2PModal({ isOpen, onClose }: ExpressP2PModalProps) {
   const router = useRouter();
   const { setQuery } = useP2PStore();
+  const { assets, fiats } = useCurrencies();
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [asset, setAsset] = useState("USDT");
   const [fiat, setFiat] = useState("INR");
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("all");
 
-  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === fiat)?.symbol || "$";
+  const fiatSymbol = fiats.find(f => f.code === fiat)?.symbol || "$";
 
   const handlePickAds = () => {
     setQuery({
@@ -68,8 +70,8 @@ export function ExpressP2PModal({ isOpen, onClose }: ExpressP2PModalProps) {
                 onChange={(e) => setAsset(e.target.value)}
                 className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 font-medium focus:ring-2 focus:ring-ring focus:outline-none"
               >
-                {ASSETS.map(a => (
-                  <option key={a.symbol} value={a.symbol}>{a.symbol}</option>
+                {assets.map(a => (
+                  <option key={a.code} value={a.code}>{a.code}</option>
                 ))}
               </select>
             </div>
@@ -93,7 +95,7 @@ export function ExpressP2PModal({ isOpen, onClose }: ExpressP2PModalProps) {
                 onChange={(e) => setFiat(e.target.value)}
                 className="flex h-12 w-28 rounded-l-none rounded-r-md border border-input bg-muted/30 px-3 py-2 font-medium focus:ring-2 focus:ring-ring focus:outline-none"
               >
-                {FIAT_CURRENCIES.map(f => (
+                {fiats.map(f => (
                   <option key={f.code} value={f.code}>{f.code}</option>
                 ))}
               </select>

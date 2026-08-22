@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useP2PStore } from "@/stores/p2p-store";
-import { FIAT_CURRENCIES } from "@/lib/p2p/constants";
+import { useCurrencies } from "@/hooks/use-currencies";
 import { ChevronLeft, History, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 
 export default function P2POrdersPage() {
   const router = useRouter();
+  const { fiats } = useCurrencies();
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -80,7 +81,7 @@ export default function P2POrdersPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {orders.map((order) => {
-                    const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === order.fiatCurrency)?.symbol || order.fiatCurrency || "$";
+                    const fiatSymbol = fiats.find(f => f.code === order.fiatCurrency)?.symbol || order.fiatCurrency || "$";
                     const isBuy = order.role === "BUYER";
                     
                     return (

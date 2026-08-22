@@ -7,10 +7,11 @@ import { useAuthStore } from "@/stores/auth-store";
 import { Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { FIAT_CURRENCIES } from "@/lib/p2p/constants";
+import { useCurrencies } from "@/hooks/use-currencies";
 import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 export default function MyAdsPage() {
+  const { fiats } = useCurrencies();
   const { user, status, hasHydrated } = useAuthStore();
   const router = useRouter();
   const { mode } = useTradingModeStore();
@@ -96,7 +97,7 @@ export default function MyAdsPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {ads.map((ad: any) => {
-                    const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === ad.fiat)?.symbol || "$";
+                    const fiatSymbol = fiats.find(f => f.code === ad.fiat)?.symbol || "$";
                     const isBuy = (ad.side || ad.type || "").toLowerCase() === "buy";
                     
                     return (

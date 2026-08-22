@@ -1037,10 +1037,209 @@ export class EthsltdClient {
   }
 
   async sendAnnouncement(data: { title: string, message: string, type?: string, target?: string, userId?: string }) {
+async applyForExpert(data: { bio: string; experienceYears: number; languages: string[]; categories: string[] }) {
+    return this.request<any>('/api/v1/experts/apply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async bookExpertService(data: { serviceId: string; scheduledAt?: string }) {
+    return this.request<any>('/api/v1/experts/bookings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyExpertBookings() {
+    return this.request<any[]>('/api/v1/experts/bookings/me');
+  }
+
+  async submitExpertReview(bookingId: string, rating: number, comment: string) {
+    return this.request<any>(`/api/v1/experts/bookings/${bookingId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ rating, comment }),
+    });
+  }
+
+  // EXPERT DASHBOARD
+  async expertGetMe() {
+    return this.request<any>('/api/v1/experts/dashboard/me');
+  }
+
+  async expertUpdateMe(data: any) {
+    return this.request<any>('/api/v1/experts/dashboard/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async expertGetServices() {
+    return this.request<any[]>('/api/v1/experts/dashboard/services');
+  }
+
+  async expertCreateService(data: any) {
+    return this.request<any>('/api/v1/experts/dashboard/services', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async expertUpdateService(serviceId: string, data: any) {
+    return this.request<any>(`/api/v1/experts/dashboard/services/${serviceId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async expertDeleteService(serviceId: string) {
+    return this.request<any>(`/api/v1/experts/dashboard/services/${serviceId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async expertGetBookings() {
+    return this.request<any[]>('/api/v1/experts/dashboard/bookings');
+  }
+
+  async expertActionBooking(bookingId: string, action: 'ACCEPT' | 'REJECT' | 'COMPLETE') {
+    return this.request<any>(`/api/v1/experts/dashboard/bookings/${bookingId}/action`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    });
+  }
+
+  // EXPERT MESSAGING
+  async getExpertMessages(bookingId: string) {
+    return this.request<any>(`/api/v1/experts/bookings/${bookingId}/messages`);
+  }
+
+  async sendExpertMessage(bookingId: string, content: string) {
+    return this.request<any>(`/api/v1/experts/bookings/${bookingId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async expertToggleChat(bookingId: string, chatEnabled: boolean) {
+    return this.request<any>(`/api/v1/experts/dashboard/bookings/${bookingId}/chat-toggle`, {
+      method: 'PUT',
+      body: JSON.stringify({ chatEnabled }),
+    });
+  }
+
+  async readNotification(id: string) {
+    return this.request<any>(`/api/v1/notifications/${id}/read`, {
+      method: 'PATCH'
+    });
+  }
+
+  async readAllNotifications() {
+    return this.request<any>('/api/v1/notifications/read-all', {
+      method: 'POST'
+    });
+  }
+
+
+
+  // Admin Currency Rates
+  async adminGetCurrencyRates() {
+    return this.request<any[]>('/api/v1/admin/currency-rates');
+  }
+
+  async adminCreateCurrencyRate(data: any) {
+    return this.request<any>('/api/v1/admin/currency-rates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async adminUpdateCurrencyRate(code: string, data: any) {
+    return this.request<any>(`/api/v1/admin/currency-rates/${code}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async adminUpdateCurrencyRateStatus(code: string, status: string) {
+    return this.request<any>(`/api/v1/admin/currency-rates/${code}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async adminDeleteCurrencyRate(code: string) {
+    return this.request<any>(`/api/v1/admin/currency-rates/${code}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async adminGetCurrencyRateHistory(code: string) {
+    return this.request<any[]>(`/api/v1/admin/currency-rates/${code}/history`);
+  }
+
+  // Admin Users
+  async adminUpdateUserStatus(userId: string, status: string) {
+    return this.request<any>(`/api/v1/admin/users/${userId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status })
+    });
+  }
+
+  // Admin P2P
+  async adminGetP2POrders() {
+    return this.request<any[]>('/api/v1/admin/p2p/orders');
+  }
+
+  async adminGetP2PDisputes() {
+    return this.request<any[]>('/api/v1/admin/p2p/disputes');
+  }
+
+  async adminResolveP2PDispute(disputeId: string, resolution: string, notes?: string) {
+    return this.request<any>(`/api/v1/admin/p2p/disputes/${disputeId}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ resolution, notes }),
+    });
+  }
+  // Admin Trading (Phase 1 Dynamic Isolation)
+
+  async getAdminVolumeChart() {
+    return this.request<any>('/api/v1/admin/stats/volume-chart');
+  }
+
+  async adminGetMarkets(params: { mode?: 'REAL' | 'DEMO' } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<any[]>(`/api/v1/admin/trading/markets?${query}`);
+  }
+
+  async adminGetOrders(params: { mode?: 'REAL' | 'DEMO', page?: number, limit?: number, status?: string, market?: string } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<{data: any[], total: number}>(`/api/v1/admin/trading/orders?${query}`);
+  }
+
+  async adminGetTrades(params: { mode?: 'REAL' | 'DEMO', page?: number, limit?: number, market?: string } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<{data: any[], total: number}>(`/api/v1/admin/trading/trades?${query}`);
+  }
+
+  async adminClearSystemCache() {
+    return this.request<any>('/api/v1/admin/system/clear-cache', { method: 'POST' });
+  }
+
+  // ===== ADMIN NOTIFICATIONS =====
+  async getAdminNotifications() {
+    return this.request<any[]>('/api/v1/admin/notifications');
+  }
+
+  async sendAnnouncement(data: { title: string, message: string, type?: string, target?: string, userId?: string }) {
     return this.request<any>('/api/v1/admin/notifications/announce', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+  // ===== PUBLIC RATES =====
+  async getPublicCurrencyRates() {
+    return this.request<any>('/api/v1/currency-rates');
   }
 }
 

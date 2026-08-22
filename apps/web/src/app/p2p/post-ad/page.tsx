@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Info } from "lucide-react";
 import Link from "next/link";
-import { FIAT_CURRENCIES, ASSETS } from "@/lib/p2p/constants";
+import { useCurrencies } from "@/hooks/use-currencies";
 import { P2PSide, PaymentMethodConfig } from "@/lib/p2p/types";
 import { Trash2, Plus } from "lucide-react";
 import {
@@ -24,6 +24,7 @@ import {
 
 export default function PostAdPage() {
   const { user, status, hasHydrated } = useAuthStore();
+  const { assets, fiats } = useCurrencies();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -180,7 +181,7 @@ export default function PostAdPage() {
   };
 
   const isBuy = formData.type === "BUY";
-  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === formData.fiat)?.symbol || "$";
+  const fiatSymbol = fiats.find(f => f.code === formData.fiat)?.symbol || "$";
 
   return (
     <main className="flex-1 py-12 px-4 md:px-8 max-w-[800px] mx-auto w-full">
@@ -237,9 +238,9 @@ export default function PostAdPage() {
                 value={formData.asset} 
                 onChange={(e) => handleSelectChange('asset', e.target.value)}
               >
-                {ASSETS.map((c) => (
-                  <option key={c.symbol} value={c.symbol}>
-                    {c.name} ({c.symbol})
+                {assets.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name} ({c.code})
                   </option>
                 ))}
               </select>
@@ -256,7 +257,7 @@ export default function PostAdPage() {
                 value={formData.fiat} 
                 onChange={(e) => handleSelectChange('fiat', e.target.value)}
               >
-                {FIAT_CURRENCIES.map((f) => (
+                {fiats.map((f) => (
                   <option key={f.code} value={f.code}>
                     {f.name} ({f.code})
                   </option>

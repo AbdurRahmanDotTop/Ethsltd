@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Info } from "lucide-react";
 import Link from "next/link";
-import { FIAT_CURRENCIES, ASSETS } from "@/lib/p2p/constants";
+import { useCurrencies } from "@/hooks/use-currencies";
 import { P2PSide, PaymentMethodConfig } from "@/lib/p2p/types";
 import { Trash2, Plus } from "lucide-react";
 import {
@@ -26,6 +26,7 @@ export default function EditAdPage() {
   const params = useParams();
   const id = params?.id as string;
   const { user, status, hasHydrated } = useAuthStore();
+  const { assets, fiats } = useCurrencies();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -194,32 +195,33 @@ export default function EditAdPage() {
       };
 
       const res = await apiClient.updateP2pAd(id, payload);
-
       if (res.success) {
-        toast.success("Ad updated successfully");
+        toast.success("Advertisement updated successfully!");
+        router.refresh();
         router.push("/p2p/my-ads");
       } else {
-        if (res.error?.toLowerCase().includes("insufficient")) {
-          setShowDepositPopup(true);
-        } else {
-          setError(res.error || "Failed to create ad");
-          toast.error(res.error || "Failed to create advertisement");
-        }
+        setError(res.error || "Failed to update ad");
+        toast.error(res.error || "Failed to update advertisement");
       }
     } catch (err: any) {
-      if (err.message?.toLowerCase().includes("insufficient")) {
-        setShowDepositPopup(true);
-      } else {
-        setError(err.message || "An unexpected error occurred");
-        toast.error(err.message || "An unexpected error occurred");
-      }
+      setError(err.message || "An unexpected error occurred");
+      toast.error(err.message || "An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const isBuy = formData.type === "BUY";
-  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === formData.fiat)?.symbol || "$";
+  const fiatSymbol = fiats.find(f => f.code === formData.fiat)?.symbol || "$";
+
+  if (isFetchingAd) {
+    return (
+      <main className="flex-1 py-12 px-4 md:px-8 max-w-[800px] mx-auto w-full flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 animate-spin text-brand-primary mb-4" />
+        <h2 className="text-xl font-medium">Loading advertisement data...</h2>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 py-12 px-4 md:px-8 max-w-[800px] mx-auto w-full">
@@ -229,8 +231,8 @@ export default function EditAdPage() {
         </Link>
         
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Edit Advertisement</h1>
-          <p className="text-sm text-muted-foreground mt-1">Update the details of your P2P ad</p>
+          <h1 className="text-3xl font-display font-bold text-foreground mb-2">Edit P2P Advertisement</h1>
+          <p className="text-muted-foreground mb-8">Update your advertisement details.</p>
         </div>
 
         {error && (
@@ -243,28 +245,12 @@ export default function EditAdPage() {
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl shadow-sm p-6 md:p-8 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Ad Type</Label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg border border-border">
-                <button
-                  type="button"
-                  onClick={() => handleSelectChange('type', 'BUY')}
-                  className={`py-2 px-4 text-sm font-medium rounded-md transition-all ${isBuy ? 'bg-background shadow-sm text-green-500' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  I want to Buy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectChange('type', 'SELL')}
-                  className={`py-2 px-4 text-sm font-medium rounded-md transition-all ${!isBuy ? 'bg-background shadow-sm text-red-500' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  I want to Sell
-                </button>
+              <Label>Ad Type (Cannot be changed)</Label>
+              <div className="p-3 bg-muted rounded-lg border border-border">
+                <span className={`font-medium ${isBuy ? 'text-green-500' : 'text-red-500'}`}>
+                  {isBuy ? 'Buy Advertisement' : 'Sell Advertisement'}
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isBuy 
-                  ? "You will pay fiat to receive crypto." 
-                  : "You will lock your crypto to receive fiat."}
-              </p>
             </div>
             
             <div className="space-y-2">
@@ -272,13 +258,13 @@ export default function EditAdPage() {
               <select 
                 id="asset" 
                 name="asset" 
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={formData.asset} 
                 onChange={(e) => handleSelectChange('asset', e.target.value)}
               >
-                {ASSETS.map((c) => (
-                  <option key={c.symbol} value={c.symbol}>
-                    {c.name} ({c.symbol})
+                {assets.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name} ({c.code})
                   </option>
                 ))}
               </select>
@@ -291,11 +277,11 @@ export default function EditAdPage() {
               <select 
                 id="fiat" 
                 name="fiat" 
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={formData.fiat} 
                 onChange={(e) => handleSelectChange('fiat', e.target.value)}
               >
-                {FIAT_CURRENCIES.map((f) => (
+                {fiats.map((f) => (
                   <option key={f.code} value={f.code}>
                     {f.name} ({f.code})
                   </option>

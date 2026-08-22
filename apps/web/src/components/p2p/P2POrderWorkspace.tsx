@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@ethsltd/api-client";
 import { P2PMerchant } from "@/lib/p2p/types";
-import { FIAT_CURRENCIES } from "@/lib/p2p/constants";
+import { useCurrencies } from "@/hooks/use-currencies";
 import { P2PChat } from "@/components/p2p/P2PChat";
 import { Loader2, AlertCircle, Copy, CheckCircle2, Clock, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface P2POrderWorkspaceProps {
 
 export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   const router = useRouter();
+  const { fiats } = useCurrencies();
   const { mode } = useTradingModeStore();
   const [order, setOrder] = useState<any>(null);
   const [merchant, setMerchant] = useState<P2PMerchant | null>(null);
@@ -97,7 +98,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
     );
   }
 
-  if (!order || !merchant) {
+  if (!order || !merchant || !currentUser) {
     return (
       <div className="text-center py-24">
         <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
@@ -108,7 +109,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
     );
   }
 
-  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === order.fiatCurrency)?.symbol || order.fiatCurrency || "$";
+  const fiatSymbol = fiats.find(f => f.code === order.fiatCurrency)?.symbol || order.fiatCurrency || "$";
   const isBuy = order.role === 'BUYER';
   const perms = order.permissions || {};
   
