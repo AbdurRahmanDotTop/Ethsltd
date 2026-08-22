@@ -46,7 +46,7 @@ export class EthsltdClient {
     this.mode = mode;
   }
 
-  private async request<T>(endpoint: string, options?: RequestInit & { skipGlobal401?: boolean }): Promise<{ success: boolean; data?: T; error?: any }> {
+  private async request<T>(endpoint: string, options?: RequestInit & { skipGlobal401?: boolean }): Promise<{ success: boolean; data?: T; error?: any; message?: string }> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...((options?.headers as Record<string, string>) || {}),
