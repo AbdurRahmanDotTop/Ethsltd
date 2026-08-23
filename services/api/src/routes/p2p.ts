@@ -130,11 +130,49 @@ p2pRoutes.put('/ads/:id', async (c) => {
   const adId = c.req.param('id');
   const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const body = await c.req.json();
-  const { type, asset, fiat, priceType, price, minLimit, maxLimit, paymentWindow, paymentMethods, terms, autoReply, countryRestrictions } = body;
+  const { type, asset, fiat, priceType, price, totalAmount, minLimit, maxLimit, paymentWindow, paymentMethods, terms, autoReply, countryRestrictions } = body;
 
   try {
     const existingAd = await db.select().from(p2pAds).where(and(eq(p2pAds.id, adId), eq(p2pAds.userId, user.id))).get();
     if (!existingAd) return c.json({ success: false, error: 'Ad not found' }, 404);
+
+    let newAvailableAmount = existingAd.availableAmount;
+    let newTotalAmount = existingAd.totalAmount;
+
+    if (totalAmount !== undefined && totalAmount !== existingAd.totalAmount) {
+      const oldTotal = new Decimal(existingAd.totalAmount);
+      const newTotal = new Decimal(totalAmount);
+      const delta = newTotal.minus(oldTotal);
+      
+      newAvailableAmount = new Decimal(existingAd.availableAmount).plus(delta).toString();
+      
+      if (new Decimal(newAvailableAmount).lessThan(0)) {
+         return c.json({ success: false, error: 'Cannot reduce total amount below already executed amount.' }, 400);
+      }
+
+      if (existingAd.type === 'SELL') {
+        const wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, existingAd.asset), eq(wallets.type, existingAd.mode))).get();
+        if (!wallet) return c.json({ success: false, error: 'Wallet not found' }, 404);
+        
+        if (delta.greaterThan(0)) {
+          if (new Decimal(wallet.balance).lessThan(delta)) {
+            return c.json({ success: false, error: 'Insufficient crypto balance to increase ad amount.' }, 400);
+          }
+          const finalBalance = new Decimal(wallet.balance).minus(delta).toString();
+          const finalEscrow = new Decimal(wallet.escrowBalance).plus(delta).toString();
+          await db.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: new Date() }).where(eq(wallets.id, wallet.id)).run();
+        } else if (delta.lessThan(0)) {
+          const refund = delta.abs();
+          if (new Decimal(wallet.escrowBalance).lessThan(refund)) {
+             return c.json({ success: false, error: 'Invalid escrow balance state.' }, 400);
+          }
+          const finalBalance = new Decimal(wallet.balance).plus(refund).toString();
+          const finalEscrow = new Decimal(wallet.escrowBalance).minus(refund).toString();
+          await db.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: new Date() }).where(eq(wallets.id, wallet.id)).run();
+        }
+      }
+      newTotalAmount = newTotal.toString();
+    }
 
     await db.update(p2pAds).set({
       type: type || existingAd.type,
@@ -142,6 +180,8 @@ p2pRoutes.put('/ads/:id', async (c) => {
       fiat: fiat || existingAd.fiat,
       isFloating: priceType ? priceType === 'floating' : existingAd.isFloating,
       price: price ? String(price) : existingAd.price,
+      totalAmount: newTotalAmount,
+      availableAmount: newAvailableAmount,
       minLimit: minLimit ? String(minLimit) : existingAd.minLimit,
       maxLimit: maxLimit ? String(maxLimit) : existingAd.maxLimit,
       paymentWindow: paymentWindow || existingAd.paymentWindow,
