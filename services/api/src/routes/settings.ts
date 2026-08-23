@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, ne } from 'drizzle-orm';
+import { eq, ne, and } from 'drizzle-orm';
 // @ts-ignore
 import * as otplib from 'otplib';
 const authenticator = (otplib as any).authenticator || (otplib as any).default?.authenticator;
@@ -194,10 +194,45 @@ settingsRoutes.post('/mfa/disable', async (c) => {
 settingsRoutes.get('/sessions', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
+  const jwtPayload = c.get('jwtPayload') as any;
+  const currentSessionId = jwtPayload?.sessionId;
 
   try {
     const activeSessions = await db.select().from(sessions).where(eq(sessions.userId, user.id)).all();
-    return c.json({ success: true, data: activeSessions });
+    
+    const mappedSessions = activeSessions.map(session => {
+      const ua = session.userAgent || '';
+      
+      // Basic UA parsing
+      let browser = 'Unknown';
+      if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
+      else if (ua.includes('Firefox')) browser = 'Firefox';
+      else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+      else if (ua.includes('Edg')) browser = 'Edge';
+      
+      let os = 'Unknown';
+      if (ua.includes('Windows')) os = 'Windows';
+      else if (ua.includes('Mac OS')) os = 'MacOS';
+      else if (ua.includes('Linux')) os = 'Linux';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+      
+      let device = 'Desktop';
+      if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) device = 'Mobile';
+
+      return {
+        id: session.id,
+        userId: session.userId,
+        device,
+        browser,
+        os,
+        isCurrentSession: session.id === currentSessionId,
+        lastActiveAt: session.createdAt, // Fallback to createdAt
+        createdAt: session.createdAt
+      };
+    });
+
+    return c.json({ success: true, data: mappedSessions });
   } catch (error: any) {
     console.error('Error fetching sessions:', error);
     return c.json({ success: false, error: 'Failed to fetch sessions' }, 500);
@@ -211,7 +246,7 @@ settingsRoutes.delete('/sessions/:id', async (c) => {
   const sessionId = c.req.param('id');
 
   try {
-    await db.delete(sessions).where(eq(sessions.id, sessionId));
+    await db.delete(sessions).where(and(eq(sessions.id, sessionId), eq(sessions.userId, user.id)));
     return c.json({ success: true });
   } catch (error: any) {
     console.error('Error deleting session:', error);
@@ -223,12 +258,15 @@ settingsRoutes.delete('/sessions/:id', async (c) => {
 settingsRoutes.delete('/sessions/all-except-current', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
+  const jwtPayload = c.get('jwtPayload') as any;
+  const currentSessionId = jwtPayload?.sessionId;
   
-  // Note: Since we are using stateless JWT, we'd ideally identify the current session via a claim in the JWT.
-  // For MVP, we might clear all sessions and force re-login, or if a sessionId claim exists, delete where id != current.
-  // Let's assume we just delete all other sessions if we could identify them. For now, we'll delete all.
   try {
-    await db.delete(sessions).where(eq(sessions.userId, user.id)); // Over-simplification for MVP
+    if (currentSessionId) {
+      await db.delete(sessions).where(and(eq(sessions.userId, user.id), ne(sessions.id, currentSessionId)));
+    } else {
+      await db.delete(sessions).where(eq(sessions.userId, user.id));
+    }
     return c.json({ success: true });
   } catch (error: any) {
     console.error('Error deleting all sessions:', error);
