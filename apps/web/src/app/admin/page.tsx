@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
 import { Users, Activity, Wallet, ArrowDownToLine, Handshake, AlertTriangle, UserCheck, Server, Loader2 } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import P2pDashboardOverview from "@/components/admin/P2pDashboardOverview";
+import P2pDashboardOverview from "../../components/admin/P2pDashboardOverview";
 
 function StatCard({ 
   title, 
