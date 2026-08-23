@@ -7,3 +7,14 @@ export function getCookieDomain(c: Context): string | undefined {
   }
   return undefined; // Let the browser use the default domain for localhost/dev
 }
+
+export function getAuthCookieOptions(c: Context) {
+  const isSecure = c.req.url.startsWith('https://') || c.req.header('x-forwarded-proto') === 'https';
+  
+  return {
+    path: '/',
+    secure: isSecure,
+    sameSite: isSecure ? 'None' : 'Lax',
+    domain: getCookieDomain(c),
+  } as const;
+}

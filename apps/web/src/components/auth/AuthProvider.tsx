@@ -59,7 +59,6 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
       useAuthStore.getState().logout();
       if (!pathname.startsWith('/login')) {
         router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
-        router.refresh();
       }
     };
 

@@ -29,7 +29,6 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
       const defaultRedirect = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account';
       const finalRedirect = searchRedirect || defaultRedirect;
       router.push(finalRedirect);
-      router.refresh();
     }
   }, [user, router, searchRedirect, pathname]);
 
@@ -55,7 +54,6 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
       } else {
         const defaultRedirect = response.data?.user?.role === 'SUPER_ADMIN' || response.data?.user?.role === 'ADMIN' ? '/admin' : '/account';
         router.push(searchRedirect || defaultRedirect);
-        router.refresh();
       }
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred during login.");

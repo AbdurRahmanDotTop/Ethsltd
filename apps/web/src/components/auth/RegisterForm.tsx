@@ -27,7 +27,6 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
     if (user && pathname === '/register') {
       const finalRedirect = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : '/account';
       router.push(finalRedirect);
-      router.refresh();
     }
   }, [user, router, pathname]);
 
@@ -60,7 +59,6 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
           setUser(response.data.user);
         } else {
           router.push("/verify-email");
-          router.refresh();
         }
       }
     } catch (err: any) {

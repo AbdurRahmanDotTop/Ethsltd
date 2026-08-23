@@ -7,7 +7,7 @@ import { users, sessions, wallets } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
 import { EmailService } from '../services/email';
-import { getCookieDomain } from '../utils/cookie';
+import { getCookieDomain, getAuthCookieOptions } from '../utils/cookie';
 
 export const authRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -91,14 +91,11 @@ authRoutes.post('/register', async (c) => {
 
   const token = await sign({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, JWT_SECRET);
 
-  const isSecure = c.req.url.startsWith('https://') || c.req.header('x-forwarded-proto') === 'https';
+  const cookieOpts = getAuthCookieOptions(c);
   setCookie(c, 'ethsltd_session', token, {
-    path: '/',
-    secure: isSecure,
+    ...cookieOpts,
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
-    sameSite: isSecure ? 'None' : 'Lax',
-    domain: getCookieDomain(c),
   });
 
   // Avoid re-fetching to prevent D1 replication lag issues
@@ -172,14 +169,11 @@ authRoutes.post('/login', async (c) => {
 
   const token = await sign({ id: user.id, email: user.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, JWT_SECRET);
 
-  const isSecure = c.req.url.startsWith('https://') || c.req.header('x-forwarded-proto') === 'https';
+  const cookieOpts = getAuthCookieOptions(c);
   setCookie(c, 'ethsltd_session', token, {
-    path: '/',
-    secure: isSecure,
+    ...cookieOpts,
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60,
-    sameSite: isSecure ? 'None' : 'Lax',
-    domain: getCookieDomain(c),
   });
 
     return c.json({ success: true, token, data: { user } });
@@ -403,7 +397,7 @@ authRoutes.post('/logout', async (c) => {
       }
     }
 
-    deleteCookie(c, 'ethsltd_session', { path: '/', secure: c.req.url.startsWith('https://'), sameSite: 'Lax', domain: getCookieDomain(c) });
+    deleteCookie(c, 'ethsltd_session', getAuthCookieOptions(c));
     return c.json({ success: true });
   } catch (err: any) {
     return c.json({ success: false, error: err.message }, 500);
