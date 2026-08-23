@@ -48,16 +48,24 @@ export default function AdminSettingsPage() {
     EMAIL_NOTIFY_TRANSFER: true,
   });
 
+  const [bankCurrencies, setBankCurrencies] = useState<any[]>([]);
+
   useEffect(() => {
     loadSettings();
   }, []);
 
   const loadSettings = async () => {
     try {
+      const ratesRes = await apiClient.getPublicCurrencyRates();
+      if (ratesRes.success && ratesRes.list) {
+        setBankCurrencies(ratesRes.list.filter((c: any) => c.isBank));
+      }
+
       const res = await apiClient.adminGetPlatformSettings();
       if (res.success && res.data) {
         const newForm = { ...formData };
         res.data.forEach((s: any) => {
+          if (s.key === 'BASE_CURRENCY') newForm.baseCurrency = s.value;
           if (s.key === 'MIN_WITHDRAWAL' || s.key === 'DAILY_WITHDRAWAL_LIMIT' || s.key === 'MIN_DEPOSIT') {
             const parsed = parseJsonSafely(s.value);
             if (parsed && typeof parsed.amount !== 'undefined') newForm[s.key === 'MIN_WITHDRAWAL' ? 'minWithdrawal' : s.key === 'DAILY_WITHDRAWAL_LIMIT' ? 'dailyWithdrawalLimit' : 'minDeposit'] = parsed.amount.toString();
@@ -253,9 +261,10 @@ export default function AdminSettingsPage() {
                     onChange={(e) => handleInputChange('baseCurrency', e.target.value)}
                     className="w-full sm:w-64 bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
                   >
-                    <option value="USDT">USDT - Tether (USD Equivalent)</option>
-                    <option value="EUR">EUR - Euro</option>
-                    <option value="GBP">GBP - British Pound</option>
+                    {bankCurrencies.length === 0 && <option value="USDT">USDT - Tether (USD Equivalent)</option>}
+                    {bankCurrencies.map(c => (
+                      <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>

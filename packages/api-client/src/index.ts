@@ -1084,8 +1084,8 @@ export class EthsltdClient {
   }
 
   // ===== PUBLIC RATES =====
-  async getPublicCurrencyRates() {
-    return this.request<any>('/api/v1/currency-rates');
+  async getPublicCurrencyRates(): Promise<{ success: boolean; data?: any; list?: any[]; baseCurrency?: string; error?: any }> {
+    return this.request<any>('/api/v1/currency-rates') as any;
   }
 
   // ===== SYSTEM DATA & BACKUPS =====
