@@ -1,19 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Home, LineChart, Zap, Wallet, CreditCard, ShoppingBag, Shield, BadgeDollarSign, HeadphonesIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export function AppNavigation() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab = searchParams?.get('tab');
+  
   const [showP2pMenu, setShowP2pMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Close submenu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (
+        menuRef.current && !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current && !buttonRef.current.contains(event.target as Node)
+      ) {
         setShowP2pMenu(false);
       }
     }
@@ -44,13 +51,13 @@ export function AppNavigation() {
       name: "Wallet",
       href: "/wallet?tab=currency",
       icon: CreditCard,
-      isActive: pathname === "/wallet" || pathname === "/wallet?tab=currency", // Note: next/navigation usePathname doesn't include search params
+      isActive: pathname.startsWith("/wallet") && tab !== "asset",
     },
     {
       name: "Assets",
       href: "/wallet?tab=asset",
       icon: Wallet,
-      isActive: pathname.startsWith("/wallet") || pathname === "/account/profile",
+      isActive: (pathname.startsWith("/wallet") && tab === "asset") || pathname === "/account/profile",
     },
   ];
 
@@ -82,7 +89,7 @@ export function AppNavigation() {
             </Link>
             
             <Link 
-              href="/p2p/ads"
+              href="/p2p/my-ads"
               onClick={() => setShowP2pMenu(false)}
               className="flex flex-col items-center justify-center p-3 rounded-xl hover:bg-white/5 transition-colors gap-2"
             >
@@ -91,7 +98,7 @@ export function AppNavigation() {
             </Link>
 
             <Link 
-              href="/expert" // Or wherever expert services is
+              href="/p2p/experts"
               onClick={() => setShowP2pMenu(false)}
               className="flex flex-col items-center justify-center p-3 rounded-xl hover:bg-white/5 transition-colors gap-2"
             >
@@ -113,6 +120,7 @@ export function AppNavigation() {
               return (
                 <button
                   key={item.name}
+                  ref={buttonRef}
                   onClick={() => setShowP2pMenu(!showP2pMenu)}
                   className={`flex flex-col items-center justify-center gap-1 group transition-colors ${showP2pMenu || item.isActive ? "text-[#00C087]" : "text-muted-foreground hover:text-[#00C087]/70"}`}
                 >
