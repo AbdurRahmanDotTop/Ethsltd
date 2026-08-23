@@ -14,9 +14,9 @@ database_name = "ethsltd_db"
 database_id = "3e91dec1-5e94-434a-9697-7a9217592afe"
 migrations_dir = "../../database/migrations"
 
-[[r2_buckets]]
-binding = "R2_BACKUPS"
-bucket_name = "ethsltd-backups"
+# [[r2_buckets]]
+# binding = "R2_BACKUPS"
+# bucket_name = "ethsltd-backups"
 
 [vars]
 CREGIS_PROXY_URL = "https://techilyfly.com/ethsltd/cregis-proxy.php"

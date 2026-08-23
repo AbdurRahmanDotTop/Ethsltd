@@ -35,7 +35,7 @@ export default function AdminDataManagementPage() {
     try {
       const res = await apiClient.adminGetBackups();
       if (res.success) {
-        setBackups(res.data);
+        setBackups(res.data || []);
       }
     } catch (e: any) {
       toast.error(e.message || "Failed to load backups");
@@ -66,7 +66,7 @@ export default function AdminDataManagementPage() {
       XLSX.utils.book_append_sheet(wb, ws, "Export");
 
       // Download
-      const fileName = \`ethsltd_\${type}_export_\${new Date().toISOString().split("T")[0]}.\${format}\`;
+      const fileName = `ethsltd_${type}_export_${new Date().toISOString().split("T")[0]}.${format}`;
       
       if (format === "csv") {
         XLSX.writeFile(wb, fileName, { bookType: "csv" });
@@ -74,7 +74,7 @@ export default function AdminDataManagementPage() {
         XLSX.writeFile(wb, fileName, { bookType: "xlsx" });
       }
       
-      toast.success(\`\${type} exported successfully as \${format.toUpperCase()}\`);
+      toast.success(`${type} exported successfully as ${format.toUpperCase()}`);
     } catch (e: any) {
       toast.error(e.message || "Failed to generate export");
     } finally {
@@ -99,7 +99,7 @@ export default function AdminDataManagementPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = res.metadata?.filename || \`backup_ethsltd_\${new Date().toISOString()}.json\`;
+        a.download = (res as any).metadata?.filename || `backup_ethsltd_${new Date().toISOString()}.json`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -177,13 +177,13 @@ export default function AdminDataManagementPage() {
       <div className="flex gap-4 border-b border-border">
         <button 
           onClick={() => setActiveTab("export")}
-          className={\`pb-2 px-1 font-medium text-sm border-b-2 transition-colors \${activeTab === 'export' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}\`}
+          className={`pb-2 px-1 font-medium text-sm border-b-2 transition-colors ${activeTab === 'export' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
         >
           Data Export
         </button>
         <button 
           onClick={() => setActiveTab("backup")}
-          className={\`pb-2 px-1 font-medium text-sm border-b-2 transition-colors \${activeTab === 'backup' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}\`}
+          className={`pb-2 px-1 font-medium text-sm border-b-2 transition-colors ${activeTab === 'backup' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
         >
           Backup & Restore
         </button>
@@ -323,7 +323,7 @@ export default function AdminDataManagementPage() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={\`px-2 py-0.5 rounded text-xs font-medium border \${bkp.status === 'SUCCESS' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'}\`}>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium border ${bkp.status === 'SUCCESS' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'}`}>
                             {bkp.status}
                           </span>
                         </td>

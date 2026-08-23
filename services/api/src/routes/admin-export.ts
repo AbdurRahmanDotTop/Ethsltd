@@ -33,9 +33,9 @@ adminExportRouter.get('/users', async (c) => {
         displayName: u.displayName,
         role: u.role,
         status: u.status,
-        riskLevel: u.riskLevel,
-        kycStatus: u.kycStatus,
-        twoFactorEnabled: u.twoFactorEnabled,
+        // Removed riskLevel as it doesn't exist on users
+        kycStatus: kyc?.status || 'PENDING',
+        mfaEnabled: u.mfaEnabled,
         emailVerified: u.emailVerified,
         lastLoginAt: u.lastLoginAt ? new Date(u.lastLoginAt).toISOString() : null,
         createdAt: new Date(u.createdAt).toISOString(),
@@ -74,13 +74,12 @@ adminExportRouter.get('/transactions', async (c) => {
     
     const exportData = ledger.map(l => ({
       id: l.id,
+      transactionId: l.transactionId,
       accountId: l.accountId,
-      type: l.type,
+      environment: l.environment,
+      direction: l.direction,
       amount: l.amount,
-      balanceAfter: l.balanceAfter,
-      referenceType: l.referenceType,
-      referenceId: l.referenceId,
-      description: l.description,
+      assetSymbol: l.assetSymbol,
       createdAt: new Date(l.createdAt).toISOString(),
     }));
 
