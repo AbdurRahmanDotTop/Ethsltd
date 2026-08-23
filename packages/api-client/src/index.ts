@@ -1023,6 +1023,10 @@ export class EthsltdClient {
     return this.request<any>('/api/v1/admin/stats/volume-chart');
   }
 
+  async getAdminRecentActivity() {
+    return this.request<any>('/api/v1/admin/stats/recent-activity');
+  }
+
   async adminGetMarkets(params: { mode?: 'REAL' | 'DEMO' } = {}) {
     const query = new URLSearchParams(params as any).toString();
     return this.request<any[]>(`/api/v1/admin/trading/markets?${query}`);

@@ -83,12 +83,13 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
   try {
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const { gte } = require('drizzle-orm');
     
     const trades = await db.select({
       amount: orders.filledAmount,
       price: orders.price,
       createdAt: orders.createdAt
-    }).from(orders).where(and(eq(orders.mode, 'REAL'), eq(orders.status, 'FILLED'), sql`created_at >= ${new Date(sevenDaysAgo).toISOString()}`));
+    }).from(orders).where(and(eq(orders.mode, 'REAL'), eq(orders.status, 'FILLED'), gte(orders.createdAt, new Date(sevenDaysAgo))));
     
     const dailyVolume: Record<string, number> = {};
     
@@ -115,6 +116,57 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
   } catch (error) {
     console.error("Volume chart error:", error);
     return c.json({ success: false, error: 'Failed to fetch volume data' }, 500);
+  }
+});
+
+// GET /api/v1/admin/stats/recent-activity
+adminRoutes.get('/stats/recent-activity', async (c) => {
+  const db = c.get('db');
+  try {
+    const { desc } = require('drizzle-orm');
+    
+    // Fetch recent users
+    const recentUsers = await db.select({
+      email: users.email,
+      createdAt: users.createdAt
+    }).from(users).orderBy(desc(users.createdAt)).limit(5).all();
+    
+    // Fetch recent orders
+    const recentOrders = await db.select({
+      side: orders.side,
+      type: orders.type,
+      amount: orders.amount,
+      symbol: orders.marketSymbol,
+      createdAt: orders.createdAt
+    }).from(orders).orderBy(desc(orders.createdAt)).limit(5).all();
+
+    const activity: any[] = [];
+    
+    recentUsers.forEach(u => {
+      if (u.createdAt) {
+        activity.push({
+          action: `New user registered: ${u.email}`,
+          timestamp: new Date(u.createdAt).toISOString()
+        });
+      }
+    });
+    
+    recentOrders.forEach(o => {
+      if (o.createdAt) {
+        activity.push({
+          action: `Order placed: ${o.side} ${o.amount} ${o.symbol}`,
+          timestamp: new Date(o.createdAt).toISOString()
+        });
+      }
+    });
+    
+    // Sort combined activity descending
+    activity.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
+    return c.json({ success: true, data: activity.slice(0, 10) });
+  } catch (error) {
+    console.error("Recent activity error:", error);
+    return c.json({ success: false, error: 'Failed to fetch recent activity' }, 500);
   }
 });
 

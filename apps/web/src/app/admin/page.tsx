@@ -48,8 +48,8 @@ export default function AdminDashboardPage() {
         const chartRes = await apiClient.getAdminVolumeChart();
         if (chartRes.success) setChartData(chartRes.data);
 
-        // We haven't built the recent activity endpoint yet
-        setActivity([]);
+        const activityRes = await apiClient.getAdminRecentActivity();
+        if (activityRes.success) setActivity(activityRes.data);
       } catch (err) {
         console.error(err);
       }
