@@ -180,6 +180,132 @@ adminRoutes.get('/stats/recent-activity', async (c) => {
   }
 });
 
+// GET /api/v1/admin/stats/p2p
+adminRoutes.get('/stats/p2p', async (c) => {
+  const db = c.get('db');
+  try {
+    const { startDate, endDate } = c.req.query();
+    const { and, eq, gte, lte, sql, sum, desc } = require('drizzle-orm');
+    
+    const conditions = [];
+    if (startDate) conditions.push(gte(p2pOrders.createdAt, new Date(startDate)));
+    if (endDate) conditions.push(lte(p2pOrders.createdAt, new Date(endDate)));
+
+    // Orders Stats
+    const ordersData = await db.select({
+      status: p2pOrders.status,
+      count: sql<number>`count(*)`,
+      volume: sql<number>`sum(CAST(${p2pOrders.cryptoAmount} AS REAL))`
+    }).from(p2pOrders)
+    .where(and(...conditions, eq(p2pOrders.mode, 'REAL')))
+    .groupBy(p2pOrders.status);
+
+    const orderStats = {
+      totalOrders: 0,
+      totalVolume: 0,
+      byStatus: {} as Record<string, { count: number, volume: number }>
+    };
+
+    ordersData.forEach(row => {
+      orderStats.totalOrders += row.count;
+      orderStats.totalVolume += row.volume || 0;
+      orderStats.byStatus[row.status] = { count: row.count, volume: row.volume || 0 };
+    });
+
+    // Buy / Sell Activity
+    const buySellData = await db.select({
+      type: p2pAds.type,
+      volume: sql<number>`sum(CAST(${p2pOrders.cryptoAmount} AS REAL))`
+    }).from(p2pOrders)
+    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
+    .where(and(...conditions, eq(p2pOrders.mode, 'REAL'), eq(p2pOrders.status, 'COMPLETED')))
+    .groupBy(p2pAds.type);
+
+    const buySellVolume = { BUY: 0, SELL: 0 };
+    buySellData.forEach(row => {
+      if (row.type) buySellVolume[row.type as 'BUY' | 'SELL'] = row.volume || 0;
+    });
+
+    // Active Ads
+    const [{ activeAds }] = await db.select({ activeAds: sql<number>`count(*)` })
+      .from(p2pAds)
+      .where(and(eq(p2pAds.status, 'ACTIVE'), eq(p2pAds.mode, 'REAL')));
+
+    // Merchants
+    const [{ activeMerchants }] = await db.select({ activeMerchants: sql<number>`count(*)` })
+      .from(users)
+      .where(eq(users.isMerchant, true));
+
+    // Chats
+    const chatConditions = [];
+    if (startDate) chatConditions.push(gte(p2pMessages.createdAt, new Date(startDate)));
+    if (endDate) chatConditions.push(lte(p2pMessages.createdAt, new Date(endDate)));
+
+    const [{ totalChats }] = await db.select({ totalChats: sql<number>`count(*)` })
+      .from(p2pMessages)
+      .where(and(...chatConditions, eq(p2pMessages.mode, 'REAL')));
+
+    const [{ unreadChats }] = await db.select({ unreadChats: sql<number>`count(*)` })
+      .from(p2pMessages)
+      .where(and(...chatConditions, eq(p2pMessages.mode, 'REAL'), eq(p2pMessages.isRead, false)));
+
+    // Disputes
+    const disputeConditions = [];
+    if (startDate) disputeConditions.push(gte(p2pDisputes.createdAt, new Date(startDate)));
+    if (endDate) disputeConditions.push(lte(p2pDisputes.createdAt, new Date(endDate)));
+
+    const disputesData = await db.select({
+      status: p2pDisputes.status,
+      count: sql<number>`count(*)`
+    }).from(p2pDisputes)
+    .where(and(...disputeConditions))
+    .groupBy(p2pDisputes.status);
+
+    const disputeStats = { total: 0, OPEN: 0, RESOLVED: 0, CLOSED: 0 };
+    disputesData.forEach(row => {
+      disputeStats.total += row.count;
+      if (row.status in disputeStats) disputeStats[row.status as keyof typeof disputeStats] = row.count;
+    });
+
+    // Escrow
+    const [{ totalEscrow }] = await db.select({
+      totalEscrow: sql<number>`sum(CAST(escrow_balance AS REAL))`
+    }).from(wallets).where(eq(wallets.type, 'REAL'));
+
+    // Recent Transactions
+    const recentOrders = await db.select({
+      id: p2pOrders.displayId,
+      cryptoAmount: p2pOrders.cryptoAmount,
+      fiatAmount: p2pOrders.fiatAmount,
+      status: p2pOrders.status,
+      createdAt: p2pOrders.createdAt,
+      asset: p2pAds.asset,
+      fiat: p2pAds.fiat
+    }).from(p2pOrders)
+    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
+    .where(eq(p2pOrders.mode, 'REAL'))
+    .orderBy(desc(p2pOrders.createdAt))
+    .limit(10);
+
+    return c.json({
+      success: true,
+      data: {
+        orderStats,
+        buySellVolume,
+        activeAds,
+        activeMerchants,
+        chatStats: { total: totalChats, unread: unreadChats },
+        disputeStats,
+        totalEscrow: totalEscrow || 0,
+        recentOrders
+      }
+    });
+  } catch (error) {
+    console.error("P2P Admin Stats error:", error);
+    return c.json({ success: false, error: 'Failed to fetch P2P stats' }, 500);
+  }
+});
+
 // GET /api/v1/admin/users
 adminRoutes.get('/users', async (c) => {
   const db = c.get('db');

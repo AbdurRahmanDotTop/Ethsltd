@@ -52,6 +52,7 @@ export const p2pMessages = sqliteTable('p2p_messages', {
   content: text('content').notNull(),
   type: text('type', { enum: ['TEXT', 'IMAGE', 'SYSTEM'] }).notNull().default('TEXT'),
   attachmentUrl: text('attachment_url'),
+  isRead: integer('is_read', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 

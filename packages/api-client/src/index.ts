@@ -452,6 +452,14 @@ export class EthsltdClient {
     return this.request<any>('/api/v1/admin/stats');
   }
 
+  async getAdminP2pStats(params?: { startDate?: string; endDate?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.startDate) searchParams.append('startDate', params.startDate);
+    if (params?.endDate) searchParams.append('endDate', params.endDate);
+    const qs = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request<any>(`/api/v1/admin/stats/p2p${qs}`);
+  }
+
   async adminGetExperts() {
     return this.request<any[]>('/api/v1/admin/experts');
   }

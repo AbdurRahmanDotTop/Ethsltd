@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Users, Activity, Wallet, ArrowDownToLine, Handshake, AlertTriangle, UserCheck, Server, Loader2 } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import P2pDashboardOverview from "@/components/admin/P2pDashboardOverview";
 
 function StatCard({ 
   title, 
@@ -35,6 +36,7 @@ function StatCard({
 }
 
 export default function AdminDashboardPage() {
+  const [activeTab, setActiveTab] = useState<'platform' | 'p2p'>('platform');
   const [stats, setStats] = useState<any>(null);
   const [activity, setActivity] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
@@ -97,9 +99,28 @@ export default function AdminDashboardPage() {
           <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
           <p className="text-muted-foreground mt-1 text-sm">Platform performance and operational health.</p>
         </div>
+        
+        <div className="flex bg-muted p-1 rounded-md">
+          <button 
+            onClick={() => setActiveTab('platform')}
+            className={`px-4 py-2 text-sm font-medium rounded-sm transition-all ${activeTab === 'platform' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Platform Overview
+          </button>
+          <button 
+            onClick={() => setActiveTab('p2p')}
+            className={`px-4 py-2 text-sm font-medium rounded-sm transition-all ${activeTab === 'p2p' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            P2P Overview
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {activeTab === 'p2p' ? (
+        <P2pDashboardOverview />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Total Users" 
           value={kpis.totalUsers.toLocaleString()} 
@@ -255,6 +276,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
