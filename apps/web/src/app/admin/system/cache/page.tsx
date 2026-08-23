@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Server, Database, Globe, RefreshCw, Trash2, ShieldAlert, CloudLightning, ExternalLink } from "lucide-react";
+import { Server, Database, Globe, RefreshCw, Trash2, ShieldAlert, CloudLightning, ExternalLink, FileText, LayoutTemplate, Box, Image as ImageIcon, ServerCog, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { clearNextjsCache } from "./actions";
@@ -13,6 +13,11 @@ export default function AdminCachePage() {
   const [isClearingApi, setIsClearingApi] = useState(false);
   const [isClearingDb, setIsClearingDb] = useState(false);
   const [isClearingCdn, setIsClearingCdn] = useState(false);
+  const [isClearingFile, setIsClearingFile] = useState(false);
+  const [isClearingTemplate, setIsClearingTemplate] = useState(false);
+  const [isClearingStatic, setIsClearingStatic] = useState(false);
+  const [isClearingImage, setIsClearingImage] = useState(false);
+  const [isClearingServer, setIsClearingServer] = useState(false);
   const [isClearingAll, setIsClearingAll] = useState(false);
 
   const handleClearAppCache = async () => {
@@ -32,7 +37,7 @@ export default function AdminCachePage() {
     }
   };
 
-  const handleClearCacheType = async (type: 'api' | 'db' | 'cdn', setLoader: (val: boolean) => void, successMsg: string) => {
+  const handleClearCacheType = async (type: any, setLoader: (val: boolean) => void, successMsg: string) => {
     if (!window.confirm(`Are you sure you want to purge the ${type.toUpperCase()} cache?`)) return;
     setLoader(true);
     try {
@@ -57,6 +62,11 @@ export default function AdminCachePage() {
       await apiClient.adminClearCache('api');
       await apiClient.adminClearCache('db');
       await apiClient.adminClearCache('cdn');
+      await apiClient.adminClearCache('file');
+      await apiClient.adminClearCache('template');
+      await apiClient.adminClearCache('static');
+      await apiClient.adminClearCache('image');
+      await apiClient.adminClearCache('server');
       toast.success("All global caches purged successfully.");
     } catch (e: any) {
       toast.error(e.message || "An error occurred while clearing caches");
@@ -185,6 +195,147 @@ export default function AdminCachePage() {
             Purge Database Cache
           </Button>
         </div>
+
+        {/* File Cache */}
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="w-12 h-12 bg-gray-500/10 text-gray-500 rounded-lg flex items-center justify-center mb-4">
+              <FileText className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold">File Cache</h3>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
+              Clears the application file cache. On Next.js, this simulates clearing temporary build artifacts or route segment data.
+            </p>
+          </div>
+          <Button 
+            onClick={() => handleClearCacheType('file', setIsClearingFile, "File Cache cleared successfully.")} 
+            disabled={isClearingAll}
+            isLoading={isClearingFile}
+            loadingText="Purging..."
+            variant="outline"
+            className="w-full justify-center"
+          >
+            {!isClearingFile && <Trash2 className="w-4 h-4 mr-2" />}
+            Purge File Cache
+          </Button>
+        </div>
+
+        {/* Template Cache */}
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="w-12 h-12 bg-pink-500/10 text-pink-500 rounded-lg flex items-center justify-center mb-4">
+              <LayoutTemplate className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold">Template Cache</h3>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
+              Clears pre-rendered template views. Useful when layout changes are not reflecting on the frontend.
+            </p>
+          </div>
+          <Button 
+            onClick={() => handleClearCacheType('template', setIsClearingTemplate, "Template Cache cleared successfully.")} 
+            disabled={isClearingAll}
+            isLoading={isClearingTemplate}
+            loadingText="Purging..."
+            variant="outline"
+            className="w-full justify-center"
+          >
+            {!isClearingTemplate && <Trash2 className="w-4 h-4 mr-2" />}
+            Purge Template Cache
+          </Button>
+        </div>
+
+        {/* Static Asset Cache */}
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="w-12 h-12 bg-cyan-500/10 text-cyan-500 rounded-lg flex items-center justify-center mb-4">
+              <Box className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold">Static Asset Cache</h3>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
+              Forces regeneration of static assets like CSS, Javascript bundles, and fonts.
+            </p>
+          </div>
+          <Button 
+            onClick={() => handleClearCacheType('static', setIsClearingStatic, "Static Asset Cache cleared successfully.")} 
+            disabled={isClearingAll}
+            isLoading={isClearingStatic}
+            loadingText="Purging..."
+            variant="outline"
+            className="w-full justify-center"
+          >
+            {!isClearingStatic && <Trash2 className="w-4 h-4 mr-2" />}
+            Purge Static Cache
+          </Button>
+        </div>
+
+        {/* Image/Media Cache */}
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center mb-4">
+              <ImageIcon className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold">Image / Media Cache</h3>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
+              Clears Next.js Image Optimization cache and CDN media layers to fetch fresh images.
+            </p>
+          </div>
+          <Button 
+            onClick={() => handleClearCacheType('image', setIsClearingImage, "Image/Media Cache cleared successfully.")} 
+            disabled={isClearingAll}
+            isLoading={isClearingImage}
+            loadingText="Purging..."
+            variant="outline"
+            className="w-full justify-center"
+          >
+            {!isClearingImage && <Trash2 className="w-4 h-4 mr-2" />}
+            Purge Image Cache
+          </Button>
+        </div>
+
+        {/* Server Cache */}
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="w-12 h-12 bg-indigo-500/10 text-indigo-500 rounded-lg flex items-center justify-center mb-4">
+              <ServerCog className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold">Server Cache</h3>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
+              Purges underlying Edge/Vercel server cache levels used by the host platform.
+            </p>
+          </div>
+          <Button 
+            onClick={() => handleClearCacheType('server', setIsClearingServer, "Server Cache cleared successfully.")} 
+            disabled={isClearingAll}
+            isLoading={isClearingServer}
+            loadingText="Purging..."
+            variant="outline"
+            className="w-full justify-center"
+          >
+            {!isClearingServer && <Trash2 className="w-4 h-4 mr-2" />}
+            Purge Server Cache
+          </Button>
+        </div>
+
+        {/* PHP/Opcode Cache - Informational */}
+        <div className="bg-muted/50 border border-border/50 rounded-xl p-6 flex flex-col justify-between opacity-80">
+          <div>
+            <div className="w-12 h-12 bg-slate-500/10 text-slate-500 rounded-lg flex items-center justify-center mb-4">
+              <Info className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold">PHP / Opcode Cache</h3>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
+              Not Applicable. This project utilizes a Node.js / Next.js ecosystem, which does not employ PHP or Opcode caches.
+            </p>
+          </div>
+          <Button 
+            disabled
+            variant="secondary"
+            className="w-full justify-center"
+          >
+            Not Applicable
+          </Button>
+        </div>
+
       </div>
 
       {/* Global Purge */}
@@ -198,7 +349,7 @@ export default function AdminCachePage() {
           </div>
           <Button 
             onClick={handleClearAll} 
-            disabled={isClearingApp || isClearingApi || isClearingDb || isClearingCdn}
+            disabled={isClearingApp || isClearingApi || isClearingDb || isClearingCdn || isClearingFile || isClearingTemplate || isClearingStatic || isClearingImage || isClearingServer}
             isLoading={isClearingAll}
             loadingText="Clearing All..."
             variant="destructive"

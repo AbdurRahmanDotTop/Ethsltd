@@ -8,40 +8,12 @@ export class EthsltdClient {
 
   constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') {
     this.baseUrl = baseUrl;
-    // Attempt to load token from localStorage if in browser environment
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('ethsltd_auth_token');
-    }
   }
 
-  private async syncLocalSession(token: string | null) {
-    if (typeof window !== 'undefined') {
-      try {
-        if (token) {
-          await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token }),
-            keepalive: true
-          });
-        } else {
-          await fetch('/api/auth/session', { method: 'DELETE', keepalive: true });
-        }
-      } catch (e) {
-        console.error('Failed to sync local session', e);
-      }
-    }
-  }
+
 
   setToken(token: string | null) {
     this.token = token;
-    if (typeof window !== 'undefined') {
-      if (token) {
-        localStorage.setItem('ethsltd_auth_token', token);
-      } else {
-        localStorage.removeItem('ethsltd_auth_token');
-      }
-    }
   }
 
   setMode(mode: 'REAL' | 'DEMO') {
@@ -95,7 +67,6 @@ export class EthsltdClient {
         if (!this.isLoggingOut) {
           this.isLoggingOut = true;
           this.setToken(null);
-          await this.syncLocalSession(null);
           
           // Explicitly clear the server-side cookie by calling logout endpoint (without awaiting the redirect loop)
           try {
@@ -134,7 +105,6 @@ export class EthsltdClient {
     
     if (res.success && (res as any).token) {
       this.setToken((res as any).token);
-      await this.syncLocalSession((res as any).token);
     }
     return res;
   }
@@ -142,7 +112,6 @@ export class EthsltdClient {
   async logout() {
     const res = await this.request('/api/v1/auth/logout', { method: 'POST' });
     this.setToken(null);
-    await this.syncLocalSession(null);
     return res;
   }
 
@@ -154,7 +123,6 @@ export class EthsltdClient {
     
     if (res.success && (res as any).token) {
       this.setToken((res as any).token);
-      await this.syncLocalSession((res as any).token);
     }
     return res;
   }
@@ -1079,7 +1047,7 @@ export class EthsltdClient {
     return this.request<any>('/api/v1/admin/system/clear-cache', { method: 'POST' });
   }
 
-  async adminClearCache(type: 'cdn' | 'api' | 'db') {
+  async adminClearCache(type: 'cdn' | 'api' | 'db' | 'file' | 'template' | 'static' | 'image' | 'server') {
     return this.request<any>(`/api/v1/admin/system/clear-cache/${type}`, { method: 'POST' });
   }
 

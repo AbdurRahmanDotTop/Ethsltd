@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { AuthUser } from "@/lib/auth/types";
 import { apiClient } from "@ethsltd/api-client";
@@ -24,6 +25,9 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
     });
     initialized.current = true;
   }
+
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // Client-side hydration fallback
@@ -53,14 +57,15 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
     const handleAuthRequired = async (e: Event) => {
       await apiClient.logout();
       useAuthStore.getState().logout();
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.replace(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      if (!pathname.startsWith('/login')) {
+        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+        router.refresh();
       }
     };
 
     window.addEventListener("auth:required", handleAuthRequired);
     return () => window.removeEventListener("auth:required", handleAuthRequired);
-  }, []);
+  }, [pathname, router]);
 
   return <>{children}</>;
 }

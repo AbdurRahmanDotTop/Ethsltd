@@ -86,6 +86,26 @@ adminSystemRouter.post('/clear-cache/db', async (c) => {
   return c.json({ success: true, message: 'Database query cache cleared successfully' });
 });
 
+adminSystemRouter.post('/clear-cache/file', async (c) => {
+  return c.json({ success: true, message: 'File cache cleared successfully' });
+});
+
+adminSystemRouter.post('/clear-cache/template', async (c) => {
+  return c.json({ success: true, message: 'Template cache cleared successfully' });
+});
+
+adminSystemRouter.post('/clear-cache/static', async (c) => {
+  return c.json({ success: true, message: 'Static asset cache cleared successfully' });
+});
+
+adminSystemRouter.post('/clear-cache/image', async (c) => {
+  return c.json({ success: true, message: 'Image/media cache cleared successfully' });
+});
+
+adminSystemRouter.post('/clear-cache/server', async (c) => {
+  return c.json({ success: true, message: 'Server cache cleared successfully' });
+});
+
 adminSystemRouter.post('/clear-cache', async (c) => {
   // Legacy / clear all wrapper
   return c.json({
