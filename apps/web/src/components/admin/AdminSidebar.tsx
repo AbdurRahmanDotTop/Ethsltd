@@ -8,7 +8,7 @@ import {
   ListOrdered, ArrowRightLeft, Wallet, ArrowDownToLine, 
   ArrowUpFromLine, Handshake, AlertTriangle, LifeBuoy, 
   FileSignature, Bell, ShieldCheck, Settings, Server,
-  KeyRound, Code, RefreshCw
+  KeyRound, Code, RefreshCw, Database
 } from "lucide-react";
 
 export const adminNavGroups = [
@@ -68,6 +68,7 @@ export const adminNavGroups = [
       { name: "Audit Logs", href: "/admin/audit", icon: ShieldCheck },
       { name: "Settings", href: "/admin/settings", icon: Settings },
       { name: "System", href: "/admin/system", icon: Server },
+      { name: "Data & Backups", href: "/admin/system/data", icon: Database },
       { name: "Maintenance", href: "/admin/system/cache", icon: RefreshCw }
     ]
   },

@@ -21,3 +21,4 @@ export * from './api_keys';
 export * from './audit_logs';
 export * from './risk_alerts';
 export * from './smart_contracts';
+export * from './system_backups';

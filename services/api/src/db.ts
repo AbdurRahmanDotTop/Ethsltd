@@ -14,6 +14,7 @@ export type Bindings = {
   CLOUDFLARE_API_KEY?: string;
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_EMAIL?: string;
+  R2_BACKUPS?: R2Bucket;
 };
 
 export type Variables = {

@@ -127,6 +127,13 @@
       "when": 1787321319183,
       "tag": "0017_legal_inhumans",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1787446867364,
+      "tag": "0018_clean_norrin_radd",
+      "breakpoints": true
     }
   ]
 }

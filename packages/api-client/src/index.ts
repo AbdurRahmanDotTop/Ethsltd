@@ -1062,6 +1062,30 @@ export class EthsltdClient {
   async getPublicCurrencyRates() {
     return this.request<any>('/api/v1/currency-rates');
   }
+
+  // ===== SYSTEM DATA & BACKUPS =====
+  async adminExportUsers() {
+    return this.request<any[]>('/api/v1/admin/export/users');
+  }
+
+  async adminExportTransactions() {
+    return this.request<any[]>('/api/v1/admin/export/transactions');
+  }
+
+  async adminCreateBackup() {
+    return this.request<any>('/api/v1/admin/backup/create', { method: 'POST' });
+  }
+
+  async adminGetBackups() {
+    return this.request<any[]>('/api/v1/admin/backup/list');
+  }
+
+  async adminRestoreBackup(data: { backupData: string }) {
+    return this.request<any>('/api/v1/admin/backup/restore', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiClient = new EthsltdClient();
