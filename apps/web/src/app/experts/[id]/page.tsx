@@ -7,6 +7,7 @@ import { Loader2, Star, MessageSquare, Briefcase, Calendar, CheckCircle2, Chevro
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function ExpertProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -49,10 +50,10 @@ export default function ExpertProfilePage() {
   }, [id]);
 
   const handleBookClick = (service: any) => {
-    const userStr = typeof window !== 'undefined' ? localStorage.getItem('ethsltd_auth_token') : null;
+    const userStr = useAuthStore.getState().user;
     if (!userStr) {
       alert("Please log in to book a session.");
-      router.push('/login?returnTo=' + encodeURIComponent(`/experts/${id}`));
+      router.push('/login?redirect=' + encodeURIComponent(`/experts/${id}`));
       return;
     }
     
