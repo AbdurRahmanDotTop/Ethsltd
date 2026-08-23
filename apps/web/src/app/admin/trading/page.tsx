@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { 
   Activity, TrendingUp, PauseCircle, PlayCircle, 
   Settings2, Search, Filter, AlertTriangle, CheckCircle,
-  Zap, ArrowRightLeft, Layers, Server, RefreshCw, X
+  Zap, ArrowRightLeft, Layers, Server, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@ethsltd/api-client";
+import Link from "next/link";
 
 // Types
 type PairStatus = 'active' | 'suspended' | 'maintenance';
@@ -32,13 +33,6 @@ export default function AdminTradingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [apiLatency, setApiLatency] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
-  // Edit Fees Modal State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingPair, setEditingPair] = useState<TradingPair | null>(null);
-  const [makerFee, setMakerFee] = useState("");
-  const [takerFee, setTakerFee] = useState("");
-  const [isSavingFees, setIsSavingFees] = useState(false);
 
   useEffect(() => {
     loadMarkets();
@@ -103,34 +97,6 @@ export default function AdminTradingPage() {
     }
   };
 
-  const openEditModal = (pair: TradingPair) => {
-    setEditingPair(pair);
-    setMakerFee(pair.makerFee.toString());
-    setTakerFee(pair.takerFee.toString());
-    setIsEditModalOpen(true);
-  };
-
-  const saveFees = async () => {
-    if (!editingPair) return;
-    setIsSavingFees(true);
-    try {
-      const res = await apiClient.adminUpdateMarketFees(editingPair.id, makerFee, takerFee);
-      if (res.success) {
-        setPairs(prev => prev.map(p => 
-          p.id === editingPair.id ? { ...p, makerFee: parseFloat(makerFee), takerFee: parseFloat(takerFee) } : p
-        ));
-        showToast(`Fees updated for ${editingPair.symbol}.`);
-        setIsEditModalOpen(false);
-      } else {
-        throw new Error("Failed to save fees");
-      }
-    } catch (err) {
-      showToast(`Failed to save fees for ${editingPair.symbol}.`, "error");
-    } finally {
-      setIsSavingFees(false);
-    }
-  };
-
   const getStatusBadge = (status: PairStatus) => {
     switch(status) {
       case 'active': return <span className="flex items-center gap-1 text-xs font-medium text-green-500 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20 w-fit"><CheckCircle className="w-3 h-3"/> Active</span>;
@@ -164,8 +130,13 @@ export default function AdminTradingPage() {
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Activity className="w-6 h-6 text-brand-primary" /> Trading & Markets
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">Manage trading pairs, fees, and monitor matching engine health.</p>
+          <p className="text-muted-foreground mt-1 text-sm">Manage trading pairs and monitor matching engine health.</p>
         </div>
+        <Link href="/admin/fees">
+          <Button variant="outline" className="flex items-center gap-2">
+            <Settings2 className="w-4 h-4" /> Global Trading Fees
+          </Button>
+        </Link>
       </div>
 
       {/* Engine & Market KPIs */}
@@ -306,10 +277,6 @@ export default function AdminTradingPage() {
                       {getStatusBadge(pair.status)}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => openEditModal(pair)}>
-                        Edit Fees
-                      </Button>
-                      
                       {pair.status === 'suspended' ? (
                         <Button 
                           size="sm"
@@ -348,58 +315,6 @@ export default function AdminTradingPage() {
           </table>
         </div>
       </div>
-
-      {/* Edit Fees Modal */}
-      {isEditModalOpen && editingPair && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)} />
-          <div className="relative w-full max-w-md bg-card border border-border rounded-xl shadow-2xl p-6 mx-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold">Edit Fees: {editingPair.symbol}</h3>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Maker Fee (%)</label>
-                <input 
-                  type="number" 
-                  step="0.001"
-                  value={makerFee}
-                  onChange={(e) => setMakerFee(e.target.value)}
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Fee charged to liquidity providers (makers).</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Taker Fee (%)</label>
-                <input 
-                  type="number" 
-                  step="0.001"
-                  value={takerFee}
-                  onChange={(e) => setTakerFee(e.target.value)}
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Fee charged to those removing liquidity (takers).</p>
-              </div>
-            </div>
-
-            <div className="mt-8 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSavingFees}>
-                Cancel
-              </Button>
-              <Button onClick={saveFees} disabled={isSavingFees}>
-                {isSavingFees ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

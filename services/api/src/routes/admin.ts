@@ -1308,7 +1308,7 @@ adminRoutes.put('/platform-settings/:key', async (c) => {
   }
 
   try {
-    const { platformSettings } = require('database');
+    const { platformSettings, markets } = require('database');
     const existing = await db.select().from(platformSettings).where(eq(platformSettings.key, key)).get();
     
     if (existing) {
@@ -1327,6 +1327,23 @@ adminRoutes.put('/platform-settings/:key', async (c) => {
         updatedAt: new Date(),
         updatedBy: admin.id
       }).run();
+    }
+    
+    // Sync to markets table if trading fees are updated globally
+    if (key === 'TRADING_FEE_MAKER' || key === 'TRADING_FEE_TAKER') {
+      try {
+        const parsed = JSON.parse(String(body.value));
+        if (parsed && typeof parsed.percentage !== 'undefined') {
+          const feeValue = String(parsed.percentage);
+          if (key === 'TRADING_FEE_MAKER') {
+            await db.update(markets).set({ makerFee: feeValue }).run();
+          } else {
+            await db.update(markets).set({ takerFee: feeValue }).run();
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse trading fee JSON to sync markets', e);
+      }
     }
     
     return c.json({ success: true });

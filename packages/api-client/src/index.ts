@@ -1035,12 +1035,7 @@ export class EthsltdClient {
     });
   }
 
-  async adminUpdateMarketFees(symbol: string, makerFee: string, takerFee: string) {
-    return this.request<{ success: boolean }>(`/api/v1/admin/trading/markets/${symbol}/fees`, {
-      method: 'PATCH',
-      body: JSON.stringify({ makerFee, takerFee })
-    });
-  }
+
 
   async adminGetOrders(params: { mode?: 'REAL' | 'DEMO', page?: number, limit?: number, status?: string, market?: string } = {}) {
     const query = new URLSearchParams(params as any).toString();

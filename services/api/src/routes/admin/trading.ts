@@ -69,26 +69,6 @@ adminTradingRoutes.patch('/markets/:symbol/status', async (c) => {
   }
 });
 
-adminTradingRoutes.patch('/markets/:symbol/fees', async (c) => {
-  const db = c.get('db');
-  const symbol = c.req.param('symbol');
-  const body = await c.req.json();
-  const { makerFee, takerFee } = body;
-  
-  if (makerFee === undefined || takerFee === undefined) {
-    return c.json({ success: false, error: 'Missing fees' }, 400);
-  }
-  
-  try {
-    await db.update(markets)
-      .set({ makerFee: String(makerFee), takerFee: String(takerFee) })
-      .where(eq(markets.symbol, symbol))
-      .run();
-    return c.json({ success: true });
-  } catch (error: any) {
-    return c.json({ success: false, error: error.message }, 500);
-  }
-});
 
 adminTradingRoutes.get('/orders', async (c) => {
   const db = c.get('db');
