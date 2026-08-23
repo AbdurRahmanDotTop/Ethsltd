@@ -30,12 +30,12 @@ export function AssetTable({ balances }: { balances: AssetBalance[] }) {
         maximumFractionDigits: maxDecimals
       }).format(usdAmount * exchangeRate);
     }
+    // Format to USDT for the default crypto base
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+      style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: maxDecimals
-    }).format(usdAmount);
+    }).format(usdAmount) + ' USDT';
   };
 
   return (

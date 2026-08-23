@@ -91,7 +91,7 @@ export default function AdminTradingPage() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+    return new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value) + ' USDT';
   };
 
   const totalVolume = pairs.reduce((sum, p) => sum + p.volume24h, 0);

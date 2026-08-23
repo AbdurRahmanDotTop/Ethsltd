@@ -142,7 +142,7 @@ export default function FeesAndLimitsPage() {
             </div>
             {(formData.withdrawalFeeType === 'FIXED' || formData.withdrawalFeeType === 'BOTH') && (
               <div>
-                <label className="text-sm font-medium mb-1 block">Fixed Amount (USD Eq.)</label>
+                <label className="text-sm font-medium mb-1 block">Fixed Amount (USDT Eq.)</label>
                 <input type="number" step="0.01" value={formData.withdrawalFeeAmount} onChange={(e) => handleInputChange('withdrawalFeeAmount', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
               </div>
             )}
@@ -171,7 +171,7 @@ export default function FeesAndLimitsPage() {
             </div>
             {(formData.depositFeeType === 'FIXED' || formData.depositFeeType === 'BOTH') && (
               <div>
-                <label className="text-sm font-medium mb-1 block">Fixed Amount (USD Eq.)</label>
+                <label className="text-sm font-medium mb-1 block">Fixed Amount (USDT Eq.)</label>
                 <input type="number" step="0.01" value={formData.depositFeeAmount} onChange={(e) => handleInputChange('depositFeeAmount', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
               </div>
             )}
@@ -200,15 +200,15 @@ export default function FeesAndLimitsPage() {
           <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
             <h4 className="font-semibold border-b border-border pb-2">Limits</h4>
             <div>
-              <label className="text-sm font-medium mb-1 block">Min Withdrawal (USD Eq.)</label>
+              <label className="text-sm font-medium mb-1 block">Min Withdrawal (USDT Eq.)</label>
               <input type="number" value={formData.minWithdrawal} onChange={(e) => handleInputChange('minWithdrawal', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Daily Withdrawal Limit (USD Eq.)</label>
+              <label className="text-sm font-medium mb-1 block">Daily Withdrawal Limit (USDT Eq.)</label>
               <input type="number" value={formData.dailyWithdrawalLimit} onChange={(e) => handleInputChange('dailyWithdrawalLimit', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Min Deposit Amount (USD Eq.)</label>
+              <label className="text-sm font-medium mb-1 block">Min Deposit Amount (USDT Eq.)</label>
               <input type="number" value={formData.minDeposit} onChange={(e) => handleInputChange('minDeposit', e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none" />
             </div>
           </div>

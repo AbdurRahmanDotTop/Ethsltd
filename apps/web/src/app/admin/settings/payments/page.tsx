@@ -43,7 +43,7 @@ export default function AdminPaymentSettingsPage() {
     bank_name: "",
     account_holder: "",
     account_number: "",
-    currency: "USD",
+    currency: "USDT",
     ifsc: "",
     swift: "",
     branch: "",
@@ -211,7 +211,7 @@ export default function AdminPaymentSettingsPage() {
       setBankForm({ ...bankAccountsList[index] });
     } else {
       setEditingBankIndex(null);
-      setBankForm({ id: crypto.randomUUID(), bank_name: "", account_holder: "", account_number: "", currency: "USD", ifsc: "", swift: "", branch: "", instructions: "" });
+      setBankForm({ id: crypto.randomUUID(), bank_name: "", account_holder: "", account_number: "", currency: "USDT", ifsc: "", swift: "", branch: "", instructions: "" });
     }
     setIsBankModalOpen(true);
   };
@@ -300,7 +300,7 @@ export default function AdminPaymentSettingsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label>Minimum Deposit Amount (USD)</Label>
+              <Label>Minimum Deposit Amount (USDT)</Label>
               <Input 
                 type="number"
                 value={editingMethod?.min_amount || 0}
@@ -420,7 +420,7 @@ export default function AdminPaymentSettingsPage() {
               </select>
             </div>
             <div className="space-y-2">
-              <Label>Min Deposit Amount (USD)</Label>
+              <Label>Min Deposit Amount (USDT)</Label>
               <Input 
                 type="number" 
                 value={addMethodForm.min_amount} 

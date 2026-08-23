@@ -22,11 +22,12 @@ export default function AccountOverviewPage() {
   const usdcBal = balances.find(b => b.symbol === 'USDC')?.total || 0;
   const totalBalance = usdtBal + usdcBal;
 
-  // Format to USD as per PRD
+  // Format to USDT
   const formattedBalance = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(totalBalance);
+    style: "decimal",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(totalBalance) + " USDT";
 
   if (!user) return null;
 
@@ -74,7 +75,7 @@ export default function AccountOverviewPage() {
             </div>
             <div>
               <h3 className="font-semibold text-lg">Wallet Balance</h3>
-              <p className="text-sm text-muted-foreground">Available USD</p>
+              <p className="text-sm text-muted-foreground">Available USDT</p>
             </div>
           </div>
           <div className="pt-4 pb-2">

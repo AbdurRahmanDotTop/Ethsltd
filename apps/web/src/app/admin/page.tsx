@@ -57,7 +57,7 @@ export default function AdminDashboardPage() {
     fetchStats();
   }, []);
 
-  // Helper for USD formatting
+  // Helper for USDT formatting
   const formatUSD = (val: number) => {
     return val.toLocaleString('en-US', {
       minimumFractionDigits: 0,
@@ -156,7 +156,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-card border border-border rounded-lg p-6 min-h-[300px] flex flex-col">
-             <h3 className="text-lg font-bold mb-4">7-Day Trading Volume (USD)</h3>
+             <h3 className="text-lg font-bold mb-4">7-Day Trading Volume (USDT)</h3>
              <div className="flex-1 w-full h-[300px]">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">

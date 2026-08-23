@@ -18,7 +18,7 @@ export default function AdminSettingsPage() {
     maintenanceMode: false,
     tradingEnabled: true,
     userRegistration: true,
-    baseCurrency: "USD",
+    baseCurrency: "USDT",
     makerFee: "0.1",
     takerFee: "0.2",
     dailyWithdrawalLimit: "50000",
@@ -253,7 +253,7 @@ export default function AdminSettingsPage() {
                     onChange={(e) => handleInputChange('baseCurrency', e.target.value)}
                     className="w-full sm:w-64 bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
                   >
-                    <option value="USD">USD - US Dollar</option>
+                    <option value="USDT">USDT - Tether (USD Equivalent)</option>
                     <option value="EUR">EUR - Euro</option>
                     <option value="GBP">GBP - British Pound</option>
                   </select>

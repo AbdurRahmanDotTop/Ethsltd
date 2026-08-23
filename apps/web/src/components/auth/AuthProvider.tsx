@@ -35,6 +35,7 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
           if (res.success && res.data) {
             store.setUser(res.data);
           } else if (res.error?.includes('401') || res.error?.includes('Session expired')) {
+            await apiClient.logout();
             store.logout();
           } else {
             // Network error or 500, keep the user in unauthenticated state
@@ -49,7 +50,8 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
     checkAuth();
     
     // Listen for global auth required events (e.g. from apiClient interceptors)
-    const handleAuthRequired = (e: Event) => {
+    const handleAuthRequired = async (e: Event) => {
+      await apiClient.logout();
       useAuthStore.getState().logout();
       if (!window.location.pathname.startsWith('/login')) {
         window.location.replace(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);

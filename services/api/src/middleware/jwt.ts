@@ -1,8 +1,9 @@
 import { Context, Next } from 'hono';
 import { verify } from 'hono/jwt';
-import { getCookie } from 'hono/cookie';
+import { getCookie, deleteCookie } from 'hono/cookie';
 import { eq } from 'drizzle-orm';
 import { users, sessions } from 'database';
+import { getCookieDomain } from '../utils/cookie';
 
 export async function jwtMiddleware(c: Context, next: Next) {
   let bearerToken = '';
@@ -48,6 +49,9 @@ export async function jwtMiddleware(c: Context, next: Next) {
   }
 
   if (!validSession) {
+    if (cookieToken) {
+      deleteCookie(c, 'ethsltd_session', { path: '/', secure: c.req.url.startsWith('https://'), sameSite: 'Lax', domain: getCookieDomain(c) });
+    }
     return c.json({ success: false, error: 'Session expired or invalid' }, 401);
   }
 
