@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Set the cookie on the Next.js domain
-    cookies().set({
+    const cookieStore = await cookies();
+    cookieStore.set({
       name: "ethsltd_session",
       value: token,
       httpOnly: true,
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE() {
-  cookies().delete("ethsltd_session");
+  const cookieStore = await cookies();
+  cookieStore.delete("ethsltd_session");
   return NextResponse.json({ success: true });
 }
