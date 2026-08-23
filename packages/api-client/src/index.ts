@@ -1035,6 +1035,22 @@ export class EthsltdClient {
     });
   }
 
+  async adminAddMarket(data: {
+    symbol: string;
+    baseAsset: string;
+    quoteAsset: string;
+    minPrice: string;
+    maxPrice: string;
+    tickSize: string;
+    minAmount: string;
+    stepSize: string;
+  }) {
+    return this.request<{ success: boolean; data?: any }>(`/api/v1/admin/trading/markets`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
 
 
   async adminGetOrders(params: { mode?: 'REAL' | 'DEMO', page?: number, limit?: number, status?: string, market?: string } = {}) {

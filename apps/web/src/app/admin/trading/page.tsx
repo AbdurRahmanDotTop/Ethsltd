@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { 
   Activity, TrendingUp, PauseCircle, PlayCircle, 
   Settings2, Search, Filter, AlertTriangle, CheckCircle,
-  Zap, ArrowRightLeft, Layers, Server, RefreshCw
+  Zap, ArrowRightLeft, Layers, Server, RefreshCw, Plus, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@ethsltd/api-client";
@@ -33,6 +33,19 @@ export default function AdminTradingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [apiLatency, setApiLatency] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  // Add Market Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [addForm, setAddForm] = useState({
+    baseAsset: '',
+    quoteAsset: 'USDT',
+    minPrice: '0.1',
+    maxPrice: '100000',
+    tickSize: '0.01',
+    minAmount: '0.001',
+    stepSize: '0.001'
+  });
 
   useEffect(() => {
     loadMarkets();
@@ -97,6 +110,56 @@ export default function AdminTradingPage() {
     }
   };
 
+  const handleAddMarket = async () => {
+    if (!addForm.baseAsset || !addForm.quoteAsset) {
+      showToast("Base and Quote assets are required", "error");
+      return;
+    }
+    
+    setIsAdding(true);
+    const symbol = `${addForm.baseAsset.toUpperCase()}-${addForm.quoteAsset.toUpperCase()}`;
+    
+    try {
+      const res = await apiClient.adminAddMarket({
+        symbol,
+        baseAsset: addForm.baseAsset.toUpperCase(),
+        quoteAsset: addForm.quoteAsset.toUpperCase(),
+        minPrice: addForm.minPrice,
+        maxPrice: addForm.maxPrice,
+        tickSize: addForm.tickSize,
+        minAmount: addForm.minAmount,
+        stepSize: addForm.stepSize
+      });
+      
+      if (res.success && res.data) {
+        showToast(`Market ${symbol} added successfully!`);
+        setIsAddModalOpen(false);
+        setAddForm({
+          baseAsset: '', quoteAsset: 'USDT', minPrice: '0.1', maxPrice: '100000', tickSize: '0.01', minAmount: '0.001', stepSize: '0.001'
+        });
+        // Optimistically add to list
+        const m = res.data as any;
+        setPairs(prev => [{
+          id: m.symbol,
+          symbol: m.symbol,
+          baseAsset: m.baseAsset,
+          quoteAsset: m.quoteAsset,
+          price: 0,
+          volume24h: 0,
+          makerFee: m.makerFee || 0,
+          takerFee: m.takerFee || 0,
+          status: 'active'
+        }, ...prev]);
+      } else {
+        throw new Error("Failed to add market");
+      }
+    } catch (err: any) {
+      showToast(err.message || "An error occurred while adding the market", "error");
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   const getStatusBadge = (status: PairStatus) => {
     switch(status) {
       case 'active': return <span className="flex items-center gap-1 text-xs font-medium text-green-500 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20 w-fit"><CheckCircle className="w-3 h-3"/> Active</span>;
@@ -132,11 +195,16 @@ export default function AdminTradingPage() {
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">Manage trading pairs and monitor matching engine health.</p>
         </div>
-        <Link href="/admin/fees">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Settings2 className="w-4 h-4" /> Global Trading Fees
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link href="/admin/fees">
+            <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
+              <Settings2 className="w-4 h-4" /> Global Fees
+            </Button>
+          </Link>
+          <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 w-full sm:w-auto">
+            <Plus className="w-4 h-4" /> Add Market
           </Button>
-        </Link>
+        </div>
       </div>
 
       {/* Engine & Market KPIs */}
@@ -315,6 +383,117 @@ export default function AdminTradingPage() {
           </table>
         </div>
       </div>
+
+      {/* Add Market Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
+          <div className="relative w-full max-w-lg bg-card border border-border rounded-xl shadow-2xl p-6 md:p-8 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6 border-b border-border pb-4">
+              <div>
+                <h3 className="text-lg font-bold">Add New Trading Pair</h3>
+                <p className="text-sm text-muted-foreground">Maker and taker fees will be automatically inherited from Global Fees.</p>
+              </div>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Base Asset</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. ADA"
+                    value={addForm.baseAsset}
+                    onChange={(e) => setAddForm({...addForm, baseAsset: e.target.value.toUpperCase()})}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Quote Asset</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. USDT"
+                    value={addForm.quoteAsset}
+                    onChange={(e) => setAddForm({...addForm, quoteAsset: e.target.value.toUpperCase()})}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                  />
+                </div>
+              </div>
+              
+              <div className="bg-muted/50 p-3 rounded-lg border border-border text-center">
+                <span className="text-xs text-muted-foreground">Trading Symbol</span>
+                <p className="text-lg font-bold tracking-wider">{addForm.baseAsset || 'BASE'}-{addForm.quoteAsset || 'QUOTE'}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Min Price</label>
+                  <input 
+                    type="number" 
+                    value={addForm.minPrice}
+                    onChange={(e) => setAddForm({...addForm, minPrice: e.target.value})}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Max Price</label>
+                  <input 
+                    type="number" 
+                    value={addForm.maxPrice}
+                    onChange={(e) => setAddForm({...addForm, maxPrice: e.target.value})}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Min Amount</label>
+                  <input 
+                    type="number" 
+                    value={addForm.minAmount}
+                    onChange={(e) => setAddForm({...addForm, minAmount: e.target.value})}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Tick Size (Price Step)</label>
+                  <input 
+                    type="number" 
+                    value={addForm.tickSize}
+                    onChange={(e) => setAddForm({...addForm, tickSize: e.target.value})}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Step Size (Amount Step)</label>
+                <input 
+                  type="number" 
+                  value={addForm.stepSize}
+                  onChange={(e) => setAddForm({...addForm, stepSize: e.target.value})}
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-border">
+              <Button variant="outline" onClick={() => setIsAddModalOpen(false)} disabled={isAdding}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddMarket} disabled={isAdding}>
+                {isAdding ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                Add Market
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

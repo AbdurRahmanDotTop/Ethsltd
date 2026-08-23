@@ -48,6 +48,59 @@ adminTradingRoutes.get('/markets', async (c) => {
   }
 });
 
+adminTradingRoutes.post('/markets', async (c) => {
+  const db = c.get('db');
+  const body = await c.req.json();
+  const { symbol, baseAsset, quoteAsset, minPrice, maxPrice, tickSize, minAmount, stepSize } = body;
+  
+  if (!symbol || !baseAsset || !quoteAsset || !minPrice || !maxPrice || !tickSize || !minAmount || !stepSize) {
+    return c.json({ success: false, error: 'Missing required fields' }, 400);
+  }
+  
+  try {
+    const { platformSettings } = require('database');
+    const makerSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'TRADING_FEE_MAKER')).get();
+    const takerSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'TRADING_FEE_TAKER')).get();
+    
+    let makerFee = '0.001';
+    let takerFee = '0.001';
+    
+    if (makerSetting) {
+      try {
+        const parsed = JSON.parse(String(makerSetting.value));
+        if (parsed?.percentage !== undefined) makerFee = String(parsed.percentage);
+      } catch (e) {}
+    }
+    
+    if (takerSetting) {
+      try {
+        const parsed = JSON.parse(String(takerSetting.value));
+        if (parsed?.percentage !== undefined) takerFee = String(parsed.percentage);
+      } catch (e) {}
+    }
+
+    const newMarket = {
+      id: crypto.randomUUID(),
+      symbol: symbol.toUpperCase(),
+      baseAsset: baseAsset.toUpperCase(),
+      quoteAsset: quoteAsset.toUpperCase(),
+      minPrice: String(minPrice),
+      maxPrice: String(maxPrice),
+      tickSize: String(tickSize),
+      minAmount: String(minAmount),
+      stepSize: String(stepSize),
+      makerFee,
+      takerFee,
+      createdAt: new Date(),
+    };
+    
+    await db.insert(markets).values(newMarket).run();
+    return c.json({ success: true, data: newMarket });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
 adminTradingRoutes.patch('/markets/:symbol/status', async (c) => {
   const db = c.get('db');
   const symbol = c.req.param('symbol');
