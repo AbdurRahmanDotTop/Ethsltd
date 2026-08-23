@@ -110,7 +110,7 @@ export function AdminHeader() {
           </button>
 
           {isNotificationsOpen && (
-            <div className="absolute right-0 top-12 w-80 sm:w-96 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+            <div className="fixed left-4 right-4 top-[4.5rem] sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-96 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
               <div className="p-3 border-b border-border bg-muted/20 flex items-center justify-between flex-wrap gap-y-4">
                 <h3 className="font-semibold text-sm">Notifications</h3>
                 {unreadCount > 0 && (
