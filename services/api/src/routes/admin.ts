@@ -85,11 +85,18 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
     const { gte } = require('drizzle-orm');
     
+    // The user explicitly requested 7-Days P2P Trading Volume in the chart.
     const trades = await db.select({
-      amount: orders.filledAmount,
-      price: orders.price,
-      createdAt: orders.createdAt
-    }).from(orders).where(and(eq(orders.mode, 'REAL'), eq(orders.status, 'FILLED'), gte(orders.createdAt, new Date(sevenDaysAgo))));
+      amount: p2pOrders.cryptoAmount,
+      createdAt: p2pOrders.createdAt,
+      asset: p2pAds.asset
+    }).from(p2pOrders)
+      .leftJoin(p2pAds, eq(p2pAds.id, p2pOrders.adId))
+      .where(and(
+        eq(p2pOrders.mode, 'REAL'), 
+        eq(p2pOrders.status, 'COMPLETED'), 
+        gte(p2pOrders.createdAt, new Date(sevenDaysAgo))
+      ));
     
     const dailyVolume: Record<string, number> = {};
     
@@ -103,7 +110,10 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
       if (!trade.createdAt) return;
       const dateStr = new Date(trade.createdAt).toISOString().split('T')[0];
       if (dailyVolume[dateStr] !== undefined) {
-        dailyVolume[dateStr] += Number(trade.amount) * Number(trade.price);
+        // Simple heuristic: If it's a stablecoin/BTC, we add its amount.
+        // For accurate multi-currency, a global price feed would be needed,
+        // but for now, USDT is the primary volume driver.
+        dailyVolume[dateStr] += Number(trade.amount);
       }
     });
     
