@@ -62,7 +62,7 @@ export function GlobalWalletDashboard() {
   }, 0);
 
   const baseCurrencyInfo = publicRates.find(r => r.code === baseCurrency);
-  const baseRate = parseFloat(baseCurrencyInfo?.rate || '1');
+  const baseRate = parseFloat(baseCurrencyInfo?.ratePerUsdt || '1');
   const baseSymbol = baseCurrencyInfo?.symbol || 'USDT';
 
   const displayTotal = totalUsdt * baseRate;
@@ -242,8 +242,10 @@ export function GlobalWalletDashboard() {
               No currencies found.
             </div>
           ) : bankCurrencies.map((currency: any, i: number) => {
-            const currencyRate = parseFloat(currency.rate || '1');
+            const currencyRate = parseFloat(currency.ratePerUsdt || '1');
             const userTotalInThisCurrency = totalUsdt * currencyRate;
+            const userAvailableInThisCurrency = availableUsdt * currencyRate;
+            const userLockedInThisCurrency = (totalUsdt - availableUsdt) * currencyRate;
             
             return (
               <div key={i} className="bg-[#121212] border border-white/10 rounded-xl p-4">
@@ -260,6 +262,14 @@ export function GlobalWalletDashboard() {
                   <div className="text-right">
                     <p className="font-bold">{showBalance ? userTotalInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</p>
                     <p className="text-xs text-gray-400">≈{showBalance ? userTotalInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {currency.code}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-3 text-xs text-gray-400">
+                  <div className="flex flex-col">
+                    <span>Available {showBalance ? userAvailableInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</span>
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span>On orders {showBalance ? userLockedInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</span>
                   </div>
                 </div>
               </div>
