@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
 import { Bindings, Variables } from '../db';
-import { adminAuth } from '../middleware/auth';
+import { jwtMiddleware } from '../middleware/jwt';
 import { systemBackups } from 'database';
 import { eq, desc, asc } from 'drizzle-orm';
 
 const adminBackupRouter = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-adminBackupRouter.use('*', adminAuth);
+adminBackupRouter.use('*', jwtMiddleware);
 
 // 1. Create a full backup
 adminBackupRouter.post('/create', async (c) => {
@@ -163,7 +163,7 @@ adminBackupRouter.get('/download/:filename', async (c) => {
     const headers = new Headers();
     object.writeHttpMetadata(headers);
     headers.set('etag', object.httpEtag);
-    headers.set('Content-Disposition', \`attachment; filename="\${filename}"\`);
+    headers.set('Content-Disposition', `attachment; filename="${filename}"`);
     
     return new Response(object.body, { headers });
   } catch (error: any) {
@@ -210,7 +210,7 @@ adminBackupRouter.post('/restore', async (c) => {
     // Create delete statements to clear current data (except system_backups)
     for (const table of tables) {
       if (table !== 'system_backups' && !table.startsWith('sqlite_')) {
-        statements.push(c.env.DB.prepare(\`DELETE FROM \${table}\`));
+        statements.push(c.env.DB.prepare(`DELETE FROM ${table}`));
       }
     }
 
@@ -225,7 +225,7 @@ adminBackupRouter.post('/restore', async (c) => {
       if (columns.length === 0) continue;
 
       const placeholders = columns.map(() => '?').join(', ');
-      const query = \`INSERT INTO \${table} (\${columns.map(c => \`"\${c}"\`).join(', ')}) VALUES (\${placeholders})\`;
+      const query = `INSERT INTO ${table} (${columns.map(c => `"${c}"`).join(', ')}) VALUES (${placeholders})`;
 
       for (const row of rows) {
         const values = columns.map(col => row[col]);

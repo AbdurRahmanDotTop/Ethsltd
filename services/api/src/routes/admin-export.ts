@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
 import { Bindings, Variables } from '../db';
-import { adminAuth } from '../middleware/auth';
+import { jwtMiddleware } from '../middleware/jwt';
 import { users, kycProfiles, wallets, ledgerEntries, bankTransfers, real_manual_deposits, trades } from 'database';
 import { eq, desc, and, gte, lte } from 'drizzle-orm';
 
 const adminExportRouter = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-adminExportRouter.use('*', adminAuth);
+adminExportRouter.use('*', jwtMiddleware);
 
 // Export Users
 adminExportRouter.get('/users', async (c) => {
