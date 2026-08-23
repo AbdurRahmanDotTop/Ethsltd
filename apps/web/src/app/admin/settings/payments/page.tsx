@@ -109,7 +109,6 @@ export default function AdminPaymentSettingsPage() {
     if (!editingMethod) return;
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("ethsltd_auth_token");
       let finalInstructions = editInstructions;
       
       // If MANUAL, build the JSON object from the dynamic inputs
@@ -168,7 +167,6 @@ export default function AdminPaymentSettingsPage() {
   const handleAddMethod = async () => {
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("ethsltd_auth_token");
       
       let finalAddMethodForm = { ...addMethodForm };
       

@@ -6,6 +6,7 @@ import { apiClient } from "@ethsltd/api-client";
 import { toast } from "sonner";
 import { Send, ArrowLeft, AlertCircle, MessageCircle } from "lucide-react";
 import Link from "next/link";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface ChatMessage {
   id: string;
@@ -28,7 +29,7 @@ export default function UserChatPage() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-  const currentUser = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem("user") || "{}" : "{}");
+  const currentUser = useAuthStore((state) => state.user) || { id: "unknown" };
 
   const fetchMessages = async () => {
     try {

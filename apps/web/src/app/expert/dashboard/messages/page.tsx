@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { apiClient } from "@ethsltd/api-client";
 import { toast } from "sonner";
 import { Send, User, MessageSquare, Lock, Unlock, AlertCircle } from "lucide-react";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface Booking {
   id: string;
@@ -31,7 +32,7 @@ export default function ExpertMessagesPage() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-  const currentUser = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem("user") || "{}" : "{}");
+  const currentUser = useAuthStore((state) => state.user) || { id: "unknown" };
 
   const fetchBookings = async () => {
     try {
