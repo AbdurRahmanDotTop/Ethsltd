@@ -68,18 +68,11 @@ export class EthsltdClient {
           this.isLoggingOut = true;
           this.setToken(null);
           
-          // Explicitly clear the server-side cookie by calling logout endpoint (without awaiting the redirect loop)
-          try {
-            await fetch(`${this.baseUrl}/api/v1/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true });
-          } catch (e) {
-            // ignore
-          }
-
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('auth:required', { detail: { message: data?.error || 'Session expired or invalid' } }));
           }
           
-          // Release lock after a short delay in case redirect didn't happen
+          // Release lock after a short delay
           setTimeout(() => {
             this.isLoggingOut = false;
           }, 2000);
