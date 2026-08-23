@@ -339,13 +339,13 @@ export function OrderEntry({ market }: { market: Market }) {
           </div>
         )}
 
-        {/* Submit */}
         <Button 
           type="submit" 
-          disabled={isSubmitting}
+          isLoading={isSubmitting}
+          loadingText="Placing..."
           className={cn("w-full mt-2 font-bold", selectedSide === 'buy' ? "bg-success hover:bg-success/90 text-white" : "bg-danger hover:bg-danger/90 text-white")}
         >
-          {isSubmitting ? "Placing..." : marketType === 'FUTURES' 
+          {marketType === 'FUTURES' 
             ? `${selectedSide === 'buy' ? 'Open Long' : 'Open Short'} ${base}`
             : marketType === 'OPTIONS'
               ? `Place ${selectedSide === 'buy' ? 'Call' : 'Put'}`

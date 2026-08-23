@@ -103,11 +103,13 @@ export default function AdminCachePage() {
           </div>
           <Button 
             onClick={() => handleClearCacheType('cdn', setIsClearingCdn, "CDN Edge Cache purged successfully.")} 
-            disabled={isClearingCdn || isClearingAll}
+            disabled={isClearingAll}
+            isLoading={isClearingCdn}
+            loadingText="Purging..."
             variant="outline"
             className="w-full justify-center"
           >
-            {isClearingCdn ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            {!isClearingCdn && <Trash2 className="w-4 h-4 mr-2" />}
             Purge CDN Cache
           </Button>
         </div>
@@ -125,11 +127,13 @@ export default function AdminCachePage() {
           </div>
           <Button 
             onClick={handleClearAppCache} 
-            disabled={isClearingApp || isClearingAll}
+            disabled={isClearingAll}
+            isLoading={isClearingApp}
+            loadingText="Purging..."
             variant="outline"
             className="w-full justify-center"
           >
-            {isClearingApp ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            {!isClearingApp && <Trash2 className="w-4 h-4 mr-2" />}
             Purge Next.js Cache
           </Button>
         </div>
@@ -147,11 +151,13 @@ export default function AdminCachePage() {
           </div>
           <Button 
             onClick={() => handleClearCacheType('api', setIsClearingApi, "API Cache cleared successfully.")} 
-            disabled={isClearingApi || isClearingAll}
+            disabled={isClearingAll}
+            isLoading={isClearingApi}
+            loadingText="Purging..."
             variant="outline"
             className="w-full justify-center"
           >
-            {isClearingApi ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            {!isClearingApi && <Trash2 className="w-4 h-4 mr-2" />}
             Purge API Cache
           </Button>
         </div>
@@ -169,11 +175,13 @@ export default function AdminCachePage() {
           </div>
           <Button 
             onClick={() => handleClearCacheType('db', setIsClearingDb, "Database Query Cache cleared successfully.")} 
-            disabled={isClearingDb || isClearingAll}
+            disabled={isClearingAll}
+            isLoading={isClearingDb}
+            loadingText="Purging..."
             variant="outline"
             className="w-full justify-center"
           >
-            {isClearingDb ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            {!isClearingDb && <Trash2 className="w-4 h-4 mr-2" />}
             Purge Database Cache
           </Button>
         </div>
@@ -190,11 +198,13 @@ export default function AdminCachePage() {
           </div>
           <Button 
             onClick={handleClearAll} 
-            disabled={isClearingAll || isClearingApp || isClearingApi || isClearingDb || isClearingCdn}
+            disabled={isClearingApp || isClearingApi || isClearingDb || isClearingCdn}
+            isLoading={isClearingAll}
+            loadingText="Clearing All..."
             variant="destructive"
             className="w-full md:w-auto justify-center bg-red-600 hover:bg-red-700 text-white shrink-0"
           >
-            {isClearingAll ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            {!isClearingAll && <Trash2 className="w-4 h-4 mr-2" />}
             Clear All Caches
           </Button>
         </div>

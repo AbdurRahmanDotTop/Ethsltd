@@ -285,12 +285,14 @@ export default function KYCPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting || kycProfile?.status === 'PENDING' || kycProfile?.status === 'APPROVED'}>
-            {isSubmitting ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</>
-            ) : kycProfile?.status === 'PENDING' ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Under Review</>
-            ) : kycProfile?.status === 'APPROVED' ? (
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={kycProfile?.status === 'APPROVED'}
+            isLoading={isSubmitting || kycProfile?.status === 'PENDING'}
+            loadingText={isSubmitting ? "Submitting..." : "Under Review"}
+          >
+            {kycProfile?.status === 'APPROVED' ? (
               <><CheckCircle2 className="w-4 h-4 mr-2" /> Verified</>
             ) : (
               <><Upload className="w-4 h-4 mr-2" /> Submit KYC Documents</>

@@ -388,8 +388,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
               <Input type="number" step="any" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 100.00" required />
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white whitespace-normal h-auto py-3" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="w-5 h-5 animate-spin mr-2 shrink-0" />}
+            <Button type="submit" className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white whitespace-normal h-auto py-3" isLoading={isSubmitting} loadingText="Checkout with Ethsltd">
               <span>Checkout with Ethsltd</span>
             </Button>
           </form>
@@ -497,8 +496,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                 )}
               </div>
             </div>
-            <Button type="submit" className="w-full h-12 text-base whitespace-normal h-auto py-3" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="w-5 h-5 animate-spin mr-2 shrink-0" />}
+            <Button type="submit" className="w-full h-12 text-base whitespace-normal h-auto py-3" isLoading={isSubmitting} loadingText="Submit Manual Deposit">
               <span>Submit Manual Deposit</span>
             </Button>
           </form>
@@ -659,8 +657,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
                   </div>
                 )}
                 
-                <Button type="submit" className="w-full h-12 text-base mt-2" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="w-5 h-5 animate-spin mr-2 shrink-0" />}
+                <Button type="submit" className="w-full h-12 text-base mt-2" isLoading={isSubmitting} loadingText="Submitting...">
                   Submit Bank Transfer Details
                 </Button>
               </form>
@@ -704,8 +701,7 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
           </div>
           
           <div className="flex w-full gap-3">
-            <Button className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={handleCheckoutConfirm} disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            <Button className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={handleCheckoutConfirm} isLoading={isSubmitting} loadingText="Processing...">
               Proceed to Payment
             </Button>
             <Button className="flex-1" variant="secondary" onClick={() => setShowConfirmModal(false)} disabled={isSubmitting}>

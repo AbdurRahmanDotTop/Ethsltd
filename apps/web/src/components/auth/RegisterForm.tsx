@@ -175,15 +175,8 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating account...
-          </>
-        ) : (
-          "Create Account"
-        )}
+      <Button type="submit" className="w-full" isLoading={isSubmitting} loadingText="Creating account...">
+        Create Account
       </Button>
     </form>
   );

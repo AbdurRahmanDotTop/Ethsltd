@@ -117,9 +117,8 @@ export function DemoWithdrawForm({ defaultAsset = "USD" }: { defaultAsset?: stri
           <Button variant="outline" className="flex-1" onClick={() => setIsConfirming(false)} disabled={isSubmitting}>
             Back
           </Button>
-          <Button className="flex-1" onClick={onConfirm} disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            {isSubmitting ? "Processing..." : "Confirm Withdrawal"}
+          <Button className="flex-1" onClick={onConfirm} isLoading={isSubmitting} loadingText="Processing...">
+            Confirm Withdrawal
           </Button>
         </div>
       </div>

@@ -112,13 +112,9 @@ export function DemoDepositForm({ defaultAsset = "USD" }: { defaultAsset?: strin
           </p>
         </div>
 
-        <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          ) : (
-            <ArrowDownToLine className="w-5 h-5 mr-2" />
-          )}
-          {isSubmitting ? "Adding Demo Balance..." : "Add Demo Balance"}
+        <Button type="submit" className="w-full h-12 text-base" isLoading={isSubmitting} loadingText="Adding Demo Balance...">
+          {!isSubmitting && <ArrowDownToLine className="w-5 h-5 mr-2" />}
+          {!isSubmitting && "Add Demo Balance"}
         </Button>
       </form>
     </div>

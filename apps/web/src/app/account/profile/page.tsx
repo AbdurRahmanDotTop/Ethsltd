@@ -190,7 +190,7 @@ export default function ProfilePage() {
                     <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2.5 py-0.5 rounded-full font-semibold border border-red-200 dark:border-red-800">
                       Unverified
                     </span>
-                    <Button type="button" size="sm" variant="secondary" className="h-6 text-xs px-2" onClick={handleRequestOTP} disabled={otpLoading}>
+                    <Button type="button" size="sm" variant="secondary" className="h-6 text-xs px-2" onClick={handleRequestOTP} isLoading={otpLoading} loadingText="Verifying...">
                       Verify Now
                     </Button>
                   </div>
@@ -221,15 +221,8 @@ export default function ProfilePage() {
           </div>
 
           <div className="pt-4 flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
+            <Button type="submit" isLoading={isSubmitting} loadingText="Saving...">
+              Save Changes
             </Button>
           </div>
         </form>
@@ -266,11 +259,10 @@ export default function ProfilePage() {
             </div>
           </div>
           <DialogFooter className="sm:justify-between">
-            <Button type="button" variant="ghost" onClick={() => handleRequestOTP()} disabled={otpLoading}>
+            <Button type="button" variant="ghost" onClick={() => handleRequestOTP()} isLoading={otpLoading} loadingText="Sending...">
               Resend Code
             </Button>
-            <Button type="button" onClick={handleVerifyOTP} disabled={otpLoading || otp.length !== 6}>
-              {otpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="button" onClick={handleVerifyOTP} disabled={otp.length !== 6} isLoading={otpLoading} loadingText="Verifying...">
               Verify Email
             </Button>
           </DialogFooter>

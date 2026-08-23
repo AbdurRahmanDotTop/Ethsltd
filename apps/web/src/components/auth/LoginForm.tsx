@@ -128,15 +128,8 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
         </Label>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Signing in...
-          </>
-        ) : (
-          "Log In"
-        )}
+      <Button type="submit" className="w-full" isLoading={isSubmitting} loadingText="Signing in...">
+        Log In
       </Button>
     </form>
   );

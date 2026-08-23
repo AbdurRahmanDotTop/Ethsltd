@@ -211,15 +211,8 @@ export default function SecurityPage() {
           </div>
 
           <div className="pt-2 flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                "Update Password"
-              )}
+            <Button type="submit" isLoading={isSubmitting} loadingText="Updating...">
+              Update Password
             </Button>
           </div>
         </form>
@@ -251,8 +244,7 @@ export default function SecurityPage() {
                 onChange={(e) => setMfaToken(e.target.value)} 
                 className="max-w-[250px]"
               />
-              <Button variant="destructive" onClick={handleDisableMfa} disabled={!mfaToken || isMfaLoading}>
-                {isMfaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              <Button variant="destructive" onClick={handleDisableMfa} disabled={!mfaToken} isLoading={isMfaLoading} loadingText="Disabling...">
                 Disable 2FA
               </Button>
             </div>
@@ -268,8 +260,7 @@ export default function SecurityPage() {
             </div>
 
             {!mfaData ? (
-              <Button onClick={handleGenerateMfa} disabled={isMfaLoading}>
-                {isMfaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              <Button onClick={handleGenerateMfa} isLoading={isMfaLoading} loadingText="Generating...">
                 Enable 2FA
               </Button>
             ) : (
@@ -296,8 +287,7 @@ export default function SecurityPage() {
                       maxLength={6}
                       className="max-w-[200px]"
                     />
-                    <Button onClick={handleEnableMfa} disabled={!mfaToken || mfaToken.length < 6 || isMfaLoading}>
-                      {isMfaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    <Button onClick={handleEnableMfa} disabled={!mfaToken || mfaToken.length < 6} isLoading={isMfaLoading} loadingText="Verifying...">
                       Verify & Enable
                     </Button>
                     <Button variant="ghost" onClick={() => setMfaData(null)}>Cancel</Button>

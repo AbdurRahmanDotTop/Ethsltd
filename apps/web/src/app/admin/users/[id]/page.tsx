@@ -6,6 +6,7 @@ import { apiClient } from "@ethsltd/api-client";
 import { AdminUser } from "@/lib/admin/types";
 import Link from "next/link";
 import { ChevronLeft, ShieldAlert, Ban, Unlock, Activity, Wallet, Info, Handshake, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -277,7 +278,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                       <label className="text-xs text-muted-foreground mb-1 block">Notes / Reason (Visible to user)</label>
                       <input type="text" value={adjustNotes} onChange={e => setAdjustNotes(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="e.g. Dispute #123 resolution, Correction" required />
                     </div>
-                    <button 
+                    <Button 
                       disabled={isAdjusting || !adjustAmount || parseFloat(adjustAmount) <= 0}
                       onClick={async () => {
                         setIsAdjusting(true);
@@ -296,10 +297,12 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                           setIsAdjusting(false);
                         }
                       }}
-                      className="w-full mt-4 bg-brand-primary text-primary-foreground py-2 rounded-md font-medium text-sm hover:opacity-90 disabled:opacity-50"
+                      className="w-full mt-4 font-medium text-sm"
+                      isLoading={isAdjusting}
+                      loadingText="Processing..."
                     >
-                      {isAdjusting ? 'Processing...' : 'Confirm Adjustment'}
-                    </button>
+                      Confirm Adjustment
+                    </Button>
                   </div>
                 </div>
               ) : activeTab === "Security" ? (
@@ -320,7 +323,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                           className="w-full px-3 py-2 bg-muted/50 border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary"
                         />
                       </div>
-                      <button
+                      <Button
                         onClick={async () => {
                           if (!confirm("Are you sure you want to forcibly reset this user's password?")) return;
                           setIsResetting(true);
@@ -338,10 +341,12 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                             setIsResetting(false);
                           }
                         }}
-                        className="mt-4 bg-brand-primary text-primary-foreground hover:bg-brand-primary/90 px-4 py-2 rounded-md font-medium text-sm disabled:opacity-50"
+                        className="mt-4 font-medium text-sm"
+                        isLoading={isResetting}
+                        loadingText="Resetting..."
                       >
-                        {isResetting ? 'Resetting...' : 'Reset'}
-                      </button>
+                        Reset
+                      </Button>
                     </div>
                   </div>
 

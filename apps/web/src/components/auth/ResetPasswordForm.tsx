@@ -114,15 +114,8 @@ export function ResetPasswordForm() {
         )}
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Updating...
-          </>
-        ) : (
-          "Reset Password"
-        )}
+      <Button type="submit" className="w-full" isLoading={isSubmitting} loadingText="Updating...">
+        Reset Password
       </Button>
     </form>
   );

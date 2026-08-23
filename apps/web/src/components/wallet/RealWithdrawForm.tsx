@@ -194,9 +194,8 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
           <Button variant="outline" className="flex-1" onClick={() => setIsConfirming(false)} disabled={isSubmitting}>
             Back
           </Button>
-          <Button variant="destructive" className="flex-1" onClick={onConfirm} disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            {isSubmitting ? "Processing..." : "Confirm Real Withdrawal"}
+          <Button variant="destructive" className="flex-1" onClick={onConfirm} isLoading={isSubmitting} loadingText="Processing...">
+            Confirm Real Withdrawal
           </Button>
         </div>
       </div>
