@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Activity, TrendingUp, PauseCircle, PlayCircle, 
   Settings2, Search, Filter, AlertTriangle, CheckCircle,
-  Zap, ArrowRightLeft, Layers, Server, RefreshCw
+  Zap, ArrowRightLeft, Layers, Server, RefreshCw, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@ethsltd/api-client";
-import { useEffect } from "react";
 
 // Types
 type PairStatus = 'active' | 'suspended' | 'maintenance';
@@ -32,6 +31,14 @@ export default function AdminTradingPage() {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [apiLatency, setApiLatency] = useState<number | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  // Edit Fees Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingPair, setEditingPair] = useState<TradingPair | null>(null);
+  const [makerFee, setMakerFee] = useState("");
+  const [takerFee, setTakerFee] = useState("");
+  const [isSavingFees, setIsSavingFees] = useState(false);
 
   useEffect(() => {
     loadMarkets();
@@ -54,16 +61,20 @@ export default function AdminTradingPage() {
           volume24h: m.volume24h || 0,
           makerFee: m.makerFee || 0.1,
           takerFee: m.takerFee || 0.1,
-          status: m.status?.toLowerCase() || 'active',
+          status: m.status?.toLowerCase() === 'paused' ? 'suspended' : (m.status?.toLowerCase() || 'active'),
         })));
-      } else {
-        // Handle no data or fallback
       }
     } catch (error) {
       console.error("Failed to load markets:", error);
+      showToast("Failed to load markets from the server.", "error");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   const filteredPairs = pairs.filter(p => {
@@ -72,33 +83,81 @@ export default function AdminTradingPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const togglePairStatus = (id: string, currentStatus: PairStatus) => {
+  const togglePairStatus = async (id: string, currentStatus: PairStatus) => {
     setIsProcessing(id);
-    setTimeout(() => {
-      setPairs(prev => prev.map(p => 
-        p.id === id ? { ...p, status: currentStatus === 'suspended' ? 'active' : 'suspended' } : p
-      ));
+    const newStatusDb = currentStatus === 'suspended' ? 'ACTIVE' : 'PAUSED';
+    const newStatusUi = currentStatus === 'suspended' ? 'active' : 'suspended';
+    
+    try {
+      const res = await apiClient.adminUpdateMarketStatus(id, newStatusDb);
+      if (res.success) {
+        setPairs(prev => prev.map(p => p.id === id ? { ...p, status: newStatusUi } : p));
+        showToast(`Market ${id} status updated to ${newStatusUi}.`);
+      } else {
+        throw new Error("Update failed");
+      }
+    } catch (err) {
+      showToast(`Failed to update status for ${id}.`, "error");
+    } finally {
       setIsProcessing(null);
-    }, 1000);
+    }
+  };
+
+  const openEditModal = (pair: TradingPair) => {
+    setEditingPair(pair);
+    setMakerFee(pair.makerFee.toString());
+    setTakerFee(pair.takerFee.toString());
+    setIsEditModalOpen(true);
+  };
+
+  const saveFees = async () => {
+    if (!editingPair) return;
+    setIsSavingFees(true);
+    try {
+      const res = await apiClient.adminUpdateMarketFees(editingPair.id, makerFee, takerFee);
+      if (res.success) {
+        setPairs(prev => prev.map(p => 
+          p.id === editingPair.id ? { ...p, makerFee: parseFloat(makerFee), takerFee: parseFloat(takerFee) } : p
+        ));
+        showToast(`Fees updated for ${editingPair.symbol}.`);
+        setIsEditModalOpen(false);
+      } else {
+        throw new Error("Failed to save fees");
+      }
+    } catch (err) {
+      showToast(`Failed to save fees for ${editingPair.symbol}.`, "error");
+    } finally {
+      setIsSavingFees(false);
+    }
   };
 
   const getStatusBadge = (status: PairStatus) => {
     switch(status) {
-      case 'active': return <span className="flex items-center gap-1 text-xs font-medium text-green-500 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20"><CheckCircle className="w-3 h-3"/> Active</span>;
-      case 'suspended': return <span className="flex items-center gap-1 text-xs font-medium text-red-500 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20"><PauseCircle className="w-3 h-3"/> Suspended</span>;
-      case 'maintenance': return <span className="flex items-center gap-1 text-xs font-medium text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded-full border border-yellow-500/20"><Settings2 className="w-3 h-3"/> Maintenance</span>;
+      case 'active': return <span className="flex items-center gap-1 text-xs font-medium text-green-500 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20 w-fit"><CheckCircle className="w-3 h-3"/> Active</span>;
+      case 'suspended': return <span className="flex items-center gap-1 text-xs font-medium text-red-500 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20 w-fit"><PauseCircle className="w-3 h-3"/> Suspended</span>;
+      case 'maintenance': return <span className="flex items-center gap-1 text-xs font-medium text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded-full border border-yellow-500/20 w-fit"><Settings2 className="w-3 h-3"/> Maintenance</span>;
     }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value) + ' USDT';
+    return new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(value) + ' USDT';
   };
 
   const totalVolume = pairs.reduce((sum, p) => sum + p.volume24h, 0);
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto relative">
       
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 ${
+          toastMessage.type === 'success' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'
+        }`}>
+          {toastMessage.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+          <p className="font-medium text-sm">{toastMessage.text}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -233,7 +292,7 @@ export default function AdminTradingPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="font-medium text-foreground">${(pair.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</p>
+                      <p className="font-medium text-foreground">{formatCurrency(pair.price || 0)}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-foreground">{formatCurrency(pair.volume24h)}</p>
@@ -247,7 +306,7 @@ export default function AdminTradingPage() {
                       {getStatusBadge(pair.status)}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => openEditModal(pair)}>
                         Edit Fees
                       </Button>
                       
@@ -289,6 +348,57 @@ export default function AdminTradingPage() {
           </table>
         </div>
       </div>
+
+      {/* Edit Fees Modal */}
+      {isEditModalOpen && editingPair && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)} />
+          <div className="relative w-full max-w-md bg-card border border-border rounded-xl shadow-2xl p-6 mx-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold">Edit Fees: {editingPair.symbol}</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Maker Fee (%)</label>
+                <input 
+                  type="number" 
+                  step="0.001"
+                  value={makerFee}
+                  onChange={(e) => setMakerFee(e.target.value)}
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Fee charged to liquidity providers (makers).</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Taker Fee (%)</label>
+                <input 
+                  type="number" 
+                  step="0.001"
+                  value={takerFee}
+                  onChange={(e) => setTakerFee(e.target.value)}
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Fee charged to those removing liquidity (takers).</p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSavingFees}>
+                Cancel
+              </Button>
+              <Button onClick={saveFees} disabled={isSavingFees}>
+                {isSavingFees ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
