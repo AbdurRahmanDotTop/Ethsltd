@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { 
-  ArrowLeft, Loader2, Send, Paperclip, User, ShieldAlert, AlertCircle 
+  ArrowLeft, Loader2, Send, Paperclip, User, ShieldAlert, AlertCircle, X 
 } from "lucide-react";
 import { useSupportStore } from "@/stores/support-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -21,6 +21,8 @@ export default function TicketDetailPage() {
   
   const [replyText, setReplyText] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,14 +37,28 @@ export default function TicketDetailPage() {
     }
   }, [activeTicket?.messages]);
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim() || !activeTicket) return;
+    if ((!replyText.trim() && !attachment) || !activeTicket) return;
 
     setIsSending(true);
     try {
-      await addMessage(activeTicket.id, replyText, "USER");
+      let attachmentBase64 = undefined;
+      if (attachment) {
+        attachmentBase64 = await fileToBase64(attachment);
+      }
+      await addMessage(activeTicket.id, replyText, "USER", attachmentBase64);
       setReplyText("");
+      setAttachment(null);
     } catch (error) {
       console.error(error);
     } finally {
@@ -144,12 +160,24 @@ export default function TicketDetailPage() {
                     <span className="font-medium text-foreground">{isUser ? 'You' : 'ETHSLTD Support'}</span>
                     <span>{format(new Date(msg.timestamp), "MMM d, h:mm a")}</span>
                   </div>
-                  <div className={`p-4 rounded-2xl whitespace-pre-wrap text-sm shadow-sm ${
+                  <div className={`p-4 rounded-2xl text-sm shadow-sm flex flex-col gap-3 ${
                     isUser 
                       ? 'bg-brand-primary text-brand-foreground rounded-tr-none' 
                       : 'bg-card border border-border text-foreground rounded-tl-none'
                   }`}>
-                    {msg.text}
+                    {msg.text && <div className="whitespace-pre-wrap">{msg.text}</div>}
+                    {msg.attachmentBase64 && (
+                      <div className="mt-1 rounded-lg overflow-hidden max-w-xs border border-border/50">
+                        {msg.attachmentBase64.startsWith('data:image') ? (
+                          <img src={msg.attachmentBase64} alt="Attachment" className="w-full h-auto object-cover" />
+                        ) : (
+                          <a href={msg.attachmentBase64} download="attachment.pdf" className={`flex items-center gap-2 p-3 transition-colors text-xs font-medium ${isUser ? 'bg-black/20 hover:bg-black/30 text-white' : 'bg-background hover:bg-muted text-foreground'}`}>
+                            <Paperclip className="w-4 h-4 shrink-0" />
+                            <span className="truncate">Download PDF Attachment</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -184,13 +212,32 @@ export default function TicketDetailPage() {
                   }}
                 />
                 <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                  <button type="button" className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted">
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={(e) => setAttachment(e.target.files?.[0] || null)} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`p-2 transition-colors rounded-lg ${attachment ? 'bg-brand-primary/10 text-brand-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                  >
                     <Paperclip className="w-5 h-5" />
                   </button>
-                  <span className="text-xs text-muted-foreground/50">{replyText.length} characters</span>
+                  {attachment && (
+                    <div className="flex items-center gap-1 text-xs font-medium bg-muted px-2 py-1 rounded-md">
+                      <span className="truncate max-w-[120px]">{attachment.name}</span>
+                      <button type="button" onClick={() => setAttachment(null)} className="text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  {!attachment && <span className="text-xs text-muted-foreground/50">{replyText.length} characters</span>}
                 </div>
                 <div className="absolute bottom-3 right-3">
-                  <Button type="submit" size="sm" disabled={isSending || !replyText.trim()} className="gap-2">
+                  <Button type="submit" size="sm" disabled={isSending || (!replyText.trim() && !attachment)} className="gap-2">
                     {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Send
                   </Button>

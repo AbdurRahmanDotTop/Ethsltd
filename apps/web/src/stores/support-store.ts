@@ -11,7 +11,7 @@ interface SupportState {
   fetchTickets: (userId?: string, status?: TicketStatus | "ALL" | "OPEN_OR_PENDING") => Promise<void>;
   fetchTicket: (id: string) => Promise<void>;
   createTicket: (payload: { subject: string; category: TicketCategory; description: string; relatedProduct?: string; relatedTransaction?: string }) => Promise<void>;
-  addMessage: (ticketId: string, text: string, sender: "USER" | "SUPPORT" | "SYSTEM") => Promise<void>;
+  addMessage: (ticketId: string, text: string, sender: "USER" | "SUPPORT" | "SYSTEM", attachmentBase64?: string) => Promise<void>;
 }
 
 export const useSupportStore = create<SupportState>()(
@@ -61,6 +61,8 @@ export const useSupportStore = create<SupportState>()(
             ticketId: m.ticketId,
             sender: (m.isAdmin ? "SUPPORT" : "USER") as "USER" | "SUPPORT" | "SYSTEM",
             text: m.content,
+            attachmentBase64: m.attachmentBase64,
+            isInternalNote: m.isInternalNote,
             timestamp: m.createdAt,
             readBySupport: true,
             readByUser: true
@@ -112,9 +114,9 @@ export const useSupportStore = create<SupportState>()(
       }
     },
 
-    addMessage: async (ticketId, text, sender) => {
+    addMessage: async (ticketId, text, sender, attachmentBase64?: string) => {
       try {
-        const res = await apiClient.sendTicketMessage(ticketId, text);
+        const res = await apiClient.sendTicketMessage(ticketId, text, attachmentBase64);
         if (res.success) {
           set((state) => {
             if (state.activeTicket && state.activeTicket.id === ticketId) {
@@ -123,6 +125,7 @@ export const useSupportStore = create<SupportState>()(
                 ticketId,
                 sender,
                 text,
+                attachmentBase64,
                 timestamp: new Date().toISOString(),
                 readBySupport: false,
                 readByUser: true

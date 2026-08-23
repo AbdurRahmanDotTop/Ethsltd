@@ -26,7 +26,7 @@ export interface SupportMessage {
   sender: "USER" | "SUPPORT" | "SYSTEM";
   text: string;
   timestamp: string;
-  attachments?: string[];
+  attachmentBase64?: string | null;
   isInternalNote?: boolean; // For admin view only
 }
 

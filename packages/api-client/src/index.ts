@@ -679,10 +679,10 @@ export class EthsltdClient {
     return this.request<any[]>(`/api/v1/support/tickets/${ticketId}/messages`);
   }
 
-  async sendTicketMessage(ticketId: string, content: string) {
+  async sendTicketMessage(ticketId: string, content: string, attachmentBase64?: string) {
     return this.request<any>(`/api/v1/support/tickets/${ticketId}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, attachmentBase64 }),
     });
   }
 
@@ -823,10 +823,10 @@ export class EthsltdClient {
     return this.request<any>(`/api/v1/admin/support/tickets/${ticketId}`);
   }
 
-  async adminSendSupportMessage(ticketId: string, content: string) {
+  async adminSendSupportMessage(ticketId: string, content: string, isInternalNote?: boolean, attachmentBase64?: string) {
     return this.request<any>(`/api/v1/admin/support/tickets/${ticketId}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, isInternalNote, attachmentBase64 }),
     });
   }
 

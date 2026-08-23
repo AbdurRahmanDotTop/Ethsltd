@@ -91,8 +91,8 @@ supportRoutes.post('/tickets/:id/messages', async (c) => {
   const ticketId = c.req.param('id');
   const body = await c.req.json();
 
-  if (!body.content) {
-    return c.json({ success: false, error: 'Missing content' }, 400);
+  if (!body.content && !body.attachmentBase64) {
+    return c.json({ success: false, error: 'Missing content or attachment' }, 400);
   }
 
   try {
@@ -103,7 +103,9 @@ supportRoutes.post('/tickets/:id/messages', async (c) => {
       ticketId,
       senderId: user.id,
       isAdmin: false, // User is sending
-      content: body.content,
+      isInternalNote: false, // Users cannot send internal notes
+      content: body.content || '',
+      attachmentBase64: body.attachmentBase64 || null,
       createdAt: now,
     });
 

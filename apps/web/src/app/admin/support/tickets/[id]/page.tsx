@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { 
-  ArrowLeft, Loader2, Send, Lock, User, ShieldAlert, CheckCircle, Save
+  ArrowLeft, Loader2, Send, Lock, User, ShieldAlert, CheckCircle, Save, Paperclip, X
 } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { SupportTicket, TicketStatus } from "@/lib/support/types";
@@ -23,6 +23,9 @@ export default function AdminTicketDetailPage() {
   
   const [currentStatus, setCurrentStatus] = useState<TicketStatus>("OPEN");
   
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,15 +54,30 @@ export default function AdminTicketDetailPage() {
     }
   }, [ticket?.messages]);
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim() || !ticket) return;
+    if ((!replyText.trim() && !attachment) || !ticket) return;
 
     setIsSending(true);
     try {
-      await apiClient.adminSendSupportMessage(ticket.id, replyText);
+      let attachmentBase64 = undefined;
+      if (attachment) {
+        attachmentBase64 = await fileToBase64(attachment);
+      }
+
+      await apiClient.adminSendSupportMessage(ticket.id, replyText, isInternalNote, attachmentBase64);
       await fetchTicketData(); // re-fetch to see updates
       setReplyText("");
+      setAttachment(null);
     } catch (error) {
       console.error(error);
     } finally {
@@ -138,14 +156,26 @@ export default function AdminTicketDetailPage() {
                     </span>
                     <span>{msg.createdAt ? format(new Date(msg.createdAt), "MMM d, h:mm a") : 'Unknown time'}</span>
                   </div>
-                  <div className={`p-4 rounded-2xl whitespace-pre-wrap text-sm shadow-sm ${
+                  <div className={`p-4 rounded-2xl text-sm shadow-sm flex flex-col gap-3 ${
                     isUser 
                       ? 'bg-muted border border-border text-foreground rounded-tl-none' 
                       : isInternal 
                         ? 'bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 rounded-tr-none'
                         : 'bg-brand-primary text-brand-foreground rounded-tr-none'
                   }`}>
-                    {msg.content}
+                    {msg.content && <div className="whitespace-pre-wrap">{msg.content}</div>}
+                    {msg.attachmentBase64 && (
+                      <div className="mt-1 rounded-lg overflow-hidden max-w-xs border border-border/50">
+                        {msg.attachmentBase64.startsWith('data:image') ? (
+                          <img src={msg.attachmentBase64} alt="Attachment" className="w-full h-auto object-cover" />
+                        ) : (
+                          <a href={msg.attachmentBase64} download="attachment.pdf" className="flex items-center gap-2 p-3 bg-background/50 hover:bg-background transition-colors text-foreground text-xs font-medium">
+                            <Paperclip className="w-4 h-4 shrink-0" />
+                            <span className="truncate">Download PDF Attachment</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -184,13 +214,37 @@ export default function AdminTicketDetailPage() {
                   }
                 }}
               />
-              <div className="absolute bottom-3 right-3">
-                <Button 
-                  type="submit" 
-                  size="sm" 
-                  disabled={isSending || !replyText.trim()} 
-                  className={isInternalNote ? "bg-amber-500 hover:bg-amber-600 text-white" : "gap-2"}
-                >
+                <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={(e) => setAttachment(e.target.files?.[0] || null)} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`p-2 transition-colors rounded-lg ${attachment ? 'bg-brand-primary/10 text-brand-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+                  {attachment && (
+                    <div className="flex items-center gap-1 text-xs font-medium bg-muted px-2 py-1 rounded-md">
+                      <span className="truncate max-w-[120px]">{attachment.name}</span>
+                      <button type="button" onClick={() => setAttachment(null)} className="text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="absolute bottom-3 right-3">
+                  <Button 
+                    type="submit" 
+                    size="sm" 
+                    disabled={isSending || (!replyText.trim() && !attachment)} 
+                    className={isInternalNote ? "bg-amber-500 hover:bg-amber-600 text-white" : "gap-2"}
+                  >
                   {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   {isInternalNote ? "Add Note" : "Send Reply"}
                 </Button>

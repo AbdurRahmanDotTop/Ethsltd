@@ -1484,7 +1484,7 @@ adminRoutes.post('/support/tickets/:id/messages', async (c) => {
   const ticketId = c.req.param('id');
   const body = await c.req.json();
 
-  if (!body.content) return c.json({ success: false, error: 'Message content required' }, 400);
+  if (!body.content && !body.attachmentBase64) return c.json({ success: false, error: 'Message content or attachment required' }, 400);
 
   try {
     const { eq } = require('drizzle-orm');
@@ -1495,13 +1495,21 @@ adminRoutes.post('/support/tickets/:id/messages', async (c) => {
       ticketId,
       senderId: admin.id,
       isAdmin: true,
-      content: body.content,
+      isInternalNote: body.isInternalNote || false,
+      content: body.content || '',
+      attachmentBase64: body.attachmentBase64 || null,
       createdAt: now,
     });
 
-    await db.update(tickets)
-      .set({ updatedAt: now, status: 'WAITING_FOR_USER' })
-      .where(eq(tickets.id, ticketId));
+    if (!body.isInternalNote) {
+      await db.update(tickets)
+        .set({ updatedAt: now, status: 'WAITING_FOR_USER' })
+        .where(eq(tickets.id, ticketId));
+    } else {
+      await db.update(tickets)
+        .set({ updatedAt: now })
+        .where(eq(tickets.id, ticketId));
+    }
 
     return c.json({ success: true });
   } catch (error) {
