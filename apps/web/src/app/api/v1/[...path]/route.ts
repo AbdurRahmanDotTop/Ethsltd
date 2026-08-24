@@ -2,11 +2,12 @@ import { NextRequest } from "next/server";
 
 export const runtime = 'edge'; // Run this on Cloudflare Edge
 
-async function proxyRequest(req: NextRequest, { params }: { params: { path: string[] } }) {
+async function proxyRequest(req: NextRequest, { params }: { params: Promise<{ path: string[] }> | { path: string[] } }) {
   // We should hit the actual backend here, not the proxy itself.
   // In production, the backend is https://api.ethsltd.com. Locally, it might be http://localhost:3001.
   const backendUrl = process.env.BACKEND_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.ethsltd.com' : 'http://localhost:3001');
-  const path = params.path.join('/');
+  const resolvedParams = await params;
+  const path = resolvedParams.path.join('/');
   const searchParams = req.nextUrl.search;
   const targetUrl = `${backendUrl.replace(/\/$/, '')}/api/v1/${path}${searchParams}`;
 
