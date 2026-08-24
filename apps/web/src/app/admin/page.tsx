@@ -41,20 +41,29 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [activity, setActivity] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
       try {
         const statsRes = await apiClient.getAdminStats();
-        if (statsRes.success) setStats(statsRes.data);
+        if (statsRes.success) {
+          setStats(statsRes.data);
+        } else {
+          setError(statsRes.error || "Failed to load admin stats. You may not have sufficient permissions.");
+        }
         
         const chartRes = await apiClient.getAdminVolumeChart();
         if (chartRes.success) setChartData(chartRes.data);
 
         const activityRes = await apiClient.getAdminRecentActivity();
         if (activityRes.success) setActivity(activityRes.data);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        setError(err.message || "An unexpected error occurred while fetching data.");
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchStats();
@@ -68,10 +77,20 @@ export default function AdminDashboardPage() {
     }) + ' USDT';
   };
 
-  if (!stats) {
+  if (isLoading) {
     return (
       <div className="p-6 md:p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="p-6 md:p-8 flex flex-col items-center justify-center min-h-[400px] text-center">
+        <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
+        <h2 className="text-xl font-bold mb-2">Access Denied or Error</h2>
+        <p className="text-muted-foreground">{error || "Failed to load dashboard data."}</p>
       </div>
     );
   }
