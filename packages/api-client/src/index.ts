@@ -6,8 +6,15 @@ export class EthsltdClient {
   private mode: 'REAL' | 'DEMO' = 'REAL';
   private isLoggingOut = false;
 
-  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    if (typeof window !== 'undefined') {
+      // In the browser, ALWAYS use relative path to hit the Next.js rewrite proxy.
+      // This ensures cookies are strictly same-domain and never blocked by 3rd-party policies.
+      this.baseUrl = '';
+    } else {
+      // On the server (Next.js SSR/Edge), use the absolute external API URL
+      this.baseUrl = baseUrl || process.env.NEXT_PUBLIC_API_URL || 'https://api.ethsltd.com';
+    }
     // We rely purely on the HttpOnly cookie for session management in the browser
     // via credentials: 'include'. localStorage is no longer used for tokens.
   }
