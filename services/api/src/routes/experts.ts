@@ -453,7 +453,7 @@ expertRoutes.post('/bookings/:id/messages', async (c) => {
 expertRoutes.use('/dashboard/*', async (c, next) => {
   const user = c.get('user');
   
-  if (user.role === 'EXPERT' || user.role === 'SUPER_ADMIN') {
+  if (user.role === 'EXPERT') {
     const db = c.get('db');
     const existingProfile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
     
@@ -462,7 +462,7 @@ expertRoutes.use('/dashboard/*', async (c, next) => {
       await db.insert(expertProfiles).values({
         id: `exp_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
         userId: user.id,
-        bio: user.role === 'SUPER_ADMIN' ? 'Super Admin Expert Profile' : 'Expert Profile',
+        bio: 'Expert Profile',
         experienceYears: 0,
         languages: ['English'],
         categories: ['General'],

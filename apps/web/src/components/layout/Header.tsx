@@ -139,7 +139,7 @@ export function Header() {
                       <Link href="/account" className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setDropdownOpen(false)}>
                         <LayoutDashboard className="w-4 h-4" /> Account
                       </Link>
-                      {(user.role === 'EXPERT' || user.role === 'SUPER_ADMIN') && (
+                      {user.role === 'EXPERT' && (
                         <Link href="/expert/dashboard" className="flex items-center gap-3 px-4 py-2 text-sm text-brand-primary font-medium hover:bg-brand-primary/10" onClick={() => setDropdownOpen(false)}>
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
                           Expert Dashboard
@@ -240,7 +240,7 @@ export function Header() {
                   <div className={`overflow-hidden transition-all duration-300 ${mobileProfileOpen ? 'max-h-[400px] mt-4 opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="flex flex-col gap-4 pl-4 py-2 border-l-2 border-border/50 ml-2">
                       <Link href="/account" className="text-base text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>Account</Link>
-                      {(user.role === 'EXPERT' || user.role === 'SUPER_ADMIN') && (
+                      {user.role === 'EXPERT' && (
                         <Link href="/expert/dashboard" className="text-base text-brand-primary font-medium hover:text-brand-primary/80" onClick={() => setMobileMenuOpen(false)}>Expert Dashboard</Link>
                       )}
                       <Link href="/account/profile" className="text-base text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>Profile</Link>
