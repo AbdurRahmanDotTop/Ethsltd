@@ -43,8 +43,8 @@ export function ExpertCard({ expert }: ExpertCardProps) {
             </div>
             <div className="flex items-center gap-1 text-sm text-muted-foreground mt-0.5">
               <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-              <span className="font-medium text-foreground">{expert.rating.toFixed(1)}</span>
-              <span>({expert.completedServices} reviews)</span>
+              <span className="font-medium text-foreground">{(expert.rating || 0).toFixed(1)}</span>
+              <span>({expert.completedServices || 0} reviews)</span>
             </div>
           </div>
         </div>
@@ -57,27 +57,27 @@ export function ExpertCard({ expert }: ExpertCardProps) {
       <div className="grid grid-cols-2 gap-y-2 gap-x-4 mb-5 text-sm">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Clock className="w-4 h-4" />
-          <span>{expert.experienceYears} Years Exp.</span>
+          <span>{expert.experienceYears || 0} Years Exp.</span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <Users className="w-4 h-4" />
-          <span>{expert.customersHelped} Helped</span>
+          <span>{expert.customersHelped || 0} Helped</span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground col-span-2">
           <Globe className="w-4 h-4 shrink-0" />
-          <span className="truncate">{expert.languages.join(", ")}</span>
+          <span className="truncate">{(expert.languages || []).join(", ")}</span>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-5">
-        {expert.categories.slice(0, 3).map(cat => (
+        {(expert.categories || []).slice(0, 3).map(cat => (
           <span key={cat} className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-medium rounded-full">
             {cat}
           </span>
         ))}
-        {expert.categories.length > 3 && (
+        {(expert.categories || []).length > 3 && (
           <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-medium rounded-full">
-            +{expert.categories.length - 3}
+            +{(expert.categories || []).length - 3}
           </span>
         )}
       </div>
