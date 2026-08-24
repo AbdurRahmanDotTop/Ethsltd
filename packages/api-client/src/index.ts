@@ -430,19 +430,6 @@ export class EthsltdClient {
     return this.request<any>(`/api/v1/admin/stats/p2p${qs}`);
   }
 
-  // Public Expert Methods
-  async getExperts() {
-    return this.request<any[]>('/api/v1/experts');
-  }
-
-  async getExpertDetails(id: string) {
-    return this.request<any>(`/api/v1/experts/${id}`);
-  }
-
-  async getExpertServices(id: string) {
-    return this.request<any[]>(`/api/v1/experts/${id}/services`);
-  }
-
   // Admin Expert Methods
   async adminGetExperts() {
     return this.request<any[]>('/api/v1/admin/experts');
