@@ -48,12 +48,15 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
         setGlobalError(response.error || "Invalid credentials.");
         return;
       }
+      // Note: setUser is still called to update client state, but we force a hard navigation
+      // so Next.js middleware and SSR components can read the new HttpOnly cookie immediately.
       setUser(response.data?.user || null);
       if (onSuccess) {
         onSuccess();
       } else {
         const defaultRedirect = response.data?.user?.role === 'SUPER_ADMIN' || response.data?.user?.role === 'ADMIN' ? '/admin' : '/account';
-        router.push(searchRedirect || defaultRedirect);
+        const finalRedirect = searchRedirect || defaultRedirect;
+        window.location.href = finalRedirect;
       }
     } catch (err: any) {
       setGlobalError(err.message || "An error occurred during login.");

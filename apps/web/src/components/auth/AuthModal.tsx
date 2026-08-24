@@ -29,6 +29,7 @@ export function AuthModal() {
 
   const handleSuccess = () => {
     closeAuthModal();
+    window.location.reload();
   };
 
   return (

@@ -57,8 +57,10 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void } = {}) {
       } else {
         if (response.data?.user) {
           setUser(response.data.user);
+          const finalRedirect = response.data.user.role === 'SUPER_ADMIN' || response.data.user.role === 'ADMIN' ? '/admin' : '/account';
+          window.location.href = finalRedirect;
         } else {
-          router.push("/verify-email");
+          window.location.href = "/verify-email";
         }
       }
     } catch (err: any) {
