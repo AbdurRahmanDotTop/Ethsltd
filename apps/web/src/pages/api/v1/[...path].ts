@@ -60,8 +60,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Forward headers
     response.headers.forEach((value, key) => {
-      res.setHeader(key, value);
+      if (key.toLowerCase() !== 'set-cookie') {
+        res.setHeader(key, value);
+      }
     });
+
+    // Handle Set-Cookie separately to prevent comma concatenation
+    if (typeof response.headers.getSetCookie === 'function') {
+      const setCookies = response.headers.getSetCookie();
+      if (setCookies && setCookies.length > 0) {
+        res.setHeader('Set-Cookie', setCookies);
+      }
+    } else {
+      const cookieHeader = response.headers.get('set-cookie');
+      if (cookieHeader) {
+        // Next.js res.setHeader handles array of cookies correctly
+        res.setHeader('Set-Cookie', cookieHeader.split(/,(?=\s*[a-zA-Z0-9_-]+\s*=)/));
+      }
+    }
 
     // Forward body
     if (response.body) {
