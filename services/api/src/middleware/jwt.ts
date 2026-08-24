@@ -50,7 +50,8 @@ export async function jwtMiddleware(c: Context, next: Next) {
 
   if (!validSession) {
     if (cookieToken) {
-      deleteCookie(c, 'ethsltd_session', getAuthCookieOptions(c));
+      const { clearAuthCookies } = await import('../utils/cookie');
+      clearAuthCookies(c);
     }
     return c.json({ success: false, error: 'Session expired or invalid' }, 401);
   }

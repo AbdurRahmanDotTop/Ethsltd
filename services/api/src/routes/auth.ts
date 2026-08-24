@@ -397,7 +397,8 @@ authRoutes.post('/logout', async (c) => {
       }
     }
 
-    deleteCookie(c, 'ethsltd_session', getAuthCookieOptions(c));
+    const { clearAuthCookies } = await import('../utils/cookie');
+    clearAuthCookies(c);
     return c.json({ success: true });
   } catch (err: any) {
     return c.json({ success: false, error: err.message }, 500);
