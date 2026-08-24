@@ -20,7 +20,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
                 <img src={expert.avatar} alt={expert.displayName} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
-                  {expert.displayName.charAt(0)}
+                  {(expert.displayName || 'Expert').charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
