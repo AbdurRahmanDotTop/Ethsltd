@@ -4,6 +4,27 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Handle API Proxy
+  if (pathname.startsWith('/api/v1/')) {
+    const isProd = process.env.NODE_ENV === 'production';
+    const backendUrl = process.env.BACKEND_API_URL || (isProd ? 'https://api.ethsltd.com' : 'http://localhost:3001');
+    
+    // Construct the destination URL
+    const destinationUrl = new URL(request.url);
+    destinationUrl.protocol = backendUrl.split('://')[0] + ':';
+    destinationUrl.host = backendUrl.split('://')[1];
+    destinationUrl.port = '';
+    
+    // Create the rewrite response
+    const response = NextResponse.rewrite(destinationUrl);
+    
+    // Forward essential headers
+    response.headers.set('x-forwarded-host', request.nextUrl.host);
+    response.headers.set('origin', request.nextUrl.origin);
+    
+    return response;
+  }
+
   // List of route prefixes that require authentication
   const protectedPrefixes = [
     '/wallet',
@@ -60,11 +81,10 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
