@@ -3,10 +3,12 @@ import { NextRequest } from "next/server";
 export const runtime = 'edge'; // Run this on Cloudflare Edge
 
 async function proxyRequest(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'https://api.ethsltd.com';
+  // We should hit the actual backend here, not the proxy itself.
+  // In production, the backend is https://api.ethsltd.com. Locally, it might be http://localhost:3001.
+  const backendUrl = process.env.BACKEND_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.ethsltd.com' : 'http://localhost:3001');
   const path = params.path.join('/');
   const searchParams = req.nextUrl.search;
-  const targetUrl = `${apiUrl}/api/v1/${path}${searchParams}`;
+  const targetUrl = `${backendUrl.replace(/\/$/, '')}/api/v1/${path}${searchParams}`;
 
   // Forward all necessary headers, EXPLICITLY including cookies and auth
   const headers = new Headers();
@@ -19,6 +21,7 @@ async function proxyRequest(req: NextRequest, { params }: { params: { path: stri
 
   // Ensure origin is set correctly so the backend's getCookieDomain logic works
   headers.set('origin', req.nextUrl.origin);
+  headers.set('x-forwarded-host', req.nextUrl.host);
 
   let body = undefined;
   // Only parse body for methods that allow it
