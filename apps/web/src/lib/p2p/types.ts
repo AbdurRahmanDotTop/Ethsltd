@@ -152,6 +152,7 @@ export type P2PExpertProfile = {
   userId: string;
   displayName: string;
   avatar?: string;
+  avatarUrl?: string;
   bio: string;
   experienceYears: number;
   languages: string[];

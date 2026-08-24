@@ -16,8 +16,8 @@ export function ExpertCard({ expert }: ExpertCardProps) {
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-muted">
-              {expert.avatar ? (
-                <img src={expert.avatar} alt={expert.displayName} className="w-full h-full object-cover" />
+              {expert.avatarUrl || expert.avatar ? (
+                <img src={expert.avatarUrl || expert.avatar} alt={expert.displayName || 'Expert'} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
                   {(expert.displayName || 'Expert').charAt(0).toUpperCase()}
@@ -36,7 +36,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="font-semibold text-foreground">{expert.displayName}</h3>
+              <h3 className="font-semibold text-foreground">{expert.displayName || 'Unnamed Expert'}</h3>
               {expert.verificationStatus === "VERIFIED" && (
                 <BadgeCheck className="w-4 h-4 text-primary" />
               )}
