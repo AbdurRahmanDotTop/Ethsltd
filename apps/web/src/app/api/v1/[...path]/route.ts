@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
 export const runtime = 'edge'; // Run this on Cloudflare Edge
+export const dynamic = 'force-dynamic'; // Prevent Next.js from caching GET requests
 
 async function proxyRequest(req: NextRequest, { params }: { params: Promise<{ path: string[] }> | { path: string[] } }) {
   // We should hit the actual backend here, not the proxy itself.
