@@ -12,15 +12,6 @@ const nextConfig: any = {
   },
   transpilePackages: ["@ethsltd/api-client", "@ethsltd/types"],
   serverExternalPackages: ["sharp"],
-  async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'https://api.ethsltd.com';
-    return [
-      {
-        source: '/api/v1/:path*',
-        destination: `${apiUrl}/api/v1/:path*`,
-      },
-    ];
-  },
 };
 
 export default nextConfig;
