@@ -351,6 +351,12 @@ adminRoutes.get('/users/:id', async (c) => {
       }
     }
     
+    // Fetch related activity and orders
+    const recentOrders = await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt)).limit(50).all();
+    const recentP2pOrders = await db.select().from(p2pOrders).where(sql`buyer_id = ${userId} OR seller_id = ${userId}`).orderBy(desc(p2pOrders.createdAt)).limit(50).all();
+    const recentTransactions = await db.select().from(walletTransactions).where(eq(walletTransactions.userId, userId)).orderBy(desc(walletTransactions.createdAt)).limit(50).all();
+    const recentSessions = await db.select().from(sessions).where(eq(sessions.userId, userId)).orderBy(desc(sessions.createdAt)).limit(10).all();
+
     return c.json({
       success: true,
       data: {
@@ -361,6 +367,10 @@ adminRoutes.get('/users/:id', async (c) => {
         demoBalanceUsd,
         tradingVolumeUsd: 0,
         p2pVolumeUsd: 0,
+        orders: recentOrders,
+        p2pOrders: recentP2pOrders,
+        transactions: recentTransactions,
+        sessions: recentSessions,
       }
     });
   } catch (error) {

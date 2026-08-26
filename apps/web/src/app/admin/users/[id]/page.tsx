@@ -379,6 +379,153 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                     </button>
                   </div>
                 </div>
+              ) : activeTab === "Activity" ? (
+                <div className="space-y-6">
+                  <h3 className="font-semibold text-lg border-b border-border pb-2">Recent Transactions</h3>
+                  {user.transactions && user.transactions.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+                          <tr>
+                            <th className="px-4 py-2 rounded-tl-md">Date</th>
+                            <th className="px-4 py-2">Type</th>
+                            <th className="px-4 py-2">Asset</th>
+                            <th className="px-4 py-2">Amount</th>
+                            <th className="px-4 py-2 rounded-tr-md">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {user.transactions.map((tx: any) => (
+                            <tr key={tx.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                              <td className="px-4 py-2">{new Date(tx.createdAt).toLocaleString()}</td>
+                              <td className="px-4 py-2 font-medium">{tx.type}</td>
+                              <td className="px-4 py-2">{tx.assetSymbol}</td>
+                              <td className="px-4 py-2">{tx.amount}</td>
+                              <td className="px-4 py-2">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${tx.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500 border-green-500/20' : tx.status === 'FAILED' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'}`}>
+                                  {tx.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg">
+                      <p>No recent transactions found.</p>
+                    </div>
+                  )}
+
+                  <h3 className="font-semibold text-lg border-b border-border pb-2 mt-8">Recent Logins</h3>
+                  {user.sessions && user.sessions.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+                          <tr>
+                            <th className="px-4 py-2 rounded-tl-md">Date</th>
+                            <th className="px-4 py-2">IP Address</th>
+                            <th className="px-4 py-2 rounded-tr-md">User Agent</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {user.sessions.map((session: any) => (
+                            <tr key={session.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                              <td className="px-4 py-2 whitespace-nowrap">{new Date(session.createdAt).toLocaleString()}</td>
+                              <td className="px-4 py-2">{session.ipAddress || 'Unknown'}</td>
+                              <td className="px-4 py-2 truncate max-w-[250px]" title={session.userAgent}>{session.userAgent || 'Unknown'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg">
+                      <p>No recent logins found.</p>
+                    </div>
+                  )}
+                </div>
+              ) : activeTab === "Orders" ? (
+                <div className="space-y-6">
+                  <h3 className="font-semibold text-lg border-b border-border pb-2">Spot Orders</h3>
+                  {user.orders && user.orders.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+                          <tr>
+                            <th className="px-4 py-2 rounded-tl-md">Date</th>
+                            <th className="px-4 py-2">Market</th>
+                            <th className="px-4 py-2">Side</th>
+                            <th className="px-4 py-2">Price</th>
+                            <th className="px-4 py-2">Amount</th>
+                            <th className="px-4 py-2 rounded-tr-md">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {user.orders.map((order: any) => (
+                            <tr key={order.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                              <td className="px-4 py-2 whitespace-nowrap">{new Date(order.createdAt).toLocaleString()}</td>
+                              <td className="px-4 py-2 font-medium">{order.marketSymbol}</td>
+                              <td className="px-4 py-2">
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${order.side === 'BUY' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                  {order.side}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2">{order.price || 'Market'}</td>
+                              <td className="px-4 py-2">{order.amount}</td>
+                              <td className="px-4 py-2 text-xs font-medium">{order.status}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg">
+                      <p>No spot orders found.</p>
+                    </div>
+                  )}
+
+                  <h3 className="font-semibold text-lg border-b border-border pb-2 mt-8">P2P Orders</h3>
+                  {user.p2pOrders && user.p2pOrders.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+                          <tr>
+                            <th className="px-4 py-2 rounded-tl-md">Date</th>
+                            <th className="px-4 py-2">Role</th>
+                            <th className="px-4 py-2">Fiat Amount</th>
+                            <th className="px-4 py-2">Crypto Amount</th>
+                            <th className="px-4 py-2">Price</th>
+                            <th className="px-4 py-2 rounded-tr-md">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {user.p2pOrders.map((order: any) => {
+                            const isBuyer = order.buyerId === user.id;
+                            return (
+                              <tr key={order.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                                <td className="px-4 py-2 whitespace-nowrap">{new Date(order.createdAt).toLocaleString()}</td>
+                                <td className="px-4 py-2">
+                                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${isBuyer ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                                    {isBuyer ? 'BUYER' : 'SELLER'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2 font-medium">{order.fiatAmount}</td>
+                                <td className="px-4 py-2 text-muted-foreground">{order.cryptoAmount}</td>
+                                <td className="px-4 py-2">{order.price}</td>
+                                <td className="px-4 py-2 text-xs font-medium">{order.status}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg">
+                      <p>No P2P orders found.</p>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="text-center text-muted-foreground flex flex-col items-center py-8">
                   <Info className="w-8 h-8 mb-3 opacity-50" />
