@@ -2,15 +2,97 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { User, Bell, Download, Clock, CreditCard, Share2, MessageCircle } from "lucide-react";
+import { User, Bell, Download, Clock, CreditCard, Share2, MessageCircle, ShieldCheck, Globe } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { useRouter } from "next/navigation";
+
+const heroSlides = [
+  {
+    id: 1,
+    title: (
+      <>
+        Brand New Rates<br />
+        <span className="text-yellow-400">0 Trading Fees</span><br />
+        for Spot Trade!
+      </>
+    ),
+    subtitle: "Fast & seamless professional trading experience.",
+    bg: "bg-gradient-to-r from-blue-700 to-blue-500",
+    cta: "Start Trading",
+    href: "/trade",
+    bgElement: (
+      <div className="absolute right-[-20px] top-0 bottom-0 flex items-center justify-center opacity-90 z-0">
+        <span className="text-[120px] font-black text-yellow-500 leading-none drop-shadow-2xl italic">0</span>
+      </div>
+    )
+  },
+  {
+    id: 2,
+    title: (
+      <>
+        Buy & Sell Crypto<br />
+        <span className="text-[#00C087]">Through P2P</span>
+      </>
+    ),
+    subtitle: "Secure, escrow-protected direct user-to-user trading.",
+    bg: "bg-gradient-to-r from-emerald-800 to-teal-600",
+    cta: "Start P2P Trading",
+    href: "/p2p",
+    bgElement: (
+      <div className="absolute right-[-10px] top-6 opacity-20 z-0 pointer-events-none">
+        <CreditCard className="w-32 h-32 text-white transform rotate-12" />
+      </div>
+    )
+  },
+  {
+    id: 3,
+    title: (
+      <>
+        Your Crypto.<br />
+        <span className="text-purple-400">Securely Managed.</span>
+      </>
+    ),
+    subtitle: "Your assets remain protected with our secure wallet infrastructure.",
+    bg: "bg-gradient-to-r from-purple-800 to-indigo-600",
+    cta: "Explore Wallet",
+    href: "/wallet",
+    bgElement: (
+      <div className="absolute right-[-10px] top-6 opacity-20 z-0 pointer-events-none">
+        <ShieldCheck className="w-32 h-32 text-white transform -rotate-12" />
+      </div>
+    )
+  },
+  {
+    id: 4,
+    title: (
+      <>
+        Everything You Need<br />
+        <span className="text-orange-400">For Your Journey</span>
+      </>
+    ),
+    subtitle: "Trading, P2P, and portfolio management in one unified ecosystem.",
+    bg: "bg-gradient-to-r from-orange-700 to-red-600",
+    cta: "Get Started",
+    href: "/trade",
+    bgElement: (
+      <div className="absolute right-[-10px] top-6 opacity-20 z-0 pointer-events-none">
+        <Globe className="w-32 h-32 text-white transform rotate-6" />
+      </div>
+    )
+  }
+];
 
 export function GlobalHomeDashboard() {
   const [tickers, setTickers] = useState<any[]>([]);
   const { user } = useAuthStore();
   const router = useRouter();
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  
+  const minSwipeDistance = 50;
 
   useEffect(() => {
     let mounted = true;
@@ -21,6 +103,36 @@ export function GlobalHomeDashboard() {
     }).catch(console.error);
     return () => { mounted = false; };
   }, []);
+
+  // Auto-slide effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [currentSlide]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEndEvent = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) {
+      setCurrentSlide(prev => (prev === heroSlides.length - 1 ? 0 : prev + 1));
+    } else if (isRightSwipe) {
+      setCurrentSlide(prev => (prev === 0 ? heroSlides.length - 1 : prev - 1));
+    }
+  };
 
   const topMarkets = tickers.slice(0, 3);
   const gainers = [...tickers].sort((a, b) => b.priceChange24h - a.priceChange24h).slice(0, 5);
@@ -51,18 +163,50 @@ export function GlobalHomeDashboard() {
         </button>
       </div>
 
-      {/* Hero Banner */}
+      {/* Hero Banner Carousel */}
       <div className="px-4 mt-2">
-        <div className="bg-gradient-to-r from-blue-700 to-blue-500 rounded-xl p-5 relative overflow-hidden shadow-lg h-36 flex flex-col justify-center">
-          <h2 className="text-xl font-bold leading-tight relative z-10 w-2/3">Brand New Rates<br/><span className="text-yellow-400">0 Trading Fees</span><br/>for Spot Trade!</h2>
-          <div className="absolute right-[-20px] top-0 bottom-0 flex items-center justify-center opacity-90 z-0">
-            <span className="text-[120px] font-black text-yellow-500 leading-none drop-shadow-2xl italic">0</span>
+        <div 
+          className="relative overflow-hidden rounded-xl shadow-lg h-[170px]" 
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEndEvent}
+        >
+          <div 
+            className="flex h-full transition-transform duration-500 ease-in-out"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {heroSlides.map((slide) => (
+              <div 
+                key={slide.id} 
+                className={`min-w-full h-full ${slide.bg} relative overflow-hidden flex flex-col justify-center px-5`}
+              >
+                {slide.bgElement}
+                <div className="relative z-10 w-[75%] sm:w-2/3">
+                  <h2 className="text-[17px] sm:text-xl font-bold leading-tight drop-shadow-md">{slide.title}</h2>
+                  {slide.subtitle && (
+                    <p className="text-[11px] sm:text-xs text-white/95 mt-1.5 line-clamp-2 pr-2">{slide.subtitle}</p>
+                  )}
+                  <Link href={slide.href} className="inline-block mt-3 bg-white text-black hover:bg-gray-100 text-[11px] sm:text-xs font-semibold px-4 py-1.5 rounded-full transition-colors shadow-sm">
+                    {slide.cta}
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* Carousel Indicators */}
         <div className="flex justify-center gap-1.5 mt-3">
-          <div className="w-4 h-1 bg-[#00C087] rounded-full"></div>
-          <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-          <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+          {heroSlides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentSlide(idx)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                currentSlide === idx ? "w-4 bg-[#00C087]" : "w-1.5 bg-gray-600 hover:bg-gray-400"
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
         </div>
       </div>
 
