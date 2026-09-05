@@ -667,13 +667,7 @@ walletRoutes.post('/withdraw', async (c) => {
   } else {
     // --- REAL MODE WITHDRAWAL (CREGIS WAAS) ---
     try {
-      const cregis = new CregisClient(c.env);
-      
-      // Step 1: Call Cregis Payout API via PHP Proxy (payout actual net amount)
-      // Note: Do we payout gross or net? Usually user requests 100, fee is 1, they receive 99.
-      const payoutId = await cregis.createPayout(preview.netUsdtReceived, assetSymbol, destination, user.id);
-      
-      // Step 2: Move balance to locked_balance
+      // Step 1: Move balance to locked_balance immediately to secure funds
       const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
       const newLocked = (parseFloat(wallet.lockedBalance) + parsedAmount).toString();
       await db.update(wallets).set({ balance: newBalance, lockedBalance: newLocked, updatedAt: now }).where(eq(wallets.id, wallet.id));
@@ -681,7 +675,7 @@ walletRoutes.post('/withdraw', async (c) => {
       const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
       const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
       
-      // Step 3: Record transaction as PENDING (Wait for Cregis Webhook to mark COMPLETED)
+      // Step 2: Record transaction as PENDING (Wait for Cregis Webhook to mark COMPLETED)
       await db.insert(walletTransactions).values({
         id: transactionId,
         displayId: txDisplayId,
@@ -694,7 +688,7 @@ walletRoutes.post('/withdraw', async (c) => {
         status: 'PENDING',
         destination,
         network: network || 'External',
-        reference: payoutId, // Store Cregis payout ID for webhook matching
+        reference: 'Pending API Submission', // Initial state
         
         // Detailed breakdown
         originalCurrency: preview.currencyCode,
@@ -714,37 +708,60 @@ walletRoutes.post('/withdraw', async (c) => {
         try {
           const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
     
-    // Admin Alert
-    c.executionCtx.waitUntil(emailService.sendAdminWithdrawalAlert({
-      id: transactionId,
-      userId: user.id,
-      amount: parsedAmount.toString(),
-      asset: assetSymbol,
-      mode: mode,
-    }, appUrl).catch(e => console.error(e)));
+          // Admin Alert
+          c.executionCtx.waitUntil(emailService.sendAdminWithdrawalAlert({
+            id: transactionId,
+            userId: user.id,
+            amount: parsedAmount.toString(),
+            asset: assetSymbol,
+            mode: mode,
+          }, appUrl).catch(e => console.error(e)));
 
-    // User Alert
-    c.executionCtx.waitUntil(emailService.sendUserTransactionAlert(
-      user.email,
-      'Withdrawal Request Submitted',
-      `Your withdrawal request for ${parsedAmount} ${assetSymbol} has been successfully submitted and is being processed.`,
-      [
-        { key: 'Transaction ID', value: transactionId },
-        { key: 'Amount', value: `${parsedAmount} ${assetSymbol}` },
-        { key: 'Destination', value: destination },
-        { key: 'Network/Bank', value: network },
-        { key: 'Status', value: 'PENDING' }
-      ],
-      `${appUrl}/wallet/history`,
-      'View Withdrawal History'
-    ).catch(e => console.error(e)));
-  } catch (e) {
-    console.error("Background email failed for withdrawal", e);
-  }
-})());
+          // User Alert
+          c.executionCtx.waitUntil(emailService.sendUserTransactionAlert(
+            user.email,
+            'Withdrawal Request Submitted',
+            `Your withdrawal request for ${parsedAmount} ${assetSymbol} has been successfully submitted and is being processed.`,
+            [
+              { key: 'Transaction ID', value: transactionId },
+              { key: 'Amount', value: `${parsedAmount} ${assetSymbol}` },
+              { key: 'Destination', value: destination },
+              { key: 'Network/Bank', value: network },
+              { key: 'Status', value: 'PENDING' }
+            ],
+            `${appUrl}/wallet/history`,
+            'View Withdrawal History'
+          ).catch(e => console.error(e)));
+        } catch (e) {
+          console.error("Background email failed for withdrawal", e);
+        }
+      })());
 
-return c.json({ 
-  success: true, 
+      // Step 3: Call Cregis Payout API via PHP Proxy (payout actual net amount)
+      try {
+        const cregis = new CregisClient(c.env);
+        const payoutId = await cregis.createPayout(preview.netUsdtReceived, assetSymbol, destination, user.id);
+        
+        // Successfully submitted to Cregis, update reference
+        await db.update(walletTransactions)
+          .set({ reference: payoutId, updatedAt: new Date() })
+          .where(eq(walletTransactions.id, transactionId));
+          
+      } catch (cregisError: any) {
+        console.error("Cregis Auto-withdrawal failed, keeping as pending for manual review:", cregisError);
+        
+        // Update the transaction reference with the error message for admin visibility
+        // Limit string length just in case the error is huge
+        const errorMsg = cregisError?.message || 'Unknown Cregis Error';
+        const updatedReference = `Auto-fail: ${errorMsg}`.substring(0, 250);
+        
+        await db.update(walletTransactions)
+          .set({ reference: updatedReference, updatedAt: new Date() })
+          .where(eq(walletTransactions.id, transactionId));
+      }
+
+      return c.json({ 
+        success: true, 
         transactionId,
         message: 'Withdrawal initiated successfully. It will be processed by the network shortly.'
       });
