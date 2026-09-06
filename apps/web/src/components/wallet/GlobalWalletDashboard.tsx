@@ -15,7 +15,7 @@ export function GlobalWalletDashboard() {
   const { user } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'currency' ? 'currency' : 'asset';
+  const initialTab = searchParams?.get('tab') === 'currency' ? 'currency' : 'asset';
   const [activeTab, setActiveTab] = useState<'asset' | 'currency'>(initialTab);
 
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -23,7 +23,7 @@ export function GlobalWalletDashboard() {
   const [baseCurrency, setBaseCurrency] = useState("USDT");
 
   useEffect(() => {
-    setActiveTab(searchParams.get('tab') === 'currency' ? 'currency' : 'asset');
+    setActiveTab(searchParams?.get('tab') === 'currency' ? 'currency' : 'asset');
   }, [searchParams]);
 
   useEffect(() => {
