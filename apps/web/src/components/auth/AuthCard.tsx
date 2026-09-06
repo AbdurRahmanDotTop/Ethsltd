@@ -25,8 +25,9 @@ export function AuthCard({
     <div className={cn("w-full max-w-md mx-auto bg-card border border-border rounded-xl shadow-xl overflow-hidden", className)}>
       <div className="p-8">
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-block mb-6 font-display font-bold text-2xl tracking-tight text-foreground">
-            ETHSLTD
+          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6 font-display font-bold text-2xl tracking-tight text-foreground">
+            <span className="dark:hidden">ETHSLTD</span>
+            <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-10 w-auto object-contain" />
           </Link>
           <h1 className="text-2xl font-bold tracking-tight mb-2">{title}</h1>
           <p className="text-muted-foreground text-sm">{subtitle}</p>

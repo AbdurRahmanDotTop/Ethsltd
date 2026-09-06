@@ -21,7 +21,7 @@ export function AdminHeader() {
 
   const allHrefs = adminNavGroups.flatMap(g => g.items.map(i => i.href));
   const activeHref = allHrefs
-    .filter(href => pathname === href || pathname.startsWith(href + '/'))
+    .filter(href => pathname === href || pathname?.startsWith(href + '/'))
     .sort((a, b) => b.length - a.length)[0] || pathname;
 
   useEffect(() => {
@@ -73,9 +73,12 @@ export function AdminHeader() {
           <Menu className="w-5 h-5" />
         </button>
 
-        <h1 className="text-xl font-bold text-white tracking-wide hidden sm:block py-1 pr-4">
-          ETHSLTD Admin
-        </h1>
+        <Link href="/admin" className="hidden sm:flex items-center gap-2 py-1 pr-4">
+          <h1 className="text-xl font-bold text-white tracking-wide dark:hidden">
+            ETHSLTD Admin
+          </h1>
+          <img src="/logo-dark.png" alt="ETHSLTD Admin Logo" className="hidden dark:block h-8 w-auto object-contain" />
+        </Link>
         
         {/* Global Search Shortcut */}
         <div className="hidden md:flex items-center ml-8 relative">

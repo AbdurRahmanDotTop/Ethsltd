@@ -66,8 +66,9 @@ export function Header() {
       >
         <div className="max-w-[1280px] mx-auto px-4 md:px-8 min-h-[4rem] py-2 flex items-center justify-between flex-wrap gap-y-4">
           <div className="flex items-center gap-8">
-            <Link href="/" className="font-display font-bold text-xl text-foreground tracking-tight">
-              ETHSLTD
+            <Link href="/" className="font-display font-bold text-xl text-foreground tracking-tight flex items-center gap-2">
+              <span className="dark:hidden">ETHSLTD</span>
+              <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-8 w-auto object-contain" />
             </Link>
 
             <nav className="hidden lg:flex items-center gap-6">
