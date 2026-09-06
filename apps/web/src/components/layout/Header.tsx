@@ -68,7 +68,7 @@ export function Header() {
           <div className="flex items-center gap-8">
             <Link href="/" className="font-display font-bold text-xl text-foreground tracking-tight flex items-center gap-2">
               <span className="dark:hidden">ETHSLTD</span>
-              <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-8 w-auto object-contain" />
+              <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-8 sm:h-10 md:h-12 w-auto object-contain" />
             </Link>
 
             <nav className="hidden lg:flex items-center gap-6">

@@ -158,7 +158,7 @@ export function GlobalHomeDashboard() {
         </button>
         <div className="flex items-center justify-center">
           <span className="dark:hidden text-xl font-semibold tracking-wide">ETHSLTD</span>
-          <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-6 w-auto object-contain" />
+          <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-10 sm:h-12 md:h-14 w-auto object-contain" />
         </div>
         <button onClick={() => router.push('/account/notifications')} className="relative p-1 text-[#00C087]">
           <Bell className="w-6 h-6" />

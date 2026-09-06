@@ -77,7 +77,7 @@ export function AdminHeader() {
           <h1 className="text-xl font-bold text-white tracking-wide dark:hidden">
             ETHSLTD Admin
           </h1>
-          <img src="/logo-dark.png" alt="ETHSLTD Admin Logo" className="hidden dark:block h-8 w-auto object-contain" />
+          <img src="/logo-dark.png" alt="ETHSLTD Admin Logo" className="hidden dark:block h-8 sm:h-10 md:h-12 w-auto object-contain" />
         </Link>
         
         {/* Global Search Shortcut */}
