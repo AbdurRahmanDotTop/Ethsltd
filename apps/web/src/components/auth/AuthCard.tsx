@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/ui/logo";
 
 interface AuthCardProps {
   title: string;
@@ -26,8 +27,7 @@ export function AuthCard({
       <div className="p-8">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6 font-display font-bold text-2xl tracking-tight text-foreground">
-            <span className="dark:hidden">ETHSLTD</span>
-            <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-10 w-auto object-contain" />
+            <Logo className="h-10 w-auto" />
           </Link>
           <h1 className="text-2xl font-bold tracking-tight mb-2">{title}</h1>
           <p className="text-muted-foreground text-sm">{subtitle}</p>

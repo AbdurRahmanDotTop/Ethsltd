@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Logo } from "@/components/ui/logo"
 
 export function Footer() {
   return (
@@ -7,8 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 mb-12">
           <div className="col-span-2">
             <Link href="/" className="font-display font-bold text-2xl text-foreground tracking-tight mb-4 flex items-center gap-2">
-              <span className="dark:hidden">ETHSLTD</span>
-              <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-10 w-auto object-contain" />
+              <Logo className="h-10 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs">
               The modern digital asset platform. Trade crypto with clarity and confidence.

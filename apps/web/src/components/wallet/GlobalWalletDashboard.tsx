@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Logo } from "@/components/ui/logo";
 import { Search, RefreshCw, Eye, EyeOff, Star, ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { useAuthStore } from "@/stores/auth-store";
@@ -85,8 +86,7 @@ export function GlobalWalletDashboard() {
         <div className="bg-[#121212] border border-white/10 rounded-lg flex items-center justify-between px-3 py-2">
           <Star className="w-5 h-5 text-gray-400" />
           <div className="flex items-center">
-            <span className="dark:hidden text-sm font-medium">ETHSLTD</span>
-            <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-9 sm:h-10 md:h-12 w-auto object-contain" />
+            <Logo className="h-9 sm:h-10 md:h-12 w-auto" />
           </div>
           <button onClick={() => fetchBalances('REAL')}><RefreshCw className="w-4 h-4 text-gray-400" /></button>
         </div>

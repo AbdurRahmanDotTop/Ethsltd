@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X, User, ChevronDown, LogOut, LayoutDashboard, Shield, Settings, Bell, Info } from "lucide-react"
+import { Logo } from "@/components/ui/logo"
 import { useAuthStore } from "@/stores/auth-store"
 import { useTradingModeStore } from "@/stores/trading-mode-store"
 import { apiClient } from "@ethsltd/api-client"
@@ -67,8 +68,7 @@ export function Header() {
         <div className="max-w-[1280px] mx-auto px-4 md:px-8 min-h-[4rem] py-2 flex items-center justify-between flex-wrap gap-y-4">
           <div className="flex items-center gap-8">
             <Link href="/" className="font-display font-bold text-xl text-foreground tracking-tight flex items-center gap-2">
-              <span className="dark:hidden">ETHSLTD</span>
-              <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-8 sm:h-10 md:h-12 w-auto object-contain" />
+              <Logo className="h-8 sm:h-10 md:h-12 w-auto" />
             </Link>
 
             <nav className="hidden lg:flex items-center gap-6">

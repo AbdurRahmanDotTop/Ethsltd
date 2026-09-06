@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Search, Bell, Activity, User, Settings, LayoutDashboard, LogOut, Shield, Menu, X } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
+import { Logo } from "@/components/ui/logo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { adminNavGroups } from "./AdminSidebar";
@@ -74,10 +75,7 @@ export function AdminHeader() {
         </button>
 
         <Link href="/admin" className="hidden sm:flex items-center gap-2 py-1 pr-4">
-          <h1 className="text-xl font-bold text-white tracking-wide dark:hidden">
-            ETHSLTD Admin
-          </h1>
-          <img src="/logo-dark.png" alt="ETHSLTD Admin Logo" className="hidden dark:block h-8 sm:h-10 md:h-12 w-auto object-contain" />
+          <Logo className="h-8 sm:h-10 md:h-12 w-auto" />
         </Link>
         
         {/* Global Search Shortcut */}

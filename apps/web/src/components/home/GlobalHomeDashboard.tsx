@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Logo } from "@/components/ui/logo";
 import Link from "next/link";
 import { User, Bell, Download, Clock, CreditCard, Share2, MessageCircle, ShieldCheck, Globe } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
@@ -157,8 +158,7 @@ export function GlobalHomeDashboard() {
           )}
         </button>
         <div className="flex items-center justify-center">
-          <span className="dark:hidden text-xl font-semibold tracking-wide">ETHSLTD</span>
-          <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-10 sm:h-12 md:h-14 w-auto object-contain" />
+          <Logo className="h-10 sm:h-12 md:h-14 w-auto" />
         </div>
         <button onClick={() => router.push('/account/notifications')} className="relative p-1 text-[#00C087]">
           <Bell className="w-6 h-6" />
