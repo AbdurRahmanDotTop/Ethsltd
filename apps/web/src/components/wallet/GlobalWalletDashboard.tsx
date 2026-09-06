@@ -84,7 +84,10 @@ export function GlobalWalletDashboard() {
       <div className="px-4 py-3">
         <div className="bg-[#121212] border border-white/10 rounded-lg flex items-center justify-between px-3 py-2">
           <Star className="w-5 h-5 text-gray-400" />
-          <span className="text-sm font-medium">ETHSLTD</span>
+          <div className="flex items-center">
+            <span className="dark:hidden text-sm font-medium">ETHSLTD</span>
+            <img src="/logo-dark.png" alt="ETHSLTD Logo" className="hidden dark:block h-5 w-auto object-contain" />
+          </div>
           <button onClick={() => fetchBalances('REAL')}><RefreshCw className="w-4 h-4 text-gray-400" /></button>
         </div>
       </div>
