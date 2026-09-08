@@ -70,7 +70,7 @@ export function P2PTable({ onSelectAd }: { onSelectAd: (ad: P2PAdvertisement, me
     };
     
     fetchData();
-  }, [query, mode]);
+  }, [query]);
 
   const isBuyMode = query.side === "buy";
   

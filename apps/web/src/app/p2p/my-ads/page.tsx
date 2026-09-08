@@ -37,7 +37,7 @@ export default function MyAdsPage() {
     if (status === "authenticated" && user) {
       fetchMyAds();
     }
-  }, [user, status, mode]);
+  }, [user, status]);
 
   const handleCloseAd = async (adId: string) => {
     if (!confirm("Are you sure you want to close this ad?")) return;

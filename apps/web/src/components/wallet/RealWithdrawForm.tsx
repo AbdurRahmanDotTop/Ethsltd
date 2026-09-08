@@ -57,7 +57,7 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
         }
       }
     });
-  }, [mode, defaultAsset, form]);
+  }, [defaultAsset, form]);
 
   useEffect(() => {
     const fetchPreview = async () => {
