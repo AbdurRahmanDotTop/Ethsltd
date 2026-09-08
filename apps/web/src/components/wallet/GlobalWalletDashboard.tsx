@@ -272,10 +272,14 @@ export function GlobalWalletDashboard() {
               No currencies found.
             </div>
           ) : bankCurrencies.map((currency: any, i: number) => {
+            const ratePerUsdt = parseFloat(currency.ratePerUsdt || '0');
+            // USDT balance converted to this fiat currency
+            const usdtValueInThisCurrency = totalUsdt * ratePerUsdt;
+            // Actual wallet balance the user holds in this currency
             const wallet = fiatBalances.find(b => b.symbol === currency.code);
-            const userTotalInThisCurrency = wallet ? wallet.total : 0;
-            const userAvailableInThisCurrency = wallet ? wallet.available : 0;
-            const userLockedInThisCurrency = wallet ? wallet.locked : 0;
+            const userWalletBalance = wallet ? wallet.total : 0;
+            const userAvailable = wallet ? wallet.available : 0;
+            const userLocked = wallet ? wallet.locked : 0;
             
             return (
               <div key={i} className="bg-[#121212] border border-white/10 rounded-xl p-4">
@@ -290,16 +294,26 @@ export function GlobalWalletDashboard() {
                     </div>
                   </div>
                   <div className="text-left sm:text-right">
-                    <p className="font-bold break-all">{showBalance ? userTotalInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</p>
-                    <p className="text-xs text-gray-400 break-all">≈{showBalance ? userTotalInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {currency.code}</p>
+                    {/* Primary: USDT converted to this currency */}
+                    <p className="font-bold break-all text-[#00C087]">
+                      {showBalance
+                        ? `${currency.symbol}${usdtValueInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency.code}`
+                        : '********'}
+                    </p>
+                    {/* Secondary label: "≈ your USDT worth in this currency" */}
+                    <p className="text-xs text-gray-400 break-all">
+                      {showBalance
+                        ? `≈${totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} USDT`
+                        : '********'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 text-xs text-gray-400 gap-2">
                   <div className="flex flex-col break-all">
-                    <span>Available: {showBalance ? userAvailableInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</span>
+                    <span>Available: {showBalance ? userAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {currency.code}</span>
                   </div>
                   <div className="flex flex-col text-left sm:text-right break-all">
-                    <span>On orders: {showBalance ? userLockedInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</span>
+                    <span>On orders: {showBalance ? userLocked.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {currency.code}</span>
                   </div>
                 </div>
               </div>
