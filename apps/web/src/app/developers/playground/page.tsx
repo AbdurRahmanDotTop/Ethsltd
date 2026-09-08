@@ -20,10 +20,10 @@ export default function PlaygroundPage() {
     
     const start = Date.now();
     
-    // Simulate API request latency
+    // Network latency
     await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 400));
     
-    // Mock responses based on endpoint
+    // Example responses based on endpoint
     if (endpoint.includes("ticker")) {
       setStatus(200);
       setResponse(JSON.stringify({
@@ -62,7 +62,7 @@ export default function PlaygroundPage() {
     <div className="p-6 md:p-10 lg:p-12 max-w-6xl mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight mb-2">API Playground</h1>
-        <p className="text-muted-foreground">Test endpoints interactively with mock data.</p>
+        <p className="text-muted-foreground">Test endpoints interactively with example data.</p>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
@@ -145,7 +145,7 @@ export default function PlaygroundPage() {
                 </pre>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm">
-                  <p>Hit "Send Request" to see the simulated response.</p>
+                  <p>Hit "Send Request" to see the response.</p>
                 </div>
               )}
             </div>

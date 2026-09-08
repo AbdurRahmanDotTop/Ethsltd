@@ -20,14 +20,25 @@ export class CregisClient {
     this.proxySecret = env.CREGIS_PROXY_SECRET;
   }
 
-  // Very basic address generator for mock/demo purposes until full WaaS API specs are used
   // In a real prod environment, this calls Cregis `/v1/address/create`
   async getDepositAddress(assetSymbol: string, userId: string): Promise<string> {
-    // Standard mock for MVP
-    if (assetSymbol.toUpperCase() === 'BTC') return `bc1qmock${userId.substring(0,8)}cregisbtc`;
-    if (assetSymbol.toUpperCase() === 'ETH') return `0xmock${userId.substring(0,8)}cregiseth`;
-    if (assetSymbol.toUpperCase() === 'USDT') return `0xmock${userId.substring(0,8)}cregisusdt`;
-    return `mock_${assetSymbol}_${userId.substring(0,8)}`;
+    const payload = {
+      currency: assetSymbol,
+      alias: `user_${userId}`,
+    };
+
+    try {
+      const data = await this.callProxy('WAAS', '/v1/address/create', payload);
+
+      if (data.code === '00000' || data.code === 200 || data.success) {
+        return data.data?.address || data.address;
+      }
+
+      throw new Error(`Cregis Address Creation Error [Code: ${data.code}]: ${data.msg || data.message || 'Rejected'}. Full Response: ${JSON.stringify(data)}`);
+    } catch (error: any) {
+      console.error("Cregis Address Fetch Error:", error);
+      throw error;
+    }
   }
   // Internal helper to call the PHP Proxy
   private async callProxy(service: 'PE' | 'WAAS', endpoint: string, payload: any): Promise<any> {
@@ -120,12 +131,25 @@ export class CregisClient {
 
   // Verifies Cregis webhook signatures
   verifyWebhookSignature(payload: string, signature: string): boolean {
-    // In production, Cregis signs webhooks using HMAC-SHA256 or MD5 with the API Secret.
     if (!this.waasApiKey && !this.peApiKey) {
-      console.warn("Missing Cregis API Keys, accepting webhook for demo purposes");
-      return true;
+      console.error("Missing Cregis API Keys, webhook signature verification failed.");
+      return false;
     }
-    // ... Implement real signature validation here based on Cregis docs ...
-    return true; // For now, allow through for testing
+    
+    // Try both keys since the webhook could be from WAAS or PE
+    const keysToTry = [this.waasApiKey, this.peApiKey].filter(k => k);
+    
+    for (const key of keysToTry) {
+      try {
+        const expectedSignature = crypto.createHmac('sha256', key).update(payload).digest('hex');
+        if (expectedSignature.toLowerCase() === signature.toLowerCase()) {
+          return true;
+        }
+      } catch (err) {
+        console.error("Error generating signature", err);
+      }
+    }
+    
+    return false;
   }
 }

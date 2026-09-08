@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@ethsltd/api-client";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { Filter, XCircle } from "lucide-react";
-import { useAdminEnvStore } from "@/stores/admin-env-store";
+
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -14,14 +14,13 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("ALL");
   const [market, setMarket] = useState("ALL");
-  const { adminMode, setAdminMode } = useAdminEnvStore();
   const limit = 20;
 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
-    apiClient.adminGetOrders({ page, limit, status, market, mode: adminMode }).then((res) => {
+    apiClient.adminGetOrders({ page, limit, status, market }).then((res) => {
       if (res.success && isMounted) {
         setOrders(res.data?.data || []);
         setTotal(res.data?.total || 0);
@@ -37,7 +36,7 @@ export default function AdminOrdersPage() {
     return () => {
       isMounted = false;
     };
-  }, [page, status, market, adminMode]);
+  }, [page, status, market, "real"]);
 
   const handleCancel = async (id: string) => {
     // Currently no real backend force-cancel API, but we simulate optimism if we had one
@@ -148,29 +147,7 @@ export default function AdminOrdersPage() {
           <p className="text-muted-foreground mt-1 text-sm">Monitor and manage open limit and stop orders globally.</p>
         </div>
         
-        {/* Real / Demo Toggle */}
-        <div className="flex bg-muted/50 p-1 rounded-md border border-border/50 self-start sm:self-auto">
-          <button
-            onClick={() => setAdminMode('REAL')}
-            className={`px-4 py-1.5 text-sm font-medium rounded transition-all ${
-              adminMode === 'REAL'
-                ? 'bg-brand-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Real
-          </button>
-          <button
-            onClick={() => setAdminMode('DEMO')}
-            className={`px-4 py-1.5 text-sm font-medium rounded transition-all ${
-              adminMode === 'DEMO'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Demo
-          </button>
-        </div>
+
       </div>
 
       <div className="flex flex-wrap gap-3">

@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-const runTx = async (db: any, cb: any) => await cb(db);
+const runTx = async (db: any, cb: any) => await db.transaction(cb);
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { EmailService } from '../services/email';
@@ -147,36 +147,12 @@ tradingRoutes.get('/markets/:symbol/candles', async (c) => {
     console.error('Binance API error (candles):', e);
   }
 
-  // Fallback to mock data if Binance fails
-  const currentPrice = await getRealPrice(symbol) || 100000;
-  
-  const candles = [];
-  let price = currentPrice * 0.95; // start lower
-  const now = Date.now();
-  
-  for(let i = 100; i >= 0; i--) {
-    const isUp = Math.random() > 0.5;
-    const change = price * (Math.random() * 0.005);
-    const open = price;
-    const close = isUp ? price + change : price - change;
-    const high = Math.max(open, close) + price * (Math.random() * 0.002);
-    const low = Math.min(open, close) - price * (Math.random() * 0.002);
-    
-    candles.push({
-      time: (now - (i * 15 * 60 * 1000)) / 1000, // 15m intervals unix
-      open, high, low, close,
-      volume: Math.random() * 100
-    });
-    price = close;
-  }
-  
-  candles[candles.length - 1].close = currentPrice;
-  return c.json({ success: true, data: candles });
+  // Return empty if Binance fails to avoid fake data
+  return c.json({ success: false, error: 'Failed to fetch market data' }, 502);
 });
 
 tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
   const symbol = c.req.param('symbol');
-  const mode = (c.req.query('mode') || 'REAL') as 'REAL' | 'DEMO';
   const db = c.get('db');
 
   try {
@@ -185,7 +161,6 @@ tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
       .where(
         and(
           eq(orders.marketSymbol, symbol),
-          eq(orders.mode, mode),
           eq(orders.type, 'LIMIT'),
           eq(orders.status, 'OPEN')
         )
@@ -226,17 +201,13 @@ tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
 
 tradingRoutes.get('/markets/:symbol/trades', async (c) => {
   const symbol = c.req.param('symbol');
-  const mode = (c.req.query('mode') || 'REAL') as 'REAL' | 'DEMO';
   const db = c.get('db');
   
   try {
     const recentTrades = await db.select()
       .from(trades)
       .where(
-        and(
-          eq(trades.marketSymbol, symbol),
-          eq(trades.mode, mode)
-        )
+          eq(trades.marketSymbol, symbol)
       )
       .orderBy(desc(trades.createdAt))
       .limit(50)
@@ -316,8 +287,8 @@ tradingRoutes.get('/exchange-rate', async (c) => {
 // Secure all other routes
 tradingRoutes.use('*', jwtMiddleware);
 
-const processOpenLimitOrders = async (db: any, userId: string, mode: 'REAL' | 'DEMO') => {
-  const openOrders = await db.select().from(orders).where(and(eq(orders.userId, userId), eq(orders.mode, mode), eq(orders.status, 'OPEN'))).all();
+const processOpenLimitOrders = async (db: any, userId: string) => {
+  const openOrders = await db.select().from(orders).where(and(eq(orders.userId, userId), eq(orders.status, 'OPEN'))).all();
   if (!openOrders.length) return;
 
   const marketCache: Record<string, number> = {};
@@ -356,7 +327,7 @@ const processOpenLimitOrders = async (db: any, userId: string, mode: 'REAL' | 'D
         const receiveAsset = freshOrder.side === 'BUY' ? marketInfo.baseAsset : marketInfo.quoteAsset;
         const spendAmount = freshOrder.side === 'BUY' ? totalValue : parsedAmount;
         
-        let spendWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, spendAsset), eq(wallets.type, mode))).get();
+        let spendWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, spendAsset))).get();
         if (!spendWallet) return;
         
         // Unlock the balance
@@ -372,13 +343,12 @@ const processOpenLimitOrders = async (db: any, userId: string, mode: 'REAL' | 'D
           ? parsedAmount.minus(feeAmount) 
           : totalValue.minus(feeAmount);
         
-        let receiveWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, receiveAsset), eq(wallets.type, mode))).get();
+        let receiveWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, receiveAsset))).get();
         if (!receiveWallet) {
           await tx.insert(wallets).values({
             id: crypto.randomUUID(),
             userId: userId,
             assetSymbol: receiveAsset,
-            type: mode,
             balance: receiveAmountFinal.toString(),
             lockedBalance: '0',
             createdAt: now,
@@ -405,7 +375,6 @@ const processOpenLimitOrders = async (db: any, userId: string, mode: 'REAL' | 'D
           id: tradeId,
           displayId: tradeDisplayId,
           marketSymbol: freshOrder.marketSymbol,
-          mode: mode,
           makerOrderId: freshOrder.id,
           takerOrderId: 'external-liquidity-bot',
           price: executionPrice.toString(),
@@ -422,13 +391,12 @@ const processOpenLimitOrders = async (db: any, userId: string, mode: 'REAL' | 'D
 tradingRoutes.get('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   // Process lazy matching first
-  await processOpenLimitOrders(db, user.id, mode);
+  await processOpenLimitOrders(db, user.id);
 
   const userOrders = await db.select().from(orders)
-    .where(and(eq(orders.userId, user.id), eq(orders.mode, mode)))
+    .where(eq(orders.userId, user.id))
     .orderBy(desc(orders.createdAt))
     .all();
     
@@ -452,10 +420,9 @@ tradingRoutes.get('/orders', async (c) => {
 tradingRoutes.get('/trades', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   // Fetch user's orders first to match trades
-  const userOrders = await db.select().from(orders).where(and(eq(orders.userId, user.id), eq(orders.mode, mode))).all();
+  const userOrders = await db.select().from(orders).where(eq(orders.userId, user.id)).all();
   const orderIds = userOrders.map(o => o.id);
   
   if (orderIds.length === 0) {
@@ -490,7 +457,6 @@ tradingRoutes.post('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const { market, side, type, amount, price } = body;
   
   const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
@@ -526,7 +492,7 @@ tradingRoutes.post('/orders', async (c) => {
   try {
     await runTx(db, async (tx: any) => {
       // Wallet Check (Inside Transaction)
-      let spendWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset), eq(wallets.type, mode))).get();
+      let spendWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset))).get();
       if (!spendWallet || new Decimal(spendWallet.balance).lt(spendAmount)) {
         throw new Error('Insufficient balance');
       }
@@ -541,7 +507,6 @@ tradingRoutes.post('/orders', async (c) => {
         displayId: orderDisplayId,
         userId: user.id,
         marketSymbol: market,
-        mode,
         side,
         type,
         price: orderPrice.toString(),
@@ -571,7 +536,6 @@ tradingRoutes.post('/orders', async (c) => {
           id: tradeId,
           displayId: tradeDisplayId,
           marketSymbol: market,
-          mode,
           makerOrderId: 'external-liquidity-bot',
           takerOrderId: orderId,
           price: fallbackPrice.toString(),
@@ -624,7 +588,7 @@ tradingRoutes.post('/orders', async (c) => {
         const receiveFee = receiveTotal.times(marketInfo.takerFee);
         const receiveAmountFinal = receiveTotal.minus(receiveFee);
         
-        let receiveWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, receiveAsset), eq(wallets.type, mode))).get();
+        let receiveWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, receiveAsset))).get();
         if (!receiveWallet) {
           const walletId = crypto.randomUUID();
           const walletDisplayId = await generateBusinessId(tx, dbUser?.email, 'WALL');
@@ -633,7 +597,6 @@ tradingRoutes.post('/orders', async (c) => {
             displayId: walletDisplayId,
             userId: user.id,
             assetSymbol: receiveAsset,
-            type: mode,
             balance: receiveAmountFinal.toString(),
             lockedBalance: '0',
             createdAt: now,
@@ -655,9 +618,7 @@ tradingRoutes.post('/orders', async (c) => {
       const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
       const orderData = await db.select().from(orders).where(eq(orders.id, orderId)).get();
       if (orderData) {
-        if (orderData.mode === 'REAL') {
           await emailService.sendAdminTradeAlert(orderData, appUrl);
-        }
         await emailService.sendUserTransactionAlert(
           user.email,
           'Trade Order Created',
@@ -713,7 +674,7 @@ tradingRoutes.delete('/orders/:id', async (c) => {
       const refundAsset = order.side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
       const refundAmount = order.side === 'BUY' ? remainingValue : orderRemainingAmount;
       
-      let refundWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, refundAsset), eq(wallets.type, order.mode))).get();
+      let refundWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, refundAsset))).get();
       if (refundWallet) {
         const newBalance = new Decimal(refundWallet.balance).plus(refundAmount).toString();
         const newLocked = Decimal.max(0, new Decimal(refundWallet.lockedBalance).minus(refundAmount)).toString();
@@ -729,9 +690,9 @@ tradingRoutes.delete('/orders/:id', async (c) => {
 
 // --- PERPETUAL FUTURES ENDPOINTS ---
 
-const processLiquidations = async (db: any, userId: string, mode: 'REAL' | 'DEMO') => {
+const processLiquidations = async (db: any, userId: string) => {
   const userPositions = await db.select().from(positions)
-    .where(and(eq(positions.userId, userId), eq(positions.mode, mode), eq(positions.status, 'OPEN')))
+    .where(and(eq(positions.userId, userId), eq(positions.status, 'OPEN')))
     .all();
 
   const now = new Date();
@@ -763,13 +724,12 @@ const processLiquidations = async (db: any, userId: string, mode: 'REAL' | 'DEMO
 tradingRoutes.get('/futures/positions', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
 
   // Check liquidations before returning positions
-  await processLiquidations(db, user.id, mode);
+  await processLiquidations(db, user.id);
 
   const userPositions = await db.select().from(positions)
-    .where(and(eq(positions.userId, user.id), eq(positions.mode, mode), eq(positions.status, 'OPEN')))
+    .where(and(eq(positions.userId, user.id), eq(positions.status, 'OPEN')))
     .all();
 
   // Add uPnL calculation
@@ -805,7 +765,6 @@ tradingRoutes.post('/futures/order', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   // side: 'LONG' | 'SHORT'
   const { market, side, amount, leverage } = body;
@@ -845,7 +804,7 @@ tradingRoutes.post('/futures/order', async (c) => {
   try {
     await runTx(db, async (tx: any) => {
       // Wallet check for margin in quote asset (USDT)
-      let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset), eq(wallets.type, mode))).get();
+      let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset))).get();
       if (!quoteWallet || new Decimal(quoteWallet.balance).lt(totalCost)) {
         throw new Error('Insufficient margin balance');
       }
@@ -858,7 +817,6 @@ tradingRoutes.post('/futures/order', async (c) => {
         id: positionId,
         userId: user.id,
         marketSymbol: market,
-        mode,
         side,
         status: 'OPEN',
         leverage: lev.toString(),
@@ -928,7 +886,7 @@ tradingRoutes.post('/futures/close', async (c) => {
 
       if (totalReturn.gt(0)) {
         const quoteAsset = marketInfo?.quoteAsset || 'USDT';
-        let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, quoteAsset), eq(wallets.type, position.mode))).get();
+        let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, quoteAsset))).get();
         if (quoteWallet) {
           const newBalance = new Decimal(quoteWallet.balance).plus(totalReturn).toString();
           await tx.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, quoteWallet.id));
@@ -944,9 +902,9 @@ tradingRoutes.post('/futures/close', async (c) => {
 
 // --- BINARY OPTIONS ENDPOINTS ---
 
-const processOptions = async (db: any, userId: string, mode: 'REAL' | 'DEMO') => {
+const processOptions = async (db: any, userId: string) => {
   const openOptions = await db.select().from(binaryOptions)
-    .where(and(eq(binaryOptions.userId, userId), eq(binaryOptions.mode, mode), eq(binaryOptions.status, 'PENDING')))
+    .where(and(eq(binaryOptions.userId, userId), eq(binaryOptions.status, 'PENDING')))
     .all();
 
   const now = new Date();
@@ -978,7 +936,7 @@ const processOptions = async (db: any, userId: string, mode: 'REAL' | 'DEMO') =>
             const marketInfo = await tx.select().from(markets).where(eq(markets.symbol, freshOpt.marketSymbol)).get();
             const quoteAsset = marketInfo?.quoteAsset || 'USDT';
             
-            let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, quoteAsset), eq(wallets.type, mode))).get();
+            let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, quoteAsset))).get();
             if (quoteWallet) {
               const newBalance = new Decimal(quoteWallet.balance).plus(payout).toString();
               await tx.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, quoteWallet.id));
@@ -993,12 +951,11 @@ const processOptions = async (db: any, userId: string, mode: 'REAL' | 'DEMO') =>
 tradingRoutes.get('/options/positions', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
 
-  await processOptions(db, user.id, mode);
+  await processOptions(db, user.id);
 
   const opts = await db.select().from(binaryOptions)
-    .where(and(eq(binaryOptions.userId, user.id), eq(binaryOptions.mode, mode)))
+    .where(eq(binaryOptions.userId, user.id))
     .orderBy(desc(binaryOptions.createdAt))
     .all();
 
@@ -1009,7 +966,6 @@ tradingRoutes.post('/options/order', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   // direction: 'UP' | 'DOWN', timeframe: minutes
   const { market, direction, amount, timeframeMinutes } = body;
@@ -1036,7 +992,7 @@ tradingRoutes.post('/options/order', async (c) => {
 
   try {
     await runTx(db, async (tx: any) => {
-      let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset), eq(wallets.type, mode))).get();
+      let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset))).get();
       if (!quoteWallet || new Decimal(quoteWallet.balance).lt(parsedAmount)) {
         throw new Error('Insufficient balance');
       }
@@ -1049,7 +1005,6 @@ tradingRoutes.post('/options/order', async (c) => {
         id: optionId,
         userId: user.id,
         marketSymbol: market,
-        mode,
         direction,
         amount: parsedAmount.toString(),
         entryPrice: markPrice.toString(),

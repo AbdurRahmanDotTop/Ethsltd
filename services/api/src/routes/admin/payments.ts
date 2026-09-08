@@ -117,14 +117,14 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   }
 
   // Find or create REAL wallet for the FINAL asset
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset), eq(wallets.type, 'REAL'))).get();
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();
   if (!wallet) {
     const walletId = crypto.randomUUID();
     const displayId = await generateBusinessId(db, null, 'WALL');
     await db.insert(wallets).values({
-      id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
+      id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
     });
-    wallet = { id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now } as any;
   }
   
   // Update wallet
@@ -139,7 +139,7 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
     idempotencyKey: `MANUAL_DEP_APPROVE_${deposit.id}`,
     referenceType: 'DEPOSIT', 
     referenceId: deposit.id,
-    environment: 'REAL', 
+
     status: 'COMMITTED', 
     createdAt: now
   });
@@ -151,7 +151,6 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
     displayId: wtDisplayId,
     userId: deposit.user_id,
     type: 'DEPOSIT',
-    mode: 'REAL',
     assetSymbol: finalAsset,
     amount: finalAmount.toString(),
     fee: feeAmount.toString(),
@@ -238,14 +237,13 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   }
 
   // Find or create REAL wallet for the FINAL asset
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset), eq(wallets.type, 'REAL'))).get();
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();
   if (!wallet) {
     const walletId = crypto.randomUUID();
     const displayId = await generateBusinessId(db, null, 'WALL');
-    await db.insert(wallets).values({
-      id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
-    });
-    wallet = { id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, type: 'REAL', balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
+    await db.insert(wallets).values({ id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now });
+
+    wallet = { id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now } as any;
   }
   
   // Update wallet
@@ -260,7 +258,7 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
     idempotencyKey: `BANK_DEP_APPROVE_${deposit.id}`,
     referenceType: 'DEPOSIT', 
     referenceId: deposit.id,
-    environment: 'REAL', 
+
     status: 'COMMITTED', 
     createdAt: now
   });
@@ -272,7 +270,6 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
     displayId: wtDisplayId,
     userId: deposit.user_id,
     type: 'DEPOSIT',
-    mode: 'REAL',
     assetSymbol: finalAsset,
     amount: finalAmount.toString(),
     fee: feeAmount.toString(),

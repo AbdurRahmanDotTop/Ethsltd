@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Decimal } from 'decimal.js';
-const runTx = async (db: any, cb: any) => await cb(db);
+const runTx = async (db: any, cb: any) => await db.transaction(cb);
 import { eq, and, desc, or, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { EmailService } from '../services/email';
@@ -14,7 +14,6 @@ export const p2pRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>(
 
 p2pRoutes.get('/ads', async (c) => {
   const db = c.get('db');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   let adsWithUsers = await db
     .select({
@@ -23,7 +22,7 @@ p2pRoutes.get('/ads', async (c) => {
     })
     .from(p2pAds)
     .leftJoin(users, eq(p2pAds.userId, users.id))
-    .where(and(eq(p2pAds.status, 'ACTIVE'), eq(p2pAds.mode, mode)))
+    .where(eq(p2pAds.status, 'ACTIVE'))
     .orderBy(desc(p2pAds.createdAt))
     .all();
 
@@ -68,11 +67,9 @@ p2pRoutes.get('/ads', async (c) => {
 
 // Secure all other routes
 p2pRoutes.use('*', jwtMiddleware);
-
 p2pRoutes.post('/ads', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const body = await c.req.json();
   const { type, asset, fiat, price, isFloating, priceMargin, totalAmount, minLimit, maxLimit, paymentWindow, paymentMethods, terms, autoReply, countryRestrictions } = body;
 
@@ -80,7 +77,7 @@ p2pRoutes.post('/ads', async (c) => {
 
   // If user is SELLING crypto for fiat, they must have the crypto balance
   if (type === 'SELL') {
-    let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, asset), eq(wallets.type, mode))).get();
+    let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, asset))).get();
     if (!wallet || parseFloat(wallet.balance) < amountNum) {
       return c.json({ success: false, error: 'Insufficient crypto balance to create this ad.' }, 400);
     }
@@ -100,7 +97,6 @@ p2pRoutes.post('/ads', async (c) => {
     id: adId,
     displayId: adDisplayId,
     userId: user.id,
-    mode,
     type,
     asset,
     fiat,
@@ -128,7 +124,6 @@ p2pRoutes.put('/ads/:id', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const adId = c.req.param('id');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const body = await c.req.json();
   const { type, asset, fiat, priceType, price, totalAmount, minLimit, maxLimit, paymentWindow, paymentMethods, terms, autoReply, countryRestrictions } = body;
 
@@ -151,7 +146,7 @@ p2pRoutes.put('/ads/:id', async (c) => {
       }
 
       if (existingAd.type === 'SELL') {
-        const wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, existingAd.asset), eq(wallets.type, existingAd.mode))).get();
+        const wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, existingAd.asset))).get();
         if (!wallet) return c.json({ success: false, error: 'Wallet not found' }, 404);
         
         if (delta.greaterThan(0)) {
@@ -209,7 +204,7 @@ p2pRoutes.put('/ads/:id/status', async (c) => {
     if (!existingAd) return c.json({ success: false, error: 'Ad not found' }, 404);
 
     if (status === 'CANCELED' && existingAd.status !== 'CANCELED' && existingAd.type === 'SELL') {
-      const wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, existingAd.asset), eq(wallets.type, existingAd.mode))).get();
+      const wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, existingAd.asset))).get();
       if (wallet) {
         const amountToRefund = new Decimal(existingAd.availableAmount);
         if (amountToRefund.greaterThan(0)) {
@@ -230,7 +225,6 @@ p2pRoutes.put('/ads/:id/status', async (c) => {
 p2pRoutes.get('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   const orderRows = await db.select({
       order: p2pOrders,
@@ -238,7 +232,7 @@ p2pRoutes.get('/orders', async (c) => {
     })
     .from(p2pOrders)
     .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .where(and(or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id)), eq(p2pOrders.mode, mode)))
+    .where(or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id)))
     .orderBy(desc(p2pOrders.createdAt)).all();
     
   const enrichedOrders = orderRows.map(row => {
@@ -254,11 +248,9 @@ p2pRoutes.get('/orders', async (c) => {
     
   return c.json({ success: true, data: enrichedOrders });
 });
-
 p2pRoutes.post('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const body = await c.req.json();
   const { adId, cryptoAmount, fiatAmount, paymentMethod } = body;
   
@@ -266,7 +258,7 @@ p2pRoutes.post('/orders', async (c) => {
     let finalOrderId = '';
     
     await runTx(db, async (tx: any) => {
-      const ad = await tx.select().from(p2pAds).where(and(eq(p2pAds.id, adId), eq(p2pAds.mode, mode))).get();
+      const ad = await tx.select().from(p2pAds).where(eq(p2pAds.id, adId)).get();
       if (!ad || ad.status !== 'ACTIVE') {
         throw new Error('Ad is no longer active.');
       }
@@ -289,7 +281,7 @@ p2pRoutes.post('/orders', async (c) => {
       // If the ad is a BUY ad (the creator wants to buy crypto), 
       // the taker is SELLING crypto. We must lock the taker's crypto now into escrowBalance.
       if (ad.type === 'BUY') {
-        const wallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, mode))).get();
+        const wallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, ad.asset))).get();
         if (!wallet || new Decimal(wallet.balance).lessThan(cryptoNum)) {
           throw new Error('Insufficient crypto balance to fulfill this order.');
         }
@@ -327,7 +319,6 @@ p2pRoutes.post('/orders', async (c) => {
         adId,
         buyerId,
         sellerId,
-        mode,
         cryptoAmount: cryptoAmount.toString(),
         fiatAmount: fiatAmount.toString(),
         price: ad.price,
@@ -407,7 +398,6 @@ p2pRoutes.post('/orders', async (c) => {
 p2pRoutes.get('/orders/:id', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const orderId = c.req.param('id');
   
   let orderData = await db
@@ -417,7 +407,7 @@ p2pRoutes.get('/orders/:id', async (c) => {
     })
     .from(p2pOrders)
     .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode)))
+    .where(eq(p2pOrders.id, orderId))
     .get();
     
   if (!orderData) return c.json({ success: false, error: 'Order not found.' }, 404);
@@ -443,7 +433,7 @@ p2pRoutes.get('/orders/:id', async (c) => {
           const cryptoAmount = new Decimal(order.cryptoAmount);
           if (ad.type === 'BUY' || ad.status === 'CANCELED') {
             // Return crypto to Seller's available balance from Escrow
-            const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
+            const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
             if (sellerWallet) {
               const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
               const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
@@ -467,7 +457,6 @@ p2pRoutes.get('/orders/:id', async (c) => {
           id: txId,
           displayId: txDisplayId,
           idempotencyKey: `p2p-expire-${order.id}`,
-          environment: order.mode,
           referenceType: 'P2P_ESCROW_REFUND',
           referenceId: order.id,
           status: 'REVERSED',
@@ -528,16 +517,15 @@ p2pRoutes.get('/orders/:id', async (c) => {
 p2pRoutes.get('/orders/:id/messages', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const orderId = c.req.param('id');
   
-  const order = await db.select().from(p2pOrders).where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode))).get();
+  const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
   if (!order || (order.buyerId !== user.id && order.sellerId !== user.id && user.role !== 'SUPER_ADMIN')) {
     return c.json({ success: false, error: 'Unauthorized' }, 403);
   }
   
   const msgs = await db.select().from(p2pMessages)
-    .where(and(eq(p2pMessages.orderId, orderId), eq(p2pMessages.mode, mode)))
+    .where(eq(p2pMessages.orderId, orderId))
     .orderBy(p2pMessages.createdAt).all();
     
   return c.json({ success: true, data: msgs });
@@ -546,11 +534,10 @@ p2pRoutes.get('/orders/:id/messages', async (c) => {
 p2pRoutes.post('/orders/:id/messages', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   const orderId = c.req.param('id');
   const body = await c.req.json();
   
-  const order = await db.select().from(p2pOrders).where(and(eq(p2pOrders.id, orderId), eq(p2pOrders.mode, mode))).get();
+  const order = await db.select().from(p2pOrders).where(eq(p2pOrders.id, orderId)).get();
   if (!order || (order.buyerId !== user.id && order.sellerId !== user.id && user.role !== 'SUPER_ADMIN')) {
     return c.json({ success: false, error: 'Unauthorized' }, 403);
   }
@@ -561,7 +548,6 @@ p2pRoutes.post('/orders/:id/messages', async (c) => {
     id: msgId,
     orderId,
     senderId: user.id,
-    mode,
     content: body.content,
     type: body.type || 'TEXT',
     attachmentUrl: body.attachmentUrl,
@@ -602,7 +588,6 @@ p2pRoutes.post('/orders/:id/mark-paid', async (c) => {
     id: `sysmsg_${Date.now()}`,
     orderId,
     senderId: user.id,
-    mode: order.mode,
     content: "Buyer has marked the order as paid. Seller, please review the payment.",
     type: 'SYSTEM',
     createdAt: now,
@@ -647,14 +632,14 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
       const cryptoAmount = new Decimal(order.cryptoAmount);
       
       // Deduct from Seller's escrow balance
-      const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
+      const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
       if (sellerWallet) {
         const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
         await tx.update(wallets).set({ escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
       }
 
       // Add to Buyer's available balance
-      const buyerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.buyerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
+      const buyerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.buyerId), eq(wallets.assetSymbol, ad.asset))).get();
       if (buyerWallet) {
         const finalBalance = new Decimal(buyerWallet.balance).plus(cryptoAmount).toString();
         await tx.update(wallets).set({ balance: finalBalance, updatedAt: now }).where(eq(wallets.id, buyerWallet.id));
@@ -666,7 +651,6 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
           balance: cryptoAmount.toString(),
           lockedBalance: '0',
           escrowBalance: '0',
-          type: order.mode,
           createdAt: now,
           updatedAt: now,
         });
@@ -679,7 +663,6 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
         id: txIdSeller,
         displayId: txDisplayIdSeller,
         idempotencyKey: `p2p-release-seller-${order.id}`,
-        environment: order.mode,
         referenceType: 'P2P_ESCROW_RELEASE',
         referenceId: order.id,
         status: 'COMMITTED',
@@ -687,13 +670,12 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
       });
 
       const getOrCreateLedgerAccount = async (userId: string) => {
-        let acc = await tx.select().from(ledgerAccounts).where(and(eq(ledgerAccounts.userId, userId), eq(ledgerAccounts.assetSymbol, ad.asset), eq(ledgerAccounts.environment, order.mode))).get();
+        let acc = await tx.select().from(ledgerAccounts).where(and(eq(ledgerAccounts.userId, userId), eq(ledgerAccounts.assetSymbol, ad.asset))).get();
         if (!acc) {
           const id = crypto.randomUUID();
           await tx.insert(ledgerAccounts).values({
             id,
             userId,
-            environment: order.mode,
             type: 'USER',
             assetSymbol: ad.asset,
             createdAt: now,
@@ -723,7 +705,6 @@ p2pRoutes.post('/orders/:id/release', async (c) => {
         id: txIdBuyer,
         displayId: txDisplayIdBuyer,
         idempotencyKey: `p2p-release-buyer-${order.id}`,
-        environment: order.mode,
         referenceType: 'P2P_ESCROW_CREDIT',
         referenceId: order.id,
         status: 'COMMITTED',
@@ -794,7 +775,7 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
       
       if (ad.type === 'BUY' || ad.status === 'CANCELED') {
         // Return crypto to Seller's available balance from Escrow
-        const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
+        const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
         if (sellerWallet) {
           const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
           const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
@@ -815,7 +796,6 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
         id: txId,
         displayId: txDisplayId,
         idempotencyKey: `p2p-cancel-${order.id}`,
-        environment: order.mode,
         referenceType: 'P2P_ESCROW_REFUND',
         referenceId: order.id,
         status: 'REVERSED',
@@ -882,7 +862,6 @@ p2pRoutes.post('/orders/:id/dispute', async (c) => {
     id: `sysmsg_${Date.now()}`,
     orderId,
     senderId: user.id,
-    mode: order.mode,
     content: "Order has been DISPUTED. An admin will review the trade shortly.",
     type: 'SYSTEM',
     createdAt: now,

@@ -9,10 +9,9 @@ interface WalletState {
   error: string | null;
   
   // Actions
-  fetchBalances: (mode: string) => Promise<void>;
-  fetchTransactions: (mode: string) => Promise<void>;
-  simulateDeposit: (asset: string, amount: number, mode: string) => Promise<any>;
-  simulateWithdrawal: (asset: string, amount: number, destination: string, network: string, fee: number, mode: string) => Promise<any>;
+  fetchBalances: () => Promise<void>;
+  fetchTransactions: () => Promise<void>;
+  withdraw: (asset: string, amount: number, destination: string, network: string) => Promise<any>;
   fiatCurrency: string;
   fiatExchangeRate: number;
   setFiatCurrency: (fiat: string) => void;
@@ -49,11 +48,11 @@ export const useWalletStore = create<WalletState>()(
       }
     },
 
-    fetchBalances: async (mode) => {
+    fetchBalances: async () => {
       // Clear balances before fetching to prevent flickering from old mode
       set({ balances: [] });
       try {
-        const res = await apiClient.getWalletBalances(mode);
+        const res = await apiClient.getWalletBalances();
         if (res.success && res.data) {
           set({ balances: res.data });
         }
@@ -62,10 +61,10 @@ export const useWalletStore = create<WalletState>()(
       }
     },
 
-    fetchTransactions: async (mode) => {
+    fetchTransactions: async () => {
       set({ transactions: [], isLoading: true, error: null });
       try {
-        const res = await apiClient.getWalletTransactions(mode as 'REAL' | 'DEMO');
+        const res = await apiClient.getWalletTransactions();
         if (res.success && res.data) {
           set({ transactions: res.data, isLoading: false });
         } else {
@@ -76,35 +75,20 @@ export const useWalletStore = create<WalletState>()(
       }
     },
 
-    simulateDeposit: async (asset, amount, mode) => {
-      const res = await apiClient.deposit({
-        assetSymbol: asset,
-        amount,
-        network: 'Simulation',
-        mode
-      });
-      
-      if (res.success) {
-        await get().fetchBalances(mode);
-        await get().fetchTransactions(mode);
-      }
-      return res;
-    },
-
-    simulateWithdrawal: async (asset, amount, destination, network, fee, mode) => {
+    withdraw: async (asset, amount, destination, network) => {
       const res = await apiClient.withdraw({
         assetSymbol: asset,
         amount,
         network,
         destination,
-        mode
       });
       
       if (res.success) {
-        await get().fetchBalances(mode);
-        await get().fetchTransactions(mode);
+        await get().fetchBalances();
+        await get().fetchTransactions();
       }
       return res;
     },
+
   })
 );

@@ -1,4 +1,4 @@
-import { DepositFormWrapper } from "@/components/wallet/DepositFormWrapper";
+import { RealDepositForm } from "@/components/wallet/RealDepositForm";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -20,7 +20,7 @@ export default async function DepositPage({ searchParams }: { searchParams: Prom
         </div>
       </div>
 
-      <DepositFormWrapper defaultAsset={params.asset} />
+      <RealDepositForm defaultAsset={params.asset} />
     </div>
   );
 }

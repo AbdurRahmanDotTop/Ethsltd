@@ -23,7 +23,7 @@ adminRiskRouter.get('/summary', async (c) => {
     // Flagged Withdrawals (Amount in USD roughly, or just sum of pending)
     const pendingWithdrawals = await db.select({ total: sql<number>`sum(amount)` })
       .from(walletTransactions)
-      .where(and(eq(walletTransactions.type, 'WITHDRAWAL'), eq(walletTransactions.status, 'PENDING'), eq(walletTransactions.mode, 'REAL')));
+      .where(and(eq(walletTransactions.type, 'WITHDRAWAL'), eq(walletTransactions.status, 'PENDING')));
     const flaggedWithdrawalsTotal = pendingWithdrawals[0]?.total || 0;
 
     // Suspicious Logins (Last 24h FAILED_LOGIN from auditLogs)
@@ -37,7 +37,7 @@ adminRiskRouter.get('/summary', async (c) => {
     const platformBalances = await db.select({
       total: sql<number>`sum(CAST(balance AS REAL))`,
       locked: sql<number>`sum(CAST(locked_balance AS REAL))`
-    }).from(wallets).where(eq(wallets.type, 'REAL'));
+    }).from(wallets);
     const totalBal = platformBalances[0]?.total || 0;
     const lockedBal = platformBalances[0]?.locked || 0;
     let exposureStatus = "Safe";
@@ -80,7 +80,7 @@ adminRiskRouter.get('/summary', async (c) => {
       success: true,
       data: {
         kpis: {
-          activeLiquidations: 0, // Mocked 0 for now as futures module is separate
+          activeLiquidations: 0, // 0 as futures module is separate
           flaggedWithdrawals: flaggedWithdrawalsTotal,
           suspiciousLogins: suspiciousLoginsCount,
           platformExposure: exposureStatus

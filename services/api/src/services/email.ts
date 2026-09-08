@@ -43,7 +43,7 @@ export class EmailService {
 
   private async sendMailWithLog(options: { to: string; subject: string; html: string; eventType: string }) {
     if (!this.apiKey) {
-      console.log(`[Mock Email] To: ${options.to} | Subject: ${options.subject}`);
+      console.log(`[Email Required (Key Missing)] To: ${options.to} | Subject: ${options.subject}`);
       return;
     }
 
@@ -164,7 +164,6 @@ export class EmailService {
 
   // EVENT: Real Deposit (Admin)
   async sendAdminDepositAlert(depositInfo: any, baseUrl: string = 'https://ethsltd.com') {
-    if (depositInfo.mode === 'DEMO') return;
     const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_DEPOSIT', 'true');
     if (notifyEnabled !== 'true') return;
 
@@ -181,7 +180,6 @@ export class EmailService {
 
   // EVENT: Real Withdrawal (Admin)
   async sendAdminWithdrawalAlert(withdrawalInfo: any, baseUrl: string = 'https://ethsltd.com') {
-    if (withdrawalInfo.mode === 'DEMO') return;
     const notifyEnabled = await getSetting(this.dbInstance, 'EMAIL_NOTIFY_WITHDRAWAL', 'true');
     if (notifyEnabled !== 'true') return;
 
@@ -219,8 +217,7 @@ export class EmailService {
       type: 'P2P Order',
       asset: orderInfo.asset || 'Crypto/Fiat',
       amount: `${orderInfo.cryptoAmount} (Fiat: ${orderInfo.fiatAmount})`,
-      status: orderInfo.status,
-      mode: orderInfo.mode
+      status: orderInfo.status
     };
     
     const html = renderAdminTransactionEmail('New P2P Order Activity', mappedInfo, `${baseUrl}/admin/p2p`, 'View P2P Orders');
@@ -244,8 +241,7 @@ export class EmailService {
       type: 'Trade Execution',
       asset: tradeInfo.marketSymbol || tradeInfo.asset,
       amount: tradeInfo.amount,
-      status: tradeInfo.status || 'FILLED',
-      mode: tradeInfo.mode
+      status: tradeInfo.status || 'FILLED'
     };
     
     const html = renderAdminTransactionEmail('New Trade Executed', mappedTradeInfo, `${baseUrl}/admin/orders`, 'View Trades');

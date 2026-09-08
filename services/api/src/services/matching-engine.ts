@@ -4,17 +4,15 @@ import { generateBusinessId } from './id-generator';
 import Decimal from 'decimal.js';
 
 export async function processOrderMatching(db: any, newOrder: any, marketInfo: any) {
-  const isBuy = newOrder.side === 'BUY';
-  const oppositeSide = isBuy ? 'SELL' : 'BUY';
-  const mode = newOrder.mode;
-
-  // Find opposite side OPEN LIMIT orders
-  let matchingOrdersQuery = db.select()
+  return await db.transaction(async (tx: any) => {
+    const isBuy = newOrder.side === 'BUY';
+    const oppositeSide = isBuy ? 'SELL' : 'BUY';
+    // Find opposite side OPEN LIMIT orders
+    let matchingOrdersQuery = tx.select()
     .from(orders)
     .where(
       and(
         eq(orders.marketSymbol, newOrder.marketSymbol),
-        eq(orders.mode, mode),
         eq(orders.side, oppositeSide),
         eq(orders.status, 'OPEN'),
         eq(orders.type, 'LIMIT')
@@ -65,7 +63,7 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
     const newMakerFilled = new Decimal(makerOrder.filledAmount).plus(fillAmount);
     const makerStatus = newMakerRemaining.lte(0) ? 'FILLED' : 'OPEN';
 
-    await db.update(orders).set({
+    await tx.update(orders).set({
       remainingAmount: newMakerRemaining.toString(),
       filledAmount: newMakerFilled.toString(),
       status: makerStatus,
@@ -74,16 +72,15 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
 
     // Create Trade Record
     const tradeId = crypto.randomUUID();
-    const tradeDisplayId = await generateBusinessId(db, 'system', 'TRAD');
+    const tradeDisplayId = await generateBusinessId(tx, 'system', 'TRAD');
 
     const makerFeeAmt = fillAmount.times(makerPrice).times(marketInfo.makerFee);
     const takerFeeAmt = fillAmount.times(makerPrice).times(marketInfo.takerFee);
 
-    await db.insert(trades).values({
+    await tx.insert(trades).values({
       id: tradeId,
       displayId: tradeDisplayId,
       marketSymbol: newOrder.marketSymbol,
-      mode,
       makerOrderId: makerOrder.id,
       takerOrderId: newOrder.id,
       price: makerPrice.toString(),
@@ -102,21 +99,21 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
     const makerReceiveNet = makerReceiveGross.minus(mFee);
 
     // Credit maker receive wallet
-    let mRecWallet = await db.select().from(wallets).where(and(eq(wallets.userId, makerOrder.userId), eq(wallets.assetSymbol, makerReceiveAsset), eq(wallets.type, mode))).get();
+    let mRecWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, makerOrder.userId), eq(wallets.assetSymbol, makerReceiveAsset))).get();
     if (mRecWallet) {
-      await db.update(wallets).set({ 
+      await tx.update(wallets).set({ 
         balance: new Decimal(mRecWallet.balance).plus(makerReceiveNet).toString(),
         updatedAt: now 
       }).where(eq(wallets.id, mRecWallet.id));
     } else {
       const newWalletId = crypto.randomUUID();
-      const newWalletDisplayId = await generateBusinessId(db, 'system', 'WALL');
-      await db.insert(wallets).values({
+      const newWalletDisplayId = await generateBusinessId(tx, 'system', 'WALL');
+      await tx.insert(wallets).values({
         id: newWalletId,
         displayId: newWalletDisplayId,
         userId: makerOrder.userId,
         assetSymbol: makerReceiveAsset,
-        type: mode,
+
         balance: makerReceiveNet.toString(),
         lockedBalance: '0',
         createdAt: now,
@@ -128,9 +125,9 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
     const makerSpendAsset = makerOrder.side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
     const makerSpendGross = makerOrder.side === 'BUY' ? fillAmount.times(makerPrice) : fillAmount;
     
-    let mSpdWallet = await db.select().from(wallets).where(and(eq(wallets.userId, makerOrder.userId), eq(wallets.assetSymbol, makerSpendAsset), eq(wallets.type, mode))).get();
+    let mSpdWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, makerOrder.userId), eq(wallets.assetSymbol, makerSpendAsset))).get();
     if (mSpdWallet) {
-      await db.update(wallets).set({
+      await tx.update(wallets).set({
         lockedBalance: Decimal.max(0, new Decimal(mSpdWallet.lockedBalance).minus(makerSpendGross)).toString(),
         updatedAt: now
       }).where(eq(wallets.id, mSpdWallet.id));
@@ -142,5 +139,6 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
     totalFilledAmount: totalFilledAmount.toNumber(),
     totalSpentOrReceived: totalSpentOrReceived.toNumber(),
     averagePrice: totalFilledAmount.gt(0) ? totalSpentOrReceived.div(totalFilledAmount).toNumber() : 0
-  };
+    };
+  });
 }

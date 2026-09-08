@@ -4,8 +4,6 @@ import Link from "next/link"
 export function EducationalSection() {
   const articles = [
     { category: "Crypto Basics", title: "What is Crypto Trading?", desc: "Introductory explanation to digital assets.", slug: "/learn/crypto-basics" },
-    { category: "Trading", title: "How Spot Trading Works", desc: "Understand buy and sell orders.", slug: "/learn/trading" },
-    { category: "Trading", title: "What is Demo Trading?", desc: "Learn how to use simulated trading.", slug: "/learn/demo-trading" },
     { category: "Security", title: "Understanding Market Risk", desc: "An overview of volatility and risk management.", slug: "/learn/security" },
   ]
 

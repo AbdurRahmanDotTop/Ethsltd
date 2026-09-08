@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { ApiKey, CreateApiKeyRequest, CreateApiKeyResponse, ApiUsageStats } from "@/lib/api/types";
-import { MockApiKeyProvider } from "@/lib/providers/mock-api-key-provider";
 
 interface ApiKeyState {
   keys: ApiKey[];
@@ -23,8 +22,7 @@ export const useApiStore = create<ApiKeyState>((set, get) => ({
   fetchKeys: async (userId: string) => {
     set({ isLoadingKeys: true });
     try {
-      const keys = await MockApiKeyProvider.getKeys(userId);
-      set({ keys, isLoadingKeys: false });
+      set({ keys: [], isLoadingKeys: false });
     } catch (error) {
       console.error("Failed to fetch API keys", error);
       set({ isLoadingKeys: false });
@@ -32,25 +30,17 @@ export const useApiStore = create<ApiKeyState>((set, get) => ({
   },
 
   createKey: async (userId: string, req: CreateApiKeyRequest) => {
-    const res = await MockApiKeyProvider.createKey(userId, req);
-    set(state => ({
-      keys: [res.key, ...state.keys]
-    }));
-    return res;
+    throw new Error("API Key creation not fully implemented yet");
   },
 
   revokeKey: async (keyId: string) => {
-    await MockApiKeyProvider.revokeKey(keyId);
-    set(state => ({
-      keys: state.keys.map(k => k.id === keyId ? { ...k, status: "REVOKED" } : k)
-    }));
+    throw new Error("API Key revocation not fully implemented yet");
   },
 
   fetchUsage: async (userId: string) => {
     set({ isLoadingUsage: true });
     try {
-      const usage = await MockApiKeyProvider.getUsageStats(userId);
-      set({ usage, isLoadingUsage: false });
+      set({ usage: null, isLoadingUsage: false });
     } catch (error) {
       console.error("Failed to fetch API usage", error);
       set({ isLoadingUsage: false });

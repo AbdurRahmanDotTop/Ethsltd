@@ -18,7 +18,6 @@ adminTradingRoutes.use('*', async (c, next) => {
 
 adminTradingRoutes.get('/markets', async (c) => {
   const db = c.get('db');
-  const mode = c.req.query('mode') || 'REAL';
   
   try {
     const allMarkets = await db.select().from(markets).all();
@@ -26,7 +25,7 @@ adminTradingRoutes.get('/markets', async (c) => {
     // We fetch trades to calculate 24h volume
     const now = Date.now();
     const allTrades = await db.select().from(trades)
-      .where(and(eq(trades.mode, mode as any), sql`created_at > ${now - 86400000}`))
+      .where(sql`created_at > ${now - 86400000}`)
       .all();
       
     const results = allMarkets.map(m => {
@@ -125,7 +124,6 @@ adminTradingRoutes.patch('/markets/:symbol/status', async (c) => {
 
 adminTradingRoutes.get('/orders', async (c) => {
   const db = c.get('db');
-  const mode = c.req.query('mode') || 'REAL';
   const page = parseInt(c.req.query('page') || '1');
   const limit = parseInt(c.req.query('limit') || '50');
   const offset = (page - 1) * limit;
@@ -133,7 +131,7 @@ adminTradingRoutes.get('/orders', async (c) => {
   const market = c.req.query('market');
   
   try {
-    const conditions = [eq(orders.mode, mode as any)];
+    const conditions: any[] = [];
     if (status && status !== 'ALL') {
        conditions.push(eq(orders.status, status as any));
     }
@@ -148,7 +146,7 @@ adminTradingRoutes.get('/orders', async (c) => {
       }
     }).from(orders)
       .innerJoin(users, eq(orders.userId, users.id))
-      .where(and(...conditions))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(orders.createdAt)).all();
     
     let filtered = results;
@@ -185,14 +183,13 @@ adminTradingRoutes.get('/orders', async (c) => {
 
 adminTradingRoutes.get('/trades', async (c) => {
   const db = c.get('db');
-  const mode = c.req.query('mode') || 'REAL';
   const page = parseInt(c.req.query('page') || '1');
   const limit = parseInt(c.req.query('limit') || '50');
   const offset = (page - 1) * limit;
   const market = c.req.query('market');
   
   try {
-    let query = db.select().from(trades).where(eq(trades.mode, mode as any));
+    let query = db.select().from(trades);
     
     const results = await query.orderBy(desc(trades.createdAt)).all();
     

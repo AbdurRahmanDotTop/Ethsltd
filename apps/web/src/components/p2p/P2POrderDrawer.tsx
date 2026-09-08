@@ -15,7 +15,6 @@ import { X, CheckCircle2, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTradingModeStore } from "@/stores/trading-mode-store";
 
 interface P2POrderDrawerProps {
   ad: P2PAdvertisement | null;
@@ -26,7 +25,6 @@ interface P2POrderDrawerProps {
 export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
   const router = useRouter();
   const { fiats } = useCurrencies();
-  const { mode } = useTradingModeStore();
   const requireAuth = useRequireAuth();
   const { query } = useP2PStore();
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
@@ -263,8 +261,8 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
             <div className="bg-green-50 dark:bg-green-900/10 text-green-800 dark:text-green-400 p-4 rounded-lg flex items-start gap-3 border border-green-200 dark:border-green-900/50">
               <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-semibold mb-1">{mode === 'DEMO' ? 'Simulated Escrow Protection' : 'Escrow Protection'}</p>
-                <p>The cryptocurrency will be held in {mode === 'DEMO' ? 'a simulated escrow' : 'escrow'} until the transaction is fully complete.</p>
+                <p className="font-semibold mb-1">Escrow Protection</p>
+                <p>The cryptocurrency will be held in escrow until the transaction is fully complete.</p>
               </div>
             </div>
 

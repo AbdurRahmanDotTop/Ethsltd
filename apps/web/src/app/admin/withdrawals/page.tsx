@@ -5,7 +5,7 @@ import { apiClient } from "@ethsltd/api-client";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { Filter, Check, X, Trash2, Edit3 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
-import { useAdminEnvStore } from "@/stores/admin-env-store";
+
 
 export default function AdminWithdrawalsPage() {
   const { user } = useAuthStore();
@@ -14,7 +14,7 @@ export default function AdminWithdrawalsPage() {
   
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("ALL");
-  const { adminMode, setAdminMode } = useAdminEnvStore();
+
   const limit = 50;
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function AdminWithdrawalsPage() {
     const fetchWithdrawals = async () => {
       setLoading(true);
       try {
-        const res = await apiClient.adminGetWithdrawals(status, adminMode);
+        const res = await apiClient.adminGetWithdrawals(status);
         if (isMounted && res.success) {
           setWithdrawals(res.data || []);
         }
@@ -34,11 +34,11 @@ export default function AdminWithdrawalsPage() {
     };
     fetchWithdrawals();
     return () => { isMounted = false; };
-  }, [status, adminMode]);
+  }, [status]);
 
   const fetchWithdrawalsCurrent = async () => {
     try {
-      const res = await apiClient.adminGetWithdrawals(status, adminMode);
+      const res = await apiClient.adminGetWithdrawals(status);
       if (res.success) {
         setWithdrawals(res.data || []);
       }

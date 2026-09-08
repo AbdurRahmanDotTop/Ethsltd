@@ -8,13 +8,13 @@ import { Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useCurrencies } from "@/hooks/use-currencies";
-import { useTradingModeStore } from "@/stores/trading-mode-store";
+
 
 export default function MyAdsPage() {
   const { fiats } = useCurrencies();
   const { user, status, hasHydrated } = useAuthStore();
   const router = useRouter();
-  const { mode } = useTradingModeStore();
+
   const [ads, setAds] = useState<P2PAdvertisement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

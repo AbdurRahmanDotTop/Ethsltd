@@ -48,7 +48,7 @@ export default function AdminAuditPage() {
   const handleExport = () => {
     setIsExporting(true);
     setTimeout(() => {
-      // Create a mock CSV content
+      // Create CSV content from logs
       const csvContent = "data:text/csv;charset=utf-8," 
         + "ID,Timestamp,Type,Action,Actor,IP Address,Target,Severity\n"
         + filteredLogs.map(e => `${e.id},${e.timestamp},${e.type},${e.action},${e.actor},${e.ip},${e.target},${e.severity}`).join("\n");

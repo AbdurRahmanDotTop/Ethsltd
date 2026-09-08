@@ -11,8 +11,6 @@ export default function LearnLayout({
   const sidebarLinks = [
     { href: "/learn", label: "Learn Hub", icon: <BookOpen className="w-4 h-4" /> },
     { href: "/learn/crypto-basics", label: "Crypto Basics", icon: <Lightbulb className="w-4 h-4" /> },
-    { href: "/learn/trading", label: "Trading Guide", icon: <TrendingUp className="w-4 h-4" /> },
-    { href: "/learn/demo-trading", label: "Demo Trading", icon: <PieChart className="w-4 h-4" /> },
     { href: "/learn/security", label: "Security Education", icon: <Shield className="w-4 h-4" /> },
     { href: "/learn/market-insights", label: "Market Insights", icon: <TrendingUp className="w-4 h-4" /> },
   ]

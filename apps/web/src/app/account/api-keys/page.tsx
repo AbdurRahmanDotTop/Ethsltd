@@ -321,7 +321,7 @@ export default function ApiKeysPage() {
                           className="h-8"
                           disabled={revokingId === k.id}
                           onClick={() => {
-                            if (window.confirm("Are you sure you want to revoke this API key? All simulated API requests using that key must fail.")) {
+                            if (window.confirm("Are you sure you want to revoke this API key? All API requests using that key will fail.")) {
                               handleRevoke(k.id);
                             }
                           }}

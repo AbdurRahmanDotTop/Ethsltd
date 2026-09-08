@@ -106,7 +106,7 @@ export default function DocsPage() {
               </ul>
               
               <div className="bg-amber-500/10 text-amber-800 dark:text-amber-400 p-4 rounded-lg text-sm mt-8">
-                <strong>Note:</strong> These are example/test limits for the mock environment.
+                <strong>Note:</strong> These limits are subject to change based on your subscription tier.
               </div>
             </div>
           )}

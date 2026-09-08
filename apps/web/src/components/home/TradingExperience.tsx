@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
-import { DemoTradingCTA } from "./DemoTradingCTA"
 import { Card } from "@/components/ui/card"
 import { LineChart, BarChart3, Wallet, ShieldCheck } from "lucide-react"
 
@@ -80,7 +79,6 @@ export function TradingExperience() {
               <Button size="lg" className="w-full sm:w-auto px-8" asChild>
                 <Link href="/trade">Start Trading</Link>
               </Button>
-              <DemoTradingCTA variant="outline" className="w-full sm:w-auto border-border hover:bg-foreground/5" />
             </div>
           </div>
           
@@ -104,7 +102,7 @@ export function TradingExperience() {
                   {/* Chart area */}
                   <div className="flex-1 border-b border-border mb-4 relative flex items-end min-h-[100px]">
                     <svg viewBox="0 0 100 50" className="w-full h-full" preserveAspectRatio="none">
-                      {/* Fake candles */}
+
                       {[...Array(20)].map((_, i) => (
                         <rect key={i} x={i * 5 + 2} y={20 + Math.random() * 20} width="2" height={10 + Math.random() * 15} fill={Math.random() > 0.5 ? '#16A34A' : '#DC2626'} />
                       ))}

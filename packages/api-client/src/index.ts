@@ -3,7 +3,6 @@ import { User } from '@ethsltd/types';
 export class EthsltdClient {
   private baseUrl: string;
   private token: string | null = null;
-  private mode: 'REAL' | 'DEMO' = 'REAL';
   private isLoggingOut = false;
 
   constructor(baseUrl?: string) {
@@ -25,10 +24,6 @@ export class EthsltdClient {
     this.token = token;
   }
 
-  setMode(mode: 'REAL' | 'DEMO') {
-    this.mode = mode;
-  }
-
   private async request<T>(endpoint: string, options?: RequestInit & { skipGlobal401?: boolean }): Promise<{ success: boolean; data?: T; error?: any; message?: string }> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -38,8 +33,6 @@ export class EthsltdClient {
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
-    
-    headers['X-Trading-Mode'] = this.mode;
 
     try {
       const res = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -198,16 +191,16 @@ export class EthsltdClient {
     return this.request<any[]>(`/api/v1/wallets?userId=${userId}`);
   }
 
-  async getWalletBalances(mode: string = 'REAL') {
-    return this.request<any[]>(`/api/v1/wallets/balances?mode=${mode}`);
+  async getWalletBalances() {
+    return this.request<any[]>(`/api/v1/wallets/balances`);
   }
 
-  async getWalletPortfolio(mode: string = 'REAL') {
-    return this.request<any>(`/api/v1/wallets/portfolio?mode=${mode}`);
+  async getWalletPortfolio() {
+    return this.request<any>(`/api/v1/wallets/portfolio`);
   }
 
-  async getWalletTransactions(mode?: 'REAL' | 'DEMO'): Promise<any> {
-    return this.request<any[]>(`/api/v1/wallets/transactions${mode ? `?mode=${mode}` : ''}`);
+  async getWalletTransactions(): Promise<any> {
+    return this.request<any[]>(`/api/v1/wallets/transactions`);
   }
 
   async getAssetConversions(): Promise<any> {
@@ -235,7 +228,6 @@ export class EthsltdClient {
     amount: number; 
     network?: string; 
     destination?: string; 
-    mode?: string;
     depositMethod?: string;
     transactionHash?: string;
     paymentReference?: string;
@@ -247,18 +239,13 @@ export class EthsltdClient {
     }) as Promise<any>;
   }
 
-  async withdraw(data: { assetSymbol: string; amount: number; network?: string; destination?: string; mode?: string }) {
+  async withdraw(data: { assetSymbol: string; amount: number; network?: string; destination?: string }) {
     return this.request<any>('/api/v1/wallets/withdraw', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async topUpDemoWallet() {
-    return this.request<any>('/api/v1/wallets/top-up-demo', {
-      method: 'POST',
-    });
-  }
 
   // Trading Data API Methods
   async getMarkets(params?: any) {
@@ -269,14 +256,12 @@ export class EthsltdClient {
     return this.request<any[]>(`/api/v1/trading/markets/${symbol}/candles?interval=${interval}`);
   }
 
-  async getMarketOrderBook(symbol: string, params: { mode?: 'REAL' | 'DEMO' } = {}) {
-    const query = new URLSearchParams(params as any).toString();
-    return this.request<any>(`/api/v1/trading/markets/${symbol}/orderbook?${query}`);
+  async getMarketOrderBook(symbol: string) {
+    return this.request<any>(`/api/v1/trading/markets/${symbol}/orderbook`);
   }
 
-  async getMarketTrades(symbol: string, params: { mode?: 'REAL' | 'DEMO' } = {}) {
-    const query = new URLSearchParams(params as any).toString();
-    return this.request<any>(`/api/v1/trading/markets/${symbol}/trades?${query}`);
+  async getMarketTrades(symbol: string) {
+    return this.request<any>(`/api/v1/trading/markets/${symbol}/trades`);
   }
 
   // Fiat Exchange Rates
@@ -285,12 +270,12 @@ export class EthsltdClient {
   }
 
   // Trading Execution API Methods
-  async getOrders(mode: string = 'REAL') {
-    return this.request<any[]>(`/api/v1/trading/orders?mode=${mode}`);
+  async getOrders() {
+    return this.request<any[]>(`/api/v1/trading/orders`);
   }
 
-  async getTrades(mode: string = 'REAL') {
-    return this.request<any[]>(`/api/v1/trading/trades?mode=${mode}`);
+  async getTrades() {
+    return this.request<any[]>(`/api/v1/trading/trades`);
   }
 
 
@@ -298,7 +283,7 @@ export class EthsltdClient {
   async createOrder(data: any) {
     return this.request<any>('/api/v1/trading/orders', {
       method: 'POST',
-      body: JSON.stringify({ ...data, mode: data.mode || 'REAL' }),
+      body: JSON.stringify(data),
     });
   }
 
@@ -309,8 +294,8 @@ export class EthsltdClient {
   }
   
   // Futures API Methods
-  async getFuturesPositions(mode: string = 'REAL') {
-    return this.request<any[]>(`/api/v1/trading/futures/positions?mode=${mode}`);
+  async getFuturesPositions() {
+    return this.request<any[]>(`/api/v1/trading/futures/positions`);
   }
 
   async createFuturesOrder(data: any) {
@@ -328,8 +313,8 @@ export class EthsltdClient {
   }
 
   // Options API Methods
-  async getOptionsPositions(mode: string = 'REAL') {
-    return this.request<any[]>(`/api/v1/trading/options/positions?mode=${mode}`);
+  async getOptionsPositions() {
+    return this.request<any[]>(`/api/v1/trading/options/positions`);
   }
 
   async createOptionsOrder(data: any) {
@@ -477,7 +462,7 @@ export class EthsltdClient {
     });
   }
 
-  async adjustAdminUserWallet(userId: string, assetSymbol: string, amount: string, type: 'REAL' | 'DEMO', action: 'CREDIT' | 'DEBIT', targetField: 'balance' | 'lockedBalance' | 'escrowBalance' = 'balance', notes?: string) {
+  async adjustAdminUserWallet(userId: string, assetSymbol: string, amount: string, type: 'REAL', action: 'CREDIT' | 'DEBIT', targetField: 'balance' | 'lockedBalance' | 'escrowBalance' = 'balance', notes?: string) {
     return this.request<any>(`/api/v1/admin/users/${userId}/wallets/adjust`, {
       method: 'POST',
       body: JSON.stringify({ assetSymbol, amount, type, action, targetField, notes }),
@@ -595,8 +580,8 @@ export class EthsltdClient {
   }
 
   // Admin Withdrawals Methods
-  async adminGetWithdrawals(status: string = 'ALL', mode: string = 'REAL') {
-    return this.request<any[]>(`/api/v1/admin/withdrawals?status=${status}&mode=${mode}`);
+  async adminGetWithdrawals(status: string = 'ALL') {
+    return this.request<any[]>(`/api/v1/admin/withdrawals?status=${status}`);
   }
 
   async adminApproveWithdrawal(id: string) {
@@ -1006,9 +991,8 @@ export class EthsltdClient {
     return this.request<any>('/api/v1/admin/stats/recent-activity');
   }
 
-  async adminGetMarkets(params: { mode?: 'REAL' | 'DEMO' } = {}) {
-    const query = new URLSearchParams(params as any).toString();
-    return this.request<any[]>(`/api/v1/admin/trading/markets?${query}`);
+  async adminGetMarkets() {
+    return this.request<any[]>(`/api/v1/admin/trading/markets`);
   }
 
   async adminUpdateMarketStatus(symbol: string, status: string) {
@@ -1036,12 +1020,12 @@ export class EthsltdClient {
 
 
 
-  async adminGetOrders(params: { mode?: 'REAL' | 'DEMO', page?: number, limit?: number, status?: string, market?: string } = {}) {
+  async adminGetOrders(params: { page?: number, limit?: number, status?: string, market?: string } = {}) {
     const query = new URLSearchParams(params as any).toString();
     return this.request<{data: any[], total: number}>(`/api/v1/admin/trading/orders?${query}`);
   }
 
-  async adminGetTrades(params: { mode?: 'REAL' | 'DEMO', page?: number, limit?: number, market?: string } = {}) {
+  async adminGetTrades(params: { page?: number, limit?: number, market?: string } = {}) {
     const query = new URLSearchParams(params as any).toString();
     return this.request<{data: any[], total: number}>(`/api/v1/admin/trading/trades?${query}`);
   }

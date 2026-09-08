@@ -47,8 +47,7 @@ adminExportRouter.get('/users', async (c) => {
         kycDocumentType: kyc?.documentType || '',
         
         // Balances
-        realBalance: userWallets.find(w => w.type === 'REAL')?.balance || 0,
-        demoBalance: userWallets.find(w => w.type === 'DEMO')?.balance || 0,
+        realBalance: userWallets.find(w => w.assetSymbol === 'USDT')?.balance || 0,
       };
     });
 
@@ -75,8 +74,6 @@ adminExportRouter.get('/transactions', async (c) => {
     const exportData = ledger.map(l => ({
       id: l.id,
       transactionId: l.transactionId,
-      accountId: l.accountId,
-      environment: l.environment,
       direction: l.direction,
       amount: l.amount,
       assetSymbol: l.assetSymbol,

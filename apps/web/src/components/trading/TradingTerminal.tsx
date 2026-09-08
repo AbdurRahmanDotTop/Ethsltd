@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react"
 import { MarketSummary } from "./MarketSummary"
 import { MarketSelector } from "./MarketSelector"
-import { TradingModeBadge } from "./TradingModeBadge"
 import { TradingChart } from "./TradingChart"
 import { OrderBook } from "./OrderBook"
 import { RecentTrades } from "./RecentTrades"
@@ -10,7 +9,6 @@ import { OrderEntry } from "./OrderEntry"
 import { TradingHistoryTabs } from "./TradingHistoryTabs"
 import { apiClient } from "@ethsltd/api-client"
 import { Market } from "@/lib/market-data/types"
-import { useTradingModeStore } from "@/stores/trading-mode-store"
 import { useTradingUIStore, MarketType } from "@/stores/trading-ui-store"
 
 export function TradingTerminal({ symbol }: { symbol: string }) {
@@ -20,7 +18,6 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
   const [trades, setTrades] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [headerHeight, setHeaderHeight] = useState(64)
-  const { mode } = useTradingModeStore()
   const { marketType, setMarketType } = useTradingUIStore()
 
   useEffect(() => {
@@ -58,8 +55,8 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
         if (m) {
           const [cRes, oRes, tRes] = await Promise.all([
             apiClient.getMarketCandles(symbol, '15m'),
-            apiClient.getMarketOrderBook(symbol, { mode }),
-            apiClient.getMarketTrades(symbol, { mode })
+            apiClient.getMarketOrderBook(symbol),
+            apiClient.getMarketTrades(symbol)
           ])
           if (mounted) {
             setMarket(m)
@@ -76,10 +73,10 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
     }
     load()
     
-    // Simulate real-time updates every 5s
+    // Poll for real-time updates every 5s
     const interval = setInterval(load, 5000);
     return () => { mounted = false; clearInterval(interval); }
-  }, [symbol, mode]) // Remove market dependency to avoid infinite loop
+  }, [symbol]) // Remove market dependency to avoid infinite loop
 
   if (loading && !market) {
     return <div className="min-h-[80vh] flex items-center justify-center bg-background"><div className="animate-spin h-8 w-8 border-4 border-brand-foreground border-t-transparent rounded-full" /></div>
@@ -103,7 +100,6 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       >
         <div className="flex items-center gap-4">
           <MarketSelector currentSymbol={market.symbol} />
-          {mode === 'DEMO' && <TradingModeBadge />}
           <div className="hidden sm:flex bg-muted p-1 rounded-md">
             {(['SPOT', 'FUTURES', 'OPTIONS'] as MarketType[]).map((type) => (
               <button

@@ -36,7 +36,7 @@ adminRoutes.get('/stats', async (c) => {
     // Platform Balance
     const [{ balance }] = await db.select({
       balance: sql<number>`sum(CAST(balance AS REAL) + CAST(locked_balance AS REAL) + CAST(escrow_balance AS REAL))`
-    }).from(wallets).where(and(eq(wallets.type, 'REAL'), sql`asset_symbol IN ('USDT', 'USD', 'USDC')`));
+    }).from(wallets).where(sql`asset_symbol IN ('USDT', 'USD', 'USDC')`);
     
     // Deposits Today
     const todayStart = new Date();
@@ -49,12 +49,12 @@ adminRoutes.get('/stats', async (c) => {
     const now = Date.now();
     const [{ p2pVolume24h }] = await db.select({
       p2pVolume24h: sql<number>`sum(CAST(fiat_amount AS REAL))`
-    }).from(p2pOrders).where(and(eq(p2pOrders.mode, 'REAL'), eq(p2pOrders.status, 'COMPLETED'), sql`updated_at > ${now - 86400000}`));
+    }).from(p2pOrders).where(and(eq(p2pOrders.status, 'COMPLETED'), sql`updated_at > ${now - 86400000}`));
 
     // Trading Volume 24h
     const [{ dailyVolumeUsd }] = await db.select({
       dailyVolumeUsd: sql<number>`sum(CAST(filled_amount AS REAL) * CAST(price AS REAL))`
-    }).from(orders).where(and(eq(orders.mode, 'REAL'), eq(orders.status, 'FILLED'), sql`created_at > ${now - 86400000}`));
+    }).from(orders).where(and(eq(orders.status, 'FILLED'), sql`created_at > ${now - 86400000}`));
 
     return c.json({
       success: true,
@@ -93,7 +93,6 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
     }).from(p2pOrders)
       .leftJoin(p2pAds, eq(p2pAds.id, p2pOrders.adId))
       .where(and(
-        eq(p2pOrders.mode, 'REAL'), 
         eq(p2pOrders.status, 'COMPLETED'), 
         gte(p2pOrders.createdAt, new Date(sevenDaysAgo))
       ));
@@ -197,7 +196,7 @@ adminRoutes.get('/stats/p2p', async (c) => {
       count: sql<number>`count(*)`,
       volume: sql<number>`sum(CAST(${p2pOrders.cryptoAmount} AS REAL))`
     }).from(p2pOrders)
-    .where(and(...conditions, eq(p2pOrders.mode, 'REAL')))
+    .where(and(...conditions))
     .groupBy(p2pOrders.status);
 
     const orderStats = {
@@ -218,7 +217,7 @@ adminRoutes.get('/stats/p2p', async (c) => {
       volume: sql<number>`sum(CAST(${p2pOrders.cryptoAmount} AS REAL))`
     }).from(p2pOrders)
     .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .where(and(...conditions, eq(p2pOrders.mode, 'REAL'), eq(p2pOrders.status, 'COMPLETED')))
+    .where(and(...conditions, eq(p2pOrders.status, 'COMPLETED')))
     .groupBy(p2pAds.type);
 
     const buySellVolume = { BUY: 0, SELL: 0 };
@@ -229,7 +228,7 @@ adminRoutes.get('/stats/p2p', async (c) => {
     // Active Ads
     const [{ activeAds }] = await db.select({ activeAds: sql<number>`count(*)` })
       .from(p2pAds)
-      .where(and(eq(p2pAds.status, 'ACTIVE'), eq(p2pAds.mode, 'REAL')));
+      .where(eq(p2pAds.status, 'ACTIVE'));
 
     // Merchants
     const [{ activeMerchants }] = await db.select({ activeMerchants: sql<number>`count(*)` })
@@ -243,11 +242,11 @@ adminRoutes.get('/stats/p2p', async (c) => {
 
     const [{ totalChats }] = await db.select({ totalChats: sql<number>`count(*)` })
       .from(p2pMessages)
-      .where(and(...chatConditions, eq(p2pMessages.mode, 'REAL')));
+      .where(and(...chatConditions));
 
     const [{ unreadChats }] = await db.select({ unreadChats: sql<number>`count(*)` })
       .from(p2pMessages)
-      .where(and(...chatConditions, eq(p2pMessages.mode, 'REAL'), eq(p2pMessages.isRead, false)));
+      .where(and(...chatConditions, eq(p2pMessages.isRead, false)));
 
     // Disputes
     const disputeConditions = [];
@@ -270,7 +269,7 @@ adminRoutes.get('/stats/p2p', async (c) => {
     // Escrow
     const [{ totalEscrow }] = await db.select({
       totalEscrow: sql<number>`sum(CAST(escrow_balance AS REAL))`
-    }).from(wallets).where(eq(wallets.type, 'REAL'));
+    }).from(wallets);
 
     // Recent Transactions
     const recentOrders = await db.select({
@@ -283,7 +282,6 @@ adminRoutes.get('/stats/p2p', async (c) => {
       fiat: p2pAds.fiat
     }).from(p2pOrders)
     .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .where(eq(p2pOrders.mode, 'REAL'))
     .orderBy(desc(p2pOrders.createdAt))
     .limit(10);
 
@@ -339,15 +337,10 @@ adminRoutes.get('/users/:id', async (c) => {
     const userWallets = await db.select().from(wallets).where(eq(wallets.userId, userId)).all();
     
     let balanceUsd = 0;
-    let demoBalanceUsd = 0;
     for (const w of userWallets) {
       if (w.assetSymbol === 'USDT' || w.assetSymbol === 'USD') {
         const total = parseFloat(w.balance || '0') + parseFloat(w.lockedBalance || '0') + parseFloat(w.escrowBalance || '0');
-        if (w.type === 'DEMO') {
-          demoBalanceUsd += total;
-        } else {
-          balanceUsd += total;
-        }
+        balanceUsd += total;
       }
     }
     
@@ -364,7 +357,6 @@ adminRoutes.get('/users/:id', async (c) => {
         kycStatus: kyc ? kyc.status : 'UNVERIFIED',
         riskLevel: 'LOW',
         balanceUsd,
-        demoBalanceUsd,
         tradingVolumeUsd: 0,
         p2pVolumeUsd: 0,
         orders: recentOrders,
@@ -600,12 +592,11 @@ adminRoutes.delete('/users/:id', async (c) => {
 // GET /api/v1/admin/wallets/overview
 adminRoutes.get('/wallets/overview', async (c) => {
   const db = c.get('db');
-  const mode = (c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   try {
     const { eq } = require('drizzle-orm');
     const { wallets, payment_methods, currencyRates } = require('database');
     
-    const allWallets = await db.select().from(wallets).where(eq(wallets.type, mode)).all();
+    const allWallets = await db.select().from(wallets).all();
     const overview: Record<string, { balance: number, locked: number, escrow: number, total: number }> = {
       'USDT': { balance: 0, locked: 0, escrow: 0, total: 0 },
       'USD': { balance: 0, locked: 0, escrow: 0, total: 0 },
@@ -673,7 +664,7 @@ adminRoutes.get('/wallets/users', async (c) => {
     let walletsList: any[] = [];
     if (userIds.length > 0) {
       walletsList = await db.select().from(wallets).where(
-        and(eq(wallets.type, 'REAL'), inArray(wallets.userId, userIds))
+        inArray(wallets.userId, userIds)
       ).all();
     }
     
@@ -700,14 +691,14 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
   }
 
   // targetField can be 'balance', 'lockedBalance', or 'escrowBalance'
-  const { assetSymbol, amount, type, action, targetField = 'balance', notes } = body;
+  const { assetSymbol, amount, action, targetField = 'balance', notes } = body;
 
   try {
     const { and, eq } = require('drizzle-orm');
     const { wallets, ledgerTransactions, walletTransactions } = require('database');
     
     let wallet = await db.select().from(wallets).where(
-      and(eq(wallets.userId, userId), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, type))
+      and(eq(wallets.userId, userId), eq(wallets.assetSymbol, assetSymbol))
     ).get();
 
     if (!wallet) {
@@ -718,7 +709,6 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
         id: crypto.randomUUID(),
         userId,
         assetSymbol,
-        type,
         balance: targetField === 'balance' ? amount.toString() : '0',
         lockedBalance: targetField === 'lockedBalance' ? amount.toString() : '0',
         escrowBalance: targetField === 'escrowBalance' ? amount.toString() : '0',
@@ -749,7 +739,6 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
       id: crypto.randomUUID(),
       displayId: ltDisplayId,
       idempotencyKey: `admin-adjust-${Date.now()}-${userId}`,
-      environment: type,
       referenceType: 'ADJUSTMENT',
       referenceId: userId,
       status: 'COMMITTED',
@@ -763,7 +752,6 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
       displayId: wtDisplayId,
       userId,
       type: 'ADJUSTMENT',
-      mode: type,
       assetSymbol,
       amount: action === 'DEBIT' ? `-${amount}` : amount,
       fee: '0',
@@ -885,7 +873,7 @@ adminRoutes.post('/deposit-settings', async (c) => {
       fee_value: body.fee_value || 0,
       display_order: body.display_order || 1,
       instructions: body.instructions || '{}',
-      environment: 'REAL',
+
       created_at: new Date(),
       updated_at: new Date(),
       updated_by: admin.id
@@ -1032,95 +1020,87 @@ adminRoutes.post('/p2p/disputes/:id/resolve', async (c) => {
     const cryptoAmount = new Decimal(order.cryptoAmount);
     const now = new Date();
 
-    const txId = crypto.randomUUID();
-    const ltDisplayId = await generateBusinessId(db, null, 'LTXN');
+    await db.transaction(async (tx: any) => {
+      const txId = crypto.randomUUID();
+      const ltDisplayId = await generateBusinessId(tx, null, 'LTXN');
 
-    const getOrCreateLedgerAccount = async (userId: string) => {
-      let acc = await db.select().from(ledgerAccounts).where(and(eq(ledgerAccounts.userId, userId), eq(ledgerAccounts.assetSymbol, ad.asset), eq(ledgerAccounts.environment, order.mode))).get();
-      if (!acc) {
-        const id = crypto.randomUUID();
-        await db.insert(ledgerAccounts).values({
-          id,
-          userId,
-          environment: order.mode,
-          type: 'USER',
-          assetSymbol: ad.asset,
-          createdAt: now,
+      const getOrCreateLedgerAccount = async (userId: string) => {
+        let acc = await tx.select().from(ledgerAccounts).where(and(eq(ledgerAccounts.userId, userId), eq(ledgerAccounts.assetSymbol, ad.asset))).get();
+        if (!acc) {
+          const id = crypto.randomUUID();
+          await tx.insert(ledgerAccounts).values({
+            id, userId, type: 'USER', assetSymbol: ad.asset, createdAt: now,
+          });
+          return id;
+        }
+        return acc.id;
+      };
+
+      if (resolution === 'RELEASE_TO_BUYER') {
+        const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+        if (sellerWallet) {
+          const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
+          await tx.update(wallets).set({ escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+        }
+        
+        const buyerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.buyerId), eq(wallets.assetSymbol, ad.asset))).get();
+        if (buyerWallet) {
+          const finalBalance = new Decimal(buyerWallet.balance).plus(cryptoAmount).toString();
+          await tx.update(wallets).set({ balance: finalBalance, updatedAt: now }).where(eq(wallets.id, buyerWallet.id));
+        } else {
+          await tx.insert(wallets).values({
+            id: crypto.randomUUID(), userId: order.buyerId, assetSymbol: ad.asset,
+            balance: cryptoAmount.toString(), lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now,
+          });
+        }
+        
+        await tx.update(p2pOrders).set({ status: 'COMPLETED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
+        await tx.update(p2pDisputes).set({ status: 'RESOLVED_BUYER', adminNotes: notes, assignedAdminId: admin.id, updatedAt: now }).where(eq(p2pDisputes.id, disputeId));
+
+        await tx.insert(ledgerTransactions).values({
+          id: txId, displayId: ltDisplayId, idempotencyKey: `p2p-admin-resolve-release-${order.id}`,
+          referenceType: 'P2P_ESCROW_RELEASE', referenceId: order.id, status: 'COMMITTED', createdAt: now,
         });
-        return id;
-      }
-      return acc.id;
-    };
 
-    if (resolution === 'RELEASE_TO_BUYER') {
-      // Deduct from Seller's escrow balance
-      const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
-      if (sellerWallet) {
-        const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
-        await db.update(wallets).set({ escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
-      }
-      
-      // Add to Buyer's available balance
-      const buyerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.buyerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
-      if (buyerWallet) {
-        const finalBalance = new Decimal(buyerWallet.balance).plus(cryptoAmount).toString();
-        await db.update(wallets).set({ balance: finalBalance, updatedAt: now }).where(eq(wallets.id, buyerWallet.id));
-      } else {
-        await db.insert(wallets).values({
-          id: crypto.randomUUID(), userId: order.buyerId, assetSymbol: ad.asset,
-          balance: cryptoAmount.toString(), lockedBalance: '0', escrowBalance: '0', type: order.mode, createdAt: now, updatedAt: now,
+        const sellerLedgerAccId = await getOrCreateLedgerAccount(order.sellerId);
+        const buyerLedgerAccId = await getOrCreateLedgerAccount(order.buyerId);
+
+        await tx.insert(ledgerEntries).values([
+          { id: crypto.randomUUID(), transactionId: txId, accountId: sellerLedgerAccId, direction: 'DEBIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now },
+          { id: crypto.randomUUID(), transactionId: txId, accountId: buyerLedgerAccId, direction: 'CREDIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now }
+        ]);
+
+      } else if (resolution === 'REFUND_TO_SELLER') {
+        const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+        if (sellerWallet) {
+          const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
+          const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
+          await tx.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+        }
+
+        if (ad.status !== 'CANCELED') {
+          const newAvailable = new Decimal(ad.availableAmount).plus(cryptoAmount).toString();
+          await tx.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
+        }
+        
+        await tx.update(p2pOrders).set({ status: 'CANCELLED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
+        await tx.update(p2pDisputes).set({ status: 'RESOLVED_SELLER', adminNotes: notes, assignedAdminId: admin.id, updatedAt: now }).where(eq(p2pDisputes.id, disputeId));
+
+        await tx.insert(ledgerTransactions).values({
+          id: txId, displayId: ltDisplayId, idempotencyKey: `p2p-admin-resolve-refund-${order.id}`,
+          referenceType: 'P2P_ESCROW_REFUND', referenceId: order.id, status: 'REVERSED', createdAt: now,
         });
-      }
-      
-      await db.update(p2pOrders).set({ status: 'COMPLETED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
-      await db.update(p2pDisputes).set({ status: 'RESOLVED_BUYER', adminNotes: notes, assignedAdminId: admin.id, updatedAt: now }).where(eq(p2pDisputes.id, disputeId));
 
-      // Ledger Entries for Release
-      await db.insert(ledgerTransactions).values({
-        id: txId, displayId: ltDisplayId, idempotencyKey: `p2p-admin-resolve-release-${order.id}`,
-        environment: order.mode, referenceType: 'P2P_ESCROW_RELEASE', referenceId: order.id, status: 'COMMITTED', createdAt: now,
+        const sellerLedgerAccId = await getOrCreateLedgerAccount(order.sellerId);
+        await tx.insert(ledgerEntries).values([
+          { id: crypto.randomUUID(), transactionId: txId, accountId: sellerLedgerAccId, direction: 'CREDIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now }
+        ]);
+      }
+
+      await tx.insert(p2pMessages).values({
+        id: `sysmsg_${crypto.randomUUID()}`, orderId: order.id, senderId: admin.id,
+        content: `Dispute Resolved by Admin. Action: ${resolution}. Notes: ${notes || ''}`, type: 'SYSTEM', createdAt: now,
       });
-
-      const sellerLedgerAccId = await getOrCreateLedgerAccount(order.sellerId);
-      const buyerLedgerAccId = await getOrCreateLedgerAccount(order.buyerId);
-
-      await db.insert(ledgerEntries).values([
-        { id: crypto.randomUUID(), transactionId: txId, accountId: sellerLedgerAccId, direction: 'DEBIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now },
-        { id: crypto.randomUUID(), transactionId: txId, accountId: buyerLedgerAccId, direction: 'CREDIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now }
-      ]);
-
-    } else if (resolution === 'REFUND_TO_SELLER') {
-      // Return crypto to Seller's available balance from Escrow
-      const sellerWallet = await db.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset), eq(wallets.type, order.mode))).get();
-      if (sellerWallet) {
-        const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
-        const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
-        await db.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
-      }
-
-      if (ad.status !== 'CANCELED') {
-        const newAvailable = new Decimal(ad.availableAmount).plus(cryptoAmount).toString();
-        await db.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
-      }
-      
-      await db.update(p2pOrders).set({ status: 'CANCELLED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
-      await db.update(p2pDisputes).set({ status: 'RESOLVED_SELLER', adminNotes: notes, assignedAdminId: admin.id, updatedAt: now }).where(eq(p2pDisputes.id, disputeId));
-
-      // Ledger Entries for Refund
-      await db.insert(ledgerTransactions).values({
-        id: txId, displayId: ltDisplayId, idempotencyKey: `p2p-admin-resolve-refund-${order.id}`,
-        environment: order.mode, referenceType: 'P2P_ESCROW_REFUND', referenceId: order.id, status: 'REVERSED', createdAt: now,
-      });
-
-      const sellerLedgerAccId = await getOrCreateLedgerAccount(order.sellerId);
-      await db.insert(ledgerEntries).values([
-        { id: crypto.randomUUID(), transactionId: txId, accountId: sellerLedgerAccId, direction: 'CREDIT', assetSymbol: ad.asset, amount: cryptoAmount.toString(), createdAt: now }
-      ]);
-    }
-
-    await db.insert(p2pMessages).values({
-      id: `sysmsg_${Date.now()}`, orderId: order.id, senderId: admin.id, mode: order.mode,
-      content: `Dispute Resolved by Admin. Action: ${resolution}. Notes: ${notes || ''}`, type: 'SYSTEM', createdAt: now,
     });
 
     return c.json({ success: true });
@@ -1157,7 +1137,7 @@ adminRoutes.get('/transactions', async (c) => {
     })
     .from(walletTransactions)
     .leftJoin(users, eq(users.id, walletTransactions.userId))
-    .where(eq(walletTransactions.mode, 'REAL'))
+    .where(eq(walletTransactions.type, 'DEPOSIT'))
     .orderBy(desc(walletTransactions.createdAt))
     .limit(200);
     
@@ -1177,7 +1157,7 @@ adminRoutes.get('/transactions', async (c) => {
 adminRoutes.get('/withdrawals', async (c) => {
   const db = c.get('db');
   const status = c.req.query('status') || 'ALL';
-  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
+
   
   try {
     const { eq, and, desc } = require('drizzle-orm');
@@ -1185,7 +1165,7 @@ adminRoutes.get('/withdrawals', async (c) => {
     
     let conditions = [
       eq(walletTransactions.type, 'WITHDRAWAL'),
-      eq(walletTransactions.mode, mode)
+      eq(walletTransactions.type, 'WITHDRAWAL')
     ];
     
     if (status !== 'ALL') {
@@ -1233,8 +1213,7 @@ adminRoutes.post('/withdrawals/:id/approve', async (c) => {
     // Deduct from locked balance permanently
     const wallet = await db.select().from(wallets).where(and(
       eq(wallets.userId, tx.userId),
-      eq(wallets.assetSymbol, tx.assetSymbol),
-      eq(wallets.type, tx.mode)
+      eq(wallets.assetSymbol, tx.assetSymbol)
     )).get();
     
     if (wallet) {
@@ -1268,8 +1247,7 @@ adminRoutes.post('/withdrawals/:id/reject', async (c) => {
     // Refund the amount back to balance from locked balance
     const wallet = await db.select().from(wallets).where(and(
       eq(wallets.userId, tx.userId),
-      eq(wallets.assetSymbol, tx.assetSymbol),
-      eq(wallets.type, tx.mode)
+      eq(wallets.assetSymbol, tx.assetSymbol)
     )).get();
     
     if (wallet) {
@@ -1689,7 +1667,7 @@ adminRoutes.post('/support/tickets/:id/messages', async (c) => {
     const { tickets, ticketMessages } = require('database');
     const now = new Date();
     await db.insert(ticketMessages).values({
-      id: `MSG-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`,
+      id: `MSG-${crypto.randomUUID()}`,
       ticketId,
       senderId: admin.id,
       isAdmin: true,
@@ -1752,7 +1730,7 @@ adminRoutes.get('/p2p/orders', async (c) => {
     })
     .from(p2pOrders)
     .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .where(eq(p2pOrders.mode, 'REAL'))
+    .where(sql`1=1`)
     .orderBy(desc(p2pOrders.createdAt))
     .all();
 

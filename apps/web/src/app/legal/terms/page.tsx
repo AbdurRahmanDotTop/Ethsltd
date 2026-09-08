@@ -13,7 +13,7 @@ export default function TermsOfService() {
         <section>
           <h3 className="text-xl font-semibold text-foreground mb-3">1. Acceptance of Terms</h3>
           <p>
-            By accessing or using the ETHSLTD platform, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, then you may not access the service. Currently, the platform operates in a simulated environment for educational purposes.
+            By accessing or using the ETHSLTD platform, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, then you may not access the service.
           </p>
         </section>
 

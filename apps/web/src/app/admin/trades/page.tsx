@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@ethsltd/api-client";
 import { AdminDataTable, Column } from "@/components/admin/AdminDataTable";
 import { Filter } from "lucide-react";
-import { useAdminEnvStore } from "@/stores/admin-env-store";
 
 export default function AdminTradesPage() {
   const [trades, setTrades] = useState<any[]>([]);
@@ -15,13 +14,11 @@ export default function AdminTradesPage() {
   const [market, setMarket] = useState("ALL");
   const limit = 20;
 
-  const { adminMode, setAdminMode } = useAdminEnvStore();
-
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
-    apiClient.adminGetTrades({ page, limit, market, mode: adminMode }).then((res) => {
+    apiClient.adminGetTrades({ page, limit, market }).then((res) => {
       if (res.success && isMounted) {
         setTrades(res.data?.data || []);
         setTotal(res.data?.total || 0);
@@ -37,7 +34,7 @@ export default function AdminTradesPage() {
     return () => {
       isMounted = false;
     };
-  }, [page, market, adminMode]);
+  }, [page, market]);
 
   const columns: Column<any>[] = [
     {
@@ -103,30 +100,6 @@ export default function AdminTradesPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Trade History</h2>
           <p className="text-muted-foreground mt-1 text-sm">Global chronological log of all executed trades.</p>
-        </div>
-        
-        {/* Real / Demo Toggle */}
-        <div className="flex bg-muted/50 p-1 rounded-md border border-border/50 self-start sm:self-auto">
-          <button
-            onClick={() => setAdminMode('REAL')}
-            className={`px-4 py-1.5 text-sm font-medium rounded transition-all ${
-              adminMode === 'REAL'
-                ? 'bg-brand-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Real
-          </button>
-          <button
-            onClick={() => setAdminMode('DEMO')}
-            className={`px-4 py-1.5 text-sm font-medium rounded transition-all ${
-              adminMode === 'DEMO'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Demo
-          </button>
         </div>
       </div>
 

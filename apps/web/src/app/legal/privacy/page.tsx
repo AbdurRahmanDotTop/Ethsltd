@@ -20,7 +20,7 @@ export default function PrivacyPolicy() {
         <section>
           <h3 className="text-xl font-semibold text-foreground mb-3">2. How We Use Information</h3>
           <p>
-            We use the information we collect to provide, maintain, and improve our services. This includes processing transactions (simulated or real), sending you technical notices, updates, security alerts, and providing customer support.
+            We use the information we collect to provide, maintain, and improve our services. This includes processing transactions, sending you technical notices, updates, security alerts, and providing customer support.
           </p>
         </section>
 

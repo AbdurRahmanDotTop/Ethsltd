@@ -5,7 +5,6 @@ export const p2pAds = sqliteTable('p2p_ads', {
   id: text('id').primaryKey(),
   displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id),
-  mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   type: text('type', { enum: ['BUY', 'SELL'] }).notNull(), // Buy ad means creator wants to buy crypto with fiat
   asset: text('asset').notNull(), // crypto asset (e.g., USDT)
   fiat: text('fiat').notNull(), // fiat asset (e.g., USD, INR)
@@ -32,7 +31,6 @@ export const p2pOrders = sqliteTable('p2p_orders', {
   adId: text('ad_id').notNull().references(() => p2pAds.id),
   buyerId: text('buyer_id').notNull().references(() => users.id),
   sellerId: text('seller_id').notNull().references(() => users.id),
-  mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   cryptoAmount: text('crypto_amount').notNull(),
   fiatAmount: text('fiat_amount').notNull(),
   price: text('price').notNull(),
@@ -48,7 +46,6 @@ export const p2pMessages = sqliteTable('p2p_messages', {
   id: text('id').primaryKey(),
   orderId: text('order_id').notNull().references(() => p2pOrders.id, { onDelete: 'cascade' }),
   senderId: text('sender_id').notNull().references(() => users.id),
-  mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   content: text('content').notNull(),
   type: text('type', { enum: ['TEXT', 'IMAGE', 'SYSTEM'] }).notNull().default('TEXT'),
   attachmentUrl: text('attachment_url'),

@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { Bindings, Variables } from '../db';
 import { jwtMiddleware as requireAuth, adminMiddleware } from '../middleware/jwt';
+import { auditLogs } from 'database';
+import crypto from 'node:crypto';
 
 const adminSystemRouter = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -63,8 +65,14 @@ adminSystemRouter.post('/clear-cache/cdn', async (c) => {
       return c.json({ success: false, error: data.errors?.[0]?.message || 'Failed to purge CDN cache' }, 500);
     }
 
-    // Log the audit event (mocked here, in a real DB we'd insert into audit_logs table)
-    // await c.var.db.insert(auditLogs).values({ action: 'PURGE_CDN', userId: c.var.user.id })
+    await c.get('db').insert(auditLogs).values({
+      id: crypto.randomUUID(),
+      adminId: c.get('user').id,
+      action: 'PURGE_CDN',
+      target: 'CLOUDFLARE_CACHE',
+      details: JSON.stringify({ purge_everything: true }),
+      createdAt: new Date()
+    });
 
     return c.json({ success: true, message: 'CDN cache purged successfully' });
   } catch (error: any) {

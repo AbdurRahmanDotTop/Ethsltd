@@ -5,10 +5,8 @@ import { BookOpen, TrendingUp, Shield, Lightbulb, PieChart } from "lucide-react"
 export default function LearnHome() {
   const topics = [
     { href: "/learn/crypto-basics", title: "Crypto Basics", desc: "Start here to understand blockchain, wallets, and the fundamentals of crypto.", icon: <Lightbulb className="w-8 h-8 text-primary" /> },
-    { href: "/learn/trading", title: "Trading Guide", desc: "Learn about market orders, limit orders, order books, and trading strategies.", icon: <TrendingUp className="w-8 h-8 text-primary" /> },
-    { href: "/learn/demo-trading", title: "Demo Trading", desc: "Practice trading in a risk-free environment using virtual funds.", icon: <PieChart className="w-8 h-8 text-primary" /> },
     { href: "/learn/security", title: "Security Education", desc: "How to keep your account, funds, and personal data secure.", icon: <Shield className="w-8 h-8 text-primary" /> },
-    { href: "/learn/market-insights", title: "Market Insights", desc: "Read the latest simulated market updates and overviews.", icon: <BookOpen className="w-8 h-8 text-primary" /> },
+    { href: "/learn/market-insights", title: "Market Insights", desc: "Read the latest market updates and overviews.", icon: <BookOpen className="w-8 h-8 text-primary" /> },
   ]
 
   return (
@@ -28,16 +26,6 @@ export default function LearnHome() {
             <p className="text-sm text-muted-foreground">{t.desc}</p>
           </Link>
         ))}
-      </div>
-      
-      <div className="mt-12 p-6 bg-muted border border-border rounded-lg flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div>
-          <h3 className="text-lg font-bold text-foreground mb-1">Ready to practice?</h3>
-          <p className="text-sm text-muted-foreground">Try our simulated trading environment.</p>
-        </div>
-        <Button className="w-full sm:w-auto" asChild>
-          <Link href="/trade">Start Demo Trading</Link>
-        </Button>
       </div>
     </div>
   )

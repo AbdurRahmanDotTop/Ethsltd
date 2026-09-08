@@ -15,7 +15,7 @@ export function RecentTrades({ data: trades }: { data: any[] }) {
       </div>
       <div className="flex flex-col overflow-y-auto py-1 no-scrollbar flex-1">
         {trades.map((trade, i) => {
-          // Fallback to trade.time if timestamp doesn't exist (mock provider mismatch)
+          // Fallback to trade.time if timestamp doesn't exist
           let time = trade.time;
           if (trade.timestamp) {
             const d = new Date(trade.timestamp);

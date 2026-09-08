@@ -8,8 +8,6 @@ import { useCurrencies } from "@/hooks/use-currencies";
 import { P2PChat } from "@/components/p2p/P2PChat";
 import { Loader2, AlertCircle, Copy, CheckCircle2, Clock, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTradingModeStore } from "@/stores/trading-mode-store";
-
 import { useAuthStore } from "@/stores/auth-store";
 
 interface P2POrderWorkspaceProps {
@@ -19,7 +17,6 @@ interface P2POrderWorkspaceProps {
 export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
   const router = useRouter();
   const { fiats } = useCurrencies();
-  const { mode } = useTradingModeStore();
   const { user: currentUser } = useAuthStore();
   const [order, setOrder] = useState<any>(null);
   const [merchant, setMerchant] = useState<P2PMerchant | null>(null);
@@ -136,14 +133,6 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
           }
         });
         toast.success("Payment marked as complete.");
-        
-        if (mode === 'DEMO') {
-          // Simulate Merchant releasing crypto after a delay for demo
-          setTimeout(async () => {
-            await apiClient.updateP2pOrderStatus(order.id, "release");
-            setOrder({ ...order, status: "COMPLETED" });
-          }, 4000);
-        }
       } else {
         toast.error(res.error || "Failed to mark paid.");
       }
@@ -156,9 +145,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
 
   const handleCancel = async () => {
     if (isSubmitting) return;
-    const confirmMessage = mode === 'DEMO' 
-      ? "Are you sure you want to cancel this order? This will release the simulated escrow."
-      : "Are you sure you want to cancel this order? This will release the escrow.";
+    const confirmMessage = "Are you sure you want to cancel this order? This will release the escrow.";
     if (confirm(confirmMessage)) {
       setIsSubmitting(true);
       try {
@@ -276,12 +263,10 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
 
             <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border">
               <h4 className="font-semibold text-sm flex items-center gap-2 text-primary dark:text-primary">
-                <Info className="w-4 h-4" /> {mode === 'DEMO' ? 'SIMULATED ' : ''}PAYMENT DETAILS
+                <Info className="w-4 h-4" /> PAYMENT DETAILS
               </h4>
               <p className="text-xs text-muted-foreground mb-4">
-                {mode === 'DEMO' 
-                  ? 'Please simulate transferring funds to the merchant using the details below. This is a demo environment.'
-                  : 'Please transfer funds to the merchant using the details below. Ensure you use the correct reference number.'}
+                Please transfer funds to the merchant using the details below. Ensure you use the correct reference number.
               </p>
               
               <div className="space-y-3">
@@ -317,12 +302,12 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
                     </div>
 
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-1">{mode === 'DEMO' ? 'Simulated Account / ID' : 'Account / ID'}</span>
+                      <span className="text-xs text-muted-foreground block mb-1">Account / ID</span>
                       <div className="flex justify-between items-center bg-background px-3 py-2 rounded border border-border flex-nowrap gap-2 w-full overflow-hidden">
                         <span className="font-mono text-sm truncate">
-                          {mode === 'DEMO' ? `${merchant.username.toLowerCase()}@ethsltd.demo` : `${merchant.username.toLowerCase()}@bank.local`}
+                          {`${merchant.username.toLowerCase()}@bank.local`}
                         </span>
-                        <button onClick={() => copyToClipboard(mode === 'DEMO' ? `${merchant.username.toLowerCase()}@ethsltd.demo` : `${merchant.username.toLowerCase()}@bank.local`, "account")} className="text-muted-foreground hover:text-foreground shrink-0">
+                        <button onClick={() => copyToClipboard(`${merchant.username.toLowerCase()}@bank.local`, "account")} className="text-muted-foreground hover:text-foreground shrink-0">
                           {copiedField === "account" ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                         </button>
                       </div>
@@ -375,7 +360,7 @@ export function P2POrderWorkspace({ orderId }: P2POrderWorkspaceProps) {
               {perms.canDispute && (
                 <Button variant="outline" className="mt-6" size="sm" onClick={handleDispute} disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Open Dispute {mode === 'DEMO' ? '(Simulation)' : ''}
+                  Open Dispute
                 </Button>
               )}
             </div>

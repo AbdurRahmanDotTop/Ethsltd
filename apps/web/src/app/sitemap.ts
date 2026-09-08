@@ -12,8 +12,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/p2p',
     '/learn',
     '/learn/crypto-basics',
-    '/learn/trading',
-    '/learn/demo-trading',
     '/learn/security',
     '/learn/market-insights',
     '/fees',

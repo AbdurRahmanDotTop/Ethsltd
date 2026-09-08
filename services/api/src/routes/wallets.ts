@@ -11,6 +11,12 @@ import { EmailService } from '../services/email';
 
 export const walletRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
+const getAssetPrice = (symbol: string) => {
+  if (symbol === 'USDT' || symbol === 'USD') return 1;
+  // TODO: Integrate live market data Oracle
+  return 0; 
+};
+
 // Add JWT Middleware to all routes in this router
 walletRoutes.use('*', jwtMiddleware);
 
@@ -121,84 +127,18 @@ walletRoutes.get('/withdrawal/preview', async (c) => {
   }
 });
 
-
-// Helper function to get mock prices for simulation
-const getMockPrice = (symbol: string) => {
-  const prices: Record<string, number> = {
-    'BTC-USD': 104250.00,
-    'ETH-USD': 3500.00,
-    'SOL-USD': 140.00,
-    'BTC': 104250.00,
-    'ETH': 3500.00,
-    'SOL': 140.00,
-    'USDT': 1.00,
-    'USDC': 1.00,
-    'USD': 1.00,
-  };
-  return prices[symbol] || 0;
-};
-
-walletRoutes.post('/top-up-demo', async (c) => {
-  const db = c.get('db');
-  const user = c.get('user');
-  
-  // We'll give 100,000 USDT in demo mode
-  const assetSymbol = 'USDT';
-  const amount = '100000';
-  const now = new Date();
-  
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, 'DEMO'))).get();
-  
-  if (!wallet) {
-    await db.insert(wallets).values({
-      id: crypto.randomUUID(),
-      userId: user.id,
-      assetSymbol,
-      type: 'DEMO',
-      balance: amount,
-      lockedBalance: '0',
-      escrowBalance: '0',
-      createdAt: now,
-      updatedAt: now,
-    });
-  } else {
-    // If they already have a wallet, top it up to 100k if it's below 10k, else just add 100k
-    const newBalance = (parseFloat(wallet.balance) + parseFloat(amount)).toString();
-    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
-  }
-  
-  const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
-  const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
-  await db.insert(walletTransactions).values({
-    id: `TX-DEMO-${Date.now()}`,
-    displayId: txDisplayId,
-    userId: user.id,
-    type: 'DEPOSIT',
-    mode: 'DEMO',
-    assetSymbol,
-    amount,
-    status: 'COMPLETED',
-    network: 'System',
-    createdAt: now,
-    updatedAt: now,
-  });
-  
-  return c.json({ success: true });
-});
-
 walletRoutes.get('/balances', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
-  const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
+  const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
   
   // Format to AssetBalance structure
   const formattedBalances = userWallets.map(w => {
     const available = parseFloat(w.balance);
     const locked = parseFloat(w.lockedBalance) + parseFloat(w.escrowBalance);
     const total = available + locked;
-    const usdPrice = getMockPrice(w.assetSymbol);
+    const usdPrice = getAssetPrice(w.assetSymbol);
     
     return {
       assetId: w.assetSymbol.toLowerCase(),
@@ -208,20 +148,18 @@ walletRoutes.get('/balances', async (c) => {
       total,
       usdPrice,
       usdValue: total * usdPrice,
-      change24h: 0, // Mocked for now
-      change24hPercent: 0 // Mocked for now
+      change24h: 0, 
+      change24hPercent: 0 
     };
   });
   
   return c.json({ success: true, data: formattedBalances });
 });
-
 walletRoutes.get('/portfolio', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
-  const userWallets = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.type, mode))).all();
+  const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
   
   let totalValueUsd = 0;
   let availableBalanceUsd = 0;
@@ -230,11 +168,12 @@ walletRoutes.get('/portfolio', async (c) => {
   const allocations = userWallets.map(w => {
     const lockedAmt = parseFloat(w.lockedBalance) + parseFloat(w.escrowBalance);
     const total = parseFloat(w.balance) + lockedAmt;
-    const usdValue = total * getMockPrice(w.assetSymbol);
+    const usdPrice = getAssetPrice(w.assetSymbol);
+    const usdValue = total * usdPrice;
     
     totalValueUsd += usdValue;
-    availableBalanceUsd += parseFloat(w.balance) * getMockPrice(w.assetSymbol);
-    lockedBalanceUsd += lockedAmt * getMockPrice(w.assetSymbol);
+    availableBalanceUsd += parseFloat(w.balance) * usdPrice;
+    lockedBalanceUsd += lockedAmt * usdPrice;
     
     return {
       asset: w.assetSymbol,
@@ -259,15 +198,13 @@ walletRoutes.get('/portfolio', async (c) => {
   
   return c.json({ success: true, data: { summary, allocations: finalAllocations } });
 });
-
 walletRoutes.get('/transactions', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
-  const mode = (c.req.query('mode') || c.req.header('x-trading-mode') || 'REAL') as 'REAL' | 'DEMO';
   
   // 1. Wallet Transactions (Deposits, Withdrawals)
   const transactions = await db.select().from(walletTransactions)
-    .where(and(eq(walletTransactions.userId, user.id), eq(walletTransactions.mode, mode)))
+    .where(eq(walletTransactions.userId, user.id))
     .all();
     
   const mappedTxs: any[] = transactions.map(tx => ({
@@ -287,10 +224,7 @@ walletRoutes.get('/transactions', async (c) => {
   // 2. P2P Orders
   const p2pRows = await db.select({ order: p2pOrders, ad: p2pAds }).from(p2pOrders)
     .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .where(and(
-      or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id)),
-      eq(p2pOrders.mode, mode)
-    )).all();
+    .where(or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id))).all();
 
   p2pRows.forEach(row => {
     const isBuyer = row.order.buyerId === user.id;
@@ -307,9 +241,8 @@ walletRoutes.get('/transactions', async (c) => {
     });
   });
 
-  // 3. Asset Conversions (Only in REAL mode usually, but we include them if requested mode is REAL)
-  if (mode === 'REAL') {
-    const conversions = await db.select().from(assetConversions)
+  // 3. Asset Conversions
+  const conversions = await db.select().from(assetConversions)
       .where(eq(assetConversions.userId, user.id))
       .all();
     
@@ -337,13 +270,10 @@ walletRoutes.get('/transactions', async (c) => {
         updatedAt: conv.createdAt.toISOString(),
       });
     });
-  }
-
   // 4. Trading Orders
   const userOrders = await db.select().from(tradingOrders)
     .where(and(
       eq(tradingOrders.userId, user.id),
-      eq(tradingOrders.mode, mode),
       eq(tradingOrders.status, 'FILLED')
     )).all();
     
@@ -366,9 +296,8 @@ walletRoutes.get('/transactions', async (c) => {
     });
   });
 
-  // 5. Expert Bookings (Only REAL mode)
-  if (mode === 'REAL') {
-    const eProfile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+  // 5. Expert Bookings
+  const eProfile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
     const bookings = await db.select().from(expertBookings)
       .where(
         eProfile 
@@ -390,7 +319,6 @@ walletRoutes.get('/transactions', async (c) => {
         updatedAt: booking.updatedAt.toISOString(),
       });
     });
-  }
 
   // Sort by date descending
   mappedTxs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -403,13 +331,13 @@ walletRoutes.post('/deposit', async (c) => {
     const db = c.get('db');
     const user = c.get('user');
     const body = await c.req.json();
-    const { assetSymbol, amount, network, destination, mode = 'REAL', depositMethod } = body;
+    const { assetSymbol, amount, network, destination, depositMethod } = body;
 
   const transactionId = `TX-${Date.now()}`;
   const now = new Date();
   
   // Check if wallet exists
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, mode))).get();
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol))).get();
   
   if (!wallet) {
     const walletId = crypto.randomUUID();
@@ -419,40 +347,15 @@ walletRoutes.post('/deposit', async (c) => {
       displayId,
       userId: user.id,
       assetSymbol,
-      type: mode,
       balance: '0',
       lockedBalance: '0',
       escrowBalance: '0',
       createdAt: now,
       updatedAt: now,
     });
-    wallet = { id: walletId, displayId, userId: user.id, assetSymbol, type: mode as any, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now };
+    wallet = { id: walletId, displayId, userId: user.id, assetSymbol, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now } as any;
   }
   
-  if (mode === 'DEMO') {
-    // For DEMO, we instantly credit the wallet
-    const newBalance = (parseFloat(wallet!.balance) + parseFloat(amount)).toString();
-    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
-    
-    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
-    const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
-    // Record transaction
-    await db.insert(walletTransactions).values({
-      id: transactionId,
-      displayId: txDisplayId,
-      userId: user.id,
-      type: 'DEPOSIT',
-      mode: mode,
-      assetSymbol,
-      amount: amount.toString(),
-      status: 'COMPLETED',
-      network: 'System',
-      destination: 'Demo Wallet',
-      createdAt: now,
-      updatedAt: now,
-    });
-    return c.json({ success: true, transactionId, message: 'Demo balance added' });
-  } else {
     // For REAL, we need to generate a Cregis Address or Bank Transfer Request
     const { transactionHash, proofFileUrl, paymentReference } = body;
     
@@ -465,7 +368,7 @@ walletRoutes.post('/deposit', async (c) => {
         const fee = amountNum * 0.01;
         const totalAmount = amountNum + fee;
         
-        // Log transaction to DB with PENDING status (simplified here for demo)
+        // Log transaction to DB with PENDING status
         const paymentReference = `ORD-${Date.now()}`;
         
         try {
@@ -569,7 +472,6 @@ walletRoutes.post('/deposit', async (c) => {
             userId: user.id,
             amount: amountNum.toString(),
             asset: assetSymbol,
-            mode: 'REAL',
           }, appUrl);
 
           await emailService.sendUserTransactionAlert(
@@ -592,9 +494,8 @@ walletRoutes.post('/deposit', async (c) => {
 
       return c.json({ success: true, message: `${depositMethod} deposit submitted successfully. Awaiting admin review.` });
     } else {
-      return c.json({ success: false, error: 'Invalid deposit method for REAL mode' }, 400);
+      return c.json({ success: false, error: 'Invalid deposit method' }, 400);
     }
-  }
   } catch (globalError: any) {
     console.error("FATAL DEPOSIT ROUTE ERROR:", globalError);
     return c.json({ success: false, error: `Server Crash: ${globalError?.message || String(globalError)}` }, 500);
@@ -605,11 +506,11 @@ walletRoutes.post('/withdraw', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const { assetSymbol, amount, destination, network, mode = 'REAL' } = body;
+  const { assetSymbol, amount, destination, network } = body;
   
   const parsedAmount = parseFloat(amount);
 
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol), eq(wallets.type, mode))).get();
+  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, assetSymbol))).get();
   
   if (!wallet || parseFloat(wallet.balance) < parsedAmount) {
     return c.json({ success: false, error: 'Insufficient balance' }, 400);
@@ -622,7 +523,7 @@ walletRoutes.post('/withdraw', async (c) => {
   }
 
   // 2. Calculate dynamic withdrawal fee using the centralized service
-  // We need methodId to calculate fee. We can fetch it by mode/network or we assume null for crypto for now.
+  // We need methodId to calculate fee. We can fetch it by network or we assume null for crypto for now.
   let methodId = null; 
   try {
      // Defaulting crypto withdrawals to MANUAL method for fee calculation if not specified
@@ -639,67 +540,48 @@ walletRoutes.post('/withdraw', async (c) => {
   const now = new Date();
   const transactionId = `TX-${Date.now()}`;
   
-  if (mode === 'DEMO') {
-    // Deduct balance instantly for DEMO
-    const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
-    await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
-    
-    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
-    const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
-    // Record transaction
-    await db.insert(walletTransactions).values({
-      id: transactionId,
-      displayId: txDisplayId,
-      userId: user.id,
-      type: 'WITHDRAWAL',
-      mode: mode,
-      assetSymbol,
-      amount: parsedAmount.toString(),
-      fee: preview.totalFees.toString(),
-      status: 'COMPLETED', // Simulated demo trading completes instantly
-      destination,
-      network: network || 'Internal',
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    return c.json({ success: true, transactionId });
-  } else {
     // --- REAL MODE WITHDRAWAL (CREGIS WAAS) ---
     try {
-      // Step 1: Move balance to locked_balance immediately to secure funds
-      const newBalance = (parseFloat(wallet.balance) - parsedAmount).toString();
-      const newLocked = (parseFloat(wallet.lockedBalance) + parsedAmount).toString();
-      await db.update(wallets).set({ balance: newBalance, lockedBalance: newLocked, updatedAt: now }).where(eq(wallets.id, wallet.id));
-      
-      const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
-      const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
-      
-      // Step 2: Record transaction as PENDING (Wait for Cregis Webhook to mark COMPLETED)
-      await db.insert(walletTransactions).values({
-        id: transactionId,
-        displayId: txDisplayId,
-        userId: user.id,
-        type: 'WITHDRAWAL',
-        mode: mode,
-        assetSymbol,
-        amount: parsedAmount.toString(),
-        fee: preview.totalFees.toString(),
-        status: 'PENDING',
-        destination,
-        network: network || 'External',
-        reference: 'Pending API Submission', // Initial state
+      let finalTxId = transactionId;
+      await db.transaction(async (tx: any) => {
+        // Step 1: Re-fetch wallet inside transaction to ensure lock and latest state
+        const currentWallet = await tx.select().from(wallets).where(eq(wallets.id, wallet.id)).get();
+        if (!currentWallet || parseFloat(currentWallet.balance) < parsedAmount) {
+          throw new Error('Insufficient balance during transaction processing');
+        }
+
+        const newBalance = (parseFloat(currentWallet.balance) - parsedAmount).toString();
+        const newLocked = (parseFloat(currentWallet.lockedBalance) + parsedAmount).toString();
+        await tx.update(wallets).set({ balance: newBalance, lockedBalance: newLocked, updatedAt: now }).where(eq(wallets.id, wallet.id));
         
-        // Detailed breakdown
-        originalCurrency: preview.currencyCode,
-        originalAmount: parsedAmount.toString(),
-        conversionRate: preview.conversionRate.toString(),
-        grossAmount: parsedAmount.toString(),
-        totalFees: preview.totalFees.toString(),
-        netAmount: preview.netUsdtReceived.toString(),
+        const dbUser = await tx.select().from(users).where(eq(users.id, user.id)).get();
+        const txDisplayId = await generateBusinessId(tx, dbUser?.email, 'WTXN');
         
-        createdAt: now,
-        updatedAt: now,
+        // Step 2: Record transaction as PENDING (Wait for Cregis Webhook to mark COMPLETED)
+        await tx.insert(walletTransactions).values({
+          id: transactionId,
+          displayId: txDisplayId,
+          userId: user.id,
+          type: 'WITHDRAWAL',
+          assetSymbol,
+          amount: parsedAmount.toString(),
+          fee: preview.totalFees.toString(),
+          status: 'PENDING',
+          destination,
+          network: network || 'External',
+          reference: 'Pending API Submission', // Initial state
+          
+          // Detailed breakdown
+          originalCurrency: preview.currencyCode,
+          originalAmount: parsedAmount.toString(),
+          conversionRate: preview.conversionRate.toString(),
+          grossAmount: parsedAmount.toString(),
+          totalFees: preview.totalFees.toString(),
+          netAmount: preview.netUsdtReceived.toString(),
+          
+          createdAt: now,
+          updatedAt: now,
+        });
       });
 
       // Async Email Dispatch
@@ -714,7 +596,6 @@ walletRoutes.post('/withdraw', async (c) => {
             userId: user.id,
             amount: parsedAmount.toString(),
             asset: assetSymbol,
-            mode: mode,
           }, appUrl).catch(e => console.error(e)));
 
           // User Alert
@@ -770,5 +651,4 @@ walletRoutes.post('/withdraw', async (c) => {
       console.error("Real Withdrawal Error:", error);
       return c.json({ success: false, error: error.message || 'Failed to process withdrawal.' }, 400);
     }
-  }
 });

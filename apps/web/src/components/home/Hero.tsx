@@ -18,7 +18,7 @@ export function Hero() {
         </h1>
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-          Discover markets, practice with demo trading, and access the tools you need to manage your digital-asset journey.
+          Discover markets, trade with confidence, and access the tools you need to manage your digital-asset journey.
         </p>
         
         <div className="flex flex-col sm:flex-row items-center gap-4">

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Notification, NotificationCategory } from "@/lib/notifications/types";
-import { MockNotificationProvider } from "@/lib/notifications/mock-notification-provider";
+
 import { apiClient } from "@ethsltd/api-client";
 
 interface NotificationPreferences {

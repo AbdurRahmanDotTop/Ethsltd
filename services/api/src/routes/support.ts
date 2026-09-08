@@ -9,7 +9,7 @@ export const supportRoutes = new Hono<{ Bindings: Bindings; Variables: Variables
 
 supportRoutes.use('*', jwtMiddleware);
 
-const generateId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
+const generateId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
 // GET /api/v1/support/tickets
 supportRoutes.get('/tickets', async (c) => {

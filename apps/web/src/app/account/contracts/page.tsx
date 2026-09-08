@@ -19,15 +19,11 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Mock User Contracts
-const MOCK_USER_CONTRACTS = [
-  { id: "CNT-8902", type: "OTC Master Agreement", status: "pending_approval", issuedAt: daysAgo(2), signedAt: daysAgo(1), signedName: "Abdur Rahman", signatureUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iNTAiPjx0ZXh0IHk9IjMwIiBmb250LWZhbWlseT0iY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCI+QWJkdXIgUmFobWFuPC90ZXh0Pjwvc3ZnPg==" },
-  { id: "CNT-8903", type: "Margin Trading Facility", status: "pending_signature", issuedAt: daysAgo(1) },
-  { id: "CNT-7100", type: "API Trading Access Terms", status: "approved", issuedAt: daysAgo(100), signedAt: daysAgo(99), signedName: "Abdur Rahman", signatureUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iNTAiPjx0ZXh0IHk9IjMwIiBmb250LWZhbWlseT0iY3Vyc2l2ZSIgZm9udC1zaXplPSIyNCI+QWJkdXIgUmFobWFuPC90ZXh0Pjwvc3ZnPg==" }
-];
+// Real User Contracts (To be fetched from API)
+const USER_CONTRACTS: any[] = [];
 
 export default function UserContractsPage() {
-  const [contracts, setContracts] = useState<any[]>(MOCK_USER_CONTRACTS);
+  const [contracts, setContracts] = useState<any[]>(USER_CONTRACTS);
   const [isClient, setIsClient] = useState(false);
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [isSigning, setIsSigning] = useState(false);
@@ -37,21 +33,8 @@ export default function UserContractsPage() {
 
   useEffect(() => {
     setIsClient(true);
-    const saved = localStorage.getItem('mock_contracts');
-    if (saved) {
-      try {
-        setContracts(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse saved contracts");
-      }
-    }
+    // TODO: Fetch contracts from API
   }, []);
-
-  useEffect(() => {
-    if (isClient) {
-      localStorage.setItem('mock_contracts', JSON.stringify(contracts));
-    }
-  }, [contracts, isClient]);
 
   const handleSign = async (id: string) => {
     setIsSigning(true);

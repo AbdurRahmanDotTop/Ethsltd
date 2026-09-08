@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { DemoTradingCTA } from "./DemoTradingCTA"
 
 export function FinalCTA() {
   return (
@@ -37,12 +36,6 @@ export function FinalCTA() {
             <Button variant="outline" size="lg" className="w-full sm:w-auto px-10 h-14 text-base border-border" asChild>
               <Link href="/markets">Explore Markets</Link>
             </Button>
-          </div>
-          
-          <div className="mt-8">
-            <DemoTradingCTA variant="ghost" className="text-[var(--brand-foreground)] hover:text-foreground">
-              Try Demo Trading &rarr;
-            </DemoTradingCTA>
           </div>
         </div>
       </div>

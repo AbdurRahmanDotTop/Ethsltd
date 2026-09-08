@@ -17,7 +17,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
 
   // Wallet Adjust State
   const [assetSymbol, setAssetSymbol] = useState("USDT");
-  const [walletType, setWalletType] = useState<"REAL"|"DEMO">("REAL");
+  const [walletType, setWalletType] = useState<"REAL">("REAL");
   const [adjustAction, setAdjustAction] = useState<"CREDIT"|"DEBIT">("CREDIT");
   const [targetField, setTargetField] = useState<"balance"|"lockedBalance"|"escrowBalance">("balance");
   const [adjustAmount, setAdjustAmount] = useState("");

@@ -12,7 +12,7 @@ import { parseMarketSymbol } from "@/lib/trading/calculations"
 import { OrderSide, OrderType } from "@/lib/trading/types"
 import { cn } from "@/lib/utils"
 
-import { useTradingModeStore } from "@/stores/trading-mode-store"
+
 import { useRequireAuth } from "@/hooks/use-require-auth"
 
 // Schema dynamically updated based on order type
@@ -26,7 +26,7 @@ const getOrderSchema = (type: OrderType) => z.object({
 export function OrderEntry({ market }: { market: Market }) {
   const { selectedSide, setSide, selectedOrderType, setOrderType, orderFormPrice, orderFormQuantity, setOrderFormPrice, setOrderFormQuantity, marketType, leverage, setLeverage } = useTradingUIStore()
   const { balances, fetchBalances } = useWalletStore()
-  const { mode } = useTradingModeStore()
+
   const requireAuth = useRequireAuth()
   const { base, quote } = parseMarketSymbol(market.symbol)
   
@@ -34,8 +34,8 @@ export function OrderEntry({ market }: { market: Market }) {
   const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null)
 
   useEffect(() => {
-    fetchBalances(mode);
-  }, [fetchBalances, mode]);
+    fetchBalances();
+  }, [fetchBalances]);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm({
     resolver: zodResolver(getOrderSchema(selectedOrderType)),
@@ -156,8 +156,7 @@ export function OrderEntry({ market }: { market: Market }) {
             side: selectedSide === 'buy' ? 'BUY' : 'SELL',
             type: selectedOrderType === 'market' ? 'MARKET' : 'LIMIT',
             price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
-            amount: parseFloat(data.quantity),
-            mode: mode
+            amount: parseFloat(data.quantity)
           });
         } else if (marketType === 'FUTURES') {
           res = await apiClient.createFuturesOrder({
@@ -181,7 +180,7 @@ export function OrderEntry({ market }: { market: Market }) {
         
         setMessage({ type: 'success', text: 'Order placed successfully' })
         setValue("quantity", "") // Reset quantity on success
-        fetchBalances(mode) // Refresh balances
+        fetchBalances() // Refresh balances
         setTimeout(() => setMessage(null), 3000)
       } catch (err: any) {
         setMessage({ type: 'error', text: err.message || 'Failed to place order' })

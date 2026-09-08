@@ -6,7 +6,6 @@ export const wallets = sqliteTable('wallets', {
   displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   assetSymbol: text('asset_symbol').notNull(),
-  type: text('type', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   balance: text('balance').notNull().default('0'), // stored as string to maintain precision
   lockedBalance: text('locked_balance').notNull().default('0'), // locked for spot/margin trading
   escrowBalance: text('escrow_balance').notNull().default('0'), // locked exclusively for P2P and escrows
@@ -19,7 +18,6 @@ export const walletTransactions = sqliteTable('wallet_transactions', {
   displayId: text('display_id').unique(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: text('type', { enum: ['DEPOSIT', 'WITHDRAWAL', 'TRADE', 'P2P', 'TRANSFER', 'FEE', 'REWARD', 'ADJUSTMENT', 'EXPERT_SERVICE'] }).notNull(),
-  mode: text('mode', { enum: ['REAL', 'DEMO'] }).notNull().default('REAL'),
   assetSymbol: text('asset_symbol').notNull(),
   amount: text('amount').notNull(),
   fee: text('fee').notNull().default('0'),

@@ -10,12 +10,6 @@ export default function RiskDisclosure() {
       <p className="text-sm text-muted-foreground mb-8">Last Updated: October 24, 2026</p>
       
       <div className="space-y-6 text-muted-foreground">
-        <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg mb-8">
-          <p className="text-sm text-destructive-foreground font-semibold">
-            CRITICAL NOTICE: ETHSLTD is currently operating in a simulated "Demo Trading" mode. The risks below apply to real-world cryptocurrency trading but your funds on this platform are currently virtual.
-          </p>
-        </div>
-
         <section>
           <h3 className="text-xl font-semibold text-foreground mb-3">1. Volatility Risk</h3>
           <p>

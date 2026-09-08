@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { useTradingModeStore } from "@/stores/trading-mode-store";
+
 import { apiClient } from "@ethsltd/api-client";
 import { AssetBalance } from "@/lib/wallet/types";
 import { Button } from "@/components/ui/button";
@@ -41,14 +41,12 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
   const selectedAsset = form.watch("asset");
   const amount = form.watch("amount");
 
-  const { mode } = useTradingModeStore();
+
   const [preview, setPreview] = useState<any | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
-    if (mode === 'REAL') {
-      apiClient.getWalletBalances(mode).then(res => setBalances(res.data || []));
-    }
+    apiClient.getWalletBalances().then(res => setBalances(res.data || []));
     apiClient.getDepositSettings().then((res: any) => {
       if (res.success && res.activeCryptoAssets && res.activeCryptoAssets.length > 0) {
         setCryptoAssets(res.activeCryptoAssets);

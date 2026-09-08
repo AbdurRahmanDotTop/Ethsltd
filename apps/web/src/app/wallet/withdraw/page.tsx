@@ -1,4 +1,4 @@
-import { WithdrawFormWrapper } from "@/components/wallet/WithdrawFormWrapper";
+import { RealWithdrawForm } from "@/components/wallet/RealWithdrawForm";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -21,7 +21,7 @@ export default function WithdrawPage({ searchParams }: { searchParams: Promise<{
         </div>
       </div>
 
-      <WithdrawFormWrapper defaultAsset={params.asset} />
+      <RealWithdrawForm defaultAsset={params.asset} />
     </div>
   );
 }

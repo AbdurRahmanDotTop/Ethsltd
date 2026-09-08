@@ -13,7 +13,7 @@ export function HowItWorks() {
     {
       step: "03",
       title: "Practice or Trade",
-      desc: "Use demo trading or eligible live trading functionality.",
+      desc: "Use eligible live trading functionality.",
     },
     {
       step: "04",

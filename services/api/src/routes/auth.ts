@@ -67,27 +67,6 @@ authRoutes.post('/register', async (c) => {
     createdAt: now,
   });
 
-  // Auto-fund demo trading wallets for new user
-  const initialDemoFunds = [
-    { assetSymbol: 'USDT', amount: '100000' },
-    { assetSymbol: 'BTC', amount: '10' },
-    { assetSymbol: 'ETH', amount: '100' }
-  ];
-
-  for (const fund of initialDemoFunds) {
-    const walletDisplayId = await generateBusinessId(db, body.email, 'WALL');
-    await db.insert(wallets).values({
-      id: crypto.randomUUID(),
-      displayId: walletDisplayId,
-      userId: userId,
-      assetSymbol: fund.assetSymbol,
-      type: 'DEMO',
-      balance: fund.amount,
-      lockedBalance: '0',
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
 
   const token = await sign({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, JWT_SECRET);
 
@@ -224,7 +203,8 @@ authRoutes.post('/verify-email/request-otp', jwtMiddleware, async (c) => {
       }
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+    const randomValue = crypto.getRandomValues(new Uint32Array(1))[0];
+    const otp = (100000 + (randomValue % 900000)).toString(); // secure 6 digit OTP
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
     await db.update(users).set({ 

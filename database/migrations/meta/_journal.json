@@ -148,6 +148,13 @@
       "when": 1787478228476,
       "tag": "0020_tan_anita_blake",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1788797658152,
+      "tag": "0021_wise_risque",
+      "breakpoints": true
     }
   ]
 }

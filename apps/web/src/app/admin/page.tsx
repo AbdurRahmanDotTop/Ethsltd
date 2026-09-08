@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
   // Map API stats to KPIs structure
   const kpis = {
     totalUsers: stats.totalUsers || 0,
-    activeUsers: Math.floor((stats.totalUsers || 0) * 0.8), // We don't track active explicitly, mock as 80%
+    activeUsers: stats.activeUsers || 0,
     pendingKyc: stats.pendingKyc || 0,
     suspendedUsers: stats.suspendedUsers || 0,
     volume24h: stats.dailyVolumeUsd || 0,

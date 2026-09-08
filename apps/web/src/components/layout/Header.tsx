@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Menu, X, User, ChevronDown, LogOut, LayoutDashboard, Shield, Settings, Bell, Info } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { useAuthStore } from "@/stores/auth-store"
-import { useTradingModeStore } from "@/stores/trading-mode-store"
+
 import { apiClient } from "@ethsltd/api-client"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -110,7 +110,7 @@ export function Header() {
           <div className="hidden lg:flex items-center gap-4">
             <ThemeToggle />
 
-            {/* Removed Demo Trading Toggle */}
+
 
             {status === "authenticated" && user ? (
               <>

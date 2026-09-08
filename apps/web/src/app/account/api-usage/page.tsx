@@ -15,9 +15,9 @@ export default function ApiUsagePage() {
     }
   }, [user, fetchUsage]);
 
-  // Generate mock usage data for the last 24 hours
-  const mockData = Array.from({ length: 24 }).map((_, i) => Math.floor(Math.random() * 100) + 20);
-  const maxVal = Math.max(...mockData);
+  // Use real data when available, falling back to 0
+  const chartData = usage?.hourlyData || Array(24).fill(0);
+  const maxVal = Math.max(...chartData, 1);
 
   return (
     <div className="max-w-5xl space-y-8">
@@ -71,7 +71,7 @@ export default function ApiUsagePage() {
             <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 shadow-sm">
               <h3 className="font-semibold mb-6">API Requests (Last 24h)</h3>
               <div className="w-full h-[300px] flex items-end gap-1 px-2 border-b border-l border-border relative">
-                {mockData.map((val, i) => (
+                {chartData.map((val: number, i: number) => (
                   <div key={i} className="flex-1 bg-brand-primary/80 hover:bg-brand-primary transition-colors rounded-t-sm" style={{ height: `${(val / maxVal) * 100}%` }} title={`${val} requests`} />
                 ))}
               </div>
@@ -128,7 +128,7 @@ export default function ApiUsagePage() {
 
               <div className="pt-4 border-t border-border mt-6">
                 <p className="text-xs text-muted-foreground text-center">
-                  These are simulation values only until the real backend defines official limits.
+                  Current rate limit usage based on your subscription tier.
                 </p>
               </div>
             </div>

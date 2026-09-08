@@ -1,28 +1,18 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowDownToLine, ArrowUpFromLine, History } from "lucide-react";
-import { useTradingModeStore } from "@/stores/trading-mode-store";
-
 import { useWalletStore } from "@/stores/wallet-store";
 
 export function WalletHeader() {
-  const { mode } = useTradingModeStore();
   const { fiatCurrency, setFiatCurrency } = useWalletStore();
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
       <div>
         <div className="flex items-center gap-2 mb-1">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Your Wallet</h1>
-          {mode === 'DEMO' && (
-            <span className="bg-primary/10 text-primary dark:text-primary text-xs font-semibold px-2 py-0.5 rounded-full border border-primary/20">
-              Demo Trading
-            </span>
-          )}
         </div>
         <p className="text-muted-foreground text-sm">
-          {mode === 'DEMO' 
-            ? 'Manage your assets, track your portfolio, and move simulated funds.'
-            : 'Manage your assets, track your portfolio, and move your funds.'}
+          Manage your assets, track your portfolio, and move your funds.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">

@@ -157,7 +157,6 @@ expertRoutes.post('/bookings', async (c) => {
   const user = c.get('user');
   const body = await c.req.json();
   const { serviceId, scheduledAt } = body;
-  const mode = c.req.header('X-Trading-Mode') === 'DEMO' ? 'DEMO' : 'REAL';
 
   try {
     const service = await db.select().from(expertServices).where(eq(expertServices.id, serviceId)).get();
@@ -167,77 +166,73 @@ expertRoutes.post('/bookings', async (c) => {
     
     const priceAmount = parseFloat(service.price);
     
-    // Find wallet
-    const wallet = await db.select().from(wallets).where(and(
-      eq(wallets.userId, user.id),
-      eq(wallets.assetSymbol, service.currency),
-      eq(wallets.type, mode)
-    )).get();
-    
-    if (!wallet) {
-      return c.json({ success: false, error: `No wallet found for ${service.currency}` }, 400);
-    }
-    
-    const availableBalance = parseFloat(wallet.balance) - parseFloat(wallet.lockedBalance) - parseFloat(wallet.escrowBalance);
-    
-    if (availableBalance < priceAmount) {
-      return c.json({ 
-        success: false, 
-        error: 'INSUFFICIENT_BALANCE', 
-        required: priceAmount, 
-        available: availableBalance,
-        currency: service.currency
-      }, 400);
-    }
-    
-    // Process Booking and Wallet Deduction
-    const bookingId = `ebk_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
-    const txId = `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
-    
-    // Update Escrow Balance
-    await db.update(wallets)
-      .set({
-        escrowBalance: (parseFloat(wallet.escrowBalance) + priceAmount).toString(),
-        updatedAt: new Date()
-      })
-      .where(eq(wallets.id, wallet.id))
-      .run();
+    // Process Booking and Wallet Deduction atomically
+    let finalBookingId = '';
+    await db.transaction(async (tx: any) => {
+      // Find wallet
+      const wallet = await tx.select().from(wallets).where(and(
+        eq(wallets.userId, user.id),
+        eq(wallets.assetSymbol, service.currency)
+      )).get();
       
-    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
-    const txDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
-    // Record Wallet Tx
-    await db.insert(walletTransactions).values({
-      id: txId,
-      displayId: txDisplayId,
-      userId: user.id,
-      type: 'EXPERT_SERVICE',
-      mode: mode,
-      assetSymbol: service.currency,
-      amount: `-${priceAmount}`,
-      status: 'COMPLETED',
-      reference: bookingId,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }).run();
+      if (!wallet) {
+        throw new Error(`No wallet found for ${service.currency}`);
+      }
+      
+      const availableBalance = parseFloat(wallet.balance) - parseFloat(wallet.lockedBalance) - parseFloat(wallet.escrowBalance);
+      
+      if (availableBalance < priceAmount) {
+        throw new Error(`INSUFFICIENT_BALANCE: required ${priceAmount}, available ${availableBalance}`);
+      }
+      
+      const bookingId = `ebk_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+      finalBookingId = bookingId;
+      const txId = `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+      
+      // Update Escrow Balance
+      await tx.update(wallets)
+        .set({
+          escrowBalance: (parseFloat(wallet.escrowBalance) + priceAmount).toString(),
+          updatedAt: new Date()
+        })
+        .where(eq(wallets.id, wallet.id))
+        .run();
+        
+      const dbUser = await tx.select().from(users).where(eq(users.id, user.id)).get();
+      const txDisplayId = await generateBusinessId(tx, dbUser?.email, 'WTXN');
+      // Record Wallet Tx
+      await tx.insert(walletTransactions).values({
+        id: txId,
+        displayId: txDisplayId,
+        userId: user.id,
+        type: 'EXPERT_SERVICE',
+        assetSymbol: service.currency,
+        amount: `-${priceAmount}`,
+        status: 'COMPLETED',
+        reference: bookingId,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).run();
+      
+      const bookingDisplayId = await generateBusinessId(tx, dbUser?.email, 'BOOK');
+      // Create Booking
+      await tx.insert(expertBookings).values({
+        id: bookingId,
+        displayId: bookingDisplayId,
+        userId: user.id,
+        expertId: service.expertId,
+        serviceId: service.id,
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : new Date(),
+        status: 'PENDING_EXPERT',
+        price: service.price,
+        currency: service.currency,
+        transactionId: txId,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).run();
+    });
     
-    const bookingDisplayId = await generateBusinessId(db, dbUser?.email, 'BOOK');
-    // Create Booking
-    await db.insert(expertBookings).values({
-      id: bookingId,
-      displayId: bookingDisplayId,
-      userId: user.id,
-      expertId: service.expertId,
-      serviceId: service.id,
-      scheduledAt: scheduledAt ? new Date(scheduledAt) : new Date(),
-      status: 'PENDING_EXPERT',
-      price: service.price,
-      currency: service.currency,
-      transactionId: txId,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }).run();
-    
-    return c.json({ success: true, data: { bookingId } });
+    return c.json({ success: true, data: { bookingId: finalBookingId } });
   } catch (error) {
     console.error(error);
     return c.json({ success: false, error: 'Booking failed' }, 500);
@@ -661,114 +656,113 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
   const { action } = await c.req.json(); // ACCEPT, REJECT, COMPLETE
   
   try {
-    const { platformSettings } = require('database');
-    const profile = await db.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
-    if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
+    await db.transaction(async (tx: any) => {
+      const { platformSettings } = require('database');
+      const profile = await tx.select().from(expertProfiles).where(eq(expertProfiles.userId, user.id)).get();
+      if (!profile) throw new Error('Profile not found');
 
-    const booking = await db.select().from(expertBookings).where(and(eq(expertBookings.id, bookingId), eq(expertBookings.expertId, profile.id))).get();
-    if (!booking) return c.json({ success: false, error: 'Booking not found' }, 404);
+      const booking = await tx.select().from(expertBookings).where(and(eq(expertBookings.id, bookingId), eq(expertBookings.expertId, profile.id))).get();
+      if (!booking) throw new Error('Booking not found');
 
-    const now = new Date();
+      const now = new Date();
 
-    if (action === 'ACCEPT' && booking.status === 'PENDING_EXPERT') {
-      const service = await db.select().from(expertServices).where(eq(expertServices.id, booking.serviceId)).get();
-      let expiresAt = null;
-      if (service && service.pricingType === 'MONTHLY') {
-        const d = new Date(now);
-        d.setDate(d.getDate() + 30);
-        expiresAt = d;
+      if (action === 'ACCEPT' && booking.status === 'PENDING_EXPERT') {
+        const service = await tx.select().from(expertServices).where(eq(expertServices.id, booking.serviceId)).get();
+        let expiresAt = null;
+        if (service && service.pricingType === 'MONTHLY') {
+          const d = new Date(now);
+          d.setDate(d.getDate() + 30);
+          expiresAt = d;
+        }
+        await tx.update(expertBookings).set({ status: 'ACCEPTED', expiresAt, updatedAt: now }).where(eq(expertBookings.id, bookingId)).run();
+        return;
       }
-      await db.update(expertBookings).set({ status: 'ACCEPTED', expiresAt, updatedAt: now }).where(eq(expertBookings.id, bookingId)).run();
-      return c.json({ success: true });
-    }
-    
-    if (action === 'REJECT' && booking.status === 'PENDING_EXPERT') {
-      // Refund Escrow to User
-      const userWallet = await db.select().from(wallets).where(and(eq(wallets.userId, booking.userId), eq(wallets.assetSymbol, booking.currency))).get();
-      if (userWallet) {
-        const refundAmt = parseFloat(booking.price);
-        const newEscrow = parseFloat(userWallet.escrowBalance) - refundAmt;
-        const newBalance = parseFloat(userWallet.balance) + refundAmt;
-        await db.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id)).run();
+      
+      if (action === 'REJECT' && booking.status === 'PENDING_EXPERT') {
+        // Refund Escrow to User
+        const userWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, booking.userId), eq(wallets.assetSymbol, booking.currency))).get();
+        if (userWallet) {
+          const refundAmt = parseFloat(booking.price);
+          const newEscrow = parseFloat(userWallet.escrowBalance) - refundAmt;
+          const newBalance = parseFloat(userWallet.balance) + refundAmt;
+          await tx.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id)).run();
+          
+          // Record Refund Wallet Tx
+          await tx.insert(walletTransactions).values({
+            id: `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
+            userId: booking.userId,
+            type: 'ADJUSTMENT',
+            assetSymbol: booking.currency,
+            amount: refundAmt.toString(),
+            status: 'COMPLETED',
+            reference: bookingId,
+            createdAt: now,
+            updatedAt: now
+          }).run();
+        }
         
-        // Record Refund Wallet Tx
-        await db.insert(walletTransactions).values({
-          id: `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
-          userId: booking.userId,
-          type: 'ADJUSTMENT',
-          mode: userWallet.type,
+        await tx.update(expertBookings).set({ status: 'REFUNDED', updatedAt: now }).where(eq(expertBookings.id, bookingId)).run();
+        return;
+      }
+
+      if (action === 'COMPLETE' && booking.status === 'ACCEPTED') {
+        // Finalize Payment: Deduct Escrow from User -> Expert Balance & Platform Revenue
+        const price = parseFloat(booking.price);
+        
+        const commissionSetting = await tx.select().from(platformSettings).where(eq(platformSettings.key, 'EXPERT_COMMISSION_PERCENTAGE')).get();
+        const commissionRate = commissionSetting ? parseFloat(commissionSetting.value) : 10;
+        
+        const platformFee = (price * commissionRate) / 100;
+        const expertEarnings = price - platformFee;
+        
+        // 1. Deduct User Escrow and Overall Balance entirely
+        const userWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, booking.userId), eq(wallets.assetSymbol, booking.currency))).get();
+        if (userWallet) {
+          const newEscrow = parseFloat(userWallet.escrowBalance) - price;
+          const newBalance = parseFloat(userWallet.balance) - price;
+          await tx.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id)).run();
+        }
+        
+        // 2. Add to Expert Real Balance
+        const expertWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, profile.userId), eq(wallets.assetSymbol, booking.currency))).get();
+        if (expertWallet) {
+          const newExpertBalance = parseFloat(expertWallet.balance) + expertEarnings;
+          await tx.update(wallets).set({ balance: newExpertBalance.toString(), updatedAt: now }).where(eq(wallets.id, expertWallet.id)).run();
+        } else {
+          await tx.insert(wallets).values({
+            id: `wal_${crypto.randomUUID()}`,
+            userId: profile.userId,
+            assetSymbol: booking.currency,
+            balance: expertEarnings.toString(),
+            lockedBalance: '0',
+            escrowBalance: '0',
+            createdAt: now,
+            updatedAt: now
+          }).run();
+        }
+
+        // Record Expert Wallet Transaction
+        const expertTxId = `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+        const dbUser = await tx.select().from(users).where(eq(users.id, user.id)).get();
+        const wtDisplayId = await generateBusinessId(tx, dbUser?.email, 'WTXN');
+        await tx.insert(walletTransactions).values({
+          id: expertTxId,
+          displayId: wtDisplayId,
+          userId: profile.userId,
+          type: 'EXPERT_SERVICE',
           assetSymbol: booking.currency,
-          amount: refundAmt.toString(),
+          amount: expertEarnings.toString(),
+          fee: platformFee.toString(),
           status: 'COMPLETED',
           reference: bookingId,
           createdAt: now,
           updatedAt: now
         }).run();
-      }
-      
-      await db.update(expertBookings).set({ status: 'REFUNDED', updatedAt: now }).where(eq(expertBookings.id, bookingId)).run();
-      return c.json({ success: true });
-    }
-
-    if (action === 'COMPLETE' && booking.status === 'ACCEPTED') {
-      // Finalize Payment: Deduct Escrow from User -> Expert Balance & Platform Revenue
-      const price = parseFloat(booking.price);
-      
-      const commissionSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'EXPERT_COMMISSION_PERCENTAGE')).get();
-      const commissionRate = commissionSetting ? parseFloat(commissionSetting.value) : 10;
-      
-      const platformFee = (price * commissionRate) / 100;
-      const expertEarnings = price - platformFee;
-      
-      // 1. Deduct User Escrow and Overall Balance entirely
-      const userWallet = await db.select().from(wallets).where(and(eq(wallets.userId, booking.userId), eq(wallets.assetSymbol, booking.currency))).get();
-      if (userWallet) {
-        const newEscrow = parseFloat(userWallet.escrowBalance) - price;
-        const newBalance = parseFloat(userWallet.balance) - price;
-        await db.update(wallets).set({ balance: newBalance.toString(), escrowBalance: newEscrow.toString(), updatedAt: now }).where(eq(wallets.id, userWallet.id)).run();
-      }
-      
-      // 2. Add to Expert Real Balance
-      const expertWallet = await db.select().from(wallets).where(and(eq(wallets.userId, profile.userId), eq(wallets.assetSymbol, booking.currency))).get();
-      if (expertWallet) {
-        const newExpertBalance = parseFloat(expertWallet.balance) + expertEarnings;
-        await db.update(wallets).set({ balance: newExpertBalance.toString(), updatedAt: now }).where(eq(wallets.id, expertWallet.id)).run();
-      } else {
-        await db.insert(wallets).values({
-          id: `wal_${crypto.randomUUID()}`,
-          userId: profile.userId,
-          assetSymbol: booking.currency,
-          type: 'REAL',
-          balance: expertEarnings.toString(),
-          lockedBalance: '0',
-          escrowBalance: '0',
-          createdAt: now,
-          updatedAt: now
-        }).run();
-      }
-
-      // Record Expert Wallet Transaction
-      const expertTxId = `txn_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
-      const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
-      const wtDisplayId = await generateBusinessId(db, dbUser?.email, 'WTXN');
-      await db.insert(walletTransactions).values({
-        id: expertTxId,
-        displayId: wtDisplayId,
-        userId: profile.userId,
-        type: 'EXPERT_SERVICE',
-        mode: 'REAL',
-        assetSymbol: booking.currency,
-        amount: expertEarnings.toString(),
-        status: 'COMPLETED',
-        reference: bookingId,
-        createdAt: now,
-        updatedAt: now
-      }).run();
       
       // Record Platform Ledger Entry for Commission
       const ledgerTxId = `ltx_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
-      const ltDisplayId = await generateBusinessId(db, dbUser?.email, 'LTXN');
-      await db.insert(ledgerTransactions).values({
+      const ltDisplayId = await generateBusinessId(tx, dbUser?.email, 'LTXN');
+      await tx.insert(ledgerTransactions).values({
         id: ledgerTxId,
         displayId: ltDisplayId,
         idempotencyKey: `comm_${bookingId}`,
@@ -777,8 +771,7 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
         status: 'COMMITTED',
         createdAt: now
       }).run();
-      
-      await db.insert(ledgerEntries).values({
+      await tx.insert(ledgerEntries).values({
         id: `len_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
         transactionId: ledgerTxId,
         accountId: 'SYSTEM_FEE',
@@ -789,7 +782,7 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
       }).run();
       
       // 3. Update Booking
-      await db.update(expertBookings).set({ 
+      await tx.update(expertBookings).set({ 
         status: 'COMPLETED', 
         platformFee: platformFee.toString(),
         expertEarnings: expertEarnings.toString(),
@@ -797,15 +790,14 @@ expertRoutes.post('/dashboard/bookings/:id/action', async (c) => {
       }).where(eq(expertBookings.id, bookingId)).run();
       
       // 4. Expert Profile Stats Update
-      await db.update(expertProfiles).set({ completedServices: profile.completedServices + 1, updatedAt: now }).where(eq(expertProfiles.id, profile.id)).run();
+      await tx.update(expertProfiles).set({ completedServices: profile.completedServices + 1, updatedAt: now }).where(eq(expertProfiles.id, profile.id)).run();
+      }
+    });
 
-      return c.json({ success: true });
-    }
-
-    return c.json({ success: false, error: 'Invalid action or booking state' }, 400);
+    return c.json({ success: true });
   } catch (error: any) {
     console.error(error);
-    return c.json({ success: false, error: 'Failed to process booking action' }, 500);
+    return c.json({ success: false, error: error.message || 'Failed to process booking action' }, 500);
   }
 });
 

@@ -4,7 +4,7 @@ import { formatPrice } from "@/lib/trading/calculations"
 import { Button } from "@/components/ui/button"
 import { apiClient } from "@ethsltd/api-client"
 
-import { useTradingModeStore } from "@/stores/trading-mode-store"
+
 import { useTradingUIStore } from "@/stores/trading-ui-store"
 
 export function TradingHistoryTabs() {
@@ -13,22 +13,22 @@ export function TradingHistoryTabs() {
   const [trades, setTrades] = useState<any[]>([])
   const [positions, setPositions] = useState<any[]>([])
   
-  const { mode } = useTradingModeStore()
+
   const { marketType } = useTradingUIStore()
 
   const loadData = async () => {
     try {
-      const oRes = await apiClient.getOrders(mode)
+      const oRes = await apiClient.getOrders()
       if(oRes.success) setOrders(oRes.data || [])
       
-      const tRes = await apiClient.getTrades(mode)
+      const tRes = await apiClient.getTrades()
       if(tRes.success) setTrades(tRes.data || [])
 
       if (marketType === 'FUTURES') {
-        const pRes = await apiClient.getFuturesPositions(mode)
+        const pRes = await apiClient.getFuturesPositions()
         if (pRes.success) setPositions(pRes.data || [])
       } else if (marketType === 'OPTIONS') {
-        const oRes = await apiClient.getOptionsPositions(mode)
+        const oRes = await apiClient.getOptionsPositions()
         if (oRes.success) setPositions(oRes.data || [])
       }
     } catch(e) {
@@ -49,7 +49,7 @@ export function TradingHistoryTabs() {
     loadData()
     const interval = setInterval(loadData, 5000)
     return () => clearInterval(interval)
-  }, [mode, marketType])
+  }, [marketType])
   
   const openOrders = orders.filter(o => o.status === 'OPEN')
   
