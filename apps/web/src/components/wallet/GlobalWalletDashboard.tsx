@@ -118,31 +118,31 @@ export function GlobalWalletDashboard() {
             {showBalance ? <Eye className="w-5 h-5 text-gray-400" /> : <EyeOff className="w-5 h-5 text-gray-400" />}
           </button>
         </div>
-        <div className="mt-3 flex justify-between items-end">
-          <div>
-            <h2 className="text-3xl font-bold text-[#00C087]">
+        <div className="mt-3 flex flex-col sm:flex-row sm:justify-between items-start sm:items-end gap-6">
+          <div className="w-full sm:w-auto">
+            <h2 className="text-3xl font-bold text-[#00C087] break-all">
               {showBalance ? `${baseSymbol}${displayAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '********'}
             </h2>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-gray-400 mt-1 break-all">
               ≈{showBalance ? displayAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {baseCurrency}
             </p>
           </div>
-          <div className="text-right flex gap-6">
-             <div>
+          <div className="text-left sm:text-right flex flex-row flex-wrap gap-x-6 gap-y-4 w-full sm:w-auto">
+             <div className="flex-1 sm:flex-none">
                <span className="text-xs text-gray-400 block mb-1">On Order / Hold</span>
-               <h3 className="text-sm font-semibold text-white">
+               <h3 className="text-sm font-semibold text-white break-all">
                  {showBalance ? ((totalUsdt - availableUsdt) * baseRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}
                </h3>
              </div>
-             <div>
+             <div className="flex-1 sm:flex-none">
                <span className="text-xs text-gray-400 block mb-1">Total Assets ({baseCurrency})</span>
-               <h3 className="text-sm font-semibold text-white">
+               <h3 className="text-sm font-semibold text-white break-all">
                  {showBalance ? displayTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}
                </h3>
              </div>
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-2 text-sm text-gray-400 break-all">
+        <div className="mt-6 flex items-center gap-2 text-sm text-gray-400 break-all bg-white/5 p-2 rounded-lg">
           <span>UID: {user?.id || 'Loading...'}</span>
         </div>
       </div>
@@ -157,27 +157,27 @@ export function GlobalWalletDashboard() {
           <div className="p-5 border-b border-white/5">
             <span className="text-xs text-gray-300">Asset valuations ({baseCurrency})</span>
             <div className="mt-2">
-              <h3 className="text-2xl font-bold text-white">
+              <h3 className="text-2xl font-bold text-white break-all">
                 {showBalance ? displayTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}
               </h3>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-400 mt-1 break-all">
                 ≈{showBalance ? displayTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {baseCurrency}
               </p>
             </div>
           </div>
 
-          <div className="flex">
-            <button onClick={() => router.push('/wallet/deposit')} className="flex-1 py-4 flex items-center justify-center gap-2 border-r border-white/5 hover:bg-white/5 transition-colors">
-              <ArrowDownToLine className="w-5 h-5 text-[#00C087]" />
-              <span className="text-sm font-medium">Deposit</span>
+          <div className="flex flex-wrap sm:flex-nowrap">
+            <button onClick={() => router.push('/wallet/deposit')} className="w-1/3 sm:flex-1 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 border-r border-white/5 hover:bg-white/5 transition-colors">
+              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C087]" />
+              <span className="text-xs sm:text-sm font-medium">Deposit</span>
             </button>
-            <button onClick={() => router.push('/wallet/withdraw')} className="flex-1 py-4 flex items-center justify-center gap-2 border-r border-white/5 hover:bg-white/5 transition-colors">
-              <ArrowUpFromLine className="w-5 h-5 text-[#00C087]" />
-              <span className="text-sm font-medium">Withdraw</span>
+            <button onClick={() => router.push('/wallet/withdraw')} className="w-1/3 sm:flex-1 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 border-r border-white/5 hover:bg-white/5 transition-colors">
+              <ArrowUpFromLine className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C087]" />
+              <span className="text-xs sm:text-sm font-medium">Withdraw</span>
             </button>
-            <button className="flex-1 py-4 flex items-center justify-center gap-2 hover:bg-white/5 transition-colors">
-              <ArrowRightLeft className="w-5 h-5 text-[#00C087]" />
-              <span className="text-sm font-medium">Transfer</span>
+            <button className="w-1/3 sm:flex-1 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 hover:bg-white/5 transition-colors">
+              <ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C087]" />
+              <span className="text-xs sm:text-sm font-medium">Transfer</span>
             </button>
           </div>
         </div>
@@ -217,24 +217,24 @@ export function GlobalWalletDashboard() {
             </div>
           ) : filteredAssets.map((asset: any, i: number) => (
             <div key={i} className="bg-[#121212] border border-white/10 rounded-xl p-4">
-              <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-3 gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#00C087] font-bold text-xs">
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#00C087] font-bold text-xs shrink-0">
                     {asset.symbol.charAt(0)}
                   </div>
-                  <span className="font-bold text-lg">{asset.symbol}</span>
+                  <span className="font-bold text-lg truncate block min-w-0">{asset.symbol}</span>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold">{showBalance ? Number(asset.total || 0).toFixed(8) : '********'}</p>
-                  <p className="text-xs text-gray-400">≈{showBalance ? (Number(asset.usdValue || 0) * baseRate).toFixed(4) : '********'} {baseCurrency}</p>
+                <div className="text-left sm:text-right">
+                  <p className="font-bold break-all">{showBalance ? Number(asset.total || 0).toFixed(8) : '********'}</p>
+                  <p className="text-xs text-gray-400 break-all">≈{showBalance ? (Number(asset.usdValue || 0) * baseRate).toFixed(4) : '********'} {baseCurrency}</p>
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-3 text-xs text-gray-400">
-                <div className="flex flex-col">
-                  <span>Available {showBalance ? Number(asset.available || 0).toFixed(8) : '********'}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 text-xs text-gray-400 gap-2">
+                <div className="flex flex-col break-all">
+                  <span>Available: {showBalance ? Number(asset.available || 0).toFixed(8) : '********'}</span>
                 </div>
-                <div className="flex flex-col text-right">
-                  <span>On orders {showBalance ? Number(asset.locked || 0).toFixed(8) : '********'}</span>
+                <div className="flex flex-col text-left sm:text-right break-all">
+                  <span>On orders: {showBalance ? Number(asset.locked || 0).toFixed(8) : '********'}</span>
                 </div>
               </div>
             </div>
@@ -252,27 +252,27 @@ export function GlobalWalletDashboard() {
             
             return (
               <div key={i} className="bg-[#121212] border border-white/10 rounded-xl p-4">
-                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-3 gap-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#00C087] font-bold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#00C087] font-bold text-xs shrink-0">
                       {currency.symbol}
                     </div>
-                    <div>
-                      <span className="font-bold text-lg">{currency.code}</span>
-                      <span className="text-xs text-gray-400 block">{currency.name}</span>
+                    <div className="min-w-0">
+                      <span className="font-bold text-lg truncate block">{currency.code}</span>
+                      <span className="text-xs text-gray-400 block truncate">{currency.name}</span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold">{showBalance ? userTotalInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</p>
-                    <p className="text-xs text-gray-400">≈{showBalance ? userTotalInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {currency.code}</p>
+                  <div className="text-left sm:text-right">
+                    <p className="font-bold break-all">{showBalance ? userTotalInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</p>
+                    <p className="text-xs text-gray-400 break-all">≈{showBalance ? userTotalInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {currency.code}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-3 text-xs text-gray-400">
-                  <div className="flex flex-col">
-                    <span>Available {showBalance ? userAvailableInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 text-xs text-gray-400 gap-2">
+                  <div className="flex flex-col break-all">
+                    <span>Available: {showBalance ? userAvailableInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</span>
                   </div>
-                  <div className="flex flex-col text-right">
-                    <span>On orders {showBalance ? userLockedInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</span>
+                  <div className="flex flex-col text-left sm:text-right break-all">
+                    <span>On orders: {showBalance ? userLockedInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}</span>
                   </div>
                 </div>
               </div>
