@@ -173,7 +173,6 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
         const res = await apiClient.deposit({
           assetSymbol: method === 'BANK' ? bankCurrency : selectedAsset,
           amount: 0,
-          mode: 'REAL',
           depositMethod: method
         });
 
@@ -199,7 +198,6 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
       const res = await apiClient.deposit({
         assetSymbol: 'USD',
         amount: Number(amount),
-        mode: 'REAL',
         depositMethod: 'AUTO'
       });
 
@@ -293,7 +291,6 @@ export function RealDepositForm({ defaultAsset = "USDT" }: { defaultAsset?: stri
       const res = await apiClient.deposit({
         assetSymbol: method === 'BANK' ? bankCurrency : selectedAsset,
         amount: Number(amount),
-        mode: 'REAL',
         depositMethod: method,
         transactionHash: method === 'MANUAL' ? transactionHash : undefined,
         paymentReference: method === 'BANK' ? paymentReference : undefined,

@@ -119,7 +119,6 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
         amount: values.amount,
         destination: values.destination,
         network: "Crypto", // Replace with actual network selection in a fully fleshed app
-        mode: "REAL"
       });
       
       if (res.success) {
