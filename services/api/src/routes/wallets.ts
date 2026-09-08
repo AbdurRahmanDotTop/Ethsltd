@@ -132,17 +132,23 @@ walletRoutes.get('/balances', async (c) => {
   const user = c.get('user');
   
   const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
+  const activeRates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
+  const ratesMap = new Map(activeRates.map(r => [r.code, r]));
   
   // Format to AssetBalance structure
   const formattedBalances = userWallets.map(w => {
+    const rateInfo = ratesMap.get(w.assetSymbol);
+    const type = rateInfo?.isBank ? 'FIAT' : (rateInfo?.isAsset ? 'CRYPTO' : 'UNKNOWN');
+    const usdPrice = rateInfo && parseFloat(rateInfo.ratePerUsdt) > 0 ? (1 / parseFloat(rateInfo.ratePerUsdt)) : getAssetPrice(w.assetSymbol);
+
     const available = parseFloat(w.balance);
     const locked = parseFloat(w.lockedBalance) + parseFloat(w.escrowBalance);
     const total = available + locked;
-    const usdPrice = getAssetPrice(w.assetSymbol);
     
     return {
       assetId: w.assetSymbol.toLowerCase(),
       symbol: w.assetSymbol,
+      type,
       available,
       locked,
       total,
@@ -160,15 +166,19 @@ walletRoutes.get('/portfolio', async (c) => {
   const user = c.get('user');
   
   const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
+  const activeRates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
+  const ratesMap = new Map(activeRates.map(r => [r.code, r]));
   
   let totalValueUsd = 0;
   let availableBalanceUsd = 0;
   let lockedBalanceUsd = 0;
   
   const allocations = userWallets.map(w => {
+    const rateInfo = ratesMap.get(w.assetSymbol);
+    const usdPrice = rateInfo && parseFloat(rateInfo.ratePerUsdt) > 0 ? (1 / parseFloat(rateInfo.ratePerUsdt)) : getAssetPrice(w.assetSymbol);
+
     const lockedAmt = parseFloat(w.lockedBalance) + parseFloat(w.escrowBalance);
     const total = parseFloat(w.balance) + lockedAmt;
-    const usdPrice = getAssetPrice(w.assetSymbol);
     const usdValue = total * usdPrice;
     
     totalValueUsd += usdValue;

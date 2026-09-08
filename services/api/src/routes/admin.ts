@@ -597,11 +597,14 @@ adminRoutes.get('/wallets/overview', async (c) => {
     const { wallets, payment_methods, currencyRates } = require('database');
     
     const allWallets = await db.select().from(wallets).all();
-    const overview: Record<string, { balance: number, locked: number, escrow: number, total: number }> = {
-      'USDT': { balance: 0, locked: 0, escrow: 0, total: 0 },
-      'USD': { balance: 0, locked: 0, escrow: 0, total: 0 },
-      'INR': { balance: 0, locked: 0, escrow: 0, total: 0 }
-    };
+    
+    const activeRates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
+    const overview: Record<string, { balance: number, locked: number, escrow: number, total: number }> = {};
+    
+    // Pre-populate with active currencies
+    for (const rate of activeRates) {
+      overview[rate.code] = { balance: 0, locked: 0, escrow: 0, total: 0 };
+    }
     
     for (const w of allWallets) {
       const sym = w.assetSymbol;
@@ -628,7 +631,6 @@ adminRoutes.get('/wallets/overview', async (c) => {
     }));
 
     // Fetch dynamic currency rates
-    const activeRates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
     const rates = activeRates.reduce((acc: any, curr: any) => {
       acc[curr.code] = parseFloat(curr.ratePerUsdt);
       return acc;
@@ -695,8 +697,17 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
 
   try {
     const { and, eq } = require('drizzle-orm');
-    const { wallets, ledgerTransactions, walletTransactions } = require('database');
+    const { wallets, ledgerTransactions, walletTransactions, currencyRates } = require('database');
     
+    // Validate that the asset is an active configured currency/asset
+    const activeAsset = await db.select().from(currencyRates).where(
+      and(eq(currencyRates.code, assetSymbol), eq(currencyRates.status, 'ACTIVE'))
+    ).get();
+    
+    if (!activeAsset) {
+      return c.json({ success: false, error: `Asset ${assetSymbol} is not configured or inactive in Currency Rates.` }, 400);
+    }
+
     let wallet = await db.select().from(wallets).where(
       and(eq(wallets.userId, userId), eq(wallets.assetSymbol, assetSymbol))
     ).get();

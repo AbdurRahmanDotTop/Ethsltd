@@ -56,8 +56,11 @@ export function GlobalWalletDashboard() {
     fetchTx();
   }, [fetchBalances]);
 
-  const totalUsdt = balances.reduce((acc, b) => acc + (b.usdValue || 0), 0);
-  const availableUsdt = balances.reduce((acc, b) => {
+  const cryptoBalances = balances.filter(b => b.type === 'CRYPTO');
+  const fiatBalances = balances.filter(b => b.type === 'FIAT');
+
+  const totalUsdt = cryptoBalances.reduce((acc, b) => acc + (b.usdValue || 0), 0);
+  const availableUsdt = cryptoBalances.reduce((acc, b) => {
     const price = b.total > 0 ? (b.usdValue || 0) / b.total : 0;
     return acc + ((b.available || 0) * price);
   }, 0);
@@ -69,7 +72,7 @@ export function GlobalWalletDashboard() {
   const displayTotal = totalUsdt * baseRate;
   const displayAvailable = availableUsdt * baseRate;
 
-  const filteredAssets = balances.filter(asset => {
+  const filteredAssets = cryptoBalances.filter(asset => {
     if (hideSmallAssets && asset.total === 0) return false;
     if (searchQuery.trim()) {
       return asset.symbol.toLowerCase().includes(searchQuery.toLowerCase());
@@ -245,10 +248,10 @@ export function GlobalWalletDashboard() {
               No currencies found.
             </div>
           ) : bankCurrencies.map((currency: any, i: number) => {
-            const currencyRate = parseFloat(currency.ratePerUsdt || '1');
-            const userTotalInThisCurrency = totalUsdt * currencyRate;
-            const userAvailableInThisCurrency = availableUsdt * currencyRate;
-            const userLockedInThisCurrency = (totalUsdt - availableUsdt) * currencyRate;
+            const wallet = fiatBalances.find(b => b.symbol === currency.code);
+            const userTotalInThisCurrency = wallet ? wallet.total : 0;
+            const userAvailableInThisCurrency = wallet ? wallet.available : 0;
+            const userLockedInThisCurrency = wallet ? wallet.locked : 0;
             
             return (
               <div key={i} className="bg-[#121212] border border-white/10 rounded-xl p-4">

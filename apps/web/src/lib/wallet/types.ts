@@ -18,6 +18,7 @@ export interface WalletTransaction {
 export interface AssetBalance {
   assetId: string;
   symbol: string;
+  type: 'FIAT' | 'CRYPTO' | 'UNKNOWN';
   available: number;
   locked: number;
   total: number;
