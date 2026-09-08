@@ -145,14 +145,12 @@ export default function AdminDashboardPage() {
           title="Total Users" 
           value={kpis.totalUsers.toLocaleString()} 
           icon={Users} 
-          trend="+12% (30d)"
           colorClass="text-blue-500 bg-blue-500" 
         />
         <StatCard 
           title="24h Volume (Spot)" 
           value={formatUSD(kpis.volume24h)} 
           icon={Activity} 
-          trend="+5.2%"
           colorClass="text-brand-primary bg-brand-primary" 
         />
         <StatCard 

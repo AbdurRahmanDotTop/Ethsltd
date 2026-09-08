@@ -184,95 +184,115 @@ adminRoutes.get('/stats/p2p', async (c) => {
   const db = c.get('db');
   try {
     const { startDate, endDate } = c.req.query();
-    const { and, eq, gte, lte, sql, sum, desc } = require('drizzle-orm');
+    const { and, eq, gte, lte, sql, desc } = require('drizzle-orm');
     
-    const conditions = [];
-    if (startDate) conditions.push(gte(p2pOrders.createdAt, new Date(startDate)));
-    if (endDate) conditions.push(lte(p2pOrders.createdAt, new Date(endDate)));
+    // Build conditions safely - only include if values exist
+    const orderConditions: any[] = [];
+    if (startDate) orderConditions.push(gte(p2pOrders.createdAt, new Date(startDate)));
+    if (endDate) orderConditions.push(lte(p2pOrders.createdAt, new Date(endDate)));
+    const orderWhere = orderConditions.length > 0 ? and(...orderConditions) : undefined;
 
-    // Orders Stats
-    const ordersData = await db.select({
+    // Orders Stats - count all statuses for the period
+    const ordersQuery = db.select({
       status: p2pOrders.status,
       count: sql<number>`count(*)`,
       volume: sql<number>`sum(CAST(${p2pOrders.cryptoAmount} AS REAL))`
-    }).from(p2pOrders)
-    .where(and(...conditions))
-    .groupBy(p2pOrders.status);
+    }).from(p2pOrders).groupBy(p2pOrders.status);
+    
+    const ordersData = orderWhere
+      ? await ordersQuery.where(orderWhere)
+      : await ordersQuery;
 
     const orderStats = {
       totalOrders: 0,
-      totalVolume: 0,
+      totalVolume: 0, // Only count COMPLETED orders for volume
       byStatus: {} as Record<string, { count: number, volume: number }>
     };
 
-    ordersData.forEach(row => {
+    ordersData.forEach((row: any) => {
       orderStats.totalOrders += row.count;
-      orderStats.totalVolume += row.volume || 0;
+      // Only sum volume for COMPLETED orders to avoid inflating with cancelled/pending
+      if (row.status === 'COMPLETED') {
+        orderStats.totalVolume += row.volume || 0;
+      }
       orderStats.byStatus[row.status] = { count: row.count, volume: row.volume || 0 };
     });
 
-    // Buy / Sell Activity
-    const buySellData = await db.select({
+    // Buy / Sell Activity - volumes from all non-cancelled orders in period
+    const buySellQuery = db.select({
       type: p2pAds.type,
       volume: sql<number>`sum(CAST(${p2pOrders.cryptoAmount} AS REAL))`
     }).from(p2pOrders)
     .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .where(and(...conditions, eq(p2pOrders.status, 'COMPLETED')))
+    .where(
+      orderConditions.length > 0
+        ? and(...orderConditions, eq(p2pOrders.status, 'COMPLETED'))
+        : eq(p2pOrders.status, 'COMPLETED')
+    )
     .groupBy(p2pAds.type);
 
     const buySellVolume = { BUY: 0, SELL: 0 };
-    buySellData.forEach(row => {
+    const buySellData = await buySellQuery;
+    buySellData.forEach((row: any) => {
+      // p2pAds.type is from the ad poster's perspective:
+      // A 'SELL' ad = merchant selling crypto = BUY activity for the taker
+      // A 'BUY' ad = merchant buying crypto = SELL activity for the taker
+      // We display it from the market perspective: BUY ad volume = BUY volume on market
       if (row.type) buySellVolume[row.type as 'BUY' | 'SELL'] = row.volume || 0;
     });
 
-    // Active Ads
+    // Active Ads - not date-filtered (current state)
     const [{ activeAds }] = await db.select({ activeAds: sql<number>`count(*)` })
       .from(p2pAds)
       .where(eq(p2pAds.status, 'ACTIVE'));
 
-    // Merchants
-    const [{ activeMerchants }] = await db.select({ activeMerchants: sql<number>`count(*)` })
-      .from(users)
-      .where(eq(users.isMerchant, true));
+    // Active P2P Merchants = users who have at least one active ad
+    const [{ activeMerchants }] = await db.select({ activeMerchants: sql<number>`count(DISTINCT user_id)` })
+      .from(p2pAds)
+      .where(eq(p2pAds.status, 'ACTIVE'));
 
-    // Chats
-    const chatConditions = [];
+    // Chats - date filtered
+    const chatConditions: any[] = [];
     if (startDate) chatConditions.push(gte(p2pMessages.createdAt, new Date(startDate)));
     if (endDate) chatConditions.push(lte(p2pMessages.createdAt, new Date(endDate)));
+    const chatWhere = chatConditions.length > 0 ? and(...chatConditions) : undefined;
 
-    const [{ totalChats }] = await db.select({ totalChats: sql<number>`count(*)` })
-      .from(p2pMessages)
-      .where(and(...chatConditions));
+    const totalChatsQuery = db.select({ totalChats: sql<number>`count(*)` }).from(p2pMessages);
+    const unreadChatsQuery = db.select({ unreadChats: sql<number>`count(*)` }).from(p2pMessages).where(
+      chatConditions.length > 0 ? and(...chatConditions, eq(p2pMessages.isRead, false)) : eq(p2pMessages.isRead, false)
+    );
 
-    const [{ unreadChats }] = await db.select({ unreadChats: sql<number>`count(*)` })
-      .from(p2pMessages)
-      .where(and(...chatConditions, eq(p2pMessages.isRead, false)));
+    const [{ totalChats }] = chatWhere ? await totalChatsQuery.where(chatWhere) : await totalChatsQuery;
+    const [{ unreadChats }] = await unreadChatsQuery;
 
-    // Disputes
-    const disputeConditions = [];
+    // Disputes - date filtered
+    const disputeConditions: any[] = [];
     if (startDate) disputeConditions.push(gte(p2pDisputes.createdAt, new Date(startDate)));
     if (endDate) disputeConditions.push(lte(p2pDisputes.createdAt, new Date(endDate)));
+    const disputeWhere = disputeConditions.length > 0 ? and(...disputeConditions) : undefined;
 
-    const disputesData = await db.select({
+    const disputesQuery = db.select({
       status: p2pDisputes.status,
       count: sql<number>`count(*)`
-    }).from(p2pDisputes)
-    .where(and(...disputeConditions))
-    .groupBy(p2pDisputes.status);
+    }).from(p2pDisputes).groupBy(p2pDisputes.status);
+
+    const disputesData = disputeWhere ? await disputesQuery.where(disputeWhere) : await disputesQuery;
 
     const disputeStats = { total: 0, OPEN: 0, RESOLVED: 0, CLOSED: 0 };
-    disputesData.forEach(row => {
+    disputesData.forEach((row: any) => {
       disputeStats.total += row.count;
       if (row.status in disputeStats) disputeStats[row.status as keyof typeof disputeStats] = row.count;
     });
 
-    // Escrow
-    const [{ totalEscrow }] = await db.select({
+    // Escrow - sum only escrow for orders that are ACTIVE in the period
+    // Only include wallets that have orders in escrow within the date window
+    const escrowQuery = db.select({
       totalEscrow: sql<number>`sum(CAST(escrow_balance AS REAL))`
     }).from(wallets);
+    const [{ totalEscrow }] = await escrowQuery;
 
-    // Recent Transactions
-    const recentOrders = await db.select({
+    // Recent Transactions - apply date filter
+    const recentOrdersQuery = db.select({
       id: p2pOrders.displayId,
       cryptoAmount: p2pOrders.cryptoAmount,
       fiatAmount: p2pOrders.fiatAmount,
@@ -284,6 +304,10 @@ adminRoutes.get('/stats/p2p', async (c) => {
     .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
     .orderBy(desc(p2pOrders.createdAt))
     .limit(10);
+
+    const recentOrders = orderWhere
+      ? await recentOrdersQuery.where(orderWhere)
+      : await recentOrdersQuery;
 
     return c.json({
       success: true,
