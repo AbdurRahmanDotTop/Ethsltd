@@ -156,20 +156,20 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-y-4 gap-x-6 pt-4 border-t border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 pt-4 border-t border-border">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Price</p>
-              <p className="font-display font-bold text-xl text-primary dark:text-primary">
+              <p className="font-display font-bold text-xl text-primary dark:text-primary break-all">
                 {fiatSymbol}{ad.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Available</p>
-              <p className="font-mono font-medium">{ad.availableAmount.toLocaleString()} {ad.asset}</p>
+              <p className="font-mono font-medium break-all">{Number(ad.availableAmount).toFixed(8)} {ad.asset}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Order Limit</p>
-              <p className="font-mono text-sm">{fiatSymbol}{ad.minLimit.toLocaleString()} - {fiatSymbol}{ad.maxLimit.toLocaleString()}</p>
+              <p className="font-mono text-sm break-all">{fiatSymbol}{ad.minLimit.toLocaleString()} - {fiatSymbol}{ad.maxLimit.toLocaleString()}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Avg. Release Time</p>
@@ -189,9 +189,9 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <div className="flex justify-between items-center flex-wrap gap-y-4">
+                <div className="flex flex-wrap justify-between items-center gap-y-1 gap-x-4">
                   <Label htmlFor="fiatAmount">I want to {userSideLabel}</Label>
-                  <span className="text-xs text-muted-foreground">Limit: {fiatSymbol}{ad.minLimit} - {fiatSymbol}{ad.maxLimit}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">Limit: {fiatSymbol}{ad.minLimit.toLocaleString()} - {fiatSymbol}{ad.maxLimit.toLocaleString()}</span>
                 </div>
                 <div className="relative">
                   <Input 

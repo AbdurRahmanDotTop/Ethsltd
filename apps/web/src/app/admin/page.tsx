@@ -21,15 +21,15 @@ function StatCard({
   colorClass: string;
 }) {
   return (
-    <div className="bg-card border border-border rounded-lg p-5 flex flex-col justify-between hover:border-brand-primary/30 transition-colors">
-      <div className="flex justify-between items-start">
-        <span className="text-sm font-medium text-muted-foreground">{title}</span>
-        <div className={`p-2 rounded-md ${colorClass} bg-opacity-10`}>
-          <Icon className={`w-4 h-4 ${colorClass}`} />
+    <div className="bg-card border border-border rounded-lg p-4 sm:p-5 flex flex-col justify-between hover:border-brand-primary/30 transition-colors">
+      <div className="flex justify-between items-start gap-2">
+        <span className="text-xs sm:text-sm font-medium text-muted-foreground leading-snug">{title}</span>
+        <div className={`p-1.5 sm:p-2 rounded-md shrink-0 ${colorClass} bg-opacity-10`}>
+          <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${colorClass}`} />
         </div>
       </div>
-      <div className="mt-4 flex items-baseline gap-2">
-        <h3 className="text-2xl font-bold text-foreground">{value}</h3>
+      <div className="mt-3 flex flex-wrap items-baseline gap-1.5">
+        <h3 className="text-lg sm:text-2xl font-bold text-foreground break-all">{value}</h3>
         {trend && <span className="text-xs text-green-500 font-medium">{trend}</span>}
       </div>
     </div>
@@ -196,7 +196,7 @@ export default function AdminDashboardPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-card border border-border rounded-lg p-6 min-h-[300px] flex flex-col">
              <h3 className="text-lg font-bold mb-4">7-Day Trading Volume (USDT)</h3>
-             <div className="flex-1 w-full h-[300px]">
+      <div className="flex-1 w-full" style={{ height: '250px' }}>
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -283,9 +283,9 @@ export default function AdminDashboardPage() {
                ) : (
                  <div className="space-y-3 w-full">
                     {activity.map((act, i) => (
-                      <div key={i} className="flex justify-between text-xs">
-                        <span className="font-medium text-foreground">{act.action}</span>
-                        <span className="text-muted-foreground">{new Date(act.timestamp).toLocaleTimeString()}</span>
+                      <div key={i} className="flex flex-col sm:flex-row sm:justify-between gap-1 text-xs border-b border-border/40 pb-2 last:border-0 last:pb-0">
+                        <span className="font-medium text-foreground break-words min-w-0">{act.action}</span>
+                        <span className="text-muted-foreground shrink-0">{new Date(act.timestamp).toLocaleTimeString()}</span>
                       </div>
                     ))}
                  </div>
