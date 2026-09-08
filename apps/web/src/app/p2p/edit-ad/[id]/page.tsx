@@ -61,7 +61,7 @@ export default function EditAdPage() {
     if (hasHydrated && status === "authenticated") {
       async function checkBalance() {
         try {
-          const res = await apiClient.getWalletBalances('REAL');
+          const res = await apiClient.getWalletBalances();
           if (res.success && res.data) {
             let totalBalance = 0;
             for (const wallet of res.data) {

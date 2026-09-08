@@ -59,7 +59,7 @@ export default function PostAdPage() {
     if (hasHydrated && status === "authenticated") {
       async function checkBalance() {
         try {
-          const res = await apiClient.getWalletBalances('REAL');
+          const res = await apiClient.getWalletBalances();
           if (res.success && res.data) {
             setWalletBalances(res.data);
             let totalBalance = 0;

@@ -24,8 +24,8 @@ export default function ExpertEarningsPage() {
 
         if (userRes.success && userRes.data) {
           // Fetch real wallet to see actual withdrawable balance
-          const walletsRes = await apiClient.getWalletBalances('REAL');
-          if (walletsRes.success) {
+          const walletsRes = await apiClient.getWalletBalances();
+          if (walletsRes.success && walletsRes.data) {
             setWalletBalance(walletsRes.data || []);
           }
         }

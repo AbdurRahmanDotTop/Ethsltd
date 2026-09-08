@@ -28,7 +28,7 @@ export function GlobalWalletDashboard() {
   }, [searchParams]);
 
   useEffect(() => {
-    fetchBalances('REAL');
+    fetchBalances();
     
     const fetchRates = async () => {
       try {
@@ -45,7 +45,7 @@ export function GlobalWalletDashboard() {
 
     const fetchTx = async () => {
       try {
-        const res = await apiClient.getWalletTransactions('REAL');
+        const res = await apiClient.getWalletTransactions();
         if (res.success && res.data) {
           setTransactions(res.data);
         }
@@ -88,7 +88,7 @@ export function GlobalWalletDashboard() {
           <div className="flex items-center">
             <Logo className="h-9 sm:h-10 md:h-12 w-auto" />
           </div>
-          <button onClick={() => fetchBalances('REAL')}><RefreshCw className="w-4 h-4 text-gray-400" /></button>
+          <button onClick={() => fetchBalances()}><RefreshCw className="w-4 h-4 text-gray-400" /></button>
         </div>
       </div>
 
