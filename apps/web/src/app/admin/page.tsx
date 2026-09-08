@@ -148,6 +148,12 @@ export default function AdminDashboardPage() {
           colorClass="text-blue-500 bg-blue-500" 
         />
         <StatCard 
+          title="Active Users" 
+          value={kpis.activeUsers.toLocaleString()} 
+          icon={UserCheck} 
+          colorClass="text-cyan-500 bg-cyan-500" 
+        />
+        <StatCard 
           title="24h Volume (Spot)" 
           value={formatUSD(kpis.volume24h)} 
           icon={Activity} 
@@ -195,7 +201,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-card border border-border rounded-lg p-6 min-h-[300px] flex flex-col">
-             <h3 className="text-lg font-bold mb-4">7-Day Trading Volume (USDT)</h3>
+           <h3 className="text-lg font-bold mb-4">7-Day Platform Volume (P2P + Spot)</h3>
       <div className="flex-1 w-full" style={{ height: '250px' }}>
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">

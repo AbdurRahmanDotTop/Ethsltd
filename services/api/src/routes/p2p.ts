@@ -253,6 +253,18 @@ p2pRoutes.post('/orders', async (c) => {
   const user = c.get('user');
   const body = await c.req.json();
   const { adId, cryptoAmount, fiatAmount, paymentMethod } = body;
+
+  // Upfront validation - return 400 with clear messages
+  if (!adId) return c.json({ success: false, error: 'adId is required.' }, 400);
+  if (cryptoAmount === undefined || cryptoAmount === null || isNaN(Number(cryptoAmount)) || Number(cryptoAmount) <= 0) {
+    return c.json({ success: false, error: 'A valid cryptoAmount is required.' }, 400);
+  }
+  if (fiatAmount === undefined || fiatAmount === null || isNaN(Number(fiatAmount)) || Number(fiatAmount) <= 0) {
+    return c.json({ success: false, error: 'A valid fiatAmount is required.' }, 400);
+  }
+  if (!paymentMethod || typeof paymentMethod !== 'string' || paymentMethod.trim() === '') {
+    return c.json({ success: false, error: 'Please select a payment method.' }, 400);
+  }
   
   try {
     let finalOrderId = '';

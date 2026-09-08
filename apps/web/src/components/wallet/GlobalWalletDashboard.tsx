@@ -250,7 +250,7 @@ export function GlobalWalletDashboard() {
                 <div className="text-left sm:text-right">
                   <p className="font-bold break-all">{showBalance ? Number(asset.total || 0).toFixed(8) : '********'}</p>
                   {fiatRate > 0 ? (
-                    <p className="text-xs text-gray-400 break-all">≈{showBalance ? `${fiatSymbol}${(Number(asset.usdValue || 0) * baseRate * fiatRate).toFixed(4)} ${fiatCode}` : '********'}</p>
+                    <p className="text-xs text-gray-400 break-all">≈{showBalance ? `${fiatSymbol}${(Number(asset.usdValue || 0) * fiatRate).toFixed(4)} ${fiatCode}` : '********'}</p>
                   ) : (
                     <p className="text-xs text-gray-400 break-all">≈{showBalance ? `${(Number(asset.usdValue || 0) * baseRate).toFixed(4)} ${baseCurrency}` : '********'}</p>
                   )}
@@ -294,26 +294,31 @@ export function GlobalWalletDashboard() {
                     </div>
                   </div>
                   <div className="text-left sm:text-right">
-                    {/* Primary: USDT converted to this currency */}
+                    {/* Primary: actual fiat wallet balance OR USDT-converted value */}
                     <p className="font-bold break-all text-[#00C087]">
                       {showBalance
-                        ? `${currency.symbol}${usdtValueInThisCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency.code}`
+                        ? `${currency.symbol}${(userWalletBalance > 0 ? userWalletBalance : usdtValueInThisCurrency).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency.code}`
                         : '********'}
                     </p>
-                    {/* Secondary label: "≈ your USDT worth in this currency" */}
+                    {/* Secondary: show USDT equivalent */}
                     <p className="text-xs text-gray-400 break-all">
                       {showBalance
-                        ? `≈${totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} USDT`
+                        ? `≈ ${totalUsdt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} USDT (your crypto holdings)`
                         : '********'}
                     </p>
                   </div>
                 </div>
+                {/* Per-asset breakdown for this currency */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 text-xs text-gray-400 gap-2">
-                  <div className="flex flex-col break-all">
-                    <span>Available: {showBalance ? userAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {currency.code}</span>
+                  <div className="flex flex-col break-all gap-1">
+                    {userWalletBalance > 0 && (
+                      <span className="text-white/70">Wallet: {showBalance ? `${currency.symbol}${userWalletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency.code}` : '********'}</span>
+                    )}
+                    <span>Available: {showBalance ? `${currency.symbol}${(userAvailable > 0 ? userAvailable : usdtValueInThisCurrency).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency.code}` : '********'}</span>
                   </div>
                   <div className="flex flex-col text-left sm:text-right break-all">
-                    <span>On orders: {showBalance ? userLocked.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {currency.code}</span>
+                    <span>Rate: 1 USDT = {currency.symbol}{ratePerUsdt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} {currency.code}</span>
+                    {userLocked > 0 && <span>On orders: {showBalance ? `${currency.symbol}${userLocked.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency.code}` : '********'}</span>}
                   </div>
                 </div>
               </div>

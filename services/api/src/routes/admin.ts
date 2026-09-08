@@ -27,16 +27,17 @@ adminRoutes.get('/stats', async (c) => {
   
   try {
     const [{ count: totalUsers }] = await db.select({ count: sql<number>`count(*)` }).from(users);
+    const [{ count: activeUsers }] = await db.select({ count: sql<number>`count(*)` }).from(users).where(sql`status = 'ACTIVE'`);
     const [{ count: pendingKyc }] = await db.select({ count: sql<number>`count(*)` }).from(kycProfiles).where(eq(kycProfiles.status, 'PENDING'));
     const [{ count: activeMarkets }] = await db.select({ count: sql<number>`count(*)` }).from(markets).where(eq(markets.status, 'ACTIVE'));
     const [{ count: pendingWithdrawals }] = await db.select({ count: sql<number>`count(*)` }).from(walletTransactions).where(and(eq(walletTransactions.type, 'WITHDRAWAL'), eq(walletTransactions.status, 'PENDING')));
     const [{ count: pendingDisputes }] = await db.select({ count: sql<number>`count(*)` }).from(p2pDisputes).where(eq(p2pDisputes.status, 'OPEN'));
     const [{ count: suspendedUsers }] = await db.select({ count: sql<number>`count(*)` }).from(users).where(sql`status IN ('FROZEN', 'BANNED')`);
 
-    // Platform Balance
+    // Platform Balance (sum all stablecoin + fiat wallets)
     const [{ balance }] = await db.select({
       balance: sql<number>`sum(CAST(balance AS REAL) + CAST(locked_balance AS REAL) + CAST(escrow_balance AS REAL))`
-    }).from(wallets).where(sql`asset_symbol IN ('USDT', 'USD', 'USDC')`);
+    }).from(wallets).where(sql`asset_symbol IN ('USDT', 'USD', 'USDC', 'INR', 'EUR', 'GBP')`);
     
     // Deposits Today
     const todayStart = new Date();
@@ -45,21 +46,22 @@ adminRoutes.get('/stats', async (c) => {
       depositsToday: sql<number>`sum(amount)`
     }).from(real_manual_deposits).where(and(eq(real_manual_deposits.status, 'APPROVED'), sql`created_at >= ${todayStart.toISOString()}`));
     
-    // P2P Volume 24h
-    const now = Date.now();
+    // P2P Volume 24h - use ISO string for comparison (SQLite stores ISO strings)
+    const yesterday24h = new Date(Date.now() - 86400000).toISOString();
     const [{ p2pVolume24h }] = await db.select({
       p2pVolume24h: sql<number>`sum(CAST(fiat_amount AS REAL))`
-    }).from(p2pOrders).where(and(eq(p2pOrders.status, 'COMPLETED'), sql`updated_at > ${now - 86400000}`));
+    }).from(p2pOrders).where(and(eq(p2pOrders.status, 'COMPLETED'), sql`updated_at > ${yesterday24h}`));
 
-    // Trading Volume 24h
+    // Trading Volume 24h - use ISO string for comparison
     const [{ dailyVolumeUsd }] = await db.select({
       dailyVolumeUsd: sql<number>`sum(CAST(filled_amount AS REAL) * CAST(price AS REAL))`
-    }).from(orders).where(and(eq(orders.status, 'FILLED'), sql`created_at > ${now - 86400000}`));
+    }).from(orders).where(and(eq(orders.status, 'FILLED'), sql`created_at > ${yesterday24h}`));
 
     return c.json({
       success: true,
       data: {
         totalUsers: totalUsers || 0,
+        activeUsers: activeUsers || 0,
         pendingKyc: pendingKyc || 0,
         activeMarkets: activeMarkets || 0,
         totalPlatformBalance: balance || 0,
@@ -83,18 +85,28 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
   try {
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const sevenDaysAgoDate = new Date(sevenDaysAgo);
     const { gte } = require('drizzle-orm');
     
-    // The user explicitly requested 7-Days P2P Trading Volume in the chart.
-    const trades = await db.select({
-      amount: p2pOrders.cryptoAmount,
+    // Fetch P2P completed orders
+    const p2pTrades = await db.select({
+      amount: p2pOrders.fiatAmount,
       createdAt: p2pOrders.createdAt,
-      asset: p2pAds.asset
     }).from(p2pOrders)
-      .leftJoin(p2pAds, eq(p2pAds.id, p2pOrders.adId))
       .where(and(
         eq(p2pOrders.status, 'COMPLETED'), 
-        gte(p2pOrders.createdAt, new Date(sevenDaysAgo))
+        gte(p2pOrders.createdAt, sevenDaysAgoDate)
+      ));
+
+    // Fetch spot trading orders
+    const spotOrders = await db.select({
+      amount: orders.filledAmount,
+      price: orders.price,
+      createdAt: orders.createdAt,
+    }).from(orders)
+      .where(and(
+        eq(orders.status, 'FILLED'), 
+        gte(orders.createdAt, sevenDaysAgoDate)
       ));
     
     const dailyVolume: Record<string, number> = {};
@@ -105,18 +117,25 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
       dailyVolume[dateStr] = 0;
     }
     
-    trades.forEach((trade) => {
+    // Add P2P volume (fiat amounts)
+    p2pTrades.forEach((trade) => {
       if (!trade.createdAt) return;
       const dateStr = new Date(trade.createdAt).toISOString().split('T')[0];
       if (dailyVolume[dateStr] !== undefined) {
-        // Simple heuristic: If it's a stablecoin/BTC, we add its amount.
-        // For accurate multi-currency, a global price feed would be needed,
-        // but for now, USDT is the primary volume driver.
-        dailyVolume[dateStr] += Number(trade.amount);
+        dailyVolume[dateStr] += Number(trade.amount) || 0;
+      }
+    });
+
+    // Add spot trading volume (filled_amount * price)
+    spotOrders.forEach((order) => {
+      if (!order.createdAt) return;
+      const dateStr = new Date(order.createdAt).toISOString().split('T')[0];
+      if (dailyVolume[dateStr] !== undefined) {
+        dailyVolume[dateStr] += (Number(order.amount) || 0) * (Number(order.price) || 0);
       }
     });
     
-    const result = Object.keys(dailyVolume).map(date => ({
+    const result = Object.keys(dailyVolume).sort().map(date => ({
       date,
       volume: dailyVolume[date]
     }));
@@ -127,6 +146,7 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
     return c.json({ success: false, error: 'Failed to fetch volume data' }, 500);
   }
 });
+
 
 // GET /api/v1/admin/stats/recent-activity
 adminRoutes.get('/stats/recent-activity', async (c) => {

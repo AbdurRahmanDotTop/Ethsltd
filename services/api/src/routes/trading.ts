@@ -128,27 +128,55 @@ tradingRoutes.get('/markets', async (c) => {
 tradingRoutes.get('/markets/:symbol/candles', async (c) => {
   const symbol = c.req.param('symbol');
   const interval = c.req.query('interval') || '15m';
+  // Map interval to MEXC format (same as Binance)
+  const mexcSymbol = symbol.replace('-', '').toUpperCase();
 
+  // Try MEXC first (more reliable on Cloudflare Workers)
   try {
-    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol.replace('-', '')}&interval=${interval}&limit=100`);
-    const data = await res.json() as any[];
-    if (Array.isArray(data)) {
-      const candles = data.map(k => ({
-        time: k[0] / 1000,
-        open: parseFloat(k[1]),
-        high: parseFloat(k[2]),
-        low: parseFloat(k[3]),
-        close: parseFloat(k[4]),
-        volume: parseFloat(k[5])
-      }));
-      return c.json({ success: true, data: candles });
+    const res = await fetch(`https://api.mexc.com/api/v3/klines?symbol=${mexcSymbol}&interval=${interval}&limit=100`);
+    if (res.ok) {
+      const data = await res.json() as any[];
+      if (Array.isArray(data) && data.length > 0) {
+        const candles = data.map((k: any) => ({
+          time: k[0] / 1000,
+          open: parseFloat(k[1]),
+          high: parseFloat(k[2]),
+          low: parseFloat(k[3]),
+          close: parseFloat(k[4]),
+          volume: parseFloat(k[5])
+        }));
+        return c.json({ success: true, data: candles });
+      }
     }
   } catch(e) {
-    console.error('Binance API error (candles):', e);
+    console.error('MEXC API error (candles):', e);
   }
 
-  // Return empty if Binance fails to avoid fake data
-  return c.json({ success: false, error: 'Failed to fetch market data' }, 502);
+  // Fallback: try Binance as secondary source
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${mexcSymbol}&interval=${interval}&limit=100`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (res.ok) {
+      const data = await res.json() as any[];
+      if (Array.isArray(data) && data.length > 0) {
+        const candles = data.map((k: any) => ({
+          time: k[0] / 1000,
+          open: parseFloat(k[1]),
+          high: parseFloat(k[2]),
+          low: parseFloat(k[3]),
+          close: parseFloat(k[4]),
+          volume: parseFloat(k[5])
+        }));
+        return c.json({ success: true, data: candles });
+      }
+    }
+  } catch(e) {
+    console.error('Binance API error (candles fallback):', e);
+  }
+
+  // Return empty array (not 502) so frontend chart shows "no data" gracefully
+  return c.json({ success: true, data: [] });
 });
 
 tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {

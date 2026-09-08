@@ -8,16 +8,21 @@ import "./globals.css";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 import { BackToTop } from "@/components/layout/BackToTop";
@@ -93,7 +98,27 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `window.__name = window.__name || function(t, v) { return Object.defineProperty(t, "name", { value: v, configurable: true }); };` }} />
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.__name = window.__name || function(t, v) { return Object.defineProperty(t, "name", { value: v, configurable: true }); };
+          // Suppress known third-party SDK errors (Tawk.to Performance Observer)
+          window.addEventListener('error', function(e) {
+            if (e && e.message && (
+              e.message.includes('startTime') ||
+              e.message.includes('reportAllChanges')
+            )) {
+              e.preventDefault();
+              return true;
+            }
+          });
+          window.addEventListener('unhandledrejection', function(e) {
+            if (e && e.reason && typeof e.reason.message === 'string' && (
+              e.reason.message.includes('startTime') ||
+              e.reason.message.includes('reportAllChanges')
+            )) {
+              e.preventDefault();
+            }
+          });
+        `}} />
       </head>
       <body className="min-h-screen flex flex-col font-sans overflow-x-hidden">
         <ThemeProvider
