@@ -72,6 +72,12 @@ export function GlobalWalletDashboard() {
   const displayTotal = totalUsdt * baseRate;
   const displayAvailable = availableUsdt * baseRate;
 
+  const targetFiat = publicRates.find(r => r.code === 'INR' && r.status === 'ACTIVE') 
+                  || publicRates.find(r => r.code === 'USD' && r.status === 'ACTIVE');
+  const fiatRate = targetFiat ? parseFloat(targetFiat.ratePerUsdt || '0') : 0;
+  const fiatSymbol = targetFiat?.symbol || '';
+  const fiatCode = targetFiat?.code || '';
+
   const filteredAssets = cryptoBalances.filter(asset => {
     if (hideSmallAssets && asset.total === 0) return false;
     if (searchQuery.trim()) {
@@ -124,24 +130,36 @@ export function GlobalWalletDashboard() {
         <div className="mt-3 flex flex-col sm:flex-row sm:justify-between items-start sm:items-end gap-6">
           <div className="w-full sm:w-auto">
             <h2 className="text-3xl font-bold text-[#00C087] break-all">
-              {showBalance ? `${baseSymbol}${displayAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '********'}
+              {showBalance ? `${displayAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${baseCurrency}` : '********'}
             </h2>
-            <p className="text-sm text-gray-400 mt-1 break-all">
-              ≈{showBalance ? displayAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {baseCurrency}
-            </p>
+            {fiatRate > 0 && (
+              <p className="text-sm text-gray-400 mt-1 break-all">
+                ≈{showBalance ? ` ${fiatSymbol}${(displayAvailable * fiatRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${fiatCode}` : '********'}
+              </p>
+            )}
           </div>
           <div className="text-left sm:text-right flex flex-row flex-wrap gap-x-6 gap-y-4 w-full sm:w-auto">
              <div className="flex-1 sm:flex-none">
                <span className="text-xs text-gray-400 block mb-1">On Order / Hold</span>
                <h3 className="text-sm font-semibold text-white break-all">
-                 {showBalance ? ((totalUsdt - availableUsdt) * baseRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}
+                 {showBalance ? `${((totalUsdt - availableUsdt) * baseRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${baseCurrency}` : '********'}
                </h3>
+               {fiatRate > 0 && showBalance && (
+                 <span className="text-xs text-gray-400 block mt-0.5">
+                   ≈ {fiatSymbol}{((totalUsdt - availableUsdt) * baseRate * fiatRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {fiatCode}
+                 </span>
+               )}
              </div>
              <div className="flex-1 sm:flex-none">
                <span className="text-xs text-gray-400 block mb-1">Total Assets ({baseCurrency})</span>
                <h3 className="text-sm font-semibold text-white break-all">
-                 {showBalance ? displayTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}
+                 {showBalance ? `${displayTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${baseCurrency}` : '********'}
                </h3>
+               {fiatRate > 0 && showBalance && (
+                 <span className="text-xs text-gray-400 block mt-0.5">
+                   ≈ {fiatSymbol}{(displayTotal * fiatRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {fiatCode}
+                 </span>
+               )}
              </div>
           </div>
         </div>
@@ -161,11 +179,13 @@ export function GlobalWalletDashboard() {
             <span className="text-xs text-gray-300">Asset valuations ({baseCurrency})</span>
             <div className="mt-2">
               <h3 className="text-2xl font-bold text-white break-all">
-                {showBalance ? displayTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'}
+                {showBalance ? `${displayTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${baseCurrency}` : '********'}
               </h3>
-              <p className="text-xs text-gray-400 mt-1 break-all">
-                ≈{showBalance ? displayTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '********'} {baseCurrency}
-              </p>
+              {fiatRate > 0 && (
+                <p className="text-xs text-gray-400 mt-1 break-all">
+                  ≈{showBalance ? ` ${fiatSymbol}${(displayTotal * fiatRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${fiatCode}` : '********'}
+                </p>
+              )}
             </div>
           </div>
 
@@ -229,7 +249,11 @@ export function GlobalWalletDashboard() {
                 </div>
                 <div className="text-left sm:text-right">
                   <p className="font-bold break-all">{showBalance ? Number(asset.total || 0).toFixed(8) : '********'}</p>
-                  <p className="text-xs text-gray-400 break-all">≈{showBalance ? (Number(asset.usdValue || 0) * baseRate).toFixed(4) : '********'} {baseCurrency}</p>
+                  {fiatRate > 0 ? (
+                    <p className="text-xs text-gray-400 break-all">≈{showBalance ? `${fiatSymbol}${(Number(asset.usdValue || 0) * baseRate * fiatRate).toFixed(4)} ${fiatCode}` : '********'}</p>
+                  ) : (
+                    <p className="text-xs text-gray-400 break-all">≈{showBalance ? `${(Number(asset.usdValue || 0) * baseRate).toFixed(4)} ${baseCurrency}` : '********'}</p>
+                  )}
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 text-xs text-gray-400 gap-2">

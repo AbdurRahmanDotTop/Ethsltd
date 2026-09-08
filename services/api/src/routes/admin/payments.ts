@@ -92,29 +92,17 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   // Atomic approval
   await db.update(realManualDeposits).set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now }).where(eq(realManualDeposits.id, id));
   
-  // Read from the frozen snapshot in the deposit record
-  const finalAsset = 'USDT';
-  const finalAmount = parseFloat(deposit.net_usdt || deposit.amount.toString());
-  const feeAmount = parseFloat(deposit.total_fees || '0');
-  const isConverted = deposit.original_currency && deposit.original_currency !== 'USDT';
+  // Dynamically use the deposited asset/currency
+  const finalAsset = deposit.original_currency || deposit.asset || 'USDT';
+  const conversionRate = parseFloat(deposit.conversion_rate || '1');
+  const usdtFeeAmount = parseFloat(deposit.total_fees || '0');
+  
+  // Calculate the fee in the original currency
+  const feeAmountInOriginalCurrency = conversionRate > 0 ? (usdtFeeAmount / conversionRate) : 0;
+  const originalAmount = parseFloat(deposit.original_amount || deposit.amount.toString());
+  const finalAmount = Math.max(0, originalAmount - feeAmountInOriginalCurrency);
 
-  // Record conversion if applicable
-  if (isConverted) {
-    await db.insert(assetConversions).values({
-      id: crypto.randomUUID(),
-      userId: deposit.user_id,
-      originalAsset: deposit.original_currency as string,
-      originalAmount: deposit.original_amount as string,
-      conversionRate: deposit.conversion_rate as string,
-      grossUsdt: deposit.gross_usdt as string,
-      depositFee: feeAmount.toString(),
-      netUsdt: deposit.net_usdt as string,
-      status: 'COMPLETED',
-      referenceId: deposit.id,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
+  const feeAmount = feeAmountInOriginalCurrency; // Keep for walletTransactions
 
   // Find or create REAL wallet for the FINAL asset
   let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();
@@ -212,29 +200,17 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   // Atomic approval
   await db.update(realManualDeposits).set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now }).where(eq(realManualDeposits.id, id));
   
-  // Read from the frozen snapshot in the deposit record
-  const finalAsset = 'USDT';
-  const finalAmount = parseFloat(deposit.net_usdt || deposit.amount.toString());
-  const feeAmount = parseFloat(deposit.total_fees || '0');
-  const isConverted = deposit.original_currency && deposit.original_currency !== 'USDT';
+  // Dynamically use the deposited asset/currency
+  const finalAsset = deposit.original_currency || deposit.asset || 'USDT';
+  const conversionRate = parseFloat(deposit.conversion_rate || '1');
+  const usdtFeeAmount = parseFloat(deposit.total_fees || '0');
+  
+  // Calculate the fee in the original currency
+  const feeAmountInOriginalCurrency = conversionRate > 0 ? (usdtFeeAmount / conversionRate) : 0;
+  const originalAmount = parseFloat(deposit.original_amount || deposit.amount.toString());
+  const finalAmount = Math.max(0, originalAmount - feeAmountInOriginalCurrency);
 
-  // Record conversion if applicable
-  if (isConverted) {
-    await db.insert(assetConversions).values({
-      id: crypto.randomUUID(),
-      userId: deposit.user_id,
-      originalAsset: deposit.original_currency as string,
-      originalAmount: deposit.original_amount as string,
-      conversionRate: deposit.conversion_rate as string,
-      grossUsdt: deposit.gross_usdt as string,
-      depositFee: feeAmount.toString(),
-      netUsdt: deposit.net_usdt as string,
-      status: 'COMPLETED',
-      referenceId: deposit.id,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
+  const feeAmount = feeAmountInOriginalCurrency; // Keep for walletTransactions
 
   // Find or create REAL wallet for the FINAL asset
   let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();

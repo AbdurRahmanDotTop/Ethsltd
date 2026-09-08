@@ -48,12 +48,19 @@ export function RealWithdrawForm({ defaultAsset = "USDT" }: { defaultAsset?: str
   useEffect(() => {
     apiClient.getWalletBalances().then(res => setBalances(res.data || []));
     apiClient.getDepositSettings().then((res: any) => {
-      if (res.success && res.activeCryptoAssets && res.activeCryptoAssets.length > 0) {
-        setCryptoAssets(res.activeCryptoAssets);
-        if (res.activeCryptoAssets.includes(defaultAsset.toUpperCase())) {
-          form.setValue("asset", defaultAsset.toUpperCase());
-        } else {
-          form.setValue("asset", res.activeCryptoAssets[0]);
+      if (res.success) {
+        // Merge crypto assets and bank currencies into a unified list
+        const crypto = res.activeCryptoAssets || [];
+        const bank = res.bankCurrencies || [];
+        const merged = [...new Set([...crypto, ...bank])];
+        
+        if (merged.length > 0) {
+          setCryptoAssets(merged);
+          if (merged.includes(defaultAsset.toUpperCase())) {
+            form.setValue("asset", defaultAsset.toUpperCase());
+          } else {
+            form.setValue("asset", merged[0]);
+          }
         }
       }
     });

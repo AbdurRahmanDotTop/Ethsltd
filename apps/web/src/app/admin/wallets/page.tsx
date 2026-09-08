@@ -12,6 +12,7 @@ import { apiClient } from "@ethsltd/api-client";
 
 export default function AdminWalletsPage() {
   const [overview, setOverview] = useState<Record<string, any>>({});
+  const [rates, setRates] = useState<Record<string, number>>({});
   const [networks, setNetworks] = useState<any[]>([]);
   const [userWallets, setUserWallets] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,6 +37,12 @@ export default function AdminWalletsPage() {
       if (overviewRes.success) {
         setOverview(overviewRes.data.overview);
         setNetworks(overviewRes.data.networks);
+        if (overviewRes.data.rates) {
+          setRates(overviewRes.data.rates);
+          if (Object.keys(overviewRes.data.rates).length > 0 && !Object.keys(overviewRes.data.rates).includes(adjustAsset)) {
+            setAdjustAsset(Object.keys(overviewRes.data.rates)[0]);
+          }
+        }
       }
       if (usersRes.success) {
         setUserWallets(usersRes.data);
@@ -219,7 +226,11 @@ export default function AdminWalletsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-1 block">Asset</label>
-                  <input type="text" value={adjustAsset} onChange={e => setAdjustAsset(e.target.value.toUpperCase())} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="USDT" required />
+                  <select value={adjustAsset} onChange={e => setAdjustAsset(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" required>
+                    {Object.keys(rates).map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Wallet Type</label>
