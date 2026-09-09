@@ -59,11 +59,11 @@ export function GlobalWalletDashboard() {
   const cryptoBalances = balances.filter(b => b.type === 'CRYPTO');
   const fiatBalances = balances.filter(b => b.type === 'FIAT');
 
-  const totalUsdt = cryptoBalances.reduce((acc, b) => acc + (b.usdValue || 0), 0);
-  const availableUsdt = cryptoBalances.reduce((acc, b) => {
-    const price = b.total > 0 ? (b.usdValue || 0) / b.total : 0;
-    return acc + ((b.available || 0) * price);
-  }, 0);
+  const usdtBalance = cryptoBalances.find(b => b.symbol === 'USDT');
+  const usdcBalance = cryptoBalances.find(b => b.symbol === 'USDC');
+  
+  const totalUsdt = (usdtBalance?.total || 0) + (usdcBalance?.total || 0);
+  const availableUsdt = (usdtBalance?.available || 0) + (usdcBalance?.available || 0);
 
   const baseCurrencyInfo = publicRates.find(r => r.code === baseCurrency);
   const baseRate = parseFloat(baseCurrencyInfo?.ratePerUsdt || '1');

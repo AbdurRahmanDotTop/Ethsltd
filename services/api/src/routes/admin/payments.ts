@@ -98,15 +98,20 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
         .set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now })
         .where(eq(realManualDeposits.id, id));
       
-      const finalAsset = 'USDT';
-      const finalAmountStr = deposit.expected_wallet_credit || deposit.net_usdt || deposit.gross_usdt || deposit.amount.toString();
-      const finalAmount = Math.max(0, parseFloat(finalAmountStr));
-      
+      const { calculateDepositPreview } = require('../../services/calculations');
       const originalCurrency = deposit.original_currency || deposit.asset || 'USDT';
       const originalAmountStr = deposit.original_amount || deposit.amount.toString();
-      const conversionRateStr = deposit.conversion_rate || '1';
-      const grossUsdtStr = deposit.gross_usdt || finalAmountStr;
-      const totalFeesStr = deposit.total_fees || deposit.deposit_fee || '0';
+      const amountNum = parseFloat(originalAmountStr);
+      
+      // Calculate live conversion
+      const preview = await calculateDepositPreview(db, amountNum, originalCurrency, null);
+      
+      const finalAsset = 'USDT';
+      const finalAmount = preview.netUsdt;
+      
+      const conversionRateStr = preview.conversionRate.toString();
+      const grossUsdtStr = preview.grossUsdt.toString();
+      const totalFeesStr = preview.totalFees.toString();
 
       // Find or create REAL wallet for the FINAL asset (USDT)
       let wallet = await tx.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();
@@ -123,8 +128,9 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
       
       // Ledger
       const ltDisplayId = await generateBusinessId(tx, null, 'LTXN');
+      const ledgerTxId = crypto.randomUUID();
       await tx.insert(ledgerTransactions).values({ 
-        id: crypto.randomUUID(),
+        id: ledgerTxId,
         displayId: ltDisplayId,
         idempotencyKey: `MANUAL_DEP_APPROVE_${deposit.id}`,
         referenceType: 'DEPOSIT', 
@@ -133,7 +139,46 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
         createdAt: now
       });
       
-      // Wallet Transaction History
+      // Detailed Wallet Transaction History
+      if (originalCurrency !== 'USDT') {
+         const originalTxId = await generateBusinessId(tx, null, 'WTXN');
+         await tx.insert(walletTransactions).values({
+           id: crypto.randomUUID(),
+           displayId: originalTxId,
+           userId: deposit.user_id,
+           type: 'DEPOSIT',
+           assetSymbol: originalCurrency,
+           amount: originalAmountStr,
+           fee: '0',
+           status: 'COMPLETED',
+           network: 'Manual',
+           reference: deposit.payment_reference,
+           createdAt: now,
+           updatedAt: now,
+         });
+
+         const conversionTxId = await generateBusinessId(tx, null, 'WTXN');
+         await tx.insert(walletTransactions).values({
+           id: crypto.randomUUID(),
+           displayId: conversionTxId,
+           userId: deposit.user_id,
+           type: 'CONVERSION',
+           assetSymbol: 'USDT',
+           amount: grossUsdtStr,
+           fee: '0',
+           status: 'COMPLETED',
+           network: 'System',
+           reference: `Converted from ${originalCurrency}`,
+           originalCurrency: originalCurrency,
+           originalAmount: originalAmountStr,
+           conversionRate: conversionRateStr,
+           grossAmount: grossUsdtStr,
+           netAmount: grossUsdtStr,
+           createdAt: now,
+           updatedAt: now,
+         });
+      }
+      
       const wtDisplayId = await generateBusinessId(tx, null, 'WTXN');
       await tx.insert(walletTransactions).values({
         id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
@@ -216,15 +261,20 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
         .set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now })
         .where(eq(realManualDeposits.id, id));
       
-      const finalAsset = 'USDT';
-      const finalAmountStr = deposit.expected_wallet_credit || deposit.net_usdt || deposit.gross_usdt || deposit.amount.toString();
-      const finalAmount = Math.max(0, parseFloat(finalAmountStr));
-      
+      const { calculateDepositPreview } = require('../../services/calculations');
       const originalCurrency = deposit.original_currency || deposit.asset || 'USDT';
       const originalAmountStr = deposit.original_amount || deposit.amount.toString();
-      const conversionRateStr = deposit.conversion_rate || '1';
-      const grossUsdtStr = deposit.gross_usdt || finalAmountStr;
-      const totalFeesStr = deposit.total_fees || deposit.deposit_fee || '0';
+      const amountNum = parseFloat(originalAmountStr);
+      
+      // Calculate live conversion
+      const preview = await calculateDepositPreview(db, amountNum, originalCurrency, null);
+      
+      const finalAsset = 'USDT';
+      const finalAmount = preview.netUsdt;
+      
+      const conversionRateStr = preview.conversionRate.toString();
+      const grossUsdtStr = preview.grossUsdt.toString();
+      const totalFeesStr = preview.totalFees.toString();
 
       // Find or create REAL wallet for the FINAL asset
       let wallet = await tx.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();
@@ -239,8 +289,9 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
       
       // Ledger
       const ltDisplayId = await generateBusinessId(tx, null, 'LTXN');
+      const ledgerTxId = crypto.randomUUID();
       await tx.insert(ledgerTransactions).values({ 
-        id: crypto.randomUUID(),
+        id: ledgerTxId,
         displayId: ltDisplayId,
         idempotencyKey: `BANK_DEP_APPROVE_${deposit.id}`,
         referenceType: 'DEPOSIT', 
@@ -248,6 +299,46 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
         status: 'COMMITTED', 
         createdAt: now
       });
+
+      // Detailed Wallet Transaction History
+      if (originalCurrency !== 'USDT') {
+         const originalTxId = await generateBusinessId(tx, null, 'WTXN');
+         await tx.insert(walletTransactions).values({
+           id: crypto.randomUUID(),
+           displayId: originalTxId,
+           userId: deposit.user_id,
+           type: 'DEPOSIT',
+           assetSymbol: originalCurrency,
+           amount: originalAmountStr,
+           fee: '0',
+           status: 'COMPLETED',
+           network: 'Bank',
+           reference: deposit.payment_reference,
+           createdAt: now,
+           updatedAt: now,
+         });
+
+         const conversionTxId = await generateBusinessId(tx, null, 'WTXN');
+         await tx.insert(walletTransactions).values({
+           id: crypto.randomUUID(),
+           displayId: conversionTxId,
+           userId: deposit.user_id,
+           type: 'CONVERSION',
+           assetSymbol: 'USDT',
+           amount: grossUsdtStr,
+           fee: '0',
+           status: 'COMPLETED',
+           network: 'System',
+           reference: `Converted from ${originalCurrency}`,
+           originalCurrency: originalCurrency,
+           originalAmount: originalAmountStr,
+           conversionRate: conversionRateStr,
+           grossAmount: grossUsdtStr,
+           netAmount: grossUsdtStr,
+           createdAt: now,
+           updatedAt: now,
+         });
+      }
       
       // Wallet Transaction History
       const wtDisplayId = await generateBusinessId(tx, null, 'WTXN');
@@ -260,7 +351,7 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
         amount: finalAmount.toString(),
         fee: totalFeesStr,
         status: 'COMPLETED',
-        network: 'Bank Transfer',
+        network: 'Bank',
         reference: deposit.payment_reference,
         originalCurrency: originalCurrency,
         originalAmount: originalAmountStr,

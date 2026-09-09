@@ -28,12 +28,31 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   const [newPassword, setNewPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false);
 
+  const [rates, setRates] = useState<Record<string, number>>({});
+
   useEffect(() => {
     async function load() {
       try {
-        const res = await apiClient.getAdminUserDetails(id);
-        if (res.success && res.data) {
-          setUser(res.data);
+        const [userRes, ratesRes] = await Promise.all([
+          apiClient.getAdminUserDetails(id),
+          apiClient.getPublicCurrencyRates()
+        ]);
+        
+        if (userRes.success && userRes.data) {
+          setUser(userRes.data);
+        }
+        
+        if (ratesRes.success && ratesRes.list) {
+          const ratesMap: Record<string, number> = {};
+          ratesRes.list.forEach((r: any) => {
+            if (r.status === 'ACTIVE') {
+              ratesMap[r.code] = parseFloat(r.ratePerUsdt) || 1;
+            }
+          });
+          setRates(ratesMap);
+          if (!Object.keys(ratesMap).includes(assetSymbol) && Object.keys(ratesMap).length > 0) {
+            setAssetSymbol(Object.keys(ratesMap)[0]);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -244,7 +263,15 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">Asset Symbol</label>
-                        <input type="text" value={assetSymbol} onChange={e => setAssetSymbol(e.target.value.toUpperCase())} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="USDT" />
+                        {Object.keys(rates).length > 0 ? (
+                          <select value={assetSymbol} onChange={e => setAssetSymbol(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" required>
+                            {Object.keys(rates).map(r => (
+                              <option key={r} value={r}>{r}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input type="text" value={assetSymbol} onChange={e => setAssetSymbol(e.target.value.toUpperCase())} className="w-full bg-background border border-border rounded px-3 py-2 text-sm" placeholder="USDT" />
+                        )}
                       </div>
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">Wallet Type</label>

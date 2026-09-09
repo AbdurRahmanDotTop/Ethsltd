@@ -742,44 +742,61 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
   try {
     const { and, eq } = require('drizzle-orm');
     const { wallets, ledgerTransactions, walletTransactions, currencyRates } = require('database');
+    const { calculateDepositPreview } = require('../../services/calculations');
     
     // Validate that the asset is an active configured currency/asset
     const activeAsset = await db.select().from(currencyRates).where(
       and(eq(currencyRates.code, assetSymbol), eq(currencyRates.status, 'ACTIVE'))
     ).get();
     
-    if (!activeAsset) {
+    if (!activeAsset && assetSymbol !== 'USDT') {
       return c.json({ success: false, error: `Asset ${assetSymbol} is not configured or inactive in Currency Rates.` }, 400);
     }
 
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      return c.json({ success: false, error: 'Invalid amount' }, 400);
+    }
+
+    // Convert to USDT using centralized logic
+    const preview = await calculateDepositPreview(db, amountNum, assetSymbol, null);
+    
+    // For admin adjustments, we do not deduct deposit fees, so we use grossUsdt
+    const usdtAdjustment = preview.grossUsdt;
+    const finalAsset = 'USDT';
+
     let wallet = await db.select().from(wallets).where(
-      and(eq(wallets.userId, userId), eq(wallets.assetSymbol, assetSymbol))
+      and(eq(wallets.userId, userId), eq(wallets.assetSymbol, finalAsset))
     ).get();
 
     if (!wallet) {
       if (action === 'DEBIT') {
         return c.json({ success: false, error: 'Insufficient balance to debit' }, 400);
       }
-      await db.insert(wallets).values({
+      const { generateBusinessId } = require('../../services/id-generator');
+      const displayId = await generateBusinessId(db, null, 'WALL');
+      wallet = {
         id: crypto.randomUUID(),
+        displayId,
         userId,
-        assetSymbol,
-        balance: targetField === 'balance' ? amount.toString() : '0',
-        lockedBalance: targetField === 'lockedBalance' ? amount.toString() : '0',
-        escrowBalance: targetField === 'escrowBalance' ? amount.toString() : '0',
+        assetSymbol: finalAsset,
+        balance: '0',
+        lockedBalance: '0',
+        escrowBalance: '0',
         createdAt: new Date(),
         updatedAt: new Date()
-      });
+      };
+      wallet[targetField] = usdtAdjustment.toString();
+      await db.insert(wallets).values(wallet);
     } else {
       let currentBalance = parseFloat((wallet as any)[targetField] as string || '0');
-      let adjustment = parseFloat(amount);
       if (action === 'DEBIT') {
-        if (currentBalance < adjustment) {
-          return c.json({ success: false, error: 'Insufficient balance' }, 400);
+        if (currentBalance < usdtAdjustment) {
+          return c.json({ success: false, error: `Insufficient USDT balance. Needed: ${usdtAdjustment}, Available: ${currentBalance}` }, 400);
         }
-        currentBalance -= adjustment;
+        currentBalance -= usdtAdjustment;
       } else {
-        currentBalance += adjustment;
+        currentBalance += usdtAdjustment;
       }
       
       const updateData: any = { updatedAt: new Date() };
@@ -788,38 +805,82 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
       await db.update(wallets).set(updateData).where(eq(wallets.id, wallet.id));
     }
 
+    const { generateBusinessId } = require('../../services/id-generator');
+
     // Ledger Entry for Admin Override
     const ltDisplayId = await generateBusinessId(db, null, 'LTXN');
+    const idempotencyKey = `admin-adjust-${Date.now()}-${userId}`;
+    const ledgerTxId = crypto.randomUUID();
     await db.insert(ledgerTransactions).values({
-      id: crypto.randomUUID(),
+      id: ledgerTxId,
       displayId: ltDisplayId,
-      idempotencyKey: `admin-adjust-${Date.now()}-${userId}`,
+      idempotencyKey,
       referenceType: 'ADJUSTMENT',
       referenceId: userId,
       status: 'COMMITTED',
       createdAt: new Date(),
     });
 
-    // Wallet Transaction Entry for User History
+    // Wallet Transaction Entry (Original Asset)
+    if (assetSymbol !== 'USDT') {
+       const originalTxId = await generateBusinessId(db, null, 'WTXN');
+       await db.insert(walletTransactions).values({
+         id: crypto.randomUUID(),
+         displayId: originalTxId,
+         userId,
+         type: 'ADJUSTMENT',
+         assetSymbol: assetSymbol,
+         amount: action === 'DEBIT' ? `-${amountNum}` : amountNum.toString(),
+         status: 'COMPLETED',
+         reference: `${notes || 'Admin Adjustment'} (Original Deposit)`,
+         createdAt: new Date(),
+         updatedAt: new Date()
+       });
+
+       const conversionTxId = await generateBusinessId(db, null, 'WTXN');
+       await db.insert(walletTransactions).values({
+         id: crypto.randomUUID(),
+         displayId: conversionTxId,
+         userId,
+         type: 'CONVERSION',
+         assetSymbol: 'USDT',
+         originalCurrency: assetSymbol,
+         originalAmount: amountNum.toString(),
+         conversionRate: preview.conversionRate.toString(),
+         grossAmount: usdtAdjustment.toString(),
+         netAmount: usdtAdjustment.toString(),
+         amount: action === 'DEBIT' ? `-${usdtAdjustment}` : usdtAdjustment.toString(),
+         status: 'COMPLETED',
+         reference: `Converted from ${assetSymbol}`,
+         createdAt: new Date(),
+         updatedAt: new Date()
+       });
+    }
+
+    // Wallet Transaction Entry (USDT Credit)
     const wtDisplayId = await generateBusinessId(db, null, 'WTXN');
     await db.insert(walletTransactions).values({
       id: crypto.randomUUID(),
       displayId: wtDisplayId,
       userId,
       type: 'ADJUSTMENT',
-      assetSymbol,
-      amount: action === 'DEBIT' ? `-${amount}` : amount,
-      fee: '0',
+      assetSymbol: finalAsset,
+      amount: action === 'DEBIT' ? `-${usdtAdjustment}` : usdtAdjustment.toString(),
+      originalCurrency: assetSymbol,
+      originalAmount: amountNum.toString(),
+      conversionRate: preview.conversionRate.toString(),
+      grossAmount: usdtAdjustment.toString(),
+      netAmount: usdtAdjustment.toString(),
       status: 'COMPLETED',
       reference: notes || 'Admin Adjustment',
       createdAt: new Date(),
       updatedAt: new Date()
     });
 
-    return c.json({ success: true });
-  } catch (error) {
+    return c.json({ success: true, creditedUsdt: usdtAdjustment });
+  } catch (error: any) {
     console.error(error);
-    return c.json({ success: false, error: 'Failed to adjust wallet balance' }, 500);
+    return c.json({ success: false, error: error.message || 'Failed to adjust wallet balance' }, 500);
   }
 });
 
