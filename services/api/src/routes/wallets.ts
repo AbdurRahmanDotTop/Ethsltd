@@ -221,12 +221,25 @@ walletRoutes.get('/transactions', async (c) => {
     id: tx.id,
     type: tx.type,
     asset: tx.assetSymbol,
-    amount: tx.type === 'WITHDRAWAL' ? -parseFloat(tx.amount) : parseFloat(tx.amount),
-    fee: parseFloat(tx.fee),
+    assetSymbol: tx.assetSymbol,
+    // CONVERSION amounts are already stored with the correct sign (negative for Step 2).
+    // WITHDRAWAL amounts are stored as positive but represent a debit — negate them.
+    // All other types (DEPOSIT, ADJUSTMENT, etc.) are stored as signed correctly.
+    amount: tx.type === 'WITHDRAWAL'
+      ? -Math.abs(parseFloat(tx.amount))
+      : parseFloat(tx.amount),
+    fee: parseFloat(tx.fee || '0'),
     status: tx.status,
     destination: tx.destination,
     network: tx.network,
     reference: tx.reference,
+    // Pass through breakdown fields so the UI can trace the full conversion chain
+    originalCurrency: tx.originalCurrency || null,
+    originalAmount: tx.originalAmount ? parseFloat(tx.originalAmount) : null,
+    conversionRate: tx.conversionRate ? parseFloat(tx.conversionRate) : null,
+    grossAmount: tx.grossAmount ? parseFloat(tx.grossAmount) : null,
+    totalFees: tx.totalFees ? parseFloat(tx.totalFees) : null,
+    netAmount: tx.netAmount ? parseFloat(tx.netAmount) : null,
     createdAt: tx.createdAt.toISOString(),
     updatedAt: tx.updatedAt.toISOString(),
   }));

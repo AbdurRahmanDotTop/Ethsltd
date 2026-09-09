@@ -348,36 +348,82 @@ export function GlobalWalletDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {transactions.map((tx: any, i: number) => (
-                    <tr key={i} className="hover:bg-white/5">
-                      <td className="px-4 py-3 text-gray-300">
-                        {new Date(tx.createdAt).toLocaleDateString()} {new Date(tx.createdAt).toLocaleTimeString()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${tx.type === 'DEPOSIT' ? 'bg-green-500/20 text-green-400' : tx.type === 'WITHDRAWAL' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                          {tx.type}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-bold">
-                        {tx.originalCurrency && tx.originalCurrency !== (tx.assetSymbol || tx.asset) ? (
-                          <div className="flex flex-col">
-                            <span>{tx.assetSymbol || tx.asset}</span>
-                            <span className="text-[10px] text-gray-500 font-normal">Converted from {tx.originalCurrency}</span>
-                          </div>
-                        ) : (
-                          tx.assetSymbol || tx.asset
-                        )}
-                      </td>
-                      <td className={`px-4 py-3 text-right font-medium ${Number(tx.amount) < 0 ? 'text-red-400' : 'text-green-400'}`}>
-                        {Number(tx.amount) > 0 ? '+' : ''}{Number(tx.amount).toFixed(4)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                         <span className={`text-xs ${tx.status === 'COMPLETED' || tx.status === 'APPROVED' ? 'text-green-400' : tx.status === 'PENDING' ? 'text-yellow-400' : 'text-red-400'}`}>
-                           {tx.status}
-                         </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {transactions.map((tx: any, i: number) => {
+                    const asset = tx.assetSymbol || tx.asset || '';
+                    const amt   = Number(tx.amount);
+                    // Use 2 decimal places for stablecoins/fiat, 8 for other crypto
+                    const stableOrFiat = ['USDT', 'USDC', 'USD', 'INR', 'EUR', 'GBP'].includes(asset.toUpperCase());
+                    const amtDisplay   = amt.toFixed(stableOrFiat ? 2 : 8);
+
+                    // Determine human-readable type label
+                    let typeLabel = tx.type as string;
+                    let typeBadgeClass = 'bg-blue-500/20 text-blue-400';
+                    if (tx.type === 'DEPOSIT' && asset === 'USDT') {
+                      typeLabel = 'DEPOSIT';
+                      typeBadgeClass = 'bg-green-500/20 text-green-400';
+                    } else if (tx.type === 'DEPOSIT') {
+                      typeLabel = 'DEPOSIT';
+                      typeBadgeClass = 'bg-teal-500/20 text-teal-400';
+                    } else if (tx.type === 'CONVERSION') {
+                      typeLabel = 'CONVERSION';
+                      typeBadgeClass = 'bg-yellow-500/20 text-yellow-400';
+                    } else if (tx.type === 'WITHDRAWAL') {
+                      typeLabel = 'WITHDRAWAL';
+                      typeBadgeClass = 'bg-red-500/20 text-red-400';
+                    }
+
+                    // Determine human-readable status label
+                    let statusLabel = tx.status as string;
+                    let statusClass = 'text-gray-400';
+                    if (tx.type === 'CONVERSION' && tx.status === 'COMPLETED') {
+                      statusLabel = 'Converted to USDT';
+                      statusClass = 'text-yellow-400';
+                    } else if (tx.type === 'DEPOSIT' && asset === 'USDT' && tx.status === 'COMPLETED') {
+                      statusLabel = 'Deposit Completed';
+                      statusClass = 'text-green-400';
+                    } else if (tx.type === 'DEPOSIT' && tx.status === 'COMPLETED') {
+                      statusLabel = 'Deposit / Received';
+                      statusClass = 'text-teal-400';
+                    } else if (tx.status === 'COMPLETED' || tx.status === 'APPROVED') {
+                      statusLabel = 'Completed';
+                      statusClass = 'text-green-400';
+                    } else if (tx.status === 'PENDING') {
+                      statusLabel = 'Pending';
+                      statusClass = 'text-yellow-400';
+                    } else if (tx.status === 'FAILED' || tx.status === 'REJECTED') {
+                      statusLabel = 'Failed';
+                      statusClass = 'text-red-400';
+                    }
+
+                    return (
+                      <tr key={i} className="hover:bg-white/5">
+                        <td className="px-4 py-3 text-gray-300">
+                          {new Date(tx.createdAt).toLocaleDateString()} {new Date(tx.createdAt).toLocaleTimeString()}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${typeBadgeClass}`}>
+                            {typeLabel}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-bold">
+                          {tx.originalCurrency && tx.originalCurrency !== asset && tx.type !== 'CONVERSION' ? (
+                            <div className="flex flex-col">
+                              <span>{asset}</span>
+                              <span className="text-[10px] text-gray-500 font-normal">from {tx.originalCurrency}</span>
+                            </div>
+                          ) : (
+                            asset
+                          )}
+                        </td>
+                        <td className={`px-4 py-3 text-right font-medium tabular-nums ${amt < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                          {amt > 0 ? '+' : ''}{amtDisplay}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className={`text-xs ${statusClass}`}>{statusLabel}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
