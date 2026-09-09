@@ -23,5 +23,21 @@ export type Variables = {
 };
 
 export const createDb = (d1: D1Database) => {
-  return drizzle(d1, { schema });
+  const db = drizzle(d1, { schema });
+  
+  const originalTx = db.transaction.bind(db);
+  // @ts-ignore - Patching transaction to fallback if D1 fails
+  db.transaction = async (cb: any) => {
+    try {
+      return await originalTx(cb);
+    } catch (e: any) {
+      if (e.message && e.message.toLowerCase().includes('begin')) {
+        console.warn('D1 transaction begin failed, falling back to sequential execution');
+        return await cb(db);
+      }
+      throw e;
+    }
+  };
+  
+  return db;
 };

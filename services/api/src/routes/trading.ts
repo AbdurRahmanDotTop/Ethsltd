@@ -1,5 +1,15 @@
 import { Hono } from 'hono';
-const runTx = async (db: any, cb: any) => await db.transaction(cb);
+const runTx = async (db: any, cb: any) => {
+  try {
+    return await db.transaction(cb);
+  } catch (e: any) {
+    if (e.message && e.message.toLowerCase().includes('begin')) {
+      console.warn('D1 transaction begin failed, falling back to sequential execution');
+      return await cb(db);
+    }
+    throw e;
+  }
+};
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { EmailService } from '../services/email';
