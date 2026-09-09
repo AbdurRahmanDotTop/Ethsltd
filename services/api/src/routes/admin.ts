@@ -1959,3 +1959,51 @@ adminRoutes.get('/exports', async (c) => {
   }
 });
 
+// GET /api/v1/admin/transactions
+adminRoutes.get('/transactions', async (c) => {
+  const db = c.get('db');
+  const admin = c.get('user');
+  
+  if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN') {
+    return c.json({ success: false, error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    const { eq, desc } = require('drizzle-orm');
+    const { walletTransactions, users } = require('database');
+    
+    // Fetch all transactions ordered by descending date
+    const transactions = await db.select({
+      id: walletTransactions.id,
+      displayId: walletTransactions.displayId,
+      userId: walletTransactions.userId,
+      type: walletTransactions.type,
+      asset: walletTransactions.assetSymbol,
+      amount: walletTransactions.amount,
+      fee: walletTransactions.fee,
+      status: walletTransactions.status,
+      network: walletTransactions.network,
+      destination: walletTransactions.destination,
+      reference: walletTransactions.reference,
+      createdAt: walletTransactions.createdAt,
+      originalCurrency: walletTransactions.originalCurrency,
+      originalAmount: walletTransactions.originalAmount,
+      conversionRate: walletTransactions.conversionRate,
+      grossAmount: walletTransactions.grossAmount,
+      totalFees: walletTransactions.totalFees,
+      netAmount: walletTransactions.netAmount,
+      userName: users.displayName,
+      userEmail: users.email
+    })
+    .from(walletTransactions)
+    .leftJoin(users, eq(walletTransactions.userId, users.id))
+    .orderBy(desc(walletTransactions.createdAt))
+    .limit(500)
+    .all();
+
+    return c.json({ success: true, data: transactions });
+  } catch (error) {
+    console.error('Fetch Admin Transactions Error:', error);
+    return c.json({ success: false, error: 'Failed to fetch transactions' }, 500);
+  }
+});

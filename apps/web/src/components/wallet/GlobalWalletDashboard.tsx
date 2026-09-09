@@ -358,7 +358,16 @@ export function GlobalWalletDashboard() {
                           {tx.type}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-bold">{tx.assetSymbol || tx.asset}</td>
+                      <td className="px-4 py-3 font-bold">
+                        {tx.originalCurrency && tx.originalCurrency !== (tx.assetSymbol || tx.asset) ? (
+                          <div className="flex flex-col">
+                            <span>{tx.assetSymbol || tx.asset}</span>
+                            <span className="text-[10px] text-gray-500 font-normal">Converted from {tx.originalCurrency}</span>
+                          </div>
+                        ) : (
+                          tx.assetSymbol || tx.asset
+                        )}
+                      </td>
                       <td className={`px-4 py-3 text-right font-medium ${Number(tx.amount) < 0 ? 'text-red-400' : 'text-green-400'}`}>
                         {Number(tx.amount) > 0 ? '+' : ''}{Number(tx.amount).toFixed(4)}
                       </td>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useWalletStore } from "@/stores/wallet-store";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,30 @@ import { ArrowRight, User, ShieldCheck, Wallet } from "lucide-react";
 export default function AccountOverviewPage() {
   const { user } = useAuthStore();
   const { balances, fetchBalances } = useWalletStore();
+  const [fiatRate, setFiatRate] = useState<number>(0);
+  const [fiatSymbol, setFiatSymbol] = useState<string>('');
+  const [fiatCode, setFiatCode] = useState<string>('');
+
   useEffect(() => {
     fetchBalances();
+    const fetchRates = async () => {
+      try {
+        const { apiClient } = await import("@ethsltd/api-client");
+        const res = await apiClient.getPublicCurrencyRates();
+        if (res.success && res.list) {
+          const targetFiat = res.list.find((r: any) => r.code === 'INR' && r.status === 'ACTIVE') 
+                          || res.list.find((r: any) => r.code === 'USD' && r.status === 'ACTIVE');
+          if (targetFiat) {
+            setFiatRate(parseFloat(targetFiat.ratePerUsdt || '0'));
+            setFiatSymbol(targetFiat.symbol || '');
+            setFiatCode(targetFiat.code || '');
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch rates:", e);
+      }
+    };
+    fetchRates();
   }, [fetchBalances]);
 
   // Combine USDT and USDC for display
@@ -78,6 +100,11 @@ export default function AccountOverviewPage() {
           </div>
           <div className="pt-4 pb-2">
             <div className="text-3xl font-bold font-mono tracking-tight">{formattedBalance}</div>
+            {fiatRate > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                ≈ {fiatSymbol}{(totalBalance * fiatRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {fiatCode}
+              </p>
+            )}
           </div>
           <div className="mt-auto pt-6">
             <Button className="w-full" asChild>

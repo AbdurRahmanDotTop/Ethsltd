@@ -5,6 +5,7 @@ import { Bindings, Variables } from '../db';
 import { cregisDeposits, wallets, ledgerTransactions, ledgerEntries, ledgerAccounts, walletTransactions } from 'database';
 import { CregisClient } from '../services/cregis';
 import { generateBusinessId } from '../services/id-generator';
+import { calculateDepositPreview } from '../services/calculations';
 
 export const webhookRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -49,22 +50,31 @@ webhookRoutes.post('/cregis', async (c) => {
         }
 
         const now = new Date();
+        const parsedAmount = parseFloat(amount);
+        
+        // Calculate equivalent USDT
+        const preview = await calculateDepositPreview(tx, parsedAmount, asset, null);
+        
+        const finalAsset = 'USDT';
+        const finalAmountStr = preview.netUsdt.toString();
         
         // 1. Get or create Real Wallet
-        let wallet = await tx.select().from(wallets).where(and(eq(wallets.userId, uid), eq(wallets.assetSymbol, asset))).get();
+        let wallet = await tx.select().from(wallets).where(and(eq(wallets.userId, uid), eq(wallets.assetSymbol, finalAsset))).get();
         if (!wallet) {
+          const displayId = await generateBusinessId(tx, null, 'WALL');
           await tx.insert(wallets).values({
             id: crypto.randomUUID(),
+            displayId,
             userId: uid,
-            assetSymbol: asset,
-            balance: amount.toString(),
+            assetSymbol: finalAsset,
+            balance: finalAmountStr,
             lockedBalance: '0',
             escrowBalance: '0',
             createdAt: now,
             updatedAt: now
           });
         } else {
-          const newBalance = (parseFloat(wallet.balance) + parseFloat(amount)).toString();
+          const newBalance = (parseFloat(wallet.balance) + parseFloat(finalAmountStr)).toString();
           await tx.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
         }
 
@@ -85,18 +95,27 @@ webhookRoutes.post('/cregis', async (c) => {
           updatedAt: now
         });
 
-        // 3. Insert WalletTransaction
+        // 3. Insert WalletTransaction with breakdown
         const wtDisplayId = await generateBusinessId(tx, null, 'WTXN');
         await tx.insert(walletTransactions).values({
           id: crypto.randomUUID(),
           displayId: wtDisplayId,
           userId: uid,
           type: 'DEPOSIT',
-          assetSymbol: asset,
-          amount: amount.toString(),
+          assetSymbol: finalAsset,
+          amount: finalAmountStr,
+          fee: preview.totalFees.toString(),
           status: 'COMPLETED',
           destination: address,
           reference: txid,
+          
+          originalCurrency: asset,
+          originalAmount: amount.toString(),
+          conversionRate: preview.conversionRate.toString(),
+          grossAmount: preview.grossUsdt.toString(),
+          totalFees: preview.totalFees.toString(),
+          netAmount: finalAmountStr,
+
           createdAt: now,
           updatedAt: now
         });

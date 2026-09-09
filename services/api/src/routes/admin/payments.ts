@@ -86,70 +86,80 @@ adminPaymentRoutes.post('/manual-deposits/:id/approve', async (c) => {
   const user = c.get('user');
   const now = new Date();
   
-  const deposit = await db.select().from(realManualDeposits).where(eq(realManualDeposits.id, id)).get();
-  if (!deposit || deposit.status !== 'PENDING') return c.json({ success: false, error: 'Invalid deposit' }, 400);
-  
-  // Atomic approval
-  await db.update(realManualDeposits).set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now }).where(eq(realManualDeposits.id, id));
-  
-  // Dynamically use the deposited asset/currency
-  const finalAsset = deposit.original_currency || deposit.asset || 'USDT';
-  const conversionRate = parseFloat(deposit.conversion_rate || '1');
-  const usdtFeeAmount = parseFloat(deposit.total_fees || '0');
-  
-  // Calculate the fee in the original currency
-  const feeAmountInOriginalCurrency = conversionRate > 0 ? (usdtFeeAmount / conversionRate) : 0;
-  const originalAmount = parseFloat(deposit.original_amount || deposit.amount.toString());
-  const finalAmount = Math.max(0, originalAmount - feeAmountInOriginalCurrency);
+  try {
+    await db.transaction(async (tx: any) => {
+      const deposit = await tx.select().from(realManualDeposits).where(eq(realManualDeposits.id, id)).get();
+      if (!deposit || deposit.status !== 'PENDING') {
+        throw new Error('Invalid deposit or already processed');
+      }
+      
+      // Atomic approval
+      await tx.update(realManualDeposits)
+        .set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now })
+        .where(eq(realManualDeposits.id, id));
+      
+      const finalAsset = 'USDT';
+      const finalAmountStr = deposit.expected_wallet_credit || deposit.net_usdt || deposit.gross_usdt || deposit.amount.toString();
+      const finalAmount = Math.max(0, parseFloat(finalAmountStr));
+      
+      const originalCurrency = deposit.original_currency || deposit.asset || 'USDT';
+      const originalAmountStr = deposit.original_amount || deposit.amount.toString();
+      const conversionRateStr = deposit.conversion_rate || '1';
+      const grossUsdtStr = deposit.gross_usdt || finalAmountStr;
+      const totalFeesStr = deposit.total_fees || deposit.deposit_fee || '0';
 
-  const feeAmount = feeAmountInOriginalCurrency; // Keep for walletTransactions
-
-  // Find or create REAL wallet for the FINAL asset
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();
-  if (!wallet) {
-    const walletId = crypto.randomUUID();
-    const displayId = await generateBusinessId(db, null, 'WALL');
-    await db.insert(wallets).values({
-      id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
+      // Find or create REAL wallet for the FINAL asset (USDT)
+      let wallet = await tx.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();
+      if (!wallet) {
+        const walletId = crypto.randomUUID();
+        const displayId = await generateBusinessId(tx, null, 'WALL');
+        await tx.insert(wallets).values({
+          id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: finalAmount.toString(), lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now
+        });
+      } else {
+        const newBalance = (parseFloat(wallet.balance) + finalAmount).toString();
+        await tx.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+      }
+      
+      // Ledger
+      const ltDisplayId = await generateBusinessId(tx, null, 'LTXN');
+      await tx.insert(ledgerTransactions).values({ 
+        id: crypto.randomUUID(),
+        displayId: ltDisplayId,
+        idempotencyKey: `MANUAL_DEP_APPROVE_${deposit.id}`,
+        referenceType: 'DEPOSIT', 
+        referenceId: deposit.id,
+        status: 'COMMITTED', 
+        createdAt: now
+      });
+      
+      // Wallet Transaction History
+      const wtDisplayId = await generateBusinessId(tx, null, 'WTXN');
+      await tx.insert(walletTransactions).values({
+        id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+        displayId: wtDisplayId,
+        userId: deposit.user_id,
+        type: 'DEPOSIT',
+        assetSymbol: finalAsset,
+        amount: finalAmount.toString(),
+        fee: totalFeesStr,
+        status: 'COMPLETED',
+        network: 'Manual',
+        reference: deposit.payment_reference,
+        originalCurrency: originalCurrency,
+        originalAmount: originalAmountStr,
+        conversionRate: conversionRateStr,
+        grossAmount: grossUsdtStr,
+        totalFees: totalFeesStr,
+        netAmount: finalAmount.toString(),
+        createdAt: now,
+        updatedAt: now,
+      });
     });
-    wallet = { id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now } as any;
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message || 'Failed to approve deposit' }, 400);
   }
-  
-  // Update wallet
-  const newBalance = (parseFloat(wallet!.balance) + finalAmount).toString();
-  await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
-  
-  // Ledger
-  const ltDisplayId = await generateBusinessId(db, null, 'LTXN');
-  await db.insert(ledgerTransactions).values({ 
-    id: crypto.randomUUID(),
-    displayId: ltDisplayId,
-    idempotencyKey: `MANUAL_DEP_APPROVE_${deposit.id}`,
-    referenceType: 'DEPOSIT', 
-    referenceId: deposit.id,
-
-    status: 'COMMITTED', 
-    createdAt: now
-  });
-  
-  // Wallet Transaction History
-  const wtDisplayId = await generateBusinessId(db, null, 'WTXN');
-  await db.insert(walletTransactions).values({
-    id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-    displayId: wtDisplayId,
-    userId: deposit.user_id,
-    type: 'DEPOSIT',
-    assetSymbol: finalAsset,
-    amount: finalAmount.toString(),
-    fee: feeAmount.toString(),
-    status: 'COMPLETED',
-    network: 'Manual',
-    reference: deposit.payment_reference,
-    createdAt: now,
-    updatedAt: now,
-  });
-  
-  return c.json({ success: true });
 });
 
 // Reject manual deposit
@@ -194,69 +204,78 @@ adminPaymentRoutes.post('/bank-deposits/:id/approve', async (c) => {
   const user = c.get('user');
   const now = new Date();
   
-  const deposit = await db.select().from(realManualDeposits).where(eq(realManualDeposits.id, id)).get();
-  if (!deposit || deposit.status !== 'PENDING') return c.json({ success: false, error: 'Invalid deposit' }, 400);
-  
-  // Atomic approval
-  await db.update(realManualDeposits).set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now }).where(eq(realManualDeposits.id, id));
-  
-  // Dynamically use the deposited asset/currency
-  const finalAsset = deposit.original_currency || deposit.asset || 'USDT';
-  const conversionRate = parseFloat(deposit.conversion_rate || '1');
-  const usdtFeeAmount = parseFloat(deposit.total_fees || '0');
-  
-  // Calculate the fee in the original currency
-  const feeAmountInOriginalCurrency = conversionRate > 0 ? (usdtFeeAmount / conversionRate) : 0;
-  const originalAmount = parseFloat(deposit.original_amount || deposit.amount.toString());
-  const finalAmount = Math.max(0, originalAmount - feeAmountInOriginalCurrency);
+  try {
+    await db.transaction(async (tx: any) => {
+      const deposit = await tx.select().from(realManualDeposits).where(eq(realManualDeposits.id, id)).get();
+      if (!deposit || deposit.status !== 'PENDING') {
+        throw new Error('Invalid deposit or already processed');
+      }
+      
+      // Atomic approval
+      await tx.update(realManualDeposits)
+        .set({ status: 'APPROVED', reviewed_by: user.id, reviewed_at: now })
+        .where(eq(realManualDeposits.id, id));
+      
+      const finalAsset = 'USDT';
+      const finalAmountStr = deposit.expected_wallet_credit || deposit.net_usdt || deposit.gross_usdt || deposit.amount.toString();
+      const finalAmount = Math.max(0, parseFloat(finalAmountStr));
+      
+      const originalCurrency = deposit.original_currency || deposit.asset || 'USDT';
+      const originalAmountStr = deposit.original_amount || deposit.amount.toString();
+      const conversionRateStr = deposit.conversion_rate || '1';
+      const grossUsdtStr = deposit.gross_usdt || finalAmountStr;
+      const totalFeesStr = deposit.total_fees || deposit.deposit_fee || '0';
 
-  const feeAmount = feeAmountInOriginalCurrency; // Keep for walletTransactions
-
-  // Find or create REAL wallet for the FINAL asset
-  let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();
-  if (!wallet) {
-    const walletId = crypto.randomUUID();
-    const displayId = await generateBusinessId(db, null, 'WALL');
-    await db.insert(wallets).values({ id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now });
-
-    wallet = { id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now } as any;
+      // Find or create REAL wallet for the FINAL asset
+      let wallet = await tx.select().from(wallets).where(and(eq(wallets.userId, deposit.user_id), eq(wallets.assetSymbol, finalAsset))).get();
+      if (!wallet) {
+        const walletId = crypto.randomUUID();
+        const displayId = await generateBusinessId(tx, null, 'WALL');
+        await tx.insert(wallets).values({ id: walletId, displayId, userId: deposit.user_id, assetSymbol: finalAsset, balance: finalAmount.toString(), lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now });
+      } else {
+        const newBalance = (parseFloat(wallet.balance) + finalAmount).toString();
+        await tx.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet.id));
+      }
+      
+      // Ledger
+      const ltDisplayId = await generateBusinessId(tx, null, 'LTXN');
+      await tx.insert(ledgerTransactions).values({ 
+        id: crypto.randomUUID(),
+        displayId: ltDisplayId,
+        idempotencyKey: `BANK_DEP_APPROVE_${deposit.id}`,
+        referenceType: 'DEPOSIT', 
+        referenceId: deposit.id,
+        status: 'COMMITTED', 
+        createdAt: now
+      });
+      
+      // Wallet Transaction History
+      const wtDisplayId = await generateBusinessId(tx, null, 'WTXN');
+      await tx.insert(walletTransactions).values({
+        id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+        displayId: wtDisplayId,
+        userId: deposit.user_id,
+        type: 'DEPOSIT',
+        assetSymbol: finalAsset,
+        amount: finalAmount.toString(),
+        fee: totalFeesStr,
+        status: 'COMPLETED',
+        network: 'Bank Transfer',
+        reference: deposit.payment_reference,
+        originalCurrency: originalCurrency,
+        originalAmount: originalAmountStr,
+        conversionRate: conversionRateStr,
+        grossAmount: grossUsdtStr,
+        totalFees: totalFeesStr,
+        netAmount: finalAmount.toString(),
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message || 'Failed to approve deposit' }, 400);
   }
-  
-  // Update wallet
-  const newBalance = (parseFloat(wallet!.balance) + finalAmount).toString();
-  await db.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, wallet!.id));
-  
-  // Ledger
-  const ltDisplayId = await generateBusinessId(db, null, 'LTXN');
-  await db.insert(ledgerTransactions).values({ 
-    id: crypto.randomUUID(),
-    displayId: ltDisplayId,
-    idempotencyKey: `BANK_DEP_APPROVE_${deposit.id}`,
-    referenceType: 'DEPOSIT', 
-    referenceId: deposit.id,
-
-    status: 'COMMITTED', 
-    createdAt: now
-  });
-  
-  // Wallet Transaction History
-  const wtDisplayId = await generateBusinessId(db, null, 'WTXN');
-  await db.insert(walletTransactions).values({
-    id: `TX-DEP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-    displayId: wtDisplayId,
-    userId: deposit.user_id,
-    type: 'DEPOSIT',
-    assetSymbol: finalAsset,
-    amount: finalAmount.toString(),
-    fee: feeAmount.toString(),
-    status: 'COMPLETED',
-    network: 'Bank Transfer',
-    reference: deposit.payment_reference,
-    createdAt: now,
-    updatedAt: now,
-  });
-  
-  return c.json({ success: true });
 });
 
 // Reject bank deposit
