@@ -61,14 +61,14 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
   // Update crypto from fiat
   useEffect(() => {
     if (ad && fiatAmount !== undefined && !isNaN(fiatAmount) && document.activeElement?.id === "fiatAmount") {
-      setValue("cryptoAmount", fiatAmount / ad.price, { shouldValidate: true });
+      setValue("cryptoAmount", Number((fiatAmount / ad.price).toFixed(8)), { shouldValidate: true });
     }
   }, [fiatAmount, ad, setValue]);
 
   // Update fiat from crypto
   useEffect(() => {
     if (ad && cryptoAmount !== undefined && !isNaN(cryptoAmount) && document.activeElement?.id === "cryptoAmount") {
-      setValue("fiatAmount", cryptoAmount * ad.price, { shouldValidate: true });
+      setValue("fiatAmount", Number((cryptoAmount * ad.price).toFixed(2)), { shouldValidate: true });
     }
   }, [cryptoAmount, ad, setValue]);
 
@@ -83,15 +83,15 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
       toast.error('Please select a payment method.');
       return;
     }
-    if (data.fiatAmount < ad.minLimit) {
-      toast.error(`Minimum order amount is ${fiatSymbol}${ad.minLimit.toLocaleString()}`);
+    if (data.fiatAmount < Number(ad.minLimit)) {
+      toast.error(`Minimum order amount is ${fiatSymbol}${Number(ad.minLimit).toLocaleString()}`);
       return;
     }
-    if (data.fiatAmount > ad.maxLimit) {
-      toast.error(`Maximum order amount is ${fiatSymbol}${ad.maxLimit.toLocaleString()}`);
+    if (data.fiatAmount > Number(ad.maxLimit)) {
+      toast.error(`Maximum order amount is ${fiatSymbol}${Number(ad.maxLimit).toLocaleString()}`);
       return;
     }
-    if (data.cryptoAmount > ad.availableAmount) {
+    if (data.cryptoAmount > Number(ad.availableAmount)) {
       toast.error(`This advertisement does not have enough available crypto.`);
       return;
     }
@@ -172,7 +172,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Order Limit</p>
-              <p className="font-mono text-sm break-all">{fiatSymbol}{ad.minLimit.toLocaleString()} - {fiatSymbol}{ad.maxLimit.toLocaleString()}</p>
+              <p className="font-mono text-sm break-all">{fiatSymbol}{Number(ad.minLimit).toLocaleString()} - {fiatSymbol}{Number(ad.maxLimit).toLocaleString()}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Avg. Release Time</p>
@@ -194,7 +194,7 @@ export function P2POrderDrawer({ ad, merchant, onClose }: P2POrderDrawerProps) {
               <div className="space-y-2">
                 <div className="flex flex-wrap justify-between items-center gap-y-1 gap-x-4">
                   <Label htmlFor="fiatAmount">I want to {userSideLabel}</Label>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">Limit: {fiatSymbol}{ad.minLimit.toLocaleString()} - {fiatSymbol}{ad.maxLimit.toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">Limit: {fiatSymbol}{Number(ad.minLimit).toLocaleString()} - {fiatSymbol}{Number(ad.maxLimit).toLocaleString()}</span>
                 </div>
                 <div className="relative">
                   <Input 

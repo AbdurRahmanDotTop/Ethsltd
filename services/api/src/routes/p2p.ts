@@ -10,7 +10,24 @@ import { generateBusinessId } from '../services/id-generator';
 
 export const p2pRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// Removed DEFAULT_P2P_ADS array
+// Helper function to refund escrow for P2P orders
+const refundP2PEscrow = async (tx: any, order: any, ad: any, now: Date) => {
+  const cryptoAmount = new Decimal(order.cryptoAmount);
+  if (ad.type === 'BUY' || ad.status === 'CANCELED') {
+    // Return crypto to Seller's available balance from Escrow
+    const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
+    if (sellerWallet) {
+      const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
+      const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
+      await tx.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
+    }
+  }
+  if (ad.status !== 'CANCELED') {
+    // Restore ad available amount
+    const newAvailable = new Decimal(ad.availableAmount).plus(cryptoAmount).toString();
+    await tx.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
+  }
+};
 
 p2pRoutes.get('/ads', async (c) => {
   const db = c.get('db');
@@ -73,18 +90,18 @@ p2pRoutes.post('/ads', async (c) => {
   const body = await c.req.json();
   const { type, asset, fiat, price, isFloating, priceMargin, totalAmount, minLimit, maxLimit, paymentWindow, paymentMethods, terms, autoReply, countryRestrictions } = body;
 
-  const amountNum = parseFloat(totalAmount);
+  const amountNum = new Decimal(totalAmount);
 
   // If user is SELLING crypto for fiat, they must have the crypto balance
   if (type === 'SELL') {
     let wallet = await db.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, asset))).get();
-    if (!wallet || parseFloat(wallet.balance) < amountNum) {
+    if (!wallet || new Decimal(wallet.balance).lessThan(amountNum)) {
       return c.json({ success: false, error: 'Insufficient crypto balance to create this ad.' }, 400);
     }
     
     // Lock the balance into escrowBalance
-    const newBalance = (parseFloat(wallet.balance) - amountNum).toString();
-    const newEscrow = (parseFloat(wallet.escrowBalance) + amountNum).toString();
+    const newBalance = new Decimal(wallet.balance).minus(amountNum).toString();
+    const newEscrow = new Decimal(wallet.escrowBalance).plus(amountNum).toString();
     const now = new Date();
     await db.update(wallets).set({ balance: newBalance, escrowBalance: newEscrow, updatedAt: now }).where(eq(wallets.id, wallet.id));
   }
@@ -235,10 +252,16 @@ p2pRoutes.get('/orders', async (c) => {
     .where(or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id)))
     .orderBy(desc(p2pOrders.createdAt)).all();
     
+  const nowTime = new Date().getTime();
   const enrichedOrders = orderRows.map(row => {
     const role = row.order.buyerId === user.id ? 'BUYER' : 'SELLER';
+    let status = row.order.status;
+    if (['CREATED', 'PAYMENT_PENDING'].includes(status) && nowTime > new Date(row.order.expiresAt).getTime()) {
+      status = 'EXPIRED';
+    }
     return {
       ...row.order,
+      status,
       role,
       asset: row.ad ? row.ad.asset : 'Unknown',
       fiatCurrency: row.ad ? row.ad.fiat : 'Unknown',
@@ -442,21 +465,7 @@ p2pRoutes.get('/orders/:id', async (c) => {
         }
         
         if (ad) {
-          const cryptoAmount = new Decimal(order.cryptoAmount);
-          if (ad.type === 'BUY' || ad.status === 'CANCELED') {
-            // Return crypto to Seller's available balance from Escrow
-            const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
-            if (sellerWallet) {
-              const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
-              const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
-              await tx.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
-            }
-          }
-          if (ad.status !== 'CANCELED') {
-            // Restore ad available amount
-            const newAvailable = new Decimal(ad.availableAmount).plus(cryptoAmount).toString();
-            await tx.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
-          }
+          await refundP2PEscrow(tx, currentOrder, ad, now);
         }
         
         await tx.update(p2pOrders).set({ status: 'EXPIRED', updatedAt: now }).where(eq(p2pOrders.id, order.id));
@@ -783,23 +792,8 @@ p2pRoutes.post('/orders/:id/cancel', async (c) => {
       if (!ad) throw new Error('Ad not found');
 
       const now = new Date();
-      const cryptoAmount = new Decimal(order.cryptoAmount);
       
-      if (ad.type === 'BUY' || ad.status === 'CANCELED') {
-        // Return crypto to Seller's available balance from Escrow
-        const sellerWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, order.sellerId), eq(wallets.assetSymbol, ad.asset))).get();
-        if (sellerWallet) {
-          const finalBalance = new Decimal(sellerWallet.balance).plus(cryptoAmount).toString();
-          const finalEscrow = new Decimal(sellerWallet.escrowBalance).minus(cryptoAmount).toString();
-          await tx.update(wallets).set({ balance: finalBalance, escrowBalance: finalEscrow, updatedAt: now }).where(eq(wallets.id, sellerWallet.id));
-        }
-      }
-
-      if (ad.status !== 'CANCELED') {
-        // Restore ad available amount if it was an active ad
-        const newAvailable = new Decimal(ad.availableAmount).plus(cryptoAmount).toString();
-        await tx.update(p2pAds).set({ availableAmount: newAvailable, updatedAt: now }).where(eq(p2pAds.id, ad.id));
-      }
+      await refundP2PEscrow(tx, order, ad, now);
 
       // Ledger Reversal
       const txId = crypto.randomUUID();
