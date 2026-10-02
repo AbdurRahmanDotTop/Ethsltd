@@ -68,7 +68,7 @@ export const useNotificationStore = create<NotificationState>()(
               if (n.type === "P2P" && n.message.includes("Order P2P-ORD-")) {
                 const match = n.message.match(/(P2P-ORD-\d+)/);
                 if (match && match[1]) {
-                  parsedActionUrl = `/p2p/order/${match[1]}`;
+                  parsedActionUrl = `https://p2p.ethsltd.com/p2p/order/${match[1]}`;
                 }
               }
               

@@ -25,6 +25,11 @@ export function middleware(request: NextRequest) {
   const authRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
 
+  if (pathname.startsWith('/p2p')) {
+    const search = request.nextUrl.search;
+    return NextResponse.redirect(`https://p2p.ethsltd.com${pathname}${search}`);
+  }
+
   const token = request.cookies.get('ethsltd_session')?.value;
 
   if (isProtected && !token) {

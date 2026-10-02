@@ -10,7 +10,7 @@ const categories = [
   { id: "account", name: "Account & Security", icon: Shield, desc: "2FA, passwords, KYC, and account recovery.", link: "/learn/security" },
   { id: "trading", name: "Trading", icon: ArrowRightLeft, desc: "Order execution, fees, and market data.", link: "/learn/trading" },
   { id: "wallet", name: "Wallet & Transfers", icon: Wallet, desc: "Deposits, withdrawals, and crypto networks.", link: "/learn/crypto-basics" },
-  { id: "p2p", name: "P2P Marketplace", icon: Users, desc: "Buying/selling, payments, and disputes.", link: "/p2p" },
+  { id: "p2p", name: "P2P Marketplace", icon: Users, desc: "Buying/selling, payments, and disputes.", link: "https://p2p.ethsltd.com/p2p" },
 ];
 
 function Users(props: any) {
