@@ -13,7 +13,7 @@ export const ledgerTransactions = sqliteTable('ledger_transactions', {
   id: text('id').primaryKey(),
   displayId: text('display_id').unique(),
   idempotencyKey: text('idempotency_key').notNull().unique(),
-  referenceType: text('reference_type', { enum: ['DEPOSIT', 'WITHDRAWAL', 'TRADE', 'P2P_ESCROW', 'FEE', 'EXPERT_SERVICE'] }).notNull(),
+  referenceType: text('reference_type', { enum: ['DEPOSIT', 'WITHDRAWAL', 'TRADE', 'FEE', 'EXPERT_SERVICE'] }).notNull(),
   referenceId: text('reference_id').notNull(),
   status: text('status', { enum: ['PENDING', 'COMMITTED', 'FAILED', 'REVERSED'] }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),

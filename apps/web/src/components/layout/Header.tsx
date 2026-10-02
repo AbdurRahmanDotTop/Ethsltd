@@ -74,7 +74,6 @@ export function Header() {
             <nav className="hidden lg:flex items-center gap-6">
               <Link href="/markets" className={`text-sm font-medium transition-colors ${pathname === '/markets' ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground'}`}>Markets</Link>
               <Link href="/trade" className={`text-sm font-medium transition-colors ${pathname?.startsWith('/trade') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Trade</Link>
-              <Link href="/p2p" className={`text-sm font-medium transition-colors ${pathname?.startsWith('/p2p') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>P2P</Link>
               <Link href="/wallet" className={`text-sm font-medium transition-colors ${pathname?.startsWith('/wallet') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Wallet</Link>
               <Link href="/markets" className={`text-sm font-medium transition-colors ${pathname === '/markets' ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Assets</Link>
               <Link href="/learn" className={`text-sm font-medium transition-colors ${pathname?.startsWith('/learn') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Learn</Link>
@@ -140,12 +139,6 @@ export function Header() {
                       <Link href="/account" className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setDropdownOpen(false)}>
                         <LayoutDashboard className="w-4 h-4" /> Account
                       </Link>
-                      {user.role === 'EXPERT' && (
-                        <Link href="/expert/dashboard" className="flex items-center gap-3 px-4 py-2 text-sm text-brand-primary font-medium hover:bg-brand-primary/10" onClick={() => setDropdownOpen(false)}>
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
-                          Expert Dashboard
-                        </Link>
-                      )}
                       <Link href="/account/profile" className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setDropdownOpen(false)}>
                         <User className="w-4 h-4" /> Profile
                       </Link>
@@ -190,7 +183,6 @@ export function Header() {
           <nav className="flex flex-col gap-4">
             <Link href="/markets" className={`text-lg font-medium py-2 border-b border-border ${pathname === '/markets' ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Markets</Link>
             <Link href="/trade" className={`text-lg font-medium py-2 border-b border-border ${pathname?.startsWith('/trade') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Trade</Link>
-            <Link href="/p2p" className={`text-lg font-medium py-2 border-b border-border ${pathname?.startsWith('/p2p') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>P2P</Link>
             <Link href="/wallet" className={`text-lg font-medium py-2 border-b border-border ${pathname?.startsWith('/wallet') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Wallet</Link>
             <Link href="/markets" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Assets</Link>
             <Link href="/learn" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Learn</Link>

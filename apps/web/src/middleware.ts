@@ -15,11 +15,7 @@ export function middleware(request: NextRequest) {
   // Specific strict exact or dynamic protected routes
   const strictProtectedRoutes = [
     '/expert/dashboard',
-    '/support/tickets',
-    '/p2p/post-ad',
-    '/p2p/my-ads',
-    '/p2p/order',
-    '/p2p/edit-ad'
+    '/support/tickets'
   ];
 
   const isProtected = 

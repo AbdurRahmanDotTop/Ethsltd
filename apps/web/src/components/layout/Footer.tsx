@@ -25,16 +25,6 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold text-foreground mb-4">P2P</h4>
-            <ul className="flex flex-col gap-3 text-sm text-muted-foreground">
-              <li><Link href="/p2p" className="hover:text-foreground transition-colors">P2P Marketplace</Link></li>
-              <li><Link href="/p2p" className="hover:text-foreground transition-colors">Buy Crypto</Link></li>
-              <li><Link href="/p2p" className="hover:text-foreground transition-colors">Sell Crypto</Link></li>
-              <li><Link href="/support" className="hover:text-foreground transition-colors">Disputes</Link></li>
-            </ul>
-          </div>
-
-          <div>
             <h4 className="font-semibold text-foreground mb-4">Assets</h4>
             <ul className="flex flex-col gap-3 text-sm text-muted-foreground">
               <li><Link href="/markets" className="hover:text-foreground transition-colors">Supported Assets</Link></li>

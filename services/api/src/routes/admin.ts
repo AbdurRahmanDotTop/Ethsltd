@@ -4,7 +4,7 @@ import { eq, desc, sql, and } from 'drizzle-orm';
 import { getFeeConfig, calculateFee } from '../services/fees';
 import { generateBusinessId } from '../services/id-generator';
 import { Bindings, Variables } from '../db';
-import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, ledgerEntries, bankTransfers, bank_accounts, real_manual_deposits, orders, positions, binaryOptions, p2pAds, p2pOrders, p2pMessages, p2pDisputes, p2pPaymentMethods, p2pFeedback, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions, expertProfiles } from 'database';
+import { users, kycProfiles, markets, payment_methods, wallets, walletTransactions, ledgerAccounts, ledgerEntries, bankTransfers, bank_accounts, real_manual_deposits, orders, positions, binaryOptions, tickets, ticketMessages, notifications, cregisDeposits, cregisPayouts, sessions, expertProfiles } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 
 export const adminRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -31,12 +31,11 @@ adminRoutes.get('/stats', async (c) => {
     const [{ count: pendingKyc }] = await db.select({ count: sql<number>`count(*)` }).from(kycProfiles).where(eq(kycProfiles.status, 'PENDING'));
     const [{ count: activeMarkets }] = await db.select({ count: sql<number>`count(*)` }).from(markets).where(eq(markets.status, 'ACTIVE'));
     const [{ count: pendingWithdrawals }] = await db.select({ count: sql<number>`count(*)` }).from(walletTransactions).where(and(eq(walletTransactions.type, 'WITHDRAWAL'), eq(walletTransactions.status, 'PENDING')));
-    const [{ count: pendingDisputes }] = await db.select({ count: sql<number>`count(*)` }).from(p2pDisputes).where(eq(p2pDisputes.status, 'OPEN'));
     const [{ count: suspendedUsers }] = await db.select({ count: sql<number>`count(*)` }).from(users).where(sql`status IN ('FROZEN', 'BANNED')`);
 
     // Platform Balance (sum all stablecoin + fiat wallets)
     const [{ balance }] = await db.select({
-      balance: sql<number>`sum(CAST(balance AS REAL) + CAST(locked_balance AS REAL) + CAST(escrow_balance AS REAL))`
+      balance: sql<number>`sum(CAST(balance AS REAL) + CAST(locked_balance AS REAL))`
     }).from(wallets).where(sql`asset_symbol IN ('USDT', 'USD', 'USDC', 'INR', 'EUR', 'GBP')`);
     
     // Deposits Today
@@ -46,13 +45,8 @@ adminRoutes.get('/stats', async (c) => {
       depositsToday: sql<number>`sum(amount)`
     }).from(real_manual_deposits).where(and(eq(real_manual_deposits.status, 'APPROVED'), sql`created_at >= ${todayStart.toISOString()}`));
     
-    // P2P Volume 24h - use ISO string for comparison (SQLite stores ISO strings)
-    const yesterday24h = new Date(Date.now() - 86400000).toISOString();
-    const [{ p2pVolume24h }] = await db.select({
-      p2pVolume24h: sql<number>`sum(CAST(fiat_amount AS REAL))`
-    }).from(p2pOrders).where(and(eq(p2pOrders.status, 'COMPLETED'), sql`updated_at > ${yesterday24h}`));
-
     // Trading Volume 24h - use ISO string for comparison
+    const yesterday24h = new Date(Date.now() - 86400000).toISOString();
     const [{ dailyVolumeUsd }] = await db.select({
       dailyVolumeUsd: sql<number>`sum(CAST(filled_amount AS REAL) * CAST(price AS REAL))`
     }).from(orders).where(and(eq(orders.status, 'FILLED'), sql`created_at > ${yesterday24h}`));
@@ -67,8 +61,6 @@ adminRoutes.get('/stats', async (c) => {
         totalPlatformBalance: balance || 0,
         depositsToday: depositsToday || 0,
         pendingWithdrawals: pendingWithdrawals || 0,
-        p2pVolume24h: p2pVolume24h || 0,
-        pendingDisputes: pendingDisputes || 0,
         suspendedUsers: suspendedUsers || 0,
         dailyVolumeUsd: dailyVolumeUsd || 0
       }
@@ -88,16 +80,6 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
     const sevenDaysAgoDate = new Date(sevenDaysAgo);
     const { gte } = require('drizzle-orm');
     
-    // Fetch P2P completed orders
-    const p2pTrades = await db.select({
-      amount: p2pOrders.fiatAmount,
-      createdAt: p2pOrders.createdAt,
-    }).from(p2pOrders)
-      .where(and(
-        eq(p2pOrders.status, 'COMPLETED'), 
-        gte(p2pOrders.createdAt, sevenDaysAgoDate)
-      ));
-
     // Fetch spot trading orders
     const spotOrders = await db.select({
       amount: orders.filledAmount,
@@ -117,15 +99,6 @@ adminRoutes.get('/stats/volume-chart', async (c) => {
       dailyVolume[dateStr] = 0;
     }
     
-    // Add P2P volume (fiat amounts)
-    p2pTrades.forEach((trade) => {
-      if (!trade.createdAt) return;
-      const dateStr = new Date(trade.createdAt).toISOString().split('T')[0];
-      if (dailyVolume[dateStr] !== undefined) {
-        dailyVolume[dateStr] += Number(trade.amount) || 0;
-      }
-    });
-
     // Add spot trading volume (filled_amount * price)
     spotOrders.forEach((order) => {
       if (!order.createdAt) return;
@@ -199,154 +172,7 @@ adminRoutes.get('/stats/recent-activity', async (c) => {
   }
 });
 
-// GET /api/v1/admin/stats/p2p
-adminRoutes.get('/stats/p2p', async (c) => {
-  const db = c.get('db');
-  try {
-    const { startDate, endDate } = c.req.query();
-    const { and, eq, gte, lte, sql, desc } = require('drizzle-orm');
-    
-    // Build conditions safely - only include if values exist
-    const orderConditions: any[] = [];
-    if (startDate) orderConditions.push(gte(p2pOrders.createdAt, new Date(startDate)));
-    if (endDate) orderConditions.push(lte(p2pOrders.createdAt, new Date(endDate)));
-    const orderWhere = orderConditions.length > 0 ? and(...orderConditions) : undefined;
 
-    // Orders Stats - count all statuses for the period
-    const ordersQuery = db.select({
-      status: p2pOrders.status,
-      count: sql<number>`count(*)`,
-      volume: sql<number>`sum(CAST(${p2pOrders.cryptoAmount} AS REAL))`
-    }).from(p2pOrders).groupBy(p2pOrders.status);
-    
-    const ordersData = orderWhere
-      ? await ordersQuery.where(orderWhere)
-      : await ordersQuery;
-
-    const orderStats = {
-      totalOrders: 0,
-      totalVolume: 0, // Only count COMPLETED orders for volume
-      byStatus: {} as Record<string, { count: number, volume: number }>
-    };
-
-    ordersData.forEach((row: any) => {
-      orderStats.totalOrders += row.count;
-      // Only sum volume for COMPLETED orders to avoid inflating with cancelled/pending
-      if (row.status === 'COMPLETED') {
-        orderStats.totalVolume += row.volume || 0;
-      }
-      orderStats.byStatus[row.status] = { count: row.count, volume: row.volume || 0 };
-    });
-
-    // Buy / Sell Activity - volumes from all non-cancelled orders in period
-    const buySellQuery = db.select({
-      type: p2pAds.type,
-      volume: sql<number>`sum(CAST(${p2pOrders.cryptoAmount} AS REAL))`
-    }).from(p2pOrders)
-    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .where(
-      orderConditions.length > 0
-        ? and(...orderConditions, eq(p2pOrders.status, 'COMPLETED'))
-        : eq(p2pOrders.status, 'COMPLETED')
-    )
-    .groupBy(p2pAds.type);
-
-    const buySellVolume = { BUY: 0, SELL: 0 };
-    const buySellData = await buySellQuery;
-    buySellData.forEach((row: any) => {
-      // p2pAds.type is from the ad poster's perspective:
-      // A 'SELL' ad = merchant selling crypto = BUY activity for the taker
-      // A 'BUY' ad = merchant buying crypto = SELL activity for the taker
-      // We display it from the market perspective: BUY ad volume = BUY volume on market
-      if (row.type) buySellVolume[row.type as 'BUY' | 'SELL'] = row.volume || 0;
-    });
-
-    // Active Ads - not date-filtered (current state)
-    const [{ activeAds }] = await db.select({ activeAds: sql<number>`count(*)` })
-      .from(p2pAds)
-      .where(eq(p2pAds.status, 'ACTIVE'));
-
-    // Active P2P Merchants = users who have at least one active ad
-    const [{ activeMerchants }] = await db.select({ activeMerchants: sql<number>`count(DISTINCT user_id)` })
-      .from(p2pAds)
-      .where(eq(p2pAds.status, 'ACTIVE'));
-
-    // Chats - date filtered
-    const chatConditions: any[] = [];
-    if (startDate) chatConditions.push(gte(p2pMessages.createdAt, new Date(startDate)));
-    if (endDate) chatConditions.push(lte(p2pMessages.createdAt, new Date(endDate)));
-    const chatWhere = chatConditions.length > 0 ? and(...chatConditions) : undefined;
-
-    const totalChatsQuery = db.select({ totalChats: sql<number>`count(*)` }).from(p2pMessages);
-    const unreadChatsQuery = db.select({ unreadChats: sql<number>`count(*)` }).from(p2pMessages).where(
-      chatConditions.length > 0 ? and(...chatConditions, eq(p2pMessages.isRead, false)) : eq(p2pMessages.isRead, false)
-    );
-
-    const [{ totalChats }] = chatWhere ? await totalChatsQuery.where(chatWhere) : await totalChatsQuery;
-    const [{ unreadChats }] = await unreadChatsQuery;
-
-    // Disputes - date filtered
-    const disputeConditions: any[] = [];
-    if (startDate) disputeConditions.push(gte(p2pDisputes.createdAt, new Date(startDate)));
-    if (endDate) disputeConditions.push(lte(p2pDisputes.createdAt, new Date(endDate)));
-    const disputeWhere = disputeConditions.length > 0 ? and(...disputeConditions) : undefined;
-
-    const disputesQuery = db.select({
-      status: p2pDisputes.status,
-      count: sql<number>`count(*)`
-    }).from(p2pDisputes).groupBy(p2pDisputes.status);
-
-    const disputesData = disputeWhere ? await disputesQuery.where(disputeWhere) : await disputesQuery;
-
-    const disputeStats = { total: 0, OPEN: 0, RESOLVED: 0, CLOSED: 0 };
-    disputesData.forEach((row: any) => {
-      disputeStats.total += row.count;
-      if (row.status in disputeStats) disputeStats[row.status as keyof typeof disputeStats] = row.count;
-    });
-
-    // Escrow - sum only escrow for orders that are ACTIVE in the period
-    // Only include wallets that have orders in escrow within the date window
-    const escrowQuery = db.select({
-      totalEscrow: sql<number>`sum(CAST(escrow_balance AS REAL))`
-    }).from(wallets);
-    const [{ totalEscrow }] = await escrowQuery;
-
-    // Recent Transactions - apply date filter
-    const recentOrdersQuery = db.select({
-      id: p2pOrders.displayId,
-      cryptoAmount: p2pOrders.cryptoAmount,
-      fiatAmount: p2pOrders.fiatAmount,
-      status: p2pOrders.status,
-      createdAt: p2pOrders.createdAt,
-      asset: p2pAds.asset,
-      fiat: p2pAds.fiat
-    }).from(p2pOrders)
-    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .orderBy(desc(p2pOrders.createdAt))
-    .limit(10);
-
-    const recentOrders = orderWhere
-      ? await recentOrdersQuery.where(orderWhere)
-      : await recentOrdersQuery;
-
-    return c.json({
-      success: true,
-      data: {
-        orderStats,
-        buySellVolume,
-        activeAds,
-        activeMerchants,
-        chatStats: { total: totalChats, unread: unreadChats },
-        disputeStats,
-        totalEscrow: totalEscrow || 0,
-        recentOrders
-      }
-    });
-  } catch (error) {
-    console.error("P2P Admin Stats error:", error);
-    return c.json({ success: false, error: 'Failed to fetch P2P stats' }, 500);
-  }
-});
 
 // GET /api/v1/admin/users
 adminRoutes.get('/users', async (c) => {
@@ -383,14 +209,13 @@ adminRoutes.get('/users/:id', async (c) => {
     let balanceUsd = 0;
     for (const w of userWallets) {
       if (w.assetSymbol === 'USDT' || w.assetSymbol === 'USD') {
-        const total = parseFloat(w.balance || '0') + parseFloat(w.lockedBalance || '0') + parseFloat(w.escrowBalance || '0');
+        const total = parseFloat(w.balance || '0') + parseFloat(w.lockedBalance || '0');
         balanceUsd += total;
       }
     }
     
     // Fetch related activity and orders
     const recentOrders = await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt)).limit(50).all();
-    const recentP2pOrders = await db.select().from(p2pOrders).where(sql`buyer_id = ${userId} OR seller_id = ${userId}`).orderBy(desc(p2pOrders.createdAt)).limit(50).all();
     const recentTransactions = await db.select().from(walletTransactions).where(eq(walletTransactions.userId, userId)).orderBy(desc(walletTransactions.createdAt)).limit(50).all();
     const recentSessions = await db.select().from(sessions).where(eq(sessions.userId, userId)).orderBy(desc(sessions.createdAt)).limit(10).all();
 
@@ -402,9 +227,7 @@ adminRoutes.get('/users/:id', async (c) => {
         riskLevel: 'LOW',
         balanceUsd,
         tradingVolumeUsd: 0,
-        p2pVolumeUsd: 0,
         orders: recentOrders,
-        p2pOrders: recentP2pOrders,
         transactions: recentTransactions,
         sessions: recentSessions,
       }
@@ -537,28 +360,7 @@ adminRoutes.delete('/users/:id', async (c) => {
 
     const queries: any[] = [];
 
-    // Manual Cascades for P2P Ads -> P2P Orders -> Disputes/Feedback/Messages
-    if (p2pAds && p2pOrders && p2pDisputes) {
-      const uAds = await db.select({ id: p2pAds.id }).from(p2pAds).where(eq(p2pAds.userId, userId));
-      const uAdIds = uAds.map((a: any) => a.id);
-      
-      // Find all orders where user is buyer/seller OR the order is for an ad owned by user
-      const uOrders = await db.select({ id: p2pOrders.id }).from(p2pOrders).where(
-        or(
-          eq(p2pOrders.buyerId, userId), 
-          eq(p2pOrders.sellerId, userId),
-          uAdIds.length > 0 ? inArray(p2pOrders.adId, uAdIds) : eq(p2pOrders.buyerId, 'impossible_value')
-        )
-      );
-      const uOrderIds = uOrders.map((o: any) => o.id);
 
-      if (uOrderIds.length > 0) {
-        queries.push(db.delete(p2pDisputes).where(inArray(p2pDisputes.orderId, uOrderIds)));
-        queries.push(db.delete(p2pFeedback).where(inArray(p2pFeedback.orderId, uOrderIds)));
-        queries.push(db.delete(p2pMessages).where(inArray(p2pMessages.orderId, uOrderIds)));
-        queries.push(db.delete(p2pOrders).where(inArray(p2pOrders.id, uOrderIds)));
-      }
-    }
 
     // Manual Cascades for Ledger Accounts -> Ledger Entries
     if (ledgerAccounts && ledgerEntries) {
@@ -592,12 +394,7 @@ adminRoutes.delete('/users/:id', async (c) => {
     if (orders) queries.push(db.delete(orders).where(eq(orders.userId, userId)));
     if (binaryOptions) queries.push(db.delete(binaryOptions).where(eq(binaryOptions.userId, userId)));
     
-    // P2P
-    if (p2pPaymentMethods) queries.push(db.delete(p2pPaymentMethods).where(eq(p2pPaymentMethods.userId, userId)));
-    if (p2pFeedback) queries.push(db.delete(p2pFeedback).where(or(eq(p2pFeedback.fromUserId, userId), eq(p2pFeedback.toUserId, userId))));
-    if (p2pMessages) queries.push(db.delete(p2pMessages).where(eq(p2pMessages.senderId, userId)));
-    if (p2pDisputes) queries.push(db.delete(p2pDisputes).where(or(eq(p2pDisputes.openerId, userId), eq(p2pDisputes.assignedAdminId, userId))));
-    if (p2pAds) queries.push(db.delete(p2pAds).where(eq(p2pAds.userId, userId)));
+
 
     // Experts
     if (expertProfiles && expertServices && expertBookings && expertReviews && expertMessages) {
@@ -643,26 +440,24 @@ adminRoutes.get('/wallets/overview', async (c) => {
     const allWallets = await db.select().from(wallets).all();
     
     const activeRates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
-    const overview: Record<string, { balance: number, locked: number, escrow: number, total: number }> = {};
+    const overview: Record<string, { balance: number, locked: number, total: number }> = {};
     
     // Pre-populate with active currencies
     for (const rate of activeRates) {
-      overview[rate.code] = { balance: 0, locked: 0, escrow: 0, total: 0 };
+      overview[rate.code] = { balance: 0, locked: 0, total: 0 };
     }
     
     for (const w of allWallets) {
       const sym = w.assetSymbol;
       if (!overview[sym]) {
-        overview[sym] = { balance: 0, locked: 0, escrow: 0, total: 0 };
+        overview[sym] = { balance: 0, locked: 0, total: 0 };
       }
       const b = parseFloat(w.balance || '0');
       const l = parseFloat(w.lockedBalance || '0');
-      const e = parseFloat(w.escrowBalance || '0');
       
       overview[sym].balance += b;
       overview[sym].locked += l;
-      overview[sym].escrow += e;
-      overview[sym].total += (b + l + e);
+      overview[sym].total += (b + l);
     }
     
     const methods = await db.select().from(payment_methods).all();
@@ -736,7 +531,7 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
     return c.json({ success: false, error: 'Unauthorized: Only Super Admins can adjust balances' }, 403);
   }
 
-  // targetField can be 'balance', 'lockedBalance', or 'escrowBalance'
+  // targetField can be 'balance' or 'lockedBalance'
   const { assetSymbol, amount, action, targetField = 'balance', notes } = body;
 
   try {
@@ -782,7 +577,6 @@ adminRoutes.post('/users/:id/wallets/adjust', async (c) => {
         assetSymbol: finalAsset,
         balance: '0',
         lockedBalance: '0',
-        escrowBalance: '0',
         createdAt: new Date(),
         updatedAt: new Date()
       };

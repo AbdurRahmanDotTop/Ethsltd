@@ -6,7 +6,7 @@ export const notifications = sqliteTable('notifications', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   message: text('message').notNull(),
-  type: text('type', { enum: ['SYSTEM', 'TRADE', 'DEPOSIT', 'WITHDRAWAL', 'SECURITY', 'P2P'] }).notNull().default('SYSTEM'),
+  type: text('type', { enum: ['SYSTEM', 'TRADE', 'DEPOSIT', 'WITHDRAWAL', 'SECURITY'] }).notNull().default('SYSTEM'),
   isRead: integer('is_read', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });

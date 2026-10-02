@@ -29,24 +29,6 @@ const heroSlides = [
     )
   },
   {
-    id: 2,
-    title: (
-      <>
-        Buy & Sell Crypto<br />
-        <span className="text-[#00C087]">Through P2P</span>
-      </>
-    ),
-    subtitle: "Secure, escrow-protected direct user-to-user trading.",
-    bg: "bg-gradient-to-r from-emerald-800 to-teal-600",
-    cta: "Start P2P Trading",
-    href: "/p2p",
-    bgElement: (
-      <div className="absolute right-[-10px] top-6 opacity-20 z-0 pointer-events-none">
-        <CreditCard className="w-32 h-32 text-white transform rotate-12" />
-      </div>
-    )
-  },
-  {
     id: 3,
     title: (
       <>
@@ -72,7 +54,7 @@ const heroSlides = [
         <span className="text-orange-400">For Your Journey</span>
       </>
     ),
-    subtitle: "Trading, P2P, and portfolio management in one unified ecosystem.",
+    subtitle: "Trading and portfolio management in one unified ecosystem.",
     bg: "bg-gradient-to-r from-orange-700 to-red-600",
     cta: "Get Started",
     href: "/trade",
@@ -141,7 +123,6 @@ export function GlobalHomeDashboard() {
   const quickActions = [
     { name: "Deposit", icon: Download, href: "/wallet/deposit" },
     { name: "Option", icon: Clock, href: "/trade" },
-    { name: "P2P", icon: CreditCard, href: "/p2p" },
     { name: "Share", icon: Share2, href: "/" },
     { name: "Chat", icon: MessageCircle, href: "/support" },
   ];
@@ -229,7 +210,7 @@ export function GlobalHomeDashboard() {
       </div>
 
       {/* Quick Actions Grid */}
-      <div className="grid grid-cols-5 gap-2 px-2 mt-6">
+      <div className="grid grid-cols-4 gap-2 px-2 mt-6">
         {quickActions.map((action, i) => {
           const Icon = action.icon;
           return (

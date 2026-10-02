@@ -37,7 +37,7 @@ export function Logo({ className = "h-10 w-auto" }: LogoProps) {
         fill="#9CA3AF"
         letterSpacing="0.22em"
       >
-        TRADE · P2P · GROW
+        TRADE · GROW
       </text>
     </svg>
   );

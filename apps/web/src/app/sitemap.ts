@@ -9,7 +9,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '',
     '/markets',
     '/trade',
-    '/p2p',
     '/learn',
     '/learn/crypto-basics',
     '/learn/security',

@@ -41,7 +41,7 @@ export function TransactionTable({ transactions }: { transactions: WalletTransac
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <div className="flex flex-wrap items-center gap-1 bg-muted p-1 rounded-md w-full sm:w-auto justify-center">
-            {["ALL", "DEPOSIT", "WITHDRAWAL", "TRADE", "P2P", "CONVERT", "SERVICE"].map(t => (
+            {["ALL", "DEPOSIT", "WITHDRAWAL", "TRADE", "CONVERT", "SERVICE"].map(t => (
               <button
                 key={t}
                 onClick={() => setFilterType(t)}

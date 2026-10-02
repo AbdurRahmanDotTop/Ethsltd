@@ -23,14 +23,14 @@ export default function TermsOfService() {
             You are responsible for safeguarding the password that you use to access the service and for any activities or actions under your password. We strongly recommend enabling Two-Factor Authentication (2FA) for your account.
           </p>
           <p>
-            <strong className="text-foreground">Account Deletion:</strong> The platform administrators (Super Admins) reserve the right to completely and permanently delete any user account and all associated data (including but not limited to transaction history, active and past orders, P2P records, and wallets) at their sole discretion, without prior notice. Once an account is deleted, the data cannot be recovered.
+            <strong className="text-foreground">Account Deletion:</strong> The platform administrators (Super Admins) reserve the right to completely and permanently delete any user account and all associated data (including but not limited to transaction history, active and past orders, and wallets) at their sole discretion, without prior notice. Once an account is deleted, the data cannot be recovered.
           </p>
         </section>
 
         <section>
-          <h3 className="text-xl font-semibold text-foreground mb-3">3. Trading Rules & P2P</h3>
+          <h3 className="text-xl font-semibold text-foreground mb-3">3. Trading Rules</h3>
           <p>
-            Any trading activities conducted on the platform must comply with applicable local regulations. Users utilizing the P2P marketplace must communicate exclusively through the platform's chat system and must not attempt to circumvent the escrow mechanism.
+            Any trading activities conducted on the platform must comply with applicable local regulations.
           </p>
         </section>
 

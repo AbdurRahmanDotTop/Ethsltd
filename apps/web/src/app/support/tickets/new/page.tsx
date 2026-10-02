@@ -67,7 +67,6 @@ export default function NewTicketPage() {
               <option value="account">Account</option>
               <option value="trading">Trading</option>
               <option value="wallet">Wallet</option>
-              <option value="p2p">P2P</option>
               <option value="security">Security</option>
               <option value="technical">Technical</option>
               <option value="other">Other</option>

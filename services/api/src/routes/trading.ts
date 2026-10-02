@@ -600,22 +600,19 @@ tradingRoutes.post('/orders', async (c) => {
       // Finalize Taker Wallet
       if (matchResult.totalFilledAmount > 0) {
         // 1. Remove from locked balance
-        const avgPrice = new Decimal(matchResult.totalSpentOrReceived).div(matchResult.totalFilledAmount);
-        const actualSpend = side === 'BUY' ? new Decimal(matchResult.totalFilledAmount).times(avgPrice) : new Decimal(matchResult.totalFilledAmount);
+        const expectedSpend = side === 'BUY' 
+            ? spendAmount.times(new Decimal(matchResult.totalFilledAmount).div(parsedAmount))
+            : new Decimal(matchResult.totalFilledAmount);
+            
+        const actualSpend = side === 'BUY' 
+            ? new Decimal(matchResult.totalSpentOrReceived)
+            : new Decimal(matchResult.totalFilledAmount);
         
         const finalSpendWallet = await tx.select().from(wallets).where(eq(wallets.id, spendWallet.id)).get();
         if(finalSpendWallet) {
-           // Free up locked balance that was used
-           const usedLockedAmount = side === 'BUY' ? actualSpend : new Decimal(matchResult.totalFilledAmount);
-           const finalLocked = Decimal.max(0, new Decimal(finalSpendWallet.lockedBalance).minus(usedLockedAmount)).toString();
+           const finalLocked = Decimal.max(0, new Decimal(finalSpendWallet.lockedBalance).minus(expectedSpend)).toString();
            
-           // If MARKET order, we locked worst-case. We may need to refund the difference.
-           let refundAmount = new Decimal(0);
-           if (side === 'BUY' && type === 'MARKET') {
-             const expectedCost = spendAmount.times(new Decimal(matchResult.totalFilledAmount).div(parsedAmount));
-             refundAmount = Decimal.max(0, expectedCost.minus(actualSpend));
-           }
-
+           const refundAmount = Decimal.max(0, expectedSpend.minus(actualSpend));
            const finalBalance = new Decimal(finalSpendWallet.balance).plus(refundAmount).toString();
            
            await tx.update(wallets).set({ balance: finalBalance, lockedBalance: finalLocked, updatedAt: now }).where(eq(wallets.id, spendWallet.id));

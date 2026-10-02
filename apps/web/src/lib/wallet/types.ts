@@ -1,4 +1,4 @@
-export type TransactionType = "DEPOSIT" | "WITHDRAWAL" | "TRADE" | "P2P" | "TRANSFER" | "FEE" | "REWARD" | "ADJUSTMENT";
+export type TransactionType = "DEPOSIT" | "WITHDRAWAL" | "TRADE" | "TRANSFER" | "FEE" | "REWARD" | "ADJUSTMENT";
 export type TransactionStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED" | "REVERSED";
 
 export interface WalletTransaction {

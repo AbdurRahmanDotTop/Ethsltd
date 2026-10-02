@@ -69,9 +69,11 @@ export function OrderEntry({ market }: { market: Market }) {
   
   // Calculate Notional Value
   const notionalValue = currentPrice * parsedQty
-  const fee = notionalValue * 0.001 // 0.1% taker fee
+  // In SPOT, fee is deducted from the received asset (Base for BUY, Quote for SELL)
+  // So required quote for BUY is just notionalValue
   const requiredMargin = marketType === 'FUTURES' ? notionalValue / leverage : notionalValue
-  const total = requiredMargin + fee
+  const fee = notionalValue * 0.001 // just for display
+  const total = requiredMargin
   
   const quoteBalance = balances.find(b => b.symbol === quote)?.available || 0
   const baseBalance = balances.find(b => b.symbol === base)?.available || 0
@@ -131,7 +133,7 @@ export function OrderEntry({ market }: { market: Market }) {
       const reqTotal = reqAmount * reqPrice;
 
       if (marketType === 'SPOT') {
-        if (selectedSide === 'buy' && total > quoteBalance) {
+        if (selectedSide === 'buy' && reqTotal > quoteBalance) {
           setMessage({ type: 'error', text: `Insufficient ${quote} balance.` });
           setIsSubmitting(false);
           return;
@@ -141,7 +143,7 @@ export function OrderEntry({ market }: { market: Market }) {
           return;
         }
       } else if (marketType === 'FUTURES') {
-        if (total > quoteBalance) {
+        if (reqTotal / leverage > quoteBalance) {
           setMessage({ type: 'error', text: `Insufficient Margin (${quote}) balance.` });
           setIsSubmitting(false);
           return;

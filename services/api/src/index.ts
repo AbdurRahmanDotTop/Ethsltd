@@ -5,7 +5,6 @@ import { createDb, Bindings, Variables } from './db';
 // Import routes (we will create these next)
 import { authRoutes } from './routes/auth';
 import { walletRoutes } from './routes/wallets';
-import { p2pRoutes } from './routes/p2p';
 import { settingsRoutes } from './routes/settings';
 import { supportRoutes } from './routes/support';
 import { tradingRoutes } from './routes/trading';
@@ -59,7 +58,6 @@ app.get('/', (c) => c.json({ status: 'ok', service: 'Ethsltd API', version: '1.0
 // Mount routes
 app.route('/api/v1/auth', authRoutes);
 app.route('/api/v1/wallets', walletRoutes);
-app.route('/api/v1/p2p', p2pRoutes);
 app.route('/api/v1/settings', settingsRoutes);
 app.route('/api/v1/support', supportRoutes);
 app.route('/api/v1/trading', tradingRoutes);

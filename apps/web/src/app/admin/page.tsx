@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Users, Activity, Wallet, ArrowDownToLine, Handshake, AlertTriangle, UserCheck, Server, Loader2 } from "lucide-react";
 import { apiClient } from "@ethsltd/api-client";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import P2pDashboardOverview from "../../components/admin/P2pDashboardOverview";
 
 function StatCard({ 
   title, 
@@ -37,7 +36,7 @@ function StatCard({
 }
 
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'platform' | 'p2p'>('platform');
+  const [activeTab, setActiveTab] = useState<'platform'>('platform');
   const [stats, setStats] = useState<any>(null);
   const [activity, setActivity] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
@@ -105,8 +104,6 @@ export default function AdminDashboardPage() {
     totalPlatformBalance: stats.totalPlatformBalance || 0,
     depositsToday: stats.depositsToday || 0,
     pendingWithdrawals: stats.pendingWithdrawals || 0,
-    p2pVolume24h: stats.p2pVolume24h || 0,
-    pendingDisputes: stats.pendingDisputes || 0,
     apiStatus: "Operational",
     dbStatus: "Operational",
     errorRate: 0.1,
@@ -120,27 +117,9 @@ export default function AdminDashboardPage() {
           <p className="text-muted-foreground mt-1 text-sm">Platform performance and operational health.</p>
         </div>
         
-        <div className="flex bg-muted p-1 rounded-md">
-          <button 
-            onClick={() => setActiveTab('platform')}
-            className={`px-4 py-2 text-sm font-medium rounded-sm transition-all ${activeTab === 'platform' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Platform Overview
-          </button>
-          <button 
-            onClick={() => setActiveTab('p2p')}
-            className={`px-4 py-2 text-sm font-medium rounded-sm transition-all ${activeTab === 'p2p' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            P2P Overview
-          </button>
-        </div>
       </div>
 
-      {activeTab === 'p2p' ? (
-        <P2pDashboardOverview />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Total Users" 
           value={kpis.totalUsers.toLocaleString()} 
@@ -158,12 +137,6 @@ export default function AdminDashboardPage() {
           value={formatUSD(kpis.volume24h)} 
           icon={Activity} 
           colorClass="text-brand-primary bg-brand-primary" 
-        />
-        <StatCard 
-          title="24h Volume (P2P)" 
-          value={formatUSD(kpis.p2pVolume24h)} 
-          icon={Handshake} 
-          colorClass="text-green-500 bg-green-500" 
         />
         <StatCard 
           title="Platform Balance" 
@@ -190,18 +163,12 @@ export default function AdminDashboardPage() {
           icon={UserCheck} 
           colorClass="text-orange-500 bg-orange-500" 
         />
-        <StatCard 
-          title="Open P2P Disputes" 
-          value={kpis.pendingDisputes} 
-          icon={AlertTriangle} 
-          colorClass="text-red-500 bg-red-500" 
-        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-card border border-border rounded-lg p-6 min-h-[300px] flex flex-col">
-           <h3 className="text-lg font-bold mb-4">7-Day Platform Volume (P2P + Spot)</h3>
+           <h3 className="text-lg font-bold mb-4">7-Day Platform Volume</h3>
       <div className="flex-1 w-full" style={{ height: '250px' }}>
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -300,8 +267,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
-      </>
-      )}
     </div>
   );
 }

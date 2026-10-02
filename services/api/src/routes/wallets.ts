@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc, and, or } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
-import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users, currencyRates, p2pOrders, p2pAds, expertBookings, expertProfiles, orders as tradingOrders } from 'database';
+import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users, currencyRates, expertBookings, expertProfiles, orders as tradingOrders } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
 import { getFeeConfig, calculateFee, getLimit } from '../services/fees';
@@ -142,7 +142,7 @@ walletRoutes.get('/balances', async (c) => {
     const usdPrice = rateInfo && parseFloat(rateInfo.ratePerUsdt) > 0 ? (1 / parseFloat(rateInfo.ratePerUsdt)) : getAssetPrice(w.assetSymbol);
 
     const available = parseFloat(w.balance);
-    const locked = parseFloat(w.lockedBalance) + parseFloat(w.escrowBalance);
+    const locked = parseFloat(w.lockedBalance);
     const total = available + locked;
     
     return {
@@ -177,7 +177,7 @@ walletRoutes.get('/portfolio', async (c) => {
     const rateInfo = ratesMap.get(w.assetSymbol);
     const usdPrice = rateInfo && parseFloat(rateInfo.ratePerUsdt) > 0 ? (1 / parseFloat(rateInfo.ratePerUsdt)) : getAssetPrice(w.assetSymbol);
 
-    const lockedAmt = parseFloat(w.lockedBalance) + parseFloat(w.escrowBalance);
+    const lockedAmt = parseFloat(w.lockedBalance);
     const total = parseFloat(w.balance) + lockedAmt;
     const usdValue = total * usdPrice;
     
@@ -244,25 +244,7 @@ walletRoutes.get('/transactions', async (c) => {
     updatedAt: tx.updatedAt.toISOString(),
   }));
 
-  // 2. P2P Orders
-  const p2pRows = await db.select({ order: p2pOrders, ad: p2pAds }).from(p2pOrders)
-    .leftJoin(p2pAds, eq(p2pOrders.adId, p2pAds.id))
-    .where(or(eq(p2pOrders.buyerId, user.id), eq(p2pOrders.sellerId, user.id))).all();
 
-  p2pRows.forEach(row => {
-    const isBuyer = row.order.buyerId === user.id;
-    mappedTxs.push({
-      id: row.order.id,
-      type: isBuyer ? 'P2P_BUY' : 'P2P_SELL',
-      asset: row.ad?.asset || 'Unknown',
-      amount: isBuyer ? parseFloat(row.order.cryptoAmount) : -parseFloat(row.order.cryptoAmount),
-      fee: 0,
-      status: row.order.status === 'COMPLETED' ? 'COMPLETED' : (row.order.status === 'CANCELLED' ? 'FAILED' : 'PENDING'),
-      reference: row.order.displayId,
-      createdAt: row.order.createdAt.toISOString(),
-      updatedAt: row.order.updatedAt.toISOString(),
-    });
-  });
 
   // 3. Asset Conversions
   const conversions = await db.select().from(assetConversions)
@@ -372,11 +354,10 @@ walletRoutes.post('/deposit', async (c) => {
       assetSymbol,
       balance: '0',
       lockedBalance: '0',
-      escrowBalance: '0',
       createdAt: now,
       updatedAt: now,
     });
-    wallet = { id: walletId, displayId, userId: user.id, assetSymbol, balance: '0', lockedBalance: '0', escrowBalance: '0', createdAt: now, updatedAt: now } as any;
+    wallet = { id: walletId, displayId, userId: user.id, assetSymbol, balance: '0', lockedBalance: '0', createdAt: now, updatedAt: now } as any;
   }
   
     // For REAL, we need to generate a Cregis Address or Bank Transfer Request
