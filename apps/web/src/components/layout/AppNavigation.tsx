@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Home, LineChart, Wallet, CreditCard } from "lucide-react";
+import { Home, LineChart, Wallet, CreditCard, Zap } from "lucide-react";
 
 export function AppNavigation() {
   const pathname = usePathname();
@@ -23,6 +23,12 @@ export function AppNavigation() {
       isActive: pathname?.startsWith("/trade"),
     },
     {
+      name: "P2P",
+      href: "https://p2p.ethsltd.com/",
+      icon: Zap,
+      isActive: false,
+    },
+    {
       name: "Wallet",
       href: "/wallet?tab=currency",
       icon: CreditCard,
@@ -40,7 +46,7 @@ export function AppNavigation() {
     <>
       {/* Main Bottom Nav */}
       <div className="fixed bottom-0 left-0 z-40 w-full bg-[#181A20] border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
-        <div className="grid h-16 w-full grid-cols-4 max-w-[1280px] mx-auto">
+        <div className="grid h-16 w-full grid-cols-5 max-w-[1280px] mx-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const activeClass = item.isActive ? "text-[#00C087]" : "text-muted-foreground hover:text-[#00C087]/70";
