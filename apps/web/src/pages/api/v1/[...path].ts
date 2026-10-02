@@ -31,9 +31,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Set explicit origin for backend CORS and getCookieDomain
     const protocol = req.headers['x-forwarded-proto'] || (req.socket && (req.socket as any).encrypted ? 'https' : 'http');
     const host = req.headers['host'] || req.headers['x-forwarded-host'] || '';
-    const origin = `${protocol}://${host}`;
+    const origin = req.headers['origin'] || `${protocol}://${host}`;
     
-    headers.set('origin', origin);
+    headers.set('origin', origin as string);
     headers.set('x-forwarded-host', host as string);
 
     // Get body if not GET/HEAD

@@ -37,6 +37,7 @@ app.use('*', cors({
     const allowed = [
       'https://ethsltd.com', 
       'https://www.ethsltd.com',
+      'https://p2p.ethsltd.com',
       'https://ethsltd-web.ethsltd.workers.dev',
       'http://localhost:3000'
     ];
