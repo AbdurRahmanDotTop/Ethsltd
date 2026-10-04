@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { OrderSide, OrderType, Timeframe } from '@/lib/trading/types';
 
-export type MarketType = 'SPOT' | 'FUTURES' | 'OPTIONS';
+export type MarketType = 'SPOT';
 
 interface TradingUIState {
   selectedSide: OrderSide;
@@ -11,7 +11,6 @@ interface TradingUIState {
   orderFormQuantity: string;
   isOrderSubmitting: boolean;
   marketType: MarketType;
-  leverage: number;
 
   setSide: (side: OrderSide) => void;
   setOrderType: (type: OrderType) => void;
@@ -20,7 +19,6 @@ interface TradingUIState {
   setOrderFormQuantity: (quantity: string) => void;
   setIsOrderSubmitting: (isSubmitting: boolean) => void;
   setMarketType: (type: MarketType) => void;
-  setLeverage: (leverage: number) => void;
 }
 
 export const useTradingUIStore = create<TradingUIState>((set) => ({
@@ -31,7 +29,6 @@ export const useTradingUIStore = create<TradingUIState>((set) => ({
   orderFormQuantity: '',
   isOrderSubmitting: false,
   marketType: 'SPOT',
-  leverage: 10,
 
   setSide: (side) => set({ selectedSide: side }),
   setOrderType: (type) => set({ selectedOrderType: type }),
@@ -40,5 +37,4 @@ export const useTradingUIStore = create<TradingUIState>((set) => ({
   setOrderFormQuantity: (quantity) => set({ orderFormQuantity: quantity }),
   setIsOrderSubmitting: (isSubmitting) => set({ isOrderSubmitting: isSubmitting }),
   setMarketType: (type) => set({ marketType: type }),
-  setLeverage: (leverage) => set({ leverage: leverage }),
 }));

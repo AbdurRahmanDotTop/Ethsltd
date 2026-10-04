@@ -1,67 +1,102 @@
 import { eq, and } from 'drizzle-orm';
-import { orders, trades, wallets } from 'database';
+import { orders, trades, wallets, walletTransactions } from 'database';
 import { generateBusinessId } from './id-generator';
 import Decimal from 'decimal.js';
 
-export async function processOrderMatching(db: any, newOrder: any, marketInfo: any) {
-  return await db.transaction(async (tx: any) => {
-    const isBuy = newOrder.side === 'BUY';
-    const oppositeSide = isBuy ? 'SELL' : 'BUY';
-    // Find opposite side OPEN LIMIT orders
-    let matchingOrdersQuery = tx.select()
+export interface MatchResult {
+  remainingToFill: string;
+  totalFilledAmount: string;
+  totalQuoteSpent: string;
+  averagePrice: string;
+  tradesExecuted: number;
+}
+
+/**
+ * Production-grade order matching engine.
+ * 
+ * IMPORTANT: This function does NOT create its own transaction.
+ * The caller MUST pass a transaction context (`tx`) to ensure atomicity
+ * across order matching, wallet settlement, and record creation.
+ * 
+ * Flow per match:
+ * 1. Find opposite-side OPEN/PARTIALLY_FILLED limit orders (price-time priority)
+ * 2. For each matchable order: calculate fill amount
+ * 3. Update maker order status (FILLED or PARTIALLY_FILLED)
+ * 4. Settle maker wallets (unlock spend, credit receive minus fee)
+ * 5. Settle taker wallets (unlock spend, credit receive minus fee)
+ * 6. Create trade record with both user IDs
+ * 7. Create walletTransaction records for audit trail
+ */
+export async function processOrderMatching(
+  tx: any,
+  newOrder: any,
+  marketInfo: any,
+  takerUserId: string
+): Promise<MatchResult> {
+  const isBuy = newOrder.side === 'BUY';
+  const oppositeSide = isBuy ? 'SELL' : 'BUY';
+
+  // Find opposite side OPEN or PARTIALLY_FILLED LIMIT orders
+  let matchingOrders = await tx.select()
     .from(orders)
     .where(
       and(
         eq(orders.marketSymbol, newOrder.marketSymbol),
         eq(orders.side, oppositeSide),
-        eq(orders.status, 'OPEN'),
         eq(orders.type, 'LIMIT')
+        // We filter status in JS below since drizzle doesn't support OR on enums easily in D1
       )
-    );
+    )
+    .all();
 
-  let matchingOrders = await matchingOrdersQuery.all();
+  // Filter to only OPEN or PARTIALLY_FILLED
+  matchingOrders = matchingOrders.filter(
+    (o: any) => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
+  );
 
-  // Sort: Buy orders want lowest Ask (asc), Sell orders want highest Bid (desc)
+  // Sort by price priority, then time priority
+  // Buy orders want lowest Ask (ascending), Sell orders want highest Bid (descending)
   matchingOrders.sort((a: any, b: any) => {
     const pA = new Decimal(a.price);
     const pB = new Decimal(b.price);
-    if (isBuy) {
-      return pA.cmp(pB); // ascending
-    } else {
-      return pB.cmp(pA); // descending
-    }
+    const priceCompare = isBuy ? pA.cmp(pB) : pB.cmp(pA);
+    if (priceCompare !== 0) return priceCompare;
+    // Time priority: earlier orders first
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
   let remainingToFill = new Decimal(newOrder.remainingAmount);
   let totalFilledAmount = new Decimal(0);
-  let totalSpentOrReceived = new Decimal(0);
-  
+  let totalQuoteSpent = new Decimal(0);
+  let tradesExecuted = 0;
+
   const now = new Date();
 
   for (const makerOrder of matchingOrders) {
     if (remainingToFill.lte(0)) break;
 
     const makerPrice = new Decimal(makerOrder.price);
-    
+
+    // Price crossing check for limit orders
     if (newOrder.type === 'LIMIT') {
       const takerPrice = new Decimal(newOrder.price);
-      if (isBuy && takerPrice.lt(makerPrice)) break; // limit buy price is lower than lowest ask
-      if (!isBuy && takerPrice.gt(makerPrice)) break; // limit sell price is higher than highest bid
+      if (isBuy && takerPrice.lt(makerPrice)) break; // taker bid < lowest ask
+      if (!isBuy && takerPrice.gt(makerPrice)) break; // taker ask > highest bid
     }
 
     const makerRemaining = new Decimal(makerOrder.remainingAmount);
     const fillAmount = Decimal.min(remainingToFill, makerRemaining);
+    const quoteAmount = fillAmount.times(makerPrice);
 
-    // Execute match
+    // Update totals
     remainingToFill = remainingToFill.minus(fillAmount);
     totalFilledAmount = totalFilledAmount.plus(fillAmount);
-    const cost = fillAmount.times(makerPrice);
-    totalSpentOrReceived = totalSpentOrReceived.plus(cost);
+    totalQuoteSpent = totalQuoteSpent.plus(quoteAmount);
 
-    // Update Maker Order
+    // --- Update Maker Order ---
     const newMakerRemaining = makerRemaining.minus(fillAmount);
     const newMakerFilled = new Decimal(makerOrder.filledAmount).plus(fillAmount);
-    const makerStatus = newMakerRemaining.lte(0) ? 'FILLED' : 'OPEN';
+    const makerStatus = newMakerRemaining.lte(0) ? 'FILLED' : 'PARTIALLY_FILLED';
 
     await tx.update(orders).set({
       remainingAmount: newMakerRemaining.toString(),
@@ -70,75 +105,262 @@ export async function processOrderMatching(db: any, newOrder: any, marketInfo: a
       updatedAt: now
     }).where(eq(orders.id, makerOrder.id));
 
-    // Create Trade Record
+    // --- Calculate Fees ---
+    const makerFeeRate = new Decimal(marketInfo.makerFee);
+    const takerFeeRate = new Decimal(marketInfo.takerFee);
+
+    // Determine who is buyer and who is seller
+    const buyOrderId = isBuy ? newOrder.id : makerOrder.id;
+    const sellOrderId = isBuy ? makerOrder.id : newOrder.id;
+    const buyUserId = isBuy ? takerUserId : makerOrder.userId;
+    const sellUserId = isBuy ? makerOrder.userId : takerUserId;
+
+    // Buyer receives base asset, pays fee in base asset
+    // Seller receives quote asset, pays fee in quote asset
+    const buyFee = fillAmount.times(takerFeeRate); // fee on base asset received
+    const sellFee = quoteAmount.times(makerFeeRate); // fee on quote asset received
+
+    // --- Create Trade Record ---
     const tradeId = crypto.randomUUID();
     const tradeDisplayId = await generateBusinessId(tx, 'system', 'TRAD');
-
-    const makerFeeAmt = fillAmount.times(makerPrice).times(marketInfo.makerFee);
-    const takerFeeAmt = fillAmount.times(makerPrice).times(marketInfo.takerFee);
 
     await tx.insert(trades).values({
       id: tradeId,
       displayId: tradeDisplayId,
       marketSymbol: newOrder.marketSymbol,
-      makerOrderId: makerOrder.id,
-      takerOrderId: newOrder.id,
+      buyOrderId,
+      sellOrderId,
+      buyUserId,
+      sellUserId,
       price: makerPrice.toString(),
       amount: fillAmount.toString(),
-      makerFee: makerFeeAmt.toString(),
-      takerFee: takerFeeAmt.toString(),
+      quoteAmount: quoteAmount.toString(),
+      buyFee: buyFee.toString(),
+      sellFee: sellFee.toString(),
       createdAt: now,
     });
 
-    // --- Update Maker Wallet ---
-    const makerReceiveAsset = makerOrder.side === 'BUY' ? marketInfo.baseAsset : marketInfo.quoteAsset;
-    const makerReceiveGross = makerOrder.side === 'BUY' ? fillAmount : fillAmount.times(makerPrice);
-    
-    // Fee in receive asset
-    const mFee = makerReceiveGross.times(marketInfo.makerFee);
-    const makerReceiveNet = makerReceiveGross.minus(mFee);
+    // --- Settle Maker Wallets ---
+    await settleTradeWallets(tx, {
+      userId: makerOrder.userId,
+      side: makerOrder.side,
+      baseAsset: marketInfo.baseAsset,
+      quoteAsset: marketInfo.quoteAsset,
+      fillAmount,
+      quoteAmount,
+      fee: makerOrder.side === 'BUY' ? fillAmount.times(makerFeeRate) : sellFee,
+      tradeId,
+      now,
+    });
 
-    // Credit maker receive wallet
-    let mRecWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, makerOrder.userId), eq(wallets.assetSymbol, makerReceiveAsset))).get();
-    if (mRecWallet) {
-      await tx.update(wallets).set({ 
-        balance: new Decimal(mRecWallet.balance).plus(makerReceiveNet).toString(),
-        updatedAt: now 
-      }).where(eq(wallets.id, mRecWallet.id));
-    } else {
-      const newWalletId = crypto.randomUUID();
-      const newWalletDisplayId = await generateBusinessId(tx, 'system', 'WALL');
-      await tx.insert(wallets).values({
-        id: newWalletId,
-        displayId: newWalletDisplayId,
-        userId: makerOrder.userId,
-        assetSymbol: makerReceiveAsset,
+    // --- Settle Taker Wallets ---
+    await settleTradeWallets(tx, {
+      userId: takerUserId,
+      side: newOrder.side,
+      baseAsset: marketInfo.baseAsset,
+      quoteAsset: marketInfo.quoteAsset,
+      fillAmount,
+      quoteAmount,
+      fee: newOrder.side === 'BUY' ? buyFee : quoteAmount.times(takerFeeRate),
+      tradeId,
+      now,
+    });
 
-        balance: makerReceiveNet.toString(),
-        lockedBalance: '0',
-        createdAt: now,
-        updatedAt: now
-      });
-    }
-
-    // Un-lock maker spend wallet
-    const makerSpendAsset = makerOrder.side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
-    const makerSpendGross = makerOrder.side === 'BUY' ? fillAmount.times(makerPrice) : fillAmount;
-    
-    let mSpdWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, makerOrder.userId), eq(wallets.assetSymbol, makerSpendAsset))).get();
-    if (mSpdWallet) {
-      await tx.update(wallets).set({
-        lockedBalance: Decimal.max(0, new Decimal(mSpdWallet.lockedBalance).minus(makerSpendGross)).toString(),
-        updatedAt: now
-      }).where(eq(wallets.id, mSpdWallet.id));
-    }
+    tradesExecuted++;
   }
 
   return {
-    remainingToFill: remainingToFill.toNumber(),
-    totalFilledAmount: totalFilledAmount.toNumber(),
-    totalSpentOrReceived: totalSpentOrReceived.toNumber(),
-    averagePrice: totalFilledAmount.gt(0) ? totalSpentOrReceived.div(totalFilledAmount).toNumber() : 0
-    };
+    remainingToFill: remainingToFill.toString(),
+    totalFilledAmount: totalFilledAmount.toString(),
+    totalQuoteSpent: totalQuoteSpent.toString(),
+    averagePrice: totalFilledAmount.gt(0)
+      ? totalQuoteSpent.div(totalFilledAmount).toString()
+      : '0',
+    tradesExecuted,
+  };
+}
+
+/**
+ * Settle wallets for one side of a trade.
+ * 
+ * For a BUY:
+ *   - Unlock quote asset from lockedBalance (the amount reserved at order time)
+ *   - Credit base asset (fillAmount - fee)
+ * 
+ * For a SELL:
+ *   - Unlock base asset from lockedBalance
+ *   - Credit quote asset (quoteAmount - fee)
+ */
+async function settleTradeWallets(tx: any, params: {
+  userId: string;
+  side: 'BUY' | 'SELL';
+  baseAsset: string;
+  quoteAsset: string;
+  fillAmount: Decimal;
+  quoteAmount: Decimal;
+  fee: Decimal;
+  tradeId: string;
+  now: Date;
+}) {
+  const { userId, side, baseAsset, quoteAsset, fillAmount, quoteAmount, fee, tradeId, now } = params;
+
+  if (side === 'BUY') {
+    // 1. Unlock the quote asset that was locked at order time
+    const spendWallet = await tx.select().from(wallets)
+      .where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, quoteAsset)))
+      .get();
+    
+    if (spendWallet) {
+      const newLocked = Decimal.max(0, new Decimal(spendWallet.lockedBalance).minus(quoteAmount));
+      await tx.update(wallets).set({
+        lockedBalance: newLocked.toString(),
+        updatedAt: now
+      }).where(eq(wallets.id, spendWallet.id));
+
+      // Create wallet transaction for the spend
+      await createWalletTransaction(tx, {
+        userId,
+        type: 'TRADE',
+        assetSymbol: quoteAsset,
+        amount: quoteAmount.negated().toString(),
+        fee: '0',
+        status: 'COMPLETED',
+        reference: tradeId,
+        beforeBalance: spendWallet.balance,
+        afterBalance: spendWallet.balance, // balance didn't change, it was already locked
+        now,
+      });
+    }
+
+    // 2. Credit base asset (received) minus fee
+    const receiveNet = fillAmount.minus(fee);
+    await creditWallet(tx, userId, baseAsset, receiveNet, now);
+
+    // Create wallet transaction for the receive
+    const receiveWallet = await tx.select().from(wallets)
+      .where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, baseAsset)))
+      .get();
+
+    await createWalletTransaction(tx, {
+      userId,
+      type: 'TRADE',
+      assetSymbol: baseAsset,
+      amount: receiveNet.toString(),
+      fee: fee.toString(),
+      status: 'COMPLETED',
+      reference: tradeId,
+      beforeBalance: new Decimal(receiveWallet?.balance || '0').minus(receiveNet).toString(),
+      afterBalance: receiveWallet?.balance || receiveNet.toString(),
+      now,
+    });
+
+  } else {
+    // SELL side
+    // 1. Unlock the base asset that was locked at order time
+    const spendWallet = await tx.select().from(wallets)
+      .where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, baseAsset)))
+      .get();
+
+    if (spendWallet) {
+      const newLocked = Decimal.max(0, new Decimal(spendWallet.lockedBalance).minus(fillAmount));
+      await tx.update(wallets).set({
+        lockedBalance: newLocked.toString(),
+        updatedAt: now
+      }).where(eq(wallets.id, spendWallet.id));
+
+      await createWalletTransaction(tx, {
+        userId,
+        type: 'TRADE',
+        assetSymbol: baseAsset,
+        amount: fillAmount.negated().toString(),
+        fee: '0',
+        status: 'COMPLETED',
+        reference: tradeId,
+        beforeBalance: spendWallet.balance,
+        afterBalance: spendWallet.balance,
+        now,
+      });
+    }
+
+    // 2. Credit quote asset (received) minus fee
+    const receiveNet = quoteAmount.minus(fee);
+    await creditWallet(tx, userId, quoteAsset, receiveNet, now);
+
+    const receiveWallet = await tx.select().from(wallets)
+      .where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, quoteAsset)))
+      .get();
+
+    await createWalletTransaction(tx, {
+      userId,
+      type: 'TRADE',
+      assetSymbol: quoteAsset,
+      amount: receiveNet.toString(),
+      fee: fee.toString(),
+      status: 'COMPLETED',
+      reference: tradeId,
+      beforeBalance: new Decimal(receiveWallet?.balance || '0').minus(receiveNet).toString(),
+      afterBalance: receiveWallet?.balance || receiveNet.toString(),
+      now,
+    });
+  }
+}
+
+/**
+ * Credit a wallet, creating it if it doesn't exist.
+ */
+async function creditWallet(tx: any, userId: string, assetSymbol: string, amount: Decimal, now: Date) {
+  const wallet = await tx.select().from(wallets)
+    .where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, assetSymbol)))
+    .get();
+
+  if (wallet) {
+    const newBalance = new Decimal(wallet.balance).plus(amount);
+    await tx.update(wallets).set({
+      balance: newBalance.toString(),
+      updatedAt: now
+    }).where(eq(wallets.id, wallet.id));
+  } else {
+    const walletId = crypto.randomUUID();
+    await tx.insert(wallets).values({
+      id: walletId,
+      userId,
+      assetSymbol,
+      balance: amount.toString(),
+      lockedBalance: '0',
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+}
+
+/**
+ * Create a wallet transaction record for audit trail.
+ */
+async function createWalletTransaction(tx: any, params: {
+  userId: string;
+  type: string;
+  assetSymbol: string;
+  amount: string;
+  fee: string;
+  status: string;
+  reference: string;
+  beforeBalance: string;
+  afterBalance: string;
+  now: Date;
+}) {
+  const txId = crypto.randomUUID();
+  await tx.insert(walletTransactions).values({
+    id: txId,
+    userId: params.userId,
+    type: params.type,
+    assetSymbol: params.assetSymbol,
+    amount: params.amount,
+    fee: params.fee,
+    status: params.status,
+    reference: params.reference,
+    beforeBalance: params.beforeBalance,
+    afterBalance: params.afterBalance,
+    createdAt: params.now,
+    updatedAt: params.now,
   });
 }

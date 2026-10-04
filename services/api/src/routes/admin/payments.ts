@@ -151,6 +151,8 @@ async function approveDepositById(
         grossAmount: grossUsdtStr,
         totalFees: totalFeesStr,
         netAmount: originalAmountStr,
+        beforeBalance: '0', // Ephemeral step
+        afterBalance: originalAmount.toString(),
         createdAt: now,
         updatedAt: now,
       });
@@ -174,10 +176,15 @@ async function approveDepositById(
         grossAmount: grossUsdtStr,
         totalFees: totalFeesStr,
         netAmount: netUsdtStr,
+        beforeBalance: originalAmount.toString(),
+        afterBalance: '0',
         createdAt: now,
         updatedAt: now,
       });
     }
+
+    const previousUsdtBalance = wallet ? wallet.balance : '0';
+    const newUsdtBalance = new Decimal(previousUsdtBalance).plus(netUsdt).toString();
 
     // Step 3 — USDT Credit: +net_usdt (Deposit Completed)
     const step3DisplayId = await generateBusinessId(tx, null, 'WTXN');
@@ -198,6 +205,8 @@ async function approveDepositById(
       grossAmount: grossUsdtStr,
       totalFees: totalFeesStr,
       netAmount: netUsdtStr,
+      beforeBalance: previousUsdtBalance,
+      afterBalance: newUsdtBalance,
       createdAt: now,
       updatedAt: now,
     });

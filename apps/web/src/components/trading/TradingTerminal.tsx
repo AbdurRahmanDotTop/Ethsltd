@@ -100,44 +100,10 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       >
         <div className="flex items-center gap-4">
           <MarketSelector currentSymbol={market.symbol} />
-          <div className="hidden sm:flex bg-muted p-1 rounded-md">
-            {(['SPOT', 'FUTURES', 'OPTIONS'] as MarketType[]).map((type) => (
-              <button
-                key={type}
-                onClick={() => setMarketType(type)}
-                className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${
-                  marketType === type 
-                    ? 'bg-background shadow-sm text-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {type === 'FUTURES' ? 'PERPETUAL' : type}
-              </button>
-            ))}
-          </div>
         </div>
         <div className="mt-2 md:mt-0 overflow-x-auto no-scrollbar">
           <MarketSummary market={market} />
         </div>
-      </div>
-      
-      {/* Mobile Market Type Selector */}
-      <div className="sm:hidden flex bg-background px-4 py-2 border-b border-border">
-         <div className="flex bg-muted p-1 rounded-md w-full">
-            {(['SPOT', 'FUTURES', 'OPTIONS'] as MarketType[]).map((type) => (
-              <button
-                key={type}
-                onClick={() => setMarketType(type)}
-                className={`flex-1 py-1 text-xs font-medium rounded-sm transition-colors ${
-                  marketType === type 
-                    ? 'bg-background shadow-sm text-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {type === 'FUTURES' ? 'PERPETUAL' : type}
-              </button>
-            ))}
-         </div>
       </div>
 
       {/* Main Grid */}

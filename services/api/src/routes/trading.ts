@@ -13,7 +13,7 @@ const runTx = async (db: any, cb: any) => {
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { EmailService } from '../services/email';
-import { markets, orders, trades, wallets, walletTransactions, positions, binaryOptions, currencyRates } from 'database';
+import { markets, orders, trades, wallets, walletTransactions, currencyRates } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
 import { processOrderMatching } from '../services/matching-engine';
@@ -29,9 +29,11 @@ const DEFAULT_MARKETS = [
   { symbol: 'SOL-USDT', baseAsset: 'SOL', quoteAsset: 'USDT', minPrice: '0.1', maxPrice: '1000', tickSize: '0.01', minAmount: '0.1', stepSize: '0.1', makerFee: '0.001', takerFee: '0.001' },
 ];
 
+// ========== PUBLIC ENDPOINTS (No Auth Required) ==========
+
 tradingRoutes.get('/markets', async (c) => {
   const db = c.get('db');
-  let allMarkets = await db.select().from(markets).all();
+  let allMarkets = await db.select().from(markets).where(eq(markets.status, 'ACTIVE')).all();
   
   if (allMarkets.length === 0) {
     // Seed markets
@@ -41,7 +43,7 @@ tradingRoutes.get('/markets', async (c) => {
       ...m,
       createdAt: now
     })));
-    allMarkets = await db.select().from(markets).all();
+    allMarkets = await db.select().from(markets).where(eq(markets.status, 'ACTIVE')).all();
   }
   
   // Fetch real data from MEXC (more reliable on Cloudflare workers than Binance)
@@ -77,7 +79,7 @@ tradingRoutes.get('/markets', async (c) => {
             if (origSymbol) {
                tickerData[origSymbol] = {
                  lastPrice: item.lastPrice,
-                 priceChangePercent: parseFloat(item.priceChangePercent) / 100, // Binance returns percentage, we need fraction to match MEXC logic below
+                 priceChangePercent: parseFloat(item.priceChangePercent) / 100,
                  highPrice: item.highPrice,
                  lowPrice: item.lowPrice,
                  volume: item.volume,
@@ -104,7 +106,6 @@ tradingRoutes.get('/markets', async (c) => {
         baseAsset: m.baseAsset,
         quoteAsset: m.quoteAsset,
         price: price,
-        // MEXC priceChangePercent is a decimal fraction (e.g. 0.05 for 5%), so multiply by 100
         priceChange24h: parseFloat(bData.priceChangePercent) * 100, 
         high24h: parseFloat(bData.highPrice),
         low24h: parseFloat(bData.lowPrice),
@@ -138,10 +139,9 @@ tradingRoutes.get('/markets', async (c) => {
 tradingRoutes.get('/markets/:symbol/candles', async (c) => {
   const symbol = c.req.param('symbol');
   const interval = c.req.query('interval') || '15m';
-  // Map interval to MEXC format (same as Binance)
   const mexcSymbol = symbol.replace('-', '').toUpperCase();
 
-  // Try MEXC first (more reliable on Cloudflare Workers)
+  // Try MEXC first
   try {
     const res = await fetch(`https://api.mexc.com/api/v3/klines?symbol=${mexcSymbol}&interval=${interval}&limit=100`);
     if (res.ok) {
@@ -162,7 +162,7 @@ tradingRoutes.get('/markets/:symbol/candles', async (c) => {
     console.error('MEXC API error (candles):', e);
   }
 
-  // Fallback: try Binance as secondary source
+  // Fallback: try Binance
   try {
     const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${mexcSymbol}&interval=${interval}&limit=100`, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -185,7 +185,6 @@ tradingRoutes.get('/markets/:symbol/candles', async (c) => {
     console.error('Binance API error (candles fallback):', e);
   }
 
-  // Return empty array (not 502) so frontend chart shows "no data" gracefully
   return c.json({ success: true, data: [] });
 });
 
@@ -199,16 +198,20 @@ tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
       .where(
         and(
           eq(orders.marketSymbol, symbol),
-          eq(orders.type, 'LIMIT'),
-          eq(orders.status, 'OPEN')
+          eq(orders.type, 'LIMIT')
         )
       )
       .all();
 
+    // Filter OPEN or PARTIALLY_FILLED in JS
+    const openOrders = activeOrders.filter((o: any) => 
+      o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
+    );
+
     const askMap = new Map<number, number>();
     const bidMap = new Map<number, number>();
 
-    for (const o of activeOrders) {
+    for (const o of openOrders) {
       if (!o.price) continue;
       const price = parseFloat(o.price);
       const amount = parseFloat(o.remainingAmount);
@@ -223,12 +226,12 @@ tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
     const asks = Array.from(askMap.entries())
       .map(([price, amount]) => ({ price, amount, total: price * amount }))
       .sort((a, b) => a.price - b.price)
-      .slice(0, 50); // Limit depth
+      .slice(0, 50);
 
     const bids = Array.from(bidMap.entries())
       .map(([price, amount]) => ({ price, amount, total: price * amount }))
       .sort((a, b) => b.price - a.price)
-      .slice(0, 50); // Limit depth
+      .slice(0, 50);
 
     return c.json({ success: true, data: { asks, bids } });
   } catch (error) {
@@ -244,19 +247,18 @@ tradingRoutes.get('/markets/:symbol/trades', async (c) => {
   try {
     const recentTrades = await db.select()
       .from(trades)
-      .where(
-          eq(trades.marketSymbol, symbol)
-      )
+      .where(eq(trades.marketSymbol, symbol))
       .orderBy(desc(trades.createdAt))
       .limit(50)
       .all();
 
-    const formattedTrades = recentTrades.map(t => ({
+    const formattedTrades = recentTrades.map((t: any) => ({
       id: t.id,
       price: parseFloat(t.price),
       amount: parseFloat(t.amount),
-      time: t.createdAt.toISOString(),
-      isBuyerMaker: false // Or determine from logic
+      total: parseFloat(t.quoteAmount || '0') || parseFloat(t.price) * parseFloat(t.amount),
+      time: t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt,
+      isBuyerMaker: false
     }));
 
     return c.json({ success: true, data: formattedTrades });
@@ -286,9 +288,8 @@ tradingRoutes.get('/exchange-rate', async (c) => {
     }
   }
 
-  // 2. Fallback to external markets if no active admin rate is found
+  // 2. Fallback to external markets
   if (base === 'USDT' && quote === 'INR') {
-    // Try WazirX for accurate Crypto INR rate
     try {
       const res = await fetch('https://api.wazirx.com/sapi/v1/ticker/24hr?symbol=usdtinr');
       if (res.ok) {
@@ -301,7 +302,6 @@ tradingRoutes.get('/exchange-rate', async (c) => {
       console.warn('WazirX exchange rate fetch failed', e);
     }
 
-    // Try Coinbase Forex rate
     try {
       const res = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=USDT');
       if (res.ok) {
@@ -314,7 +314,6 @@ tradingRoutes.get('/exchange-rate', async (c) => {
       console.warn('Coinbase exchange rate fetch failed', e);
     }
     
-    // Absolute Fallback
     return c.json({ success: true, data: { rate: 90.00, source: 'Fallback' } });
   }
 
@@ -322,124 +321,20 @@ tradingRoutes.get('/exchange-rate', async (c) => {
 });
 
 
-// Secure all other routes
+// ========== AUTHENTICATED ENDPOINTS ==========
 tradingRoutes.use('*', jwtMiddleware);
 
-const processOpenLimitOrders = async (db: any, userId: string) => {
-  const openOrders = await db.select().from(orders).where(and(eq(orders.userId, userId), eq(orders.status, 'OPEN'))).all();
-  if (!openOrders.length) return;
-
-  const marketCache: Record<string, number> = {};
-  const marketInfoCache: Record<string, any> = {};
-
-  const now = new Date();
-
-  for (const order of openOrders) {
-    if (order.type !== 'LIMIT' || !order.price) continue;
-    
-    if (!marketCache[order.marketSymbol]) {
-      marketCache[order.marketSymbol] = await getRealPrice(order.marketSymbol) || 0;
-      marketInfoCache[order.marketSymbol] = await db.select().from(markets).where(eq(markets.symbol, order.marketSymbol)).get();
-    }
-    
-    const currentPriceNum = marketCache[order.marketSymbol];
-    const marketInfo = marketInfoCache[order.marketSymbol];
-    
-    if (!currentPriceNum || currentPriceNum <= 0 || !marketInfo) continue;
-    
-    const currentPrice = new Decimal(currentPriceNum);
-    const limitPrice = new Decimal(order.price);
-    const isCrossed = order.side === 'BUY' ? currentPrice.lte(limitPrice) : currentPrice.gte(limitPrice);
-    
-    if (isCrossed) {
-      await runTx(db, async (tx: any) => {
-        // Re-verify order is still OPEN
-        const freshOrder = await tx.select().from(orders).where(eq(orders.id, order.id)).get();
-        if (!freshOrder || freshOrder.status !== 'OPEN') return;
-
-        const executionPrice = limitPrice;
-        const parsedAmount = new Decimal(freshOrder.remainingAmount);
-        const totalValue = parsedAmount.times(executionPrice);
-        
-        const spendAsset = freshOrder.side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
-        const receiveAsset = freshOrder.side === 'BUY' ? marketInfo.baseAsset : marketInfo.quoteAsset;
-        const spendAmount = freshOrder.side === 'BUY' ? totalValue : parsedAmount;
-        
-        let spendWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, spendAsset))).get();
-        if (!spendWallet) return;
-        
-        // Unlock the balance
-        const newLocked = Decimal.max(0, new Decimal(spendWallet.lockedBalance).minus(spendAmount)).toString();
-        await tx.update(wallets).set({ lockedBalance: newLocked, updatedAt: now }).where(eq(wallets.id, spendWallet.id));
-        
-        // Deduct fee and add received asset
-        const feeAmount = freshOrder.side === 'BUY' 
-          ? parsedAmount.times(marketInfo.makerFee) 
-          : totalValue.times(marketInfo.makerFee);
-          
-        const receiveAmountFinal = freshOrder.side === 'BUY' 
-          ? parsedAmount.minus(feeAmount) 
-          : totalValue.minus(feeAmount);
-        
-        let receiveWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, receiveAsset))).get();
-        if (!receiveWallet) {
-          await tx.insert(wallets).values({
-            id: crypto.randomUUID(),
-            userId: userId,
-            assetSymbol: receiveAsset,
-            balance: receiveAmountFinal.toString(),
-            lockedBalance: '0',
-            createdAt: now,
-            updatedAt: now,
-          });
-        } else {
-          const newReceiveBalance = new Decimal(receiveWallet.balance).plus(receiveAmountFinal).toString();
-          await tx.update(wallets).set({ balance: newReceiveBalance, updatedAt: now }).where(eq(wallets.id, receiveWallet.id));
-        }
-        
-        // Update order status
-        await tx.update(orders).set({
-          status: 'FILLED',
-          filledAmount: freshOrder.amount,
-          remainingAmount: '0',
-          updatedAt: now,
-        }).where(eq(orders.id, freshOrder.id));
-        
-        // Create trade record
-        const tradeId = `TRD-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-        const tradeDisplayId = await generateBusinessId(tx, 'bot', 'TRAD');
-        
-        await tx.insert(trades).values({
-          id: tradeId,
-          displayId: tradeDisplayId,
-          marketSymbol: freshOrder.marketSymbol,
-          makerOrderId: freshOrder.id,
-          takerOrderId: 'external-liquidity-bot',
-          price: executionPrice.toString(),
-          amount: parsedAmount.toString(),
-          makerFee: feeAmount.toString(),
-          takerFee: '0',
-          createdAt: now,
-        });
-      });
-    }
-  }
-};
-
+// GET /orders — Fetch user's orders (no fake matching!)
 tradingRoutes.get('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   
-  // Process lazy matching first
-  await processOpenLimitOrders(db, user.id);
-
   const userOrders = await db.select().from(orders)
     .where(eq(orders.userId, user.id))
     .orderBy(desc(orders.createdAt))
     .all();
     
-  // Format for frontend
-  const formattedOrders = userOrders.map(o => ({
+  const formattedOrders = userOrders.map((o: any) => ({
     id: o.id,
     market: o.marketSymbol,
     side: o.side,
@@ -447,99 +342,122 @@ tradingRoutes.get('/orders', async (c) => {
     price: o.price ? parseFloat(o.price) : undefined,
     amount: parseFloat(o.amount),
     filled: parseFloat(o.filledAmount),
+    remaining: parseFloat(o.remainingAmount),
     total: o.price ? parseFloat(o.amount) * parseFloat(o.price) : undefined,
     status: o.status,
-    createdAt: o.createdAt.toISOString(),
+    createdAt: o.createdAt instanceof Date ? o.createdAt.toISOString() : o.createdAt,
   }));
     
   return c.json({ success: true, data: formattedOrders });
 });
 
+// GET /trades — Fetch user's trade history
 tradingRoutes.get('/trades', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   
-  // Fetch user's orders first to match trades
-  const userOrders = await db.select().from(orders).where(eq(orders.userId, user.id)).all();
-  const orderIds = userOrders.map(o => o.id);
+  // Query trades where this user is buyer or seller
+  const allTrades = await db.select().from(trades).orderBy(desc(trades.createdAt)).limit(200).all();
   
-  if (orderIds.length === 0) {
-    return c.json({ success: true, data: [] });
-  }
+  const userTrades = allTrades.filter((t: any) => 
+    t.buyUserId === user.id || t.sellUserId === user.id
+  );
   
-  // A real implementation would query where makerOrderId in orderIds OR takerOrderId in orderIds
-  // But Drizzle sqlite doesn't easily support dynamic OR IN array right now, so we do it in JS
-  const allTrades = await db.select().from(trades).orderBy(desc(trades.createdAt)).all();
-  const userTrades = allTrades.filter(t => orderIds.includes(t.makerOrderId) || orderIds.includes(t.takerOrderId));
-  
-  const formattedTrades = userTrades.map(t => {
-    // Find matching user order to know if it was BUY or SELL
-    const userOrder = userOrders.find(o => o.id === t.makerOrderId || o.id === t.takerOrderId);
+  const formattedTrades = userTrades.map((t: any) => {
+    const isBuyer = t.buyUserId === user.id;
     return {
       id: t.id,
       market: t.marketSymbol,
-      side: userOrder?.side || 'BUY',
+      side: isBuyer ? 'BUY' : 'SELL',
       price: parseFloat(t.price),
       amount: parseFloat(t.amount),
-      total: parseFloat(t.price) * parseFloat(t.amount),
-      fee: userOrder?.id === t.makerOrderId ? parseFloat(t.makerFee) : parseFloat(t.takerFee),
-      feeAsset: userOrder?.side === 'BUY' ? t.marketSymbol.split('-')[0] : t.marketSymbol.split('-')[1], // Simplified
-      createdAt: t.createdAt.toISOString(),
+      total: parseFloat(t.quoteAmount || '0') || parseFloat(t.price) * parseFloat(t.amount),
+      fee: isBuyer ? parseFloat(t.buyFee || '0') : parseFloat(t.sellFee || '0'),
+      feeAsset: isBuyer ? t.marketSymbol.split('-')[0] : t.marketSymbol.split('-')[1],
+      createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt,
     };
   });
   
   return c.json({ success: true, data: formattedTrades });
 });
 
+// POST /orders — Place a new spot order
 tradingRoutes.post('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
   const { market, side, type, amount, price } = body;
   
+  // --- Validate market ---
   const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
   if (!marketInfo) {
     return c.json({ success: false, error: 'Market not found' }, 400);
   }
+  if (marketInfo.status !== 'ACTIVE') {
+    return c.json({ success: false, error: 'Market is currently not active' }, 400);
+  }
 
+  // --- Validate & set price ---
   const fetchedPrice = await getRealPrice(market);
   const orderPriceRaw = type === 'MARKET' ? fetchedPrice : parseFloat(price);
   
   if (!orderPriceRaw || orderPriceRaw <= 0) {
-    return c.json({ success: false, error: 'Invalid price' }, 400);
+    return c.json({ success: false, error: 'Invalid price or price unavailable' }, 400);
   }
 
   const orderPrice = new Decimal(orderPriceRaw);
   const parsedAmount = new Decimal(amount);
   
+  // --- Validate amount ---
   if (parsedAmount.lte(0)) {
-    return c.json({ success: false, error: 'Invalid amount' }, 400);
+    return c.json({ success: false, error: 'Amount must be greater than zero' }, 400);
+  }
+  
+  const minAmount = new Decimal(marketInfo.minAmount);
+  if (parsedAmount.lt(minAmount)) {
+    return c.json({ success: false, error: `Minimum order amount is ${marketInfo.minAmount}` }, 400);
+  }
+
+  // --- Validate price bounds for limit orders ---
+  if (type === 'LIMIT') {
+    const minPrice = new Decimal(marketInfo.minPrice);
+    const maxPrice = new Decimal(marketInfo.maxPrice);
+    if (orderPrice.lt(minPrice) || orderPrice.gt(maxPrice)) {
+      return c.json({ success: false, error: `Price must be between ${marketInfo.minPrice} and ${marketInfo.maxPrice}` }, 400);
+    }
   }
 
   const totalValue = parsedAmount.times(orderPrice);
   
   const spendAsset = side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
-  const receiveAsset = side === 'BUY' ? marketInfo.baseAsset : marketInfo.quoteAsset;
   const spendAmount = side === 'BUY' ? totalValue : parsedAmount;
   
   const now = new Date();
-  const orderId = `ORD-${Date.now()}`;
+  const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
   const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
   const orderDisplayId = await generateBusinessId(db, dbUser?.email, 'ORDE');
 
   try {
     await runTx(db, async (tx: any) => {
-      // Wallet Check (Inside Transaction)
-      let spendWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset))).get();
+      // --- Balance Check (Inside Transaction) ---
+      let spendWallet = await tx.select().from(wallets)
+        .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)))
+        .get();
+      
       if (!spendWallet || new Decimal(spendWallet.balance).lt(spendAmount)) {
-        throw new Error('Insufficient balance');
+        throw new Error(`Insufficient ${spendAsset} balance`);
       }
       
-      // Deduct from available balance (lock it)
+      // --- Reserve balance: move from available to locked ---
       const newSpendBalance = new Decimal(spendWallet.balance).minus(spendAmount).toString();
       const newLockedBalance = new Decimal(spendWallet.lockedBalance).plus(spendAmount).toString();
-      await tx.update(wallets).set({ balance: newSpendBalance, lockedBalance: newLockedBalance, updatedAt: now }).where(eq(wallets.id, spendWallet.id));
+      await tx.update(wallets).set({
+        balance: newSpendBalance,
+        lockedBalance: newLockedBalance,
+        updatedAt: now
+      }).where(eq(wallets.id, spendWallet.id));
       
+      // --- Create Order Record ---
       const newOrderRecord = {
         id: orderId,
         displayId: orderDisplayId,
@@ -558,95 +476,65 @@ tradingRoutes.post('/orders', async (c) => {
 
       await tx.insert(orders).values(newOrderRecord);
       
-      // Call the matching engine passing tx
-      const matchResult = await processOrderMatching(tx, newOrderRecord, marketInfo);
+      // --- Run Matching Engine (within same transaction) ---
+      const matchResult = await processOrderMatching(tx, newOrderRecord, marketInfo, user.id);
       
-      // Check if MARKET order and still has remaining. If so, bot fills it (External Liquidity Fallback)
-      if (matchResult.remainingToFill > 0 && type === 'MARKET') {
-        const fallbackPrice = orderPrice; 
-        const fillAmount = new Decimal(matchResult.remainingToFill);
-        
-        const tradeId = crypto.randomUUID();
-        const tradeDisplayId = await generateBusinessId(tx, 'bot', 'TRAD');
-        const takerFeeAmt = fillAmount.times(fallbackPrice).times(marketInfo.takerFee);
-        
-        await tx.insert(trades).values({
-          id: tradeId,
-          displayId: tradeDisplayId,
-          marketSymbol: market,
-          makerOrderId: 'external-liquidity-bot',
-          takerOrderId: orderId,
-          price: fallbackPrice.toString(),
-          amount: fillAmount.toString(),
-          makerFee: '0',
-          takerFee: takerFeeAmt.toString(),
-          createdAt: now,
-        });
-        
-        matchResult.remainingToFill -= fillAmount.toNumber();
-        matchResult.totalFilledAmount += fillAmount.toNumber();
-        matchResult.totalSpentOrReceived += fillAmount.times(fallbackPrice).toNumber();
+      const filledAmount = new Decimal(matchResult.totalFilledAmount);
+      const remainingAmount = new Decimal(matchResult.remainingToFill);
+      
+      // --- Determine final order status ---
+      let finalStatus: string;
+      if (remainingAmount.lte(0)) {
+        finalStatus = 'FILLED';
+      } else if (filledAmount.gt(0)) {
+        finalStatus = 'PARTIALLY_FILLED';
+      } else {
+        finalStatus = 'OPEN';
       }
+
+      // For MARKET orders that couldn't be fully filled: 
+      // The unfilled portion remains as OPEN (not FAILED), user can cancel it.
+      // This is standard exchange behavior.
       
-      // Update Taker Order (This User's Order)
-      const takerStatus = matchResult.remainingToFill <= 0 ? 'FILLED' : 'OPEN';
+      // --- Update order with final state ---
       await tx.update(orders).set({
-        filledAmount: matchResult.totalFilledAmount.toString(),
-        remainingAmount: matchResult.remainingToFill.toString(),
-        status: takerStatus,
+        filledAmount: filledAmount.toString(),
+        remainingAmount: remainingAmount.toString(),
+        status: finalStatus,
         updatedAt: now
       }).where(eq(orders.id, orderId));
+
+      // --- Handle unfilled remainder for market orders ---
+      // If market order has remaining unfilled, and there are no matching limit orders,
+      // we keep it OPEN for future matching. This is NOT fake execution.
+      // The user can see the partially filled status and cancel the remainder.
       
-      // Finalize Taker Wallet
-      if (matchResult.totalFilledAmount > 0) {
-        // 1. Remove from locked balance
-        const expectedSpend = side === 'BUY' 
-            ? spendAmount.times(new Decimal(matchResult.totalFilledAmount).div(parsedAmount))
-            : new Decimal(matchResult.totalFilledAmount);
-            
-        const actualSpend = side === 'BUY' 
-            ? new Decimal(matchResult.totalSpentOrReceived)
-            : new Decimal(matchResult.totalFilledAmount);
+      // --- Refund excess locked balance if fully filled at better price ---
+      if (filledAmount.gt(0) && side === 'BUY') {
+        const actualQuoteSpent = new Decimal(matchResult.totalQuoteSpent);
+        const excessLocked = spendAmount.minus(actualQuoteSpent);
         
-        const finalSpendWallet = await tx.select().from(wallets).where(eq(wallets.id, spendWallet.id)).get();
-        if(finalSpendWallet) {
-           const finalLocked = Decimal.max(0, new Decimal(finalSpendWallet.lockedBalance).minus(expectedSpend)).toString();
-           
-           const refundAmount = Decimal.max(0, expectedSpend.minus(actualSpend));
-           const finalBalance = new Decimal(finalSpendWallet.balance).plus(refundAmount).toString();
-           
-           await tx.update(wallets).set({ balance: finalBalance, lockedBalance: finalLocked, updatedAt: now }).where(eq(wallets.id, spendWallet.id));
-        }
-        
-        // 2. Add received asset
-        const receiveTotal = side === 'BUY' ? new Decimal(matchResult.totalFilledAmount) : new Decimal(matchResult.totalSpentOrReceived);
-        const receiveFee = receiveTotal.times(marketInfo.takerFee);
-        const receiveAmountFinal = receiveTotal.minus(receiveFee);
-        
-        let receiveWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, receiveAsset))).get();
-        if (!receiveWallet) {
-          const walletId = crypto.randomUUID();
-          const walletDisplayId = await generateBusinessId(tx, dbUser?.email, 'WALL');
-          await tx.insert(wallets).values({
-            id: walletId,
-            displayId: walletDisplayId,
-            userId: user.id,
-            assetSymbol: receiveAsset,
-            balance: receiveAmountFinal.toString(),
-            lockedBalance: '0',
-            createdAt: now,
-            updatedAt: now,
-          });
-        } else {
-          const newReceiveBalance = new Decimal(receiveWallet.balance).plus(receiveAmountFinal).toString();
-          await tx.update(wallets).set({ balance: newReceiveBalance, updatedAt: now }).where(eq(wallets.id, receiveWallet.id));
+        if (excessLocked.gt(0) && finalStatus === 'FILLED') {
+          // Refund the excess to available balance
+          const freshWallet = await tx.select().from(wallets)
+            .where(eq(wallets.id, spendWallet.id)).get();
+          
+          if (freshWallet) {
+            await tx.update(wallets).set({
+              balance: new Decimal(freshWallet.balance).plus(excessLocked).toString(),
+              lockedBalance: Decimal.max(0, new Decimal(freshWallet.lockedBalance).minus(excessLocked)).toString(),
+              updatedAt: now
+            }).where(eq(wallets.id, spendWallet.id));
+          }
         }
       }
     }); // End Transaction
   } catch (error: any) {
-    return c.json({ success: false, error: error.message || 'Transaction failed' }, 400);
+    console.error('Order placement error:', error);
+    return c.json({ success: false, error: error.message || 'Failed to place order' }, 400);
   }
 
+  // Send email notification (fire-and-forget)
   const emailService = new EmailService(c.env, db);
   c.executionCtx.waitUntil((async () => {
     try {
@@ -678,6 +566,7 @@ tradingRoutes.post('/orders', async (c) => {
   return c.json({ success: true, orderId });
 });
 
+// DELETE /orders/:id — Cancel an open order
 tradingRoutes.delete('/orders/:id', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
@@ -685,35 +574,64 @@ tradingRoutes.delete('/orders/:id', async (c) => {
   
   try {
     await runTx(db, async (tx: any) => {
-      const order = await tx.select().from(orders).where(and(eq(orders.id, orderId), eq(orders.userId, user.id))).get();
+      const order = await tx.select().from(orders)
+        .where(and(eq(orders.id, orderId), eq(orders.userId, user.id)))
+        .get();
       
       if (!order) {
         throw new Error('Order not found');
       }
       
-      if (order.status !== 'OPEN') {
-        throw new Error('Order cannot be canceled');
+      // Only OPEN or PARTIALLY_FILLED orders can be cancelled
+      if (order.status !== 'OPEN' && order.status !== 'PARTIALLY_FILLED') {
+        throw new Error('Only open or partially filled orders can be canceled');
       }
       
-      const marketInfo = await tx.select().from(markets).where(eq(markets.symbol, order.marketSymbol)).get();
-      if(!marketInfo) throw new Error('Market missing');
+      const marketInfo = await tx.select().from(markets)
+        .where(eq(markets.symbol, order.marketSymbol)).get();
+      if(!marketInfo) throw new Error('Market not found');
 
       const now = new Date();
-      await tx.update(orders).set({ status: 'CANCELED', updatedAt: now }).where(eq(orders.id, order.id));
+      await tx.update(orders).set({ status: 'CANCELED', updatedAt: now })
+        .where(eq(orders.id, order.id));
       
-      // Refund locked balance
+      // Refund locked balance for the REMAINING (unfilled) portion
       const orderRemainingAmount = new Decimal(order.remainingAmount);
       const orderPrice = new Decimal(order.price || '0');
-      const remainingValue = orderRemainingAmount.times(orderPrice);
       
       const refundAsset = order.side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
-      const refundAmount = order.side === 'BUY' ? remainingValue : orderRemainingAmount;
+      const refundAmount = order.side === 'BUY' 
+        ? orderRemainingAmount.times(orderPrice)  // BUY: locked in quote
+        : orderRemainingAmount;                     // SELL: locked in base
       
-      let refundWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, refundAsset))).get();
-      if (refundWallet) {
-        const newBalance = new Decimal(refundWallet.balance).plus(refundAmount).toString();
-        const newLocked = Decimal.max(0, new Decimal(refundWallet.lockedBalance).minus(refundAmount)).toString();
-        await tx.update(wallets).set({ balance: newBalance, lockedBalance: newLocked, updatedAt: now }).where(eq(wallets.id, refundWallet.id));
+      if (refundAmount.gt(0)) {
+        let refundWallet = await tx.select().from(wallets)
+          .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, refundAsset)))
+          .get();
+        
+        if (refundWallet) {
+          const newBalance = new Decimal(refundWallet.balance).plus(refundAmount).toString();
+          const newLocked = Decimal.max(0, new Decimal(refundWallet.lockedBalance).minus(refundAmount)).toString();
+          await tx.update(wallets).set({
+            balance: newBalance,
+            lockedBalance: newLocked,
+            updatedAt: now
+          }).where(eq(wallets.id, refundWallet.id));
+
+          // Create wallet transaction for the refund
+          await tx.insert(walletTransactions).values({
+            id: crypto.randomUUID(),
+            userId: user.id,
+            type: 'TRADE',
+            assetSymbol: refundAsset,
+            amount: refundAmount.toString(),
+            fee: '0',
+            status: 'COMPLETED',
+            reference: order.id,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
       }
     });
   } catch (e: any) {
@@ -721,338 +639,4 @@ tradingRoutes.delete('/orders/:id', async (c) => {
   }
   
   return c.json({ success: true });
-});
-
-// --- PERPETUAL FUTURES ENDPOINTS ---
-
-const processLiquidations = async (db: any, userId: string) => {
-  const userPositions = await db.select().from(positions)
-    .where(and(eq(positions.userId, userId), eq(positions.status, 'OPEN')))
-    .all();
-
-  const now = new Date();
-  for (const p of userPositions) {
-    const fetchedPrice = await getRealPrice(p.marketSymbol);
-    const markPrice = fetchedPrice ? new Decimal(fetchedPrice) : new Decimal(p.entryPrice);
-    const liqPrice = new Decimal(p.liquidationPrice);
-
-    let isLiquidated = false;
-    if (p.side === 'LONG' && markPrice.lte(liqPrice)) isLiquidated = true;
-    if (p.side === 'SHORT' && markPrice.gte(liqPrice)) isLiquidated = true;
-
-    if (isLiquidated) {
-      await runTx(db, async (tx: any) => {
-        const currentPos = await tx.select().from(positions).where(eq(positions.id, p.id)).get();
-        if (currentPos && currentPos.status === 'OPEN') {
-          // Liquidate
-          await tx.update(positions).set({
-            status: 'LIQUIDATED',
-            realizedPnl: new Decimal(currentPos.marginAmount).negated().toString(),
-            updatedAt: now
-          }).where(eq(positions.id, currentPos.id));
-        }
-      });
-    }
-  }
-};
-
-tradingRoutes.get('/futures/positions', async (c) => {
-  const db = c.get('db');
-  const user = c.get('user');
-
-  // Check liquidations before returning positions
-  await processLiquidations(db, user.id);
-
-  const userPositions = await db.select().from(positions)
-    .where(and(eq(positions.userId, user.id), eq(positions.status, 'OPEN')))
-    .all();
-
-  // Add uPnL calculation
-  const formattedPositions = await Promise.all(userPositions.map(async p => {
-    const fetchedPrice = await getRealPrice(p.marketSymbol);
-    const markPrice = fetchedPrice ? new Decimal(fetchedPrice) : new Decimal(p.entryPrice);
-    const entry = new Decimal(p.entryPrice);
-    const amount = new Decimal(p.amount);
-    
-    // Calculate unrealized PnL
-    let upnl = new Decimal(0);
-    if (p.side === 'LONG') {
-      upnl = markPrice.minus(entry).times(amount);
-    } else {
-      upnl = entry.minus(markPrice).times(amount);
-    }
-
-    const marginAmt = new Decimal(p.marginAmount);
-    const marginRatio = marginAmt.plus(upnl).div(markPrice.times(amount));
-
-    return {
-      ...p,
-      markPrice: markPrice.toNumber(),
-      unrealizedPnl: upnl.toNumber(),
-      marginRatio: marginRatio.times(100).toNumber(), // as percentage
-    };
-  }));
-
-  return c.json({ success: true, data: formattedPositions });
-});
-
-tradingRoutes.post('/futures/order', async (c) => {
-  const db = c.get('db');
-  const user = c.get('user');
-  const body = await c.req.json();
-  
-  // side: 'LONG' | 'SHORT'
-  const { market, side, amount, leverage } = body;
-
-  const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
-  if (!marketInfo) {
-    return c.json({ success: false, error: 'Market not found' }, 400);
-  }
-
-  const markPriceRaw = await getRealPrice(market);
-  if (!markPriceRaw || markPriceRaw <= 0) {
-    return c.json({ success: false, error: 'Invalid market price' }, 400);
-  }
-  const markPrice = new Decimal(markPriceRaw);
-
-  const lev = new Decimal(leverage || '1');
-  if (lev.lt(1) || lev.gt(new Decimal(marketInfo.maxLeverage || '100'))) {
-    return c.json({ success: false, error: 'Invalid leverage' }, 400);
-  }
-
-  const parsedAmount = new Decimal(amount); // in base asset (e.g. BTC)
-  const positionNotionalValue = parsedAmount.times(markPrice);
-  const requiredMargin = positionNotionalValue.div(lev);
-  const fee = positionNotionalValue.times(marketInfo.takerFee);
-  const totalCost = requiredMargin.plus(fee);
-
-  const now = new Date();
-  const positionId = `POS-${Date.now()}`;
-  
-  // Calculate Liquidation Price (simplified isolated margin)
-  // Long Liq = Entry - (Margin / Amount)
-  // Short Liq = Entry + (Margin / Amount)
-  const liqPrice = side === 'LONG' 
-    ? markPrice.minus(requiredMargin.div(parsedAmount).times(0.9)) // 90% maintenance margin threshold
-    : markPrice.plus(requiredMargin.div(parsedAmount).times(0.9));
-
-  try {
-    await runTx(db, async (tx: any) => {
-      // Wallet check for margin in quote asset (USDT)
-      let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset))).get();
-      if (!quoteWallet || new Decimal(quoteWallet.balance).lt(totalCost)) {
-        throw new Error('Insufficient margin balance');
-      }
-
-      // Deduct margin + fee from available balance
-      const newBalance = new Decimal(quoteWallet.balance).minus(totalCost).toString();
-      await tx.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, quoteWallet.id));
-
-      await tx.insert(positions).values({
-        id: positionId,
-        userId: user.id,
-        marketSymbol: market,
-        side,
-        status: 'OPEN',
-        leverage: lev.toString(),
-        marginType: 'ISOLATED',
-        marginAmount: requiredMargin.toString(),
-        entryPrice: markPrice.toString(),
-        liquidationPrice: Decimal.max(0, liqPrice).toString(),
-        amount: parsedAmount.toString(),
-        realizedPnl: '0',
-        createdAt: now,
-        updatedAt: now,
-      });
-    });
-  } catch (error: any) {
-    return c.json({ success: false, error: error.message || 'Failed to open position' }, 400);
-  }
-
-  return c.json({ success: true, positionId, message: 'Position opened' });
-});
-
-tradingRoutes.post('/futures/close', async (c) => {
-  const db = c.get('db');
-  const user = c.get('user');
-  const body = await c.req.json();
-  const { positionId } = body;
-
-  let pnlOut = 0;
-  let totalReturnOut = 0;
-
-  try {
-    await runTx(db, async (tx: any) => {
-      const position = await tx.select().from(positions).where(and(eq(positions.id, positionId), eq(positions.userId, user.id))).get();
-      if (!position || position.status !== 'OPEN') {
-        throw new Error('Position not found or already closed');
-      }
-
-      const fetchedPrice = await getRealPrice(position.marketSymbol);
-      const markPrice = fetchedPrice ? new Decimal(fetchedPrice) : new Decimal(position.entryPrice);
-      const entry = new Decimal(position.entryPrice);
-      const amount = new Decimal(position.amount);
-      const marginAmt = new Decimal(position.marginAmount);
-
-      // Calculate PnL
-      let pnl = new Decimal(0);
-      if (position.side === 'LONG') {
-        pnl = markPrice.minus(entry).times(amount);
-      } else {
-        pnl = entry.minus(markPrice).times(amount);
-      }
-
-      const marketInfo = await tx.select().from(markets).where(eq(markets.symbol, position.marketSymbol)).get();
-      const takerFee = marketInfo?.takerFee ? new Decimal(marketInfo.takerFee) : new Decimal('0.001');
-      const fee = markPrice.times(amount).times(takerFee);
-
-      // Total return = Margin + PnL - Closing Fee
-      const totalReturn = marginAmt.plus(pnl).minus(fee);
-      
-      pnlOut = pnl.toNumber();
-      totalReturnOut = totalReturn.toNumber();
-
-      const now = new Date();
-      await tx.update(positions).set({
-        status: 'CLOSED',
-        realizedPnl: pnl.toString(),
-        updatedAt: now,
-      }).where(eq(positions.id, position.id));
-
-      if (totalReturn.gt(0)) {
-        const quoteAsset = marketInfo?.quoteAsset || 'USDT';
-        let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, quoteAsset))).get();
-        if (quoteWallet) {
-          const newBalance = new Decimal(quoteWallet.balance).plus(totalReturn).toString();
-          await tx.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, quoteWallet.id));
-        }
-      }
-    });
-  } catch (error: any) {
-    return c.json({ success: false, error: error.message || 'Failed to close position' }, 400);
-  }
-
-  return c.json({ success: true, pnl: pnlOut, totalReturn: totalReturnOut });
-});
-
-// --- BINARY OPTIONS ENDPOINTS ---
-
-const processOptions = async (db: any, userId: string) => {
-  const openOptions = await db.select().from(binaryOptions)
-    .where(and(eq(binaryOptions.userId, userId), eq(binaryOptions.status, 'PENDING')))
-    .all();
-
-  const now = new Date();
-  for (const opt of openOptions) {
-    if (now.getTime() >= opt.expiresAt.getTime()) {
-      const fetchedPrice = await getRealPrice(opt.marketSymbol);
-      const markPrice = fetchedPrice ? new Decimal(fetchedPrice) : new Decimal(opt.entryPrice);
-      const entry = new Decimal(opt.entryPrice);
-      
-      let status = 'LOST';
-      if (opt.direction === 'UP' && markPrice.gt(entry)) status = 'WON';
-      else if (opt.direction === 'DOWN' && markPrice.lt(entry)) status = 'WON';
-      else if (markPrice.eq(entry)) status = 'TIE';
-
-      await runTx(db, async (tx: any) => {
-        // Re-check status to prevent race conditions
-        const freshOpt = await tx.select().from(binaryOptions).where(eq(binaryOptions.id, opt.id)).get();
-        if (freshOpt && freshOpt.status === 'PENDING') {
-          await tx.update(binaryOptions).set({
-            status,
-            settlePrice: markPrice.toString(),
-            updatedAt: now
-          }).where(eq(binaryOptions.id, freshOpt.id));
-
-          if (status === 'WON' || status === 'TIE') {
-            const amount = new Decimal(freshOpt.amount);
-            const payout = status === 'WON' ? amount.times(freshOpt.payoutMultiplier) : amount;
-            
-            const marketInfo = await tx.select().from(markets).where(eq(markets.symbol, freshOpt.marketSymbol)).get();
-            const quoteAsset = marketInfo?.quoteAsset || 'USDT';
-            
-            let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, userId), eq(wallets.assetSymbol, quoteAsset))).get();
-            if (quoteWallet) {
-              const newBalance = new Decimal(quoteWallet.balance).plus(payout).toString();
-              await tx.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, quoteWallet.id));
-            }
-          }
-        }
-      });
-    }
-  }
-};
-
-tradingRoutes.get('/options/positions', async (c) => {
-  const db = c.get('db');
-  const user = c.get('user');
-
-  await processOptions(db, user.id);
-
-  const opts = await db.select().from(binaryOptions)
-    .where(eq(binaryOptions.userId, user.id))
-    .orderBy(desc(binaryOptions.createdAt))
-    .all();
-
-  return c.json({ success: true, data: opts });
-});
-
-tradingRoutes.post('/options/order', async (c) => {
-  const db = c.get('db');
-  const user = c.get('user');
-  const body = await c.req.json();
-  
-  // direction: 'UP' | 'DOWN', timeframe: minutes
-  const { market, direction, amount, timeframeMinutes } = body;
-
-  const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
-  if (!marketInfo) {
-    return c.json({ success: false, error: 'Market not found' }, 400);
-  }
-
-  const markPriceRaw = await getRealPrice(market);
-  if (!markPriceRaw || markPriceRaw <= 0) {
-    return c.json({ success: false, error: 'Invalid market price' }, 400);
-  }
-  const markPrice = new Decimal(markPriceRaw);
-
-  const parsedAmount = new Decimal(amount); // in quote asset (USDT)
-  if (parsedAmount.lte(0)) {
-    return c.json({ success: false, error: 'Invalid amount' }, 400);
-  }
-
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + (parseInt(timeframeMinutes) * 60000));
-  const optionId = `OPT-${Date.now()}`;
-
-  try {
-    await runTx(db, async (tx: any) => {
-      let quoteWallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset))).get();
-      if (!quoteWallet || new Decimal(quoteWallet.balance).lt(parsedAmount)) {
-        throw new Error('Insufficient balance');
-      }
-
-      // Deduct wager
-      const newBalance = new Decimal(quoteWallet.balance).minus(parsedAmount).toString();
-      await tx.update(wallets).set({ balance: newBalance, updatedAt: now }).where(eq(wallets.id, quoteWallet.id));
-
-      await tx.insert(binaryOptions).values({
-        id: optionId,
-        userId: user.id,
-        marketSymbol: market,
-        direction,
-        amount: parsedAmount.toString(),
-        entryPrice: markPrice.toString(),
-        status: 'PENDING',
-        payoutMultiplier: '1.8', // 80% profit
-        expiresAt,
-        createdAt: now,
-        updatedAt: now,
-      });
-    });
-  } catch (error: any) {
-    return c.json({ success: false, error: error.message || 'Failed to place option' }, 400);
-  }
-
-  return c.json({ success: true, optionId, message: 'Option contract placed' });
 });

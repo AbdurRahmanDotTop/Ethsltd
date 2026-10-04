@@ -1,10 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { platformSettings } from 'database';
+import Decimal from 'decimal.js';
 
 export interface FeeConfig {
   type: 'FIXED' | 'PERCENTAGE' | 'BOTH';
-  amount?: number; // Fixed amount
-  percentage?: number; // Percentage (0-100)
+  amount?: string; // Fixed amount
+  percentage?: string; // Percentage (0-100)
 }
 
 export const getFeeConfig = async (db: any, key: string, fallback: FeeConfig): Promise<FeeConfig> => {
@@ -12,12 +13,17 @@ export const getFeeConfig = async (db: any, key: string, fallback: FeeConfig): P
     const setting = await db.select().from(platformSettings).where(eq(platformSettings.key, key)).get();
     if (setting && setting.value) {
       try {
-        return JSON.parse(setting.value) as FeeConfig;
+        const parsed = JSON.parse(setting.value);
+        return {
+          type: parsed.type || fallback.type,
+          amount: parsed.amount ? String(parsed.amount) : undefined,
+          percentage: parsed.percentage ? String(parsed.percentage) : undefined,
+        };
       } catch (e) {
         // Fallback for simple string numeric values in legacy settings
         const num = parseFloat(setting.value);
         if (!isNaN(num)) {
-          return { type: 'PERCENTAGE', percentage: num };
+          return { type: 'PERCENTAGE', percentage: String(num) };
         }
       }
     }
@@ -27,15 +33,22 @@ export const getFeeConfig = async (db: any, key: string, fallback: FeeConfig): P
   return fallback;
 };
 
-export const calculateFee = (amount: number, config: FeeConfig): number => {
-  let fee = 0;
+export const calculateFee = (amount: string | number | Decimal, config: FeeConfig): string => {
+  const amt = new Decimal(amount);
+  let fee = new Decimal(0);
+  
   if (config.type === 'FIXED' || config.type === 'BOTH') {
-    fee += (config.amount || 0);
+    if (config.amount) {
+      fee = fee.plus(new Decimal(config.amount));
+    }
   }
   if (config.type === 'PERCENTAGE' || config.type === 'BOTH') {
-    fee += (amount * (config.percentage || 0)) / 100;
+    if (config.percentage) {
+      const pct = new Decimal(config.percentage).div(100);
+      fee = fee.plus(amt.times(pct));
+    }
   }
-  return fee;
+  return fee.toString();
 };
 
 export const getLimit = async (db: any, key: string, fallback: number): Promise<number> => {

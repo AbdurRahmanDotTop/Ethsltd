@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { Bindings, Variables } from '../../db';
-import { markets, orders, trades, users } from 'database';
+import { markets, orders, trades, users, wallets, walletTransactions } from 'database';
 import { jwtMiddleware } from '../../middleware/jwt';
+import Decimal from 'decimal.js';
 
 export const adminTradingRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -50,34 +51,13 @@ adminTradingRoutes.get('/markets', async (c) => {
 adminTradingRoutes.post('/markets', async (c) => {
   const db = c.get('db');
   const body = await c.req.json();
-  const { symbol, baseAsset, quoteAsset, minPrice, maxPrice, tickSize, minAmount, stepSize } = body;
+  const { symbol, baseAsset, quoteAsset, minPrice, maxPrice, tickSize, minAmount, stepSize, makerFee, takerFee } = body;
   
   if (!symbol || !baseAsset || !quoteAsset || !minPrice || !maxPrice || !tickSize || !minAmount || !stepSize) {
     return c.json({ success: false, error: 'Missing required fields' }, 400);
   }
   
   try {
-    const { platformSettings } = require('database');
-    const makerSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'TRADING_FEE_MAKER')).get();
-    const takerSetting = await db.select().from(platformSettings).where(eq(platformSettings.key, 'TRADING_FEE_TAKER')).get();
-    
-    let makerFee = '0.001';
-    let takerFee = '0.001';
-    
-    if (makerSetting) {
-      try {
-        const parsed = JSON.parse(String(makerSetting.value));
-        if (parsed?.percentage !== undefined) makerFee = String(parsed.percentage);
-      } catch (e) {}
-    }
-    
-    if (takerSetting) {
-      try {
-        const parsed = JSON.parse(String(takerSetting.value));
-        if (parsed?.percentage !== undefined) takerFee = String(parsed.percentage);
-      } catch (e) {}
-    }
-
     const newMarket = {
       id: crypto.randomUUID(),
       symbol: symbol.toUpperCase(),
@@ -88,13 +68,38 @@ adminTradingRoutes.post('/markets', async (c) => {
       tickSize: String(tickSize),
       minAmount: String(minAmount),
       stepSize: String(stepSize),
-      makerFee,
-      takerFee,
+      makerFee: makerFee ? String(makerFee) : '0.001',
+      takerFee: takerFee ? String(takerFee) : '0.001',
       createdAt: new Date(),
     };
     
     await db.insert(markets).values(newMarket).run();
     return c.json({ success: true, data: newMarket });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+adminTradingRoutes.put('/markets/:symbol', async (c) => {
+  const db = c.get('db');
+  const symbol = c.req.param('symbol');
+  const body = await c.req.json();
+  const { minPrice, maxPrice, tickSize, minAmount, stepSize, makerFee, takerFee } = body;
+  
+  try {
+    await db.update(markets)
+      .set({ 
+        minPrice: minPrice ? String(minPrice) : undefined,
+        maxPrice: maxPrice ? String(maxPrice) : undefined,
+        tickSize: tickSize ? String(tickSize) : undefined,
+        minAmount: minAmount ? String(minAmount) : undefined,
+        stepSize: stepSize ? String(stepSize) : undefined,
+        makerFee: makerFee ? String(makerFee) : undefined,
+        takerFee: takerFee ? String(takerFee) : undefined,
+      })
+      .where(eq(markets.symbol, symbol))
+      .run();
+    return c.json({ success: true });
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500);
   }
@@ -181,6 +186,71 @@ adminTradingRoutes.get('/orders', async (c) => {
   }
 });
 
+adminTradingRoutes.post('/orders/:id/cancel', async (c) => {
+  const db = c.get('db');
+  const orderId = c.req.param('id');
+  
+  try {
+    await db.transaction(async (tx: any) => {
+      const order = await tx.select().from(orders).where(eq(orders.id, orderId)).get();
+      if (!order) throw new Error('Order not found');
+      
+      if (order.status !== 'OPEN' && order.status !== 'PARTIALLY_FILLED') {
+        throw new Error(`Cannot cancel order in ${order.status} state`);
+      }
+      
+      const marketInfo = await tx.select().from(markets).where(eq(markets.symbol, order.marketSymbol)).get();
+      if(!marketInfo) throw new Error('Market not found');
+
+      const now = new Date();
+      await tx.update(orders).set({ status: 'CANCELED', updatedAt: now }).where(eq(orders.id, order.id));
+      
+      // Refund locked balance
+      const orderRemainingAmount = new Decimal(order.remainingAmount);
+      const orderPrice = new Decimal(order.price || '0');
+      
+      const refundAsset = order.side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
+      const refundAmount = order.side === 'BUY' 
+        ? orderRemainingAmount.times(orderPrice)
+        : orderRemainingAmount;
+      
+      if (refundAmount.gt(0)) {
+        let refundWallet = await tx.select().from(wallets)
+          .where(and(eq(wallets.userId, order.userId), eq(wallets.assetSymbol, refundAsset)))
+          .get();
+        
+        if (refundWallet) {
+          const newBalance = new Decimal(refundWallet.balance).plus(refundAmount).toString();
+          const newLocked = Decimal.max(0, new Decimal(refundWallet.lockedBalance).minus(refundAmount)).toString();
+          await tx.update(wallets).set({
+            balance: newBalance,
+            lockedBalance: newLocked,
+            updatedAt: now
+          }).where(eq(wallets.id, refundWallet.id));
+
+          await tx.insert(walletTransactions).values({
+            id: crypto.randomUUID(),
+            userId: order.userId,
+            type: 'TRADE',
+            assetSymbol: refundAsset,
+            amount: refundAmount.toString(),
+            fee: '0',
+            status: 'COMPLETED',
+            reference: `Admin Cancel: ${order.id}`,
+            beforeBalance: refundWallet.balance,
+            afterBalance: newBalance,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+      }
+    });
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 400);
+  }
+});
+
 adminTradingRoutes.get('/trades', async (c) => {
   const db = c.get('db');
   const page = parseInt(c.req.query('page') || '1');
@@ -195,19 +265,19 @@ adminTradingRoutes.get('/trades', async (c) => {
     
     let filtered = results;
     if (market && market !== 'ALL') {
-       filtered = filtered.filter(r => r.marketSymbol === market);
+       filtered = filtered.filter((r: any) => r.marketSymbol === market);
     }
     
     const paginated = filtered.slice(offset, offset + limit);
     
-    const mapped = paginated.map(t => ({
+    const mapped = paginated.map((t: any) => ({
       id: t.displayId || t.id,
       market: t.marketSymbol,
-      takerSide: 'BUY', // Taker side logic to be refined if schema provides it
       price: t.price,
       amount: t.amount,
-      makerFee: t.makerFee,
-      takerFee: t.takerFee,
+      quoteAmount: t.quoteAmount,
+      buyFee: t.buyFee,
+      sellFee: t.sellFee,
       createdAt: t.createdAt
     }));
     

@@ -33,6 +33,9 @@ export const walletTransactions = sqliteTable('wallet_transactions', {
   totalFees: text('total_fees'),
   netAmount: text('net_amount'),
   
+  beforeBalance: text('before_balance'),
+  afterBalance: text('after_balance'),
+  
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
