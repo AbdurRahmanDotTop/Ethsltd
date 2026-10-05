@@ -46,7 +46,7 @@ export function QuotesList() {
 
     switch (action) {
       case "new_order":
-        router.push(`/trade/${selectedSymbol.symbol}`)
+        router.push(`/order/${selectedSymbol.symbol}`)
         break
       case "chart":
         router.push(`/trade/${selectedSymbol.symbol}`)
