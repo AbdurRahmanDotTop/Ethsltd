@@ -513,8 +513,6 @@ tradingRoutes.post('/orders', async (c) => {
       let finalPrice = orderPrice.toString();
       
       // Native MT5-style CFD Execution (Without external API calls)
-      let positionId = crypto.randomUUID();
-      let finalPrice = orderPrice.toString();
       const marginRequired = totalValue.div(100); // hardcoded leverage 100 for now
       
       // Update Order to FILLED and Create Position in our DB
