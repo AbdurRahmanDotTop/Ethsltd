@@ -2,7 +2,8 @@ import { Hono } from 'hono';
 import { Bindings, Variables } from '../db';
 import { jwtMiddleware as authMiddleware } from '../middleware/jwt';
 // @ts-ignore
-import { authenticator } from 'otplib';
+import * as otplibPkg from 'otplib';
+const authenticator = (otplibPkg as any).authenticator || (otplibPkg as any).default?.authenticator;
 import * as QRCode from 'qrcode';
 import { eq } from 'drizzle-orm';
 import { users } from 'database/schema/auth';

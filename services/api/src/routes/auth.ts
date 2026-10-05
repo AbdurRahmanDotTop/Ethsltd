@@ -9,7 +9,8 @@ import { generateBusinessId } from '../services/id-generator';
 import { EmailService } from '../services/email';
 import { getCookieDomain, getAuthCookieOptions } from '../utils/cookie';
 // @ts-ignore
-import { authenticator } from 'otplib';
+import * as otplibPkg from 'otplib';
+const authenticator = (otplibPkg as any).authenticator || (otplibPkg as any).default?.authenticator;
 
 export const authRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Home, LineChart, Wallet, CreditCard, Zap } from "lucide-react";
+import { ArrowUpDown, CandlestickChart, Briefcase, Clock, MessageSquare } from "lucide-react";
 
 export function AppNavigation() {
   const pathname = usePathname();
@@ -11,34 +11,34 @@ export function AppNavigation() {
 
   const navItems = [
     {
-      name: "Home",
-      href: "/",
-      icon: Home,
-      isActive: pathname === "/",
+      name: "Quotes",
+      href: "/markets",
+      icon: ArrowUpDown,
+      isActive: pathname === "/markets" || pathname === "/",
+    },
+    {
+      name: "Charts",
+      href: "/trade",
+      icon: CandlestickChart,
+      isActive: pathname?.startsWith("/trade") && !pathname?.includes("/positions") && !pathname?.includes("/history"),
     },
     {
       name: "Trade",
-      href: "/trade",
-      icon: LineChart,
-      isActive: pathname?.startsWith("/trade"),
-    },
-    {
-      name: "P2P",
-      href: "https://p2p.ethsltd.com/",
-      icon: Zap,
-      isActive: false,
-    },
-    {
-      name: "Wallet",
-      href: "/wallet?tab=currency",
-      icon: CreditCard,
+      href: "/wallet",
+      icon: Briefcase,
       isActive: pathname?.startsWith("/wallet") && tab !== "asset",
     },
     {
-      name: "Assets",
-      href: "/wallet?tab=asset",
-      icon: Wallet,
-      isActive: (pathname?.startsWith("/wallet") && tab === "asset") || pathname === "/account/profile",
+      name: "History",
+      href: "/account/history",
+      icon: Clock,
+      isActive: pathname?.startsWith("/account/history") || pathname?.startsWith("/wallet/history"),
+    },
+    {
+      name: "Messages",
+      href: "/support",
+      icon: MessageSquare,
+      isActive: pathname?.startsWith("/support") || pathname?.startsWith("/notifications"),
     },
   ];
 

@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { eq, desc, and, or } from 'drizzle-orm';
 // @ts-ignore
-import { authenticator } from 'otplib';
+import * as otplibPkg from 'otplib';
+const authenticator = (otplibPkg as any).authenticator || (otplibPkg as any).default?.authenticator;
 import { Bindings, Variables } from '../db';
 import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users, currencyRates, expertBookings, expertProfiles, orders as tradingOrders } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';

@@ -448,8 +448,13 @@ tradingRoutes.post('/orders', async (c) => {
 
   const totalValue = parsedAmount.times(orderPrice);
   
-  const spendAsset = side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
-  const spendAmount = side === 'BUY' ? totalValue : parsedAmount;
+  let spendAsset = side === 'BUY' ? marketInfo.quoteAsset : marketInfo.baseAsset;
+  let spendAmount = side === 'BUY' ? totalValue : parsedAmount;
+  
+  if (marketInfo.type !== 'SPOT') {
+    spendAsset = marketInfo.quoteAsset;
+    spendAmount = totalValue.div(100); // hardcoded leverage 100
+  }
   
   const now = new Date();
   const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
@@ -474,7 +479,7 @@ tradingRoutes.post('/orders', async (c) => {
         balance: newSpendBalance,
         lockedBalance: newLockedBalance,
         updatedAt: now
-      }).where(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset));
+      }).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)));
       
       // --- Create Order Record (PENDING for MT5) ---
       const newOrderRecord = {
@@ -599,7 +604,7 @@ tradingRoutes.post('/orders', async (c) => {
               balance: returnedBalance,
               lockedBalance: returnedLocked,
               updatedAt: new Date()
-            }).where(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset));
+            }).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)));
           }
         });
 
@@ -655,14 +660,14 @@ tradingRoutes.post('/orders', async (c) => {
         if (excessLocked.gt(0) && finalStatus === 'FILLED') {
           // Refund the excess to available balance
           const freshWallet = await tx.select().from(wallets)
-            .where(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)).get();
+            .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset))).get();
           
           if (freshWallet) {
             await tx.update(wallets).set({
               balance: new Decimal(freshWallet.balance).plus(excessLocked).toString(),
               lockedBalance: Decimal.max(0, new Decimal(freshWallet.lockedBalance).minus(excessLocked)).toString(),
               updatedAt: now
-            }).where(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset));
+            }).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)));
           }
         }
       }
