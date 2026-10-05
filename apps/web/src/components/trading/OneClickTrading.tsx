@@ -25,7 +25,7 @@ export function OneClickTrading({ market, currentPrice }: { market: any, current
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          marketSymbol: market.symbol,
+          market: market.symbol,
           type: 'MARKET',
           side,
           amount,
@@ -63,23 +63,23 @@ export function OneClickTrading({ market, currentPrice }: { market: any, current
         </div>
         
         {/* Body */}
-        <div className="p-2 flex gap-1">
+        <div className="p-2 flex gap-2">
           <button 
             disabled={isSubmitting}
             onClick={() => handleTrade('SELL')}
-            className="flex-1 bg-danger/10 hover:bg-danger/20 border border-danger/30 text-danger rounded flex flex-col items-center justify-center py-2 transition-colors disabled:opacity-50"
+            className="flex-1 bg-danger hover:bg-danger/90 text-white rounded flex flex-col items-center justify-center py-2 transition-transform active:scale-95 disabled:opacity-50 shadow-sm"
           >
-            <span className="text-[10px] font-bold uppercase">Sell</span>
+            <span className="text-[10px] font-bold uppercase">{isSubmitting ? '...' : 'SELL'}</span>
             <span className="text-sm font-mono font-bold mt-0.5">{currentPrice ? currentPrice.toFixed(4) : '---'}</span>
           </button>
           
-          <div className="flex flex-col gap-1 w-16 shrink-0">
-            <div className="text-[10px] text-center text-muted-foreground">Amount</div>
+          <div className="flex flex-col gap-1 w-16 shrink-0 justify-center">
+            <div className="text-[9px] text-center text-muted-foreground uppercase tracking-wider">Amount</div>
             <input 
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-muted border border-border rounded text-center text-sm py-1 outline-none focus:border-brand-foreground"
+              className="w-full bg-muted/50 border border-border rounded text-center text-sm py-1 outline-none focus:border-brand-foreground focus:ring-1 focus:ring-brand-foreground/50 transition-all font-mono"
               step={market.stepSize || "0.01"}
               min={market.minAmount || "0.01"}
             />
@@ -88,9 +88,9 @@ export function OneClickTrading({ market, currentPrice }: { market: any, current
           <button 
             disabled={isSubmitting}
             onClick={() => handleTrade('BUY')}
-            className="flex-1 bg-success/10 hover:bg-success/20 border border-success/30 text-success rounded flex flex-col items-center justify-center py-2 transition-colors disabled:opacity-50"
+            className="flex-1 bg-success hover:bg-success/90 text-white rounded flex flex-col items-center justify-center py-2 transition-transform active:scale-95 disabled:opacity-50 shadow-sm"
           >
-            <span className="text-[10px] font-bold uppercase">Buy</span>
+            <span className="text-[10px] font-bold uppercase">{isSubmitting ? '...' : 'BUY'}</span>
             <span className="text-sm font-mono font-bold mt-0.5">{currentPrice ? currentPrice.toFixed(4) : '---'}</span>
           </button>
         </div>

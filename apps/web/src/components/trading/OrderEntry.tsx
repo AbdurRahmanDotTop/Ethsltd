@@ -248,29 +248,31 @@ export function OrderEntry({ market }: { market: Market }) {
         )}
 
         
-        <div className="flex items-center gap-2 border-t border-border/30 pt-4">
+        <div className="flex items-center gap-3 border-t border-border/30 pt-4">
           <Button 
             type="submit" 
             disabled={isSubmitting}
             onClick={() => setSide('sell')}
-            variant="ghost"
-            className="flex-1 h-14 font-medium text-base text-danger hover:bg-danger/10 hover:text-danger uppercase rounded-none flex flex-col items-center justify-center"
+            className={cn(
+              "flex-1 h-14 font-bold text-base uppercase rounded-md flex flex-col items-center justify-center shadow-md transition-all active:scale-95",
+              "bg-danger hover:bg-danger/90 text-white border border-danger/50"
+            )}
           >
-            <span className="leading-tight">SELL</span>
-            <span className="text-[10px] font-normal leading-tight">BY MARKET</span>
+            <span className="leading-tight">{isSubmitting && selectedSide === 'sell' ? 'PROCESSING...' : 'SELL'}</span>
+            {!(isSubmitting && selectedSide === 'sell') && <span className="text-[10px] font-medium leading-tight opacity-80 mt-0.5">{selectedOrderType === 'market' ? 'BY MARKET' : 'LIMIT ORDER'}</span>}
           </Button>
-          
-          <div className="w-[1px] h-10 bg-border/50"></div>
           
           <Button 
             type="submit" 
             disabled={isSubmitting}
             onClick={() => setSide('buy')}
-            variant="ghost"
-            className="flex-1 h-14 font-medium text-base text-info hover:bg-info/10 hover:text-info uppercase rounded-none flex flex-col items-center justify-center"
+            className={cn(
+              "flex-1 h-14 font-bold text-base uppercase rounded-md flex flex-col items-center justify-center shadow-md transition-all active:scale-95",
+              "bg-success hover:bg-success/90 text-white border border-success/50"
+            )}
           >
-            <span className="leading-tight">BUY</span>
-            <span className="text-[10px] font-normal leading-tight">BY MARKET</span>
+            <span className="leading-tight">{isSubmitting && selectedSide === 'buy' ? 'PROCESSING...' : 'BUY'}</span>
+            {!(isSubmitting && selectedSide === 'buy') && <span className="text-[10px] font-medium leading-tight opacity-80 mt-0.5">{selectedOrderType === 'market' ? 'BY MARKET' : 'LIMIT ORDER'}</span>}
           </Button>
         </div>
 
