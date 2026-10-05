@@ -75,7 +75,7 @@ export function QuotesList() {
   const currentTime = new Date().toLocaleTimeString('en-US', { hour12: false })
 
   return (
-    <div className="bg-black min-h-screen text-white font-sans pb-20">
+    <div className="bg-black min-h-screen text-white font-sans pb-20 w-full max-w-2xl mx-auto md:border-x md:border-white/10 relative">
       {/* Top Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-black border-b border-white/5">
         <div className="flex items-center gap-4">
@@ -168,11 +168,10 @@ export function QuotesList() {
         />
       )}
 
-      {/* Action Sheet Menu */}
       <div 
         className={cn(
-          "fixed bottom-0 left-0 w-full bg-[#1e1e1e] rounded-t-xl z-50 transition-transform duration-300 ease-out transform pb-safe",
-          selectedSymbol ? "translate-y-0" : "translate-y-full"
+          "fixed bottom-0 left-1/2 w-full max-w-2xl bg-[#1e1e1e] rounded-t-xl z-50 transition-transform duration-300 ease-out pb-safe",
+          selectedSymbol ? "translate-y-0 -translate-x-1/2" : "translate-y-full -translate-x-1/2"
         )}
       >
         {selectedSymbol && (

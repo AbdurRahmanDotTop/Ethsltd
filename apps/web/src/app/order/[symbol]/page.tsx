@@ -11,7 +11,8 @@ export default function MobileOrderPage() {
   const params = useParams()
   const [market, setMarket] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const rawSymbol = decodeURIComponent(params.symbol as string);
+  
+  const rawSymbol = decodeURIComponent((params?.symbol as string) || "");
   const symbol = rawSymbol.replace('_', '-').replace(' ', '-'); // normalize
 
   useEffect(() => {

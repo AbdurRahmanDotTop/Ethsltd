@@ -76,9 +76,8 @@ export function AppNavigation() {
 
   return (
     <>
-      {/* Main Bottom Nav */}
-      <div className="fixed bottom-0 left-0 z-40 w-full bg-[#181A20] border-t border-white/5 pb-[env(safe-area-inset-bottom)] overflow-x-auto no-scrollbar">
-        <div className="flex h-16 min-w-max mx-auto px-2">
+      <div className="fixed bottom-0 left-0 z-40 w-full bg-[#181A20] border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex h-16 w-full max-w-5xl mx-auto px-2 overflow-x-auto no-scrollbar justify-start md:justify-center items-center">
           {navItems.map((item, index) => {
             const Icon = item.icon;
             const activeClass = item.isActive ? "text-[#00C087]" : "text-muted-foreground hover:text-[#00C087]/70";
@@ -87,7 +86,7 @@ export function AppNavigation() {
               <Link
                 key={item.name + index}
                 href={item.href!}
-                className={`flex flex-col items-center justify-center gap-1 px-4 min-w-[72px] group transition-colors ${activeClass}`}
+                className={`flex flex-col items-center justify-center gap-1 px-4 shrink-0 min-w-[72px] group transition-colors ${activeClass}`}
               >
                 <Icon
                   className={`w-[22px] h-[22px] ${item.isActive ? "fill-[#00C087]/10" : ""}`}
