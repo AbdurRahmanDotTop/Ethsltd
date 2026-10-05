@@ -52,7 +52,8 @@ export function MobileMT5Chart({ symbol }: { symbol: string }) {
           }
 
           if (chartRef.current) {
-            chartRef.current.applyNewData(formattedData)
+            chartRef.current.setSymbol({ ticker: symbol.toUpperCase(), pricePrecision: 5, volumePrecision: 4 });
+            chartRef.current.setPeriod({ type: 'minute', span: 1 }); // Trigger reload
             
             // Fetch and draw orders
             apiClient.getOrders().then(oRes => {
@@ -110,7 +111,9 @@ export function MobileMT5Chart({ symbol }: { symbol: string }) {
                high: Math.max(lastCandle.high, price),
                low: Math.min(lastCandle.low, price)
              }
-             chartRef.current.updateData(updatedCandle)
+             if (subscribeCallbackRef.current) {
+               subscribeCallbackRef.current(updatedCandle)
+             }
           }
         }
       } catch(e) {}
@@ -167,8 +170,25 @@ export function MobileMT5Chart({ symbol }: { symbol: string }) {
 
     if (chart) {
       chartRef.current = chart;
+      chart.setDataLoader({
+        getBars: (params) => {
+          if (params.type === 'init') {
+             params.callback(fullDataRef.current, { backward: false, forward: false });
+          } else {
+             params.callback([], { backward: false, forward: false });
+          }
+        },
+        subscribeBar: (params) => {
+          subscribeCallbackRef.current = params.callback;
+        },
+        unsubscribeBar: () => {
+          subscribeCallbackRef.current = null;
+        }
+      });
+      // Trigger initial load if data already exists
       if (fullDataRef.current.length > 0) {
-        chart.applyNewData(fullDataRef.current);
+        chart.setSymbol({ ticker: 'SYMBOL', pricePrecision: 5, volumePrecision: 4 });
+        chart.setPeriod({ type: 'minute', span: 1 });
       }
     }
 
