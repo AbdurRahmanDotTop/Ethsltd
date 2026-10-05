@@ -48,7 +48,7 @@ export function OneClickTrading({ market, currentPrice }: { market: any, current
   // MT5 style one-click trading widget
   return (
     <div 
-      className={`absolute top-12 left-4 z-20 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-30 hover:opacity-100'}`}
+      className={`absolute top-12 right-4 z-20 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-30 hover:opacity-100'}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

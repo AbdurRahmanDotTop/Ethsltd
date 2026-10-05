@@ -143,56 +143,40 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       </div>
 
       {/* Main Grid */}
-      <div className="flex flex-col xl:flex-row flex-1 p-2 gap-2">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-2 p-2 flex-1">
         
-        {/* Left Col: Market Watch (MT5 style sidebar) */}
-        <div className="flex flex-col w-full xl:w-[280px] shrink-0 gap-2 hidden lg:flex">
-          <div className="flex-1 min-h-[400px]">
-            <MarketWatch currentSymbol={market.symbol} />
-          </div>
-        </div>
-
-        {/* Middle Col: Chart & Orders */}
-        <div className="flex flex-col flex-1 gap-2 min-w-0">
-          <div className="bg-muted/10 border border-border rounded-lg flex-1 min-h-[400px] xl:min-h-[500px] relative z-10 overflow-hidden">
+        {/* Center: Chart */}
+        <div className="order-1 xl:order-2 xl:col-span-6 2xl:col-span-7 flex flex-col gap-2 min-w-0">
+          <div className="bg-muted/10 border border-border rounded-lg min-h-[400px] xl:min-h-[500px] relative z-10 overflow-hidden flex-1">
             <TradingChart data={candles} />
             {market && <OneClickTrading market={market} currentPrice={market.price} />}
           </div>
-          <div className="bg-muted/10 border border-border rounded-lg min-h-[280px] hidden xl:block">
-            <TradingHistoryTabs />
+        </div>
+
+        {/* Right: Order Entry & Book */}
+        <div className="order-2 xl:order-3 xl:col-span-3 2xl:col-span-3 flex flex-col gap-2">
+          <div className="shrink-0 z-10 relative">
+            <OrderEntry market={market} />
+          </div>
+          <div className="flex-1 bg-muted/10 border border-border rounded-lg flex flex-col overflow-hidden min-h-[300px]">
+            <OrderBook data={orderbook} />
           </div>
         </div>
 
-        {/* Right Middle Col: Orderbook & Recent Trades (Optional, can be hidden on smaller screens) */}
-        <div className="flex flex-col w-full xl:w-[260px] shrink-0 gap-2 hidden 2xl:flex">
-          <div className="flex-1 bg-muted/10 border border-border rounded-lg flex flex-col overflow-hidden min-h-[400px]">
-            <OrderBook data={orderbook} />
+        {/* Left: Market Watch & Recent Trades */}
+        <div className="order-3 xl:order-1 xl:col-span-3 2xl:col-span-2 flex flex-col gap-2">
+          <div className="flex-1 min-h-[400px]">
+            <MarketWatch currentSymbol={market.symbol} />
           </div>
-          <div className="shrink-0 bg-muted/10 border border-border rounded-lg flex flex-col overflow-hidden h-[280px] hidden xl:flex">
+          <div className="h-[300px] bg-muted/10 border border-border rounded-lg flex flex-col overflow-hidden">
             <RecentTrades data={trades} />
           </div>
         </div>
 
-        {/* Right Col: Order Form */}
-        <div className="flex flex-col w-full lg:w-[320px] shrink-0 gap-2">
-          
-          {/* Mobile/Tablet Orderbook */}
-          <div className="lg:hidden flex-1 bg-muted/10 border border-border rounded-lg flex flex-col overflow-hidden h-[300px]">
-            <OrderBook data={orderbook} />
-          </div>
-
-          <div className="shrink-0 z-10 relative">
-            <OrderEntry market={market} />
-          </div>
-          
-          {/* Mobile/Tablet only history and trades */}
-          <div className="xl:hidden mt-2 flex flex-col gap-2">
-             <div className="bg-muted/10 border border-border rounded-lg overflow-hidden h-[300px]">
-               <RecentTrades data={trades} />
-             </div>
-             <div className="border border-border rounded-lg overflow-hidden">
-               <TradingHistoryTabs />
-             </div>
+        {/* Bottom: History Tabs */}
+        <div className="order-4 xl:order-4 xl:col-span-12 flex flex-col gap-2">
+          <div className="bg-muted/10 border border-border rounded-lg min-h-[280px]">
+            <TradingHistoryTabs />
           </div>
         </div>
 

@@ -156,26 +156,26 @@ export function OrderEntry({ market }: { market: Market }) {
       </div>
 
       {/* Volume Selector */}
-      <div className="flex justify-between items-center mb-6 text-brand-foreground font-mono font-medium">
-        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.5).toFixed(2))} className="hover:text-foreground">-0.5</button>
-        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.1).toFixed(2))} className="hover:text-foreground">-0.1</button>
-        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.01).toFixed(2))} className="hover:text-foreground">-0.01</button>
+      <div className="flex flex-wrap justify-center items-center gap-2 mb-6 text-brand-foreground font-mono font-medium">
+        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.5).toFixed(2))} className="text-xs hover:text-foreground p-1">-0.5</button>
+        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.1).toFixed(2))} className="text-xs hover:text-foreground p-1">-0.1</button>
+        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.01).toFixed(2))} className="text-xs hover:text-foreground p-1">-0.01</button>
         <input 
           {...register("quantity")}
-          className="w-20 text-center bg-transparent text-xl font-bold border-b border-foreground focus:outline-none focus:border-brand-foreground mx-2"
+          className="w-16 md:w-20 text-center bg-transparent text-lg md:text-xl font-bold border-b border-foreground focus:outline-none focus:border-brand-foreground mx-1"
           inputMode="decimal"
         />
-        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.01).toFixed(2))} className="hover:text-foreground">+0.01</button>
-        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.1).toFixed(2))} className="hover:text-foreground">+0.1</button>
-        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.5).toFixed(2))} className="hover:text-foreground">+0.5</button>
+        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.01).toFixed(2))} className="text-xs hover:text-foreground p-1">+0.01</button>
+        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.1).toFixed(2))} className="text-xs hover:text-foreground p-1">+0.1</button>
+        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.5).toFixed(2))} className="text-xs hover:text-foreground p-1">+0.5</button>
       </div>
 
       {/* Big Bid/Ask Display */}
-      <div className="flex justify-center items-center gap-8 mb-6">
-        <div className="text-3xl font-bold text-info cursor-pointer" onClick={() => setSide('sell')}>
+      <div className="flex justify-center items-center gap-4 mb-6">
+        <div className="text-xl md:text-2xl font-bold text-danger cursor-pointer break-all text-center flex-1" onClick={() => setSide('sell')}>
           {market.price ? (market.price * 0.9998).toFixed(5) : "---"}
         </div>
-        <div className="text-3xl font-bold text-info cursor-pointer" onClick={() => setSide('buy')}>
+        <div className="text-xl md:text-2xl font-bold text-success cursor-pointer break-all text-center flex-1" onClick={() => setSide('buy')}>
           {market.price ? market.price.toFixed(5) : "---"}
         </div>
       </div>
