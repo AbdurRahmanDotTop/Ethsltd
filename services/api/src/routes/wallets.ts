@@ -4,7 +4,8 @@ import { eq, desc, and, or } from 'drizzle-orm';
 import * as otplibPkg from 'otplib';
 const authenticator = (otplibPkg as any).authenticator || (otplibPkg as any).default?.authenticator;
 import { Bindings, Variables } from '../db';
-import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users, currencyRates, expertBookings, expertProfiles, orders as tradingOrders } from 'database';
+import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users, currencyRates, expertBookings, expertProfiles, orders as tradingOrders, positions } from 'database';
+import { mt5Accounts } from 'database/schema/mt5';
 import { jwtMiddleware } from '../middleware/jwt';
 import { CregisClient } from '../services/cregis';
 import { getFeeConfig, calculateFee, getLimit } from '../services/fees';
@@ -29,6 +30,60 @@ walletRoutes.get('/asset-conversions', async (c) => {
   
   const conversions = await db.select().from(assetConversions).where(eq(assetConversions.userId, user.id)).orderBy(desc(assetConversions.createdAt)).limit(50);
   return c.json({ success: true, data: conversions });
+});
+
+walletRoutes.get('/portfolio', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+
+  try {
+    // 1. Fetch Spot Wallets Balance
+    const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
+    let totalBalance = 0;
+    for (const w of userWallets) {
+      const price = getAssetPrice(w.assetSymbol) || 0;
+      totalBalance += parseFloat(w.balance) * price;
+      totalBalance += parseFloat(w.lockedBalance) * price;
+    }
+
+    // 2. Fetch MT5 account if it exists to add MT5 balance
+    const mt5User = await db.select().from(mt5Accounts).where(eq(mt5Accounts.userId, user.id)).get();
+    if (mt5User) {
+      totalBalance += parseFloat(mt5User.balance || '0');
+    }
+
+    // 3. Fetch active positions for Equity/Margin calculation
+    const userPositions = await db.select().from(positions).where(and(eq(positions.userId, user.id), eq(positions.status, 'OPEN'))).all();
+    
+    let totalMargin = 0;
+    let totalPnl = 0;
+
+    for (const pos of userPositions) {
+      totalMargin += parseFloat(pos.marginAmount || '0');
+      // Mock unrealized PnL based on entry/current price if it's Spot, or fetch from MT5
+      // For simplicity here, we assume it's calculated on UI or just 0 if prices aren't fetched
+      totalPnl += 0; // We can let UI calculate PNL or fetch it here.
+    }
+
+    const equity = totalBalance + totalPnl;
+    const freeMargin = equity - totalMargin;
+    const marginLevel = totalMargin > 0 ? (equity / totalMargin) * 100 : 0;
+
+    return c.json({
+      success: true,
+      data: {
+        balance: totalBalance,
+        equity: equity,
+        margin: totalMargin,
+        freeMargin: freeMargin,
+        marginLevel: marginLevel,
+        totalPnl: totalPnl
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching portfolio:", err);
+    return c.json({ success: false, error: "Failed to load portfolio" }, 500);
+  }
 });
 
 walletRoutes.get('/deposit-settings', async (c) => {

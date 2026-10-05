@@ -648,6 +648,30 @@ tradingRoutes.post('/orders', async (c) => {
         updatedAt: now
       }).where(eq(orders.id, orderId));
 
+      // --- MT5 BEHAVIOR: Create a Position for SPOT trades too ---
+      if (filledAmount.gt(0)) {
+        const positionDisplayId = await generateBusinessId(db, dbUser?.email, 'POS');
+        const posId = crypto.randomUUID();
+        await tx.insert(positions).values({
+          id: posId,
+          displayId: positionDisplayId,
+          userId: user.id,
+          marketSymbol: market,
+          side: side === 'BUY' ? 'LONG' : 'SHORT',
+          status: 'OPEN',
+          leverage: '1',
+          marginType: 'ISOLATED',
+          marginAmount: spendAmount.toString(),
+          entryPrice: orderPrice.toString(),
+          stopLoss: stopLoss ? stopLoss.toString() : null,
+          takeProfit: takeProfit ? takeProfit.toString() : null,
+          liquidationPrice: null,
+          amount: filledAmount.toString(),
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
       // --- Handle unfilled remainder for market orders ---
       // If market order has remaining unfilled, and there are no matching limit orders,
       // we keep it OPEN for future matching. This is NOT fake execution.
