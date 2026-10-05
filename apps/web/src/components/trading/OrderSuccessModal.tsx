@@ -12,7 +12,7 @@ export function OrderSuccessModal() {
 
   const handleDone = () => {
     setSuccessOrder(null);
-    router.push('/wallet/history');
+    router.push('/positions');
   };
 
   const isBuy = successOrder.side === 'BUY';

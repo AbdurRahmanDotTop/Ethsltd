@@ -56,9 +56,9 @@ export function AppNavigation() {
     },
     {
       name: "Positions",
-      href: "/wallet",
+      href: "/positions",
       icon: Briefcase,
-      isActive: false,
+      isActive: pathname?.startsWith("/positions"),
     },
     {
       name: "History",
