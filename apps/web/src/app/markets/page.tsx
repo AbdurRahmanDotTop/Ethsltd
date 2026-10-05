@@ -7,7 +7,6 @@ import { apiClient } from "@ethsltd/api-client"
 import { FinalCTA } from "@/components/home/FinalCTA"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
-import { QuotesList } from "@/components/markets/QuotesList"
 
 export const metadata: Metadata = {
   title: "Crypto Markets | ETHSLTD",
@@ -40,40 +39,28 @@ export default async function MarketsPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <div className="hidden md:block">
-        <Header />
-      </div>
+      <Header />
       <main className="flex-1 flex flex-col">
-        {/* Mobile View: MT5 Quotes */}
-        <div className="block md:hidden">
-          <QuotesList />
+        <MarketsHero />
+        <MarketStats stats={stats} />
+        <MarketExplorer />
+        
+        <div className="bg-muted/10 border-t border-border">
+          <MarketGridSection title="Trending Markets" markets={trending} />
+          <MarketGridSection title="Top Gainers" markets={topGainers} />
+          <MarketGridSection title="Top Losers" markets={topLosers} />
+          <MarketGridSection title="New on ETHSLTD" markets={newListings} />
         </div>
 
-        {/* Desktop View: Traditional Markets Dashboard */}
-        <div className="hidden md:flex flex-col">
-          <MarketsHero />
-          <MarketStats stats={stats} />
-          <MarketExplorer />
-          
-          <div className="bg-muted/10 border-t border-border">
-            <MarketGridSection title="Trending Markets" markets={trending} />
-            <MarketGridSection title="Top Gainers" markets={topGainers} />
-            <MarketGridSection title="Top Losers" markets={topLosers} />
-            <MarketGridSection title="New on ETHSLTD" markets={newListings} />
-          </div>
-
-          <div className="py-12 border-t border-border bg-background text-center px-4">
-            <p className="text-sm text-muted-foreground max-w-3xl mx-auto">
-              Crypto markets are volatile. Prices and market data can change rapidly. Market information is provided for informational purposes and does not constitute financial advice.
-            </p>
-          </div>
-
-          <FinalCTA />
+        <div className="py-12 border-t border-border bg-background text-center px-4">
+          <p className="text-sm text-muted-foreground max-w-3xl mx-auto">
+            Crypto markets are volatile. Prices and market data can change rapidly. Market information is provided for informational purposes and does not constitute financial advice.
+          </p>
         </div>
+
+        <FinalCTA />
       </main>
-      <div className="hidden md:block">
-        <Footer />
-      </div>
+      <Footer />
     </div>
   )
 }

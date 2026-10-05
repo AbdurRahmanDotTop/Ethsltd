@@ -10,35 +10,9 @@ export function TradingChart({ data }: { data: Candle[] }) {
   const chartRef = useRef<Chart | null>(null)
   const [activeIndicator, setActiveIndicator] = useState<string>('VOL')
 
-  const applyData = useCallback((candles: Candle[]) => {
-    if (!chartRef.current || !candles || candles.length === 0) return;
-
-    // Deduplicate and sort by time ascending
-    const seen = new Set<number>();
-    const sortedData = [...candles]
-      .map(d => ({ ...d, time: Math.floor(Number(d.time)) * 1000 }))
-      .sort((a, b) => a.time - b.time)
-      .filter(d => {
-        if (seen.has(d.time)) return false;
-        seen.add(d.time);
-        return true;
-      });
-
-    const formattedData = sortedData.map(d => ({
-      timestamp: d.time,
-      open: d.open,
-      high: d.high,
-      low: d.low,
-      close: d.close,
-      volume: d.volume,
-    }));
-
-    try {
-      (chartRef.current as any).applyNewData(formattedData);
-    } catch (e) {
-      console.warn("TradingChart setData error:", e);
-    }
-  }, []);
+  const subscribeCallbackRef = useRef<((data: any) => void) | null>(null)
+  const fullDataRef = useRef<any[]>([])
+  const isInitRef = useRef<boolean>(false)
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -79,7 +53,22 @@ export function TradingChart({ data }: { data: Candle[] }) {
     if (chart) {
       chartRef.current = chart;
       (chart as any).createIndicator('VOL', true, { id: 'candle_pane' });
-      applyData(data);
+      
+      chart.setDataLoader({
+        getBars: (params) => {
+          if (params.type === 'init') {
+             params.callback(fullDataRef.current, { backward: false, forward: false });
+          } else {
+             params.callback([], { backward: false, forward: false });
+          }
+        },
+        subscribeBar: (params) => {
+          subscribeCallbackRef.current = params.callback;
+        },
+        unsubscribeBar: () => {
+          subscribeCallbackRef.current = null;
+        }
+      });
     }
 
     const resizeObserver = new ResizeObserver((entries) => {
@@ -93,12 +82,47 @@ export function TradingChart({ data }: { data: Candle[] }) {
       resizeObserver.disconnect();
       if (chartRef.current && chartContainerRef.current) dispose(chartContainerRef.current as HTMLElement);
       chartRef.current = null;
+      isInitRef.current = false;
     };
   }, [theme]);
 
   useEffect(() => {
-    applyData(data);
-  }, [data, applyData]);
+    if (!chartRef.current || !data || data.length === 0) return;
+
+    const seen = new Set<number>();
+    const sortedData = [...data]
+      .map(d => ({ ...d, time: Math.floor(Number(d.time)) * 1000 }))
+      .sort((a, b) => a.time - b.time)
+      .filter(d => {
+        if (seen.has(d.time)) return false;
+        seen.add(d.time);
+        return true;
+      });
+
+    const formattedData = sortedData.map(d => ({
+      timestamp: d.time,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+      volume: d.volume,
+    }));
+
+    // If it's a big change (e.g. first load or timeframe change), re-init
+    if (!isInitRef.current || Math.abs(fullDataRef.current.length - formattedData.length) > 5) {
+        fullDataRef.current = formattedData;
+        isInitRef.current = true;
+        // Trigger init by setting symbol and period
+        chartRef.current.setSymbol({ ticker: 'SYMBOL', pricePrecision: 2, volumePrecision: 4 });
+        chartRef.current.setPeriod({ type: 'minute', span: 1 });
+    } else {
+        // Just an update
+        fullDataRef.current = formattedData;
+        if (subscribeCallbackRef.current) {
+            subscribeCallbackRef.current(formattedData[formattedData.length - 1]);
+        }
+    }
+  }, [data]);
 
   // Toolbar Handlers
   const addIndicator = (name: string) => {

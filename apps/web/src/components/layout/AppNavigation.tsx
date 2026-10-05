@@ -44,9 +44,9 @@ export function AppNavigation() {
     // New MT5 Items
     {
       name: "Quotes",
-      href: "/markets",
+      href: "/quotes",
       icon: ArrowUpDown,
-      isActive: pathname === "/markets",
+      isActive: pathname === "/quotes",
     },
     {
       name: "Charts",
@@ -62,7 +62,7 @@ export function AppNavigation() {
     },
     {
       name: "History",
-      href: "/account/history",
+      href: "/wallet/history",
       icon: Clock,
       isActive: pathname?.startsWith("/account/history") || pathname?.startsWith("/wallet/history"),
     },
