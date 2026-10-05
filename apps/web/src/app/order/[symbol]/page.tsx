@@ -1,16 +1,18 @@
 "use client"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, FileText, RefreshCw } from "lucide-react"
 import { apiClient } from "@ethsltd/api-client"
 import { OrderEntry } from "@/components/trading/OrderEntry"
 import { OrderSuccessModal } from "@/components/trading/OrderSuccessModal"
 
-export default function MobileOrderPage({ params }: { params: { symbol: string } }) {
+export default function MobileOrderPage() {
   const router = useRouter()
+  const params = useParams()
   const [market, setMarket] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const symbol = params.symbol.replace('_', '-') // normalize
+  const rawSymbol = decodeURIComponent(params.symbol as string);
+  const symbol = rawSymbol.replace('_', '-').replace(' ', '-'); // normalize
 
   useEffect(() => {
     let mounted = true
