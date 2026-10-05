@@ -11,6 +11,7 @@ interface TradingUIState {
   orderFormQuantity: string;
   isOrderSubmitting: boolean;
   marketType: MarketType;
+  successOrder: any | null;
 
   setSide: (side: OrderSide) => void;
   setOrderType: (type: OrderType) => void;
@@ -19,6 +20,7 @@ interface TradingUIState {
   setOrderFormQuantity: (quantity: string) => void;
   setIsOrderSubmitting: (isSubmitting: boolean) => void;
   setMarketType: (type: MarketType) => void;
+  setSuccessOrder: (order: any | null) => void;
 }
 
 export const useTradingUIStore = create<TradingUIState>((set) => ({
@@ -29,6 +31,7 @@ export const useTradingUIStore = create<TradingUIState>((set) => ({
   orderFormQuantity: '',
   isOrderSubmitting: false,
   marketType: 'SPOT',
+  successOrder: null,
 
   setSide: (side) => set({ selectedSide: side }),
   setOrderType: (type) => set({ selectedOrderType: type }),
@@ -37,4 +40,5 @@ export const useTradingUIStore = create<TradingUIState>((set) => ({
   setOrderFormQuantity: (quantity) => set({ orderFormQuantity: quantity }),
   setIsOrderSubmitting: (isSubmitting) => set({ isOrderSubmitting: isSubmitting }),
   setMarketType: (type) => set({ marketType: type }),
+  setSuccessOrder: (order) => set({ successOrder: order }),
 }));

@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useAuthStore } from "@/stores/auth-store"
+import { useTradingUIStore } from "@/stores/trading-ui-store"
 import { toast } from "sonner"
 
 export function OneClickTrading({ market, currentPrice }: { market: any, currentPrice: number }) {
@@ -33,7 +34,10 @@ export function OneClickTrading({ market, currentPrice }: { market: any, current
       })
 
       const data = await res.json()
-      if (data.success) {
+      if (data.success && data.order) {
+        toast.dismiss(toastId)
+        useTradingUIStore.getState().setSuccessOrder(data.order)
+      } else if (data.success) {
         toast.success(`Position Opened: ${side} ${amount} ${market.baseAsset}`, { id: toastId })
       } else {
         toast.error(data.error || 'Failed to open position', { id: toastId })

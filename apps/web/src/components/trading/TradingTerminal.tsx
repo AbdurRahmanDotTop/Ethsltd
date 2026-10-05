@@ -9,6 +9,7 @@ import { RecentTrades } from "./RecentTrades"
 import { OrderEntry } from "./OrderEntry"
 import { TradingHistoryTabs } from "./TradingHistoryTabs"
 import { OneClickTrading } from "./OneClickTrading"
+import { OrderSuccessModal } from "./OrderSuccessModal"
 import { apiClient } from "@ethsltd/api-client"
 import { Market } from "@/lib/market-data/types"
 import { useTradingUIStore, MarketType } from "@/stores/trading-ui-store"
@@ -181,6 +182,8 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
         </div>
 
       </div>
+      
+      <OrderSuccessModal />
     </div>
   )
 }

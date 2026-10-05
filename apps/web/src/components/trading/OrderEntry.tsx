@@ -136,10 +136,15 @@ export function OrderEntry({ market }: { market: Market }) {
           throw new Error(res?.error || 'Failed to place order')
         }
         
-        setMessage({ type: 'success', text: 'Order placed successfully' })
+        if (res.order) {
+          useTradingUIStore.getState().setSuccessOrder(res.order);
+        } else {
+          setMessage({ type: 'success', text: 'Order placed successfully' })
+          setTimeout(() => setMessage(null), 3000)
+        }
+        
         setValue("quantity", "") // Reset quantity on success
         fetchBalances() // Refresh balances
-        setTimeout(() => setMessage(null), 3000)
       } catch (err: any) {
         setMessage({ type: 'error', text: err.message || 'Failed to place order' })
       } finally {

@@ -584,7 +584,8 @@ tradingRoutes.post('/orders', async (c) => {
         });
         
         // Return early to prevent Spot matching engine from running
-        return c.json({ success: true, message: 'MT5 Order Executed', orderId: orderDisplayId });
+        const finalOrder = await db.select().from(orders).where(eq(orders.id, orderId)).get();
+        return c.json({ success: true, message: 'MT5 Order Executed', orderId: orderDisplayId, order: finalOrder });
 
       } catch (mt5Error: any) {
         console.error('MT5 Execution Failed:', mt5Error);
@@ -706,7 +707,8 @@ tradingRoutes.post('/orders', async (c) => {
     }
   })());
 
-  return c.json({ success: true, orderId });
+  const finalOrder = await db.select().from(orders).where(eq(orders.id, orderId)).get();
+  return c.json({ success: true, orderId, order: finalOrder });
 });
 
 // DELETE /orders/:id — Cancel an open order
