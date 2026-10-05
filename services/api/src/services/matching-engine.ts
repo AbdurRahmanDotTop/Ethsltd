@@ -169,6 +169,58 @@ export async function processOrderMatching(
     tradesExecuted++;
   }
 
+  // --- MT5 B-BOOK / MARKET AUTO-FILL ---
+  // If it's a MARKET order and still has remaining amount (no limit orders matched),
+  // we act as the counterparty (B-Book) to ensure instant MT5-like execution.
+  if (newOrder.type === 'MARKET' && remainingToFill.gt(0)) {
+    const fillAmount = remainingToFill;
+    const executionPrice = new Decimal(newOrder.price); // Price was set from oracle in routes
+    const quoteAmount = fillAmount.times(executionPrice);
+    
+    totalFilledAmount = totalFilledAmount.plus(fillAmount);
+    totalQuoteSpent = totalQuoteSpent.plus(quoteAmount);
+    remainingToFill = new Decimal(0);
+    
+    const takerFeeRate = new Decimal(marketInfo.takerFee);
+    const buyFee = fillAmount.times(takerFeeRate);
+    const sellFee = quoteAmount.times(takerFeeRate);
+
+    const tradeId = crypto.randomUUID();
+    const tradeDisplayId = await generateBusinessId(tx, 'system', 'TRAD');
+
+    // Trade record against the "system" (no maker userId)
+    await tx.insert(trades).values({
+      id: tradeId,
+      displayId: tradeDisplayId,
+      marketSymbol: newOrder.marketSymbol,
+      buyOrderId: isBuy ? newOrder.id : null,
+      sellOrderId: isBuy ? null : newOrder.id,
+      buyUserId: isBuy ? takerUserId : null,
+      sellUserId: isBuy ? null : takerUserId,
+      price: executionPrice.toString(),
+      amount: fillAmount.toString(),
+      quoteAmount: quoteAmount.toString(),
+      buyFee: isBuy ? buyFee.toString() : '0',
+      sellFee: isBuy ? '0' : sellFee.toString(),
+      createdAt: now,
+    });
+
+    // Settle Taker Wallets only
+    await settleTradeWallets(tx, {
+      userId: takerUserId,
+      side: newOrder.side,
+      baseAsset: marketInfo.baseAsset,
+      quoteAsset: marketInfo.quoteAsset,
+      fillAmount,
+      quoteAmount,
+      fee: isBuy ? buyFee : quoteAmount.times(takerFeeRate),
+      tradeId,
+      now,
+    });
+    
+    tradesExecuted++;
+  }
+
   return {
     remainingToFill: remainingToFill.toString(),
     totalFilledAmount: totalFilledAmount.toString(),
