@@ -14,7 +14,7 @@ import { Footer } from "@/components/layout/Footer";
 
 export default function TicketDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
   const router = useRouter();
   const { user } = useAuthStore();
   const { activeTicket, isLoading, fetchTicket, addMessage } = useSupportStore();

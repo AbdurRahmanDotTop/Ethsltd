@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { useAuthStore } from "@/stores/auth-store";
 
 export default function ExpertProfilePage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const router = useRouter();
   
   const [expert, setExpert] = useState<any>(null);
@@ -32,6 +33,7 @@ export default function ExpertProfilePage() {
 
   useEffect(() => {
     const fetchExpertAndServices = async () => {
+      if (!id) return;
       try {
         const [expertRes, servicesRes] = await Promise.all([
           apiClient.getExpert(id),

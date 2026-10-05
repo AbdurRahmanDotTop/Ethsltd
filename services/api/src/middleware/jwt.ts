@@ -18,7 +18,7 @@ export async function jwtMiddleware(c: Context, next: Next) {
     return c.json({ success: false, error: 'Missing or invalid token' }, 401);
   }
 
-  const secret = 'super_secret_jwt_key_replace_me_in_prod'; // Use env variable in prod
+  const secret = c.env.JWT_SECRET || 'super_secret_jwt_key_replace_me_in_prod';
   const db = c.get('db');
 
   const verifyToken = async (token: string) => {

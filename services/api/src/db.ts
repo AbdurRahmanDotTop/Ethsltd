@@ -15,6 +15,9 @@ export type Bindings = {
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_EMAIL?: string;
   R2_BACKUPS?: R2Bucket;
+  JWT_SECRET?: string;
+  MT5_API_KEY?: string;
+  MT5_SERVER_ID?: string;
 };
 
 export type Variables = {

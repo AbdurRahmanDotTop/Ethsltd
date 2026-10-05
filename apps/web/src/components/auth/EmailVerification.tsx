@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export function EmailVerification() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token');
   const [timeLeft, setTimeLeft] = useState(45);
   const [isResending, setIsResending] = useState(false);
   const [isVerified, setIsVerified] = useState(false);

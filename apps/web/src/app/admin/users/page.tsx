@@ -240,7 +240,6 @@ export default function AdminUsersPage() {
                   <li>User account, profile, and KYC documents</li>
                   <li>All Wallets, Balances, and Ledger Entries</li>
                   <li>All Trading Orders, Positions, and Options</li>
-                  <li>All P2P Ads, Orders, Messages, and Feedback</li>
                   <li>All Support Tickets and Messages</li>
                   <li>All related deposit/withdrawal records</li>
                   <li>Expert profiles, services, and bookings (if any)</li>

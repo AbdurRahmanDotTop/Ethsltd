@@ -55,8 +55,8 @@ export function AuthProvider({ initialUser, children }: AuthProviderProps) {
     // Listen for global auth required events (e.g. from apiClient interceptors)
     const handleAuthRequired = async (e: Event) => {
       useAuthStore.getState().logout();
-      if (!pathname.startsWith('/login')) {
-        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      if (!pathname?.startsWith('/login')) {
+        router.push(`/login?redirect=${encodeURIComponent(pathname || '')}`);
       }
     };
 

@@ -150,137 +150,94 @@ export function OrderEntry({ market }: { market: Market }) {
 
   return (
     <div className="flex flex-col h-full bg-background rounded-lg border border-border p-4">
-      {/* Buy/Sell Tabs */}
-      <div className="flex bg-muted rounded-md p-1 mb-4 relative z-0">
-        <div 
-          className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded bg-background shadow transition-transform duration-200 z-0" 
-          style={{ transform: selectedSide === 'sell' ? 'translateX(100%)' : 'translateX(0)' }} 
+      {/* Order Type Header */}
+      <div className="text-center font-semibold text-sm mb-4 text-foreground mt-2">
+        {selectedOrderType === 'market' ? 'Market Execution' : 'Limit Order'}
+      </div>
+
+      {/* Volume Selector */}
+      <div className="flex justify-between items-center mb-6 text-brand-foreground font-mono font-medium">
+        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.5).toFixed(2))} className="hover:text-foreground">-0.5</button>
+        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.1).toFixed(2))} className="hover:text-foreground">-0.1</button>
+        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.01).toFixed(2))} className="hover:text-foreground">-0.01</button>
+        <input 
+          {...register("quantity")}
+          className="w-20 text-center bg-transparent text-xl font-bold border-b border-foreground focus:outline-none focus:border-brand-foreground mx-2"
+          inputMode="decimal"
         />
-        <button 
-          className={cn("flex-1 py-1.5 text-sm font-semibold z-10 transition-colors", selectedSide === 'buy' ? 'text-success' : 'text-muted-foreground')}
-          onClick={() => setSide('buy')}
-          type="button"
-        >
-          Buy
-        </button>
-        <button 
-          className={cn("flex-1 py-1.5 text-sm font-semibold z-10 transition-colors", selectedSide === 'sell' ? 'text-danger' : 'text-muted-foreground')}
-          onClick={() => setSide('sell')}
-          type="button"
-        >
-          Sell
-        </button>
+        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.01).toFixed(2))} className="hover:text-foreground">+0.01</button>
+        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.1).toFixed(2))} className="hover:text-foreground">+0.1</button>
+        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.5).toFixed(2))} className="hover:text-foreground">+0.5</button>
       </div>
 
-      {/* Order Type */}
-      <div className="flex gap-4 mb-4 border-b border-border text-sm">
-        <button 
-          className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'limit' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
-          onClick={() => setOrderType('limit')}
-          type="button"
-        >
-          Limit
-        </button>
-        <button 
-          className={cn("pb-2 font-medium transition-colors", selectedOrderType === 'market' ? 'text-foreground border-b-2 border-brand-foreground' : 'text-muted-foreground')}
-          onClick={() => setOrderType('market')}
-          type="button"
-        >
-          Market
-        </button>
-      </div>
-
-      <div className="flex justify-between items-center mb-4 text-xs flex-wrap gap-y-4">
-        <span className="text-muted-foreground">Available</span>
-        <span className="font-mono font-medium">
-          {selectedSide === 'buy' ? `${quoteBalance.toLocaleString()} ${quote}` : `${baseBalance.toLocaleString()} ${base}`}
-        </span>
+      {/* Big Bid/Ask Display */}
+      <div className="flex justify-center items-center gap-8 mb-6">
+        <div className="text-3xl font-bold text-info cursor-pointer" onClick={() => setSide('sell')}>
+          {market.price ? (market.price * 0.9998).toFixed(5) : "---"}
+        </div>
+        <div className="text-3xl font-bold text-info cursor-pointer" onClick={() => setSide('buy')}>
+          {market.price ? market.price.toFixed(5) : "---"}
+        </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         
-        {/* Price Input */}
-        <div className="relative">
-          <label className="text-xs text-muted-foreground mb-1 block">Price ({quote})</label>
-          <div className="relative flex items-center">
+        {selectedOrderType === 'limit' && (
+          <div className="relative mb-4">
+            <label className="text-xs text-muted-foreground mb-1 block">Price</label>
             <input 
               {...register("price")}
               type="text" 
               inputMode="decimal"
-              placeholder={selectedOrderType === 'market' ? "Market Price" : "0.00"}
-              disabled={selectedOrderType === 'market'}
-              className="w-full bg-muted border border-border rounded h-10 px-3 font-mono text-sm focus:outline-none focus:border-brand-foreground disabled:opacity-50"
-            />
-          </div>
-          {errors.price && <span className="text-xs text-danger mt-1 absolute -bottom-5 left-0">{errors.price.message?.toString()}</span>}
-        </div>
-
-        {/* Quantity Input */}
-        <div className="relative mt-2">
-          <label className="text-xs text-muted-foreground mb-1 block">
-            Amount ({base})
-          </label>
-          <div className="relative flex items-center">
-            <input 
-              {...register("quantity")}
-              type="text" 
-              inputMode="decimal"
               placeholder="0.00"
-              className="w-full bg-muted border border-border rounded h-10 px-3 font-mono text-sm focus:outline-none focus:border-brand-foreground"
+              className="w-full bg-muted/30 border-b border-border h-10 px-3 font-mono text-center text-sm focus:outline-none focus:border-brand-foreground"
             />
+            {errors.price && <span className="text-xs text-danger mt-1 absolute -bottom-5 left-0">{errors.price.message?.toString()}</span>}
           </div>
-          {errors.quantity && <span className="text-xs text-danger mt-1 absolute -bottom-5 left-0">{errors.quantity.message?.toString()}</span>}
-        </div>
+        )}
 
         
         {/* MT5 Style SL/TP Fields */}
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <label className="text-xs text-danger mb-1 block font-semibold">Stop Loss (SL)</label>
+        <div className="flex gap-4 mb-4">
+          <div className="flex-1 relative flex items-center border-b border-danger/50 pb-1">
+            <button type="button" onClick={() => setValue("stopLoss", Math.max(0, parseFloat(watch("stopLoss") || "0") - 0.0001).toFixed(5))} className="text-info px-2">-</button>
             <input 
               {...register("stopLoss")}
               type="text" 
               inputMode="decimal"
-              placeholder="0.00"
-              className="w-full bg-muted border border-border rounded h-10 px-3 font-mono text-sm focus:outline-none focus:border-danger"
+              placeholder="SL"
+              className="w-full bg-transparent text-center font-mono text-sm focus:outline-none"
             />
+            <button type="button" onClick={() => setValue("stopLoss", (parseFloat(watch("stopLoss") || "0") + 0.0001).toFixed(5))} className="text-info px-2">+</button>
           </div>
-          <div className="flex-1 relative">
-            <label className="text-xs text-success mb-1 block font-semibold">Take Profit (TP)</label>
+          <div className="flex-1 relative flex items-center border-b border-success/50 pb-1">
+            <button type="button" onClick={() => setValue("takeProfit", Math.max(0, parseFloat(watch("takeProfit") || "0") - 0.0001).toFixed(5))} className="text-info px-2">-</button>
             <input 
               {...register("takeProfit")}
               type="text" 
               inputMode="decimal"
-              placeholder="0.00"
-              className="w-full bg-muted border border-border rounded h-10 px-3 font-mono text-sm focus:outline-none focus:border-success"
+              placeholder="TP"
+              className="w-full bg-transparent text-center font-mono text-sm focus:outline-none"
             />
+            <button type="button" onClick={() => setValue("takeProfit", (parseFloat(watch("takeProfit") || "0") + 0.0001).toFixed(5))} className="text-info px-2">+</button>
           </div>
         </div>
 
-        {/* Percentages */}
-        <div className="flex gap-2 mt-3">
-          {[0.25, 0.50, 0.75, 1].map(pct => (
-            <button 
-              key={pct}
-              type="button"
-              className="flex-1 bg-muted hover:bg-muted/80 text-muted-foreground text-xs py-1 rounded transition-colors"
-              onClick={() => handlePercentageClick(pct)}
-            >
-              {pct * 100}%
-            </button>
-          ))}
+        {/* Fill Policy */}
+        <div className="flex justify-between items-center text-xs text-muted-foreground mb-6">
+          <span>Fill policy</span>
+          <span>Fill or Kill</span>
         </div>
 
-        {/* Summary */}
-        <div className="mt-4 pt-4 border-t border-border space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground text-xs">Est. Total</span>
-            <span className="font-mono">{requiredMargin > 0 ? requiredMargin.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "0.00"} {quote}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground text-xs">Est. Fee</span>
-            <span className="font-mono">{fee > 0 ? fee.toLocaleString(undefined, { maximumFractionDigits: 4 }) : "0.00"} {quote}</span>
-          </div>
+        {/* Tick Chart Placeholder (Visual Match for MT5) */}
+        <div className="h-32 border border-border/50 rounded-md mb-6 relative overflow-hidden bg-muted/10 hidden md:block">
+           <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground/30">
+              Tick Chart Area
+           </div>
+        </div>
+
+        <div className="text-center text-[11px] text-muted-foreground/70 mb-4 px-2">
+          Attention! The trade will be executed at market conditions, difference with requested price may be significant!
         </div>
 
         {/* Messages */}
@@ -291,24 +248,29 @@ export function OrderEntry({ market }: { market: Market }) {
         )}
 
         
-        <div className="flex gap-2 mt-4">
+        <div className="flex items-center gap-2 border-t border-border/30 pt-4">
           <Button 
             type="submit" 
             disabled={isSubmitting}
             onClick={() => setSide('sell')}
-            className="flex-1 h-14 font-bold text-lg bg-danger hover:bg-danger/90 text-white uppercase rounded shadow-lg flex flex-col items-center justify-center"
+            variant="ghost"
+            className="flex-1 h-14 font-medium text-base text-danger hover:bg-danger/10 hover:text-danger uppercase rounded-none flex flex-col items-center justify-center"
           >
             <span className="leading-tight">SELL</span>
-            <span className="text-[10px] font-normal leading-tight opacity-80">BY MARKET</span>
+            <span className="text-[10px] font-normal leading-tight">BY MARKET</span>
           </Button>
+          
+          <div className="w-[1px] h-10 bg-border/50"></div>
+          
           <Button 
             type="submit" 
             disabled={isSubmitting}
             onClick={() => setSide('buy')}
-            className="flex-1 h-14 font-bold text-lg bg-info hover:bg-info/90 text-white uppercase rounded shadow-lg flex flex-col items-center justify-center"
+            variant="ghost"
+            className="flex-1 h-14 font-medium text-base text-info hover:bg-info/10 hover:text-info uppercase rounded-none flex flex-col items-center justify-center"
           >
             <span className="leading-tight">BUY</span>
-            <span className="text-[10px] font-normal leading-tight opacity-80">BY MARKET</span>
+            <span className="text-[10px] font-normal leading-tight">BY MARKET</span>
           </Button>
         </div>
 

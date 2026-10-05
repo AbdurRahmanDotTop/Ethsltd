@@ -39,8 +39,16 @@ export default function AdminOrdersPage() {
   }, [page, status, market, "real"]);
 
   const handleCancel = async (id: string) => {
-    // Currently no real backend force-cancel API, but we simulate optimism if we had one
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'CANCELED' } : o));
+    try {
+      const res = await apiClient.adminCancelOrder(id);
+      if (res.success) {
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'CANCELED' } : o));
+      } else {
+        alert(res.error || 'Failed to cancel order');
+      }
+    } catch (e: any) {
+      alert(e.message || 'An error occurred');
+    }
   };
 
   const columns: Column<any>[] = [

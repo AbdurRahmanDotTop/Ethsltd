@@ -3,10 +3,12 @@ import { useState, useEffect } from "react"
 import { MarketSummary } from "./MarketSummary"
 import { MarketSelector } from "./MarketSelector"
 import { TradingChart } from "./TradingChart"
+import { MarketWatch } from "./MarketWatch"
 import { OrderBook } from "./OrderBook"
 import { RecentTrades } from "./RecentTrades"
 import { OrderEntry } from "./OrderEntry"
 import { TradingHistoryTabs } from "./TradingHistoryTabs"
+import { OneClickTrading } from "./OneClickTrading"
 import { apiClient } from "@ethsltd/api-client"
 import { Market } from "@/lib/market-data/types"
 import { useTradingUIStore, MarketType } from "@/stores/trading-ui-store"
@@ -73,10 +75,44 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
     }
     load()
     
-    // Poll for real-time updates every 5s
-    const interval = setInterval(load, 5000);
-    return () => { mounted = false; clearInterval(interval); }
-  }, [symbol]) // Remove market dependency to avoid infinite loop
+    // Connect to WebSockets for real-time data
+    const wsUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace('http', 'ws') + '/ws/stream';
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('Connected to Market Stream');
+      ws.send(JSON.stringify({ type: 'subscribe', symbol: symbol.toUpperCase() }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'ticker') {
+          // Update market price real-time
+          setMarket((prev: any) => prev ? { ...prev, price: parseFloat(data.price) } : prev);
+          // Also append to candles to see chart moving
+          setCandles((prev: any[]) => {
+             const last = prev[prev.length - 1];
+             if (!last) return prev;
+             return [...prev.slice(0, -1), { 
+                ...last, 
+                close: parseFloat(data.price), 
+                high: Math.max(last.high, parseFloat(data.price)),
+                low: Math.min(last.low, parseFloat(data.price))
+             }];
+          });
+        } else if (data.type === 'orderbook') {
+          // Update orderbook live
+          setOrderbook(data.data);
+        }
+      } catch(e) {}
+    };
+
+    return () => { 
+      mounted = false; 
+      ws.close(); 
+    }
+  }, [symbol])
 
   if (loading && !market) {
     return <div className="min-h-[80vh] flex items-center justify-center bg-background"><div className="animate-spin h-8 w-8 border-4 border-brand-foreground border-t-transparent rounded-full" /></div>
@@ -109,18 +145,26 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       {/* Main Grid */}
       <div className="flex flex-col xl:flex-row flex-1 p-2 gap-2">
         
-        {/* Left Col: Chart & Orders */}
+        {/* Left Col: Market Watch (MT5 style sidebar) */}
+        <div className="flex flex-col w-full xl:w-[280px] shrink-0 gap-2 hidden lg:flex">
+          <div className="flex-1 min-h-[400px]">
+            <MarketWatch currentSymbol={market.symbol} />
+          </div>
+        </div>
+
+        {/* Middle Col: Chart & Orders */}
         <div className="flex flex-col flex-1 gap-2 min-w-0">
           <div className="bg-muted/10 border border-border rounded-lg flex-1 min-h-[400px] xl:min-h-[500px] relative z-10 overflow-hidden">
             <TradingChart data={candles} />
+            {market && <OneClickTrading market={market} currentPrice={market.price} />}
           </div>
           <div className="bg-muted/10 border border-border rounded-lg min-h-[280px] hidden xl:block">
             <TradingHistoryTabs />
           </div>
         </div>
 
-        {/* Middle Col: Orderbook & Recent Trades */}
-        <div className="flex flex-col w-full xl:w-[300px] shrink-0 gap-2 hidden lg:flex">
+        {/* Right Middle Col: Orderbook & Recent Trades (Optional, can be hidden on smaller screens) */}
+        <div className="flex flex-col w-full xl:w-[260px] shrink-0 gap-2 hidden 2xl:flex">
           <div className="flex-1 bg-muted/10 border border-border rounded-lg flex flex-col overflow-hidden min-h-[400px]">
             <OrderBook data={orderbook} />
           </div>

@@ -14,11 +14,9 @@ export default function PreferencesPage() {
   const handleSave = () => {
     setIsSaving(true);
     setSuccess("");
-    // Simulate API call to save preferences
-    setTimeout(() => {
-      setIsSaving(false);
-      setSuccess("Preferences updated successfully.");
-    }, 600);
+    // Preferences are saved locally via next-themes and context
+    setIsSaving(false);
+    setSuccess("Preferences updated successfully.");
   };
 
   return (

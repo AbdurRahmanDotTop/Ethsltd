@@ -8,10 +8,11 @@ import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
 import { EmailService } from '../services/email';
 import { getCookieDomain, getAuthCookieOptions } from '../utils/cookie';
+// @ts-ignore
+import { authenticator } from 'otplib';
 
 export const authRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-const JWT_SECRET = 'super_secret_jwt_key_replace_me_in_prod';
 
 async function hashPassword(password: string) {
   const encoder = new TextEncoder();
@@ -68,7 +69,7 @@ authRoutes.post('/register', async (c) => {
   });
 
 
-  const token = await sign({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, JWT_SECRET);
+  const token = await sign({ id: userId, email: body.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, c.env.JWT_SECRET || 'super_secret_jwt_key_replace_me_in_prod');
 
   const cookieOpts = getAuthCookieOptions(c);
   setCookie(c, 'ethsltd_session', token, {
@@ -88,7 +89,7 @@ authRoutes.post('/register', async (c) => {
 
   // Async Email Dispatch
   const emailService = new EmailService(c.env, db);
-  const verifyToken = await sign({ purpose: 'email_verify', userId: userId, exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) }, JWT_SECRET);
+  const verifyToken = await sign({ purpose: 'email_verify', userId: userId, exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) }, c.env.JWT_SECRET || 'super_secret_jwt_key_replace_me_in_prod');
   // We determine the origin based on request headers (or a configured APP_URL)
   const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
   
@@ -130,6 +131,17 @@ authRoutes.post('/login', async (c) => {
       return c.json({ success: false, error: `Account is ${user.status}` }, 403);
     }
 
+    if (user.mfaEnabled) {
+      if (!body.mfaToken) {
+        return c.json({ success: false, error: 'MFA_REQUIRED', mfaRequired: true }, 401);
+      }
+      
+      const isValid = authenticator.verify({ token: body.mfaToken, secret: user.mfaSecret! });
+      if (!isValid) {
+        return c.json({ success: false, error: 'Invalid 2FA code' }, 401);
+      }
+    }
+
   const sessionId = crypto.randomUUID();
   const now = new Date();
 
@@ -146,7 +158,7 @@ authRoutes.post('/login', async (c) => {
 
   await db.update(users).set({ lastLoginAt: now }).where(eq(users.id, user.id));
 
-  const token = await sign({ id: user.id, email: user.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, JWT_SECRET);
+  const token = await sign({ id: user.id, email: user.email, sessionId, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) }, c.env.JWT_SECRET || 'super_secret_jwt_key_replace_me_in_prod');
 
   const cookieOpts = getAuthCookieOptions(c);
   setCookie(c, 'ethsltd_session', token, {
@@ -177,7 +189,7 @@ authRoutes.post('/verify-email', async (c) => {
     if (!token) return c.json({ success: false, error: 'Token required' }, 400);
 
     const { verify } = await import('hono/jwt');
-    const payload = await verify(token, JWT_SECRET, "HS256");
+    const payload = await verify(token, c.env.JWT_SECRET || 'super_secret_jwt_key_replace_me_in_prod', "HS256");
     if (payload.purpose !== 'email_verify' || !payload.userId) {
       return c.json({ success: false, error: 'Invalid token' }, 400);
     }
@@ -398,7 +410,7 @@ authRoutes.post('/forgot-password', async (c) => {
     }
 
     const { sign } = await import('hono/jwt');
-    const resetToken = await sign({ purpose: 'password_reset', userId: user.id, exp: Math.floor(Date.now() / 1000) + (15 * 60) }, JWT_SECRET);
+    const resetToken = await sign({ purpose: 'password_reset', userId: user.id, exp: Math.floor(Date.now() / 1000) + (15 * 60) }, c.env.JWT_SECRET || 'super_secret_jwt_key_replace_me_in_prod');
     
     const emailService = new EmailService(c.env, db);
     const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
@@ -426,7 +438,7 @@ authRoutes.post('/reset-password', async (c) => {
     const { verify } = await import('hono/jwt');
     let payload;
     try {
-      payload = await verify(token, JWT_SECRET, "HS256");
+      payload = await verify(token, c.env.JWT_SECRET || 'super_secret_jwt_key_replace_me_in_prod', "HS256");
     } catch (e) {
       return c.json({ success: false, error: 'Token expired or invalid' }, 400);
     }

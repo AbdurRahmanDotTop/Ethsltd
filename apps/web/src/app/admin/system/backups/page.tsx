@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 const AVAILABLE_MODULES = [
   "Users", "User Profiles", "Wallets", "Transactions", "Trades",
-  "Trading Orders", "P2P Ads", "P2P Orders", "Escrow Records", "Disputes",
+  "Trading Orders",
   "Payment Methods", "Ledger Accounts", "Ledger Entries", "System Settings",
   "Audit Logs", "Support Tickets"
 ];

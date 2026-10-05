@@ -231,13 +231,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
               </div>
               <div className="text-2xl font-bold">{formatUSD(user.tradingVolumeUsd)}</div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Handshake className="w-4 h-4" />
-                <span className="text-sm font-medium">P2P Vol (30d)</span>
-              </div>
-              <div className="text-2xl font-bold">{formatUSD(user.p2pVolumeUsd)}</div>
-            </div>
+
           </div>
 
           <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -286,7 +280,6 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                         <select value={targetField} onChange={e => setTargetField(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
                           <option value="balance">Available Balance</option>
                           <option value="lockedBalance">Locked (Spot)</option>
-                          <option value="escrowBalance">Escrow (P2P)</option>
                         </select>
                       </div>
                       <div>
@@ -512,46 +505,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                     </div>
                   )}
 
-                  <h3 className="font-semibold text-lg border-b border-border pb-2 mt-8">P2P Orders</h3>
-                  {user.p2pOrders && user.p2pOrders.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
-                          <tr>
-                            <th className="px-4 py-2 rounded-tl-md">Date</th>
-                            <th className="px-4 py-2">Role</th>
-                            <th className="px-4 py-2">Fiat Amount</th>
-                            <th className="px-4 py-2">Crypto Amount</th>
-                            <th className="px-4 py-2">Price</th>
-                            <th className="px-4 py-2 rounded-tr-md">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {user.p2pOrders.map((order: any) => {
-                            const isBuyer = order.buyerId === user.id;
-                            return (
-                              <tr key={order.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                                <td className="px-4 py-2 whitespace-nowrap">{new Date(order.createdAt).toLocaleString()}</td>
-                                <td className="px-4 py-2">
-                                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${isBuyer ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500'}`}>
-                                    {isBuyer ? 'BUYER' : 'SELLER'}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-2 font-medium">{order.fiatAmount}</td>
-                                <td className="px-4 py-2 text-muted-foreground">{order.cryptoAmount}</td>
-                                <td className="px-4 py-2">{order.price}</td>
-                                <td className="px-4 py-2 text-xs font-medium">{order.status}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg">
-                      <p>No P2P orders found.</p>
-                    </div>
-                  )}
+
                 </div>
               ) : (
                 <div className="text-center text-muted-foreground flex flex-col items-center py-8">

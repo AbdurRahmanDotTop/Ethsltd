@@ -7,9 +7,6 @@ const nextConfig: any = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   transpilePackages: ["@ethsltd/api-client", "@ethsltd/types"],
   serverExternalPackages: ["sharp"],
 };

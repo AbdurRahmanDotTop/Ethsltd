@@ -76,7 +76,8 @@ export default function SecurityPage() {
     setIsMfaLoading(true);
     setMfaError("");
     try {
-      const res = await apiClient.enableMfa(mfaToken);
+      if (!mfaData) return;
+      const res = await apiClient.enableMfa(mfaToken, mfaData.secret);
       if (res.success) {
         setSuccess("Two-factor authentication enabled successfully.");
         setMfaData(null);

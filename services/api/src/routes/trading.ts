@@ -14,12 +14,14 @@ import { eq, and, desc, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { EmailService } from '../services/email';
 import { markets, orders, trades, wallets, walletTransactions, currencyRates, positions } from 'database';
+import { mt5Accounts } from 'database/schema/mt5';
 import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
 import { processOrderMatching } from '../services/matching-engine';
 import { users } from 'database';
 import { getRealPrice } from '../utils/price';
 import Decimal from 'decimal.js';
+import { MT5Service } from '../services/mt5-client';
 
 export const tradingRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -203,7 +205,6 @@ tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
       )
       .all();
 
-    // Filter OPEN or PARTIALLY_FILLED in JS
     const openOrders = activeOrders.filter((o: any) => 
       o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
     );
@@ -211,6 +212,24 @@ tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
     const askMap = new Map<number, number>();
     const bidMap = new Map<number, number>();
 
+    // 1. Fetch Real Market Depth (Level 2) from MEXC
+    const mexcSymbol = symbol.replace('-', '').toUpperCase();
+    try {
+      const res = await fetch(`https://api.mexc.com/api/v3/depth?symbol=${mexcSymbol}&limit=20`);
+      if (res.ok) {
+        const data = await res.json() as any;
+        if (data.asks) {
+           data.asks.forEach((ask: any[]) => askMap.set(parseFloat(ask[0]), parseFloat(ask[1])));
+        }
+        if (data.bids) {
+           data.bids.forEach((bid: any[]) => bidMap.set(parseFloat(bid[0]), parseFloat(bid[1])));
+        }
+      }
+    } catch(e) {
+      console.warn("MEXC Orderbook fetch failed, falling back to local orders only");
+    }
+
+    // 2. Overlay Local DB Orders
     for (const o of openOrders) {
       if (!o.price) continue;
       const price = parseFloat(o.price);
@@ -455,9 +474,9 @@ tradingRoutes.post('/orders', async (c) => {
         balance: newSpendBalance,
         lockedBalance: newLockedBalance,
         updatedAt: now
-      }).where(eq(wallets.id, spendWallet.id));
+      }).where(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset));
       
-      // --- Create Order Record ---
+      // --- Create Order Record (PENDING for MT5) ---
       const newOrderRecord = {
         id: orderId,
         displayId: orderDisplayId,
@@ -472,25 +491,75 @@ tradingRoutes.post('/orders', async (c) => {
         amount: parsedAmount.toString(),
         filledAmount: '0',
         remainingAmount: parsedAmount.toString(),
-        status: 'ACCEPTED' as const,
+        status: marketInfo.type !== 'SPOT' ? 'ROUTING' as const : 'ACCEPTED' as const,
         timeInForce: timeInForce || 'GTC',
         createdAt: now,
         updatedAt: now,
       };
 
-      if (marketInfo.type !== 'SPOT') {
-        // MT5 MARGIN/CFD logic: Create a Position instead of just settling spot trade
-        // We bypass the matching engine for now for CFD and simulate direct market execution
-        if (type === 'MARKET') {
-          const positionId = crypto.randomUUID();
+      await tx.insert(orders).values(newOrderRecord);
+    }); // End of DB lock transaction
+
+    // ============================================
+    // MT5 INTEGRATION (MARGIN / CFD)
+    // ============================================
+    if (marketInfo.type !== 'SPOT') {
+      let positionId = crypto.randomUUID();
+      let finalPrice = orderPrice.toString();
+      
+      try {
+        const mt5Service = new MT5Service({
+          metaApiToken: c.env.MT5_API_KEY || 'mock_token',
+          metaApiAccountId: c.env.MT5_SERVER_ID || 'mock_account'
+        });
+
+        // 1. Get or Create MT5 Account
+        let mt5User = await db.select().from(mt5Accounts).where(eq(mt5Accounts.userId, user.id)).get();
+        if (!mt5User) {
+           const credentials = await mt5Service.createUserAccount(dbUser?.email || user.id, dbUser?.email || user.id, 'Real_Group');
+           mt5User = {
+              id: crypto.randomUUID(),
+              userId: user.id,
+              mt5Login: credentials.login,
+              mt5Password: credentials.password,
+              mt5Group: 'Real_Group',
+              balance: '0',
+              createdAt: now,
+              updatedAt: now
+           };
+           await db.insert(mt5Accounts).values(mt5User);
+        }
+
+        // 2. Sync Locked Margin to MT5 (Deposit)
+        const marginRequired = totalValue.div(100); // hardcoded leverage 100 for now
+        await mt5Service.syncBalance(mt5User.mt5Login, marginRequired.toString(), 'DEPOSIT', 'Trade Margin Lock');
+
+        // 3. Place Trade on MT5
+        const tradeRes = await mt5Service.placeTrade(mt5User.mt5Login, {
+          actionType: side === 'BUY' ? 'ORDER_TYPE_BUY' : 'ORDER_TYPE_SELL',
+          symbol: market,
+          volume: parseFloat(parsedAmount.toString()),
+          price: parseFloat(orderPrice.toString()),
+          stopLoss: stopLoss ? parseFloat(stopLoss) : undefined,
+          takeProfit: takeProfit ? parseFloat(takeProfit) : undefined
+        });
+
+        positionId = tradeRes.positionId as any;
+        finalPrice = tradeRes.price.toString();
+
+        // 4. Update Order to FILLED and Create Position in our DB
+        await runTx(db, async (tx: any) => {
+          await tx.update(orders).set({ 
+            status: 'FILLED', 
+            filledAmount: parsedAmount.toString(), 
+            remainingAmount: '0',
+            price: finalPrice,
+            updatedAt: new Date()
+          }).where(eq(orders.id, orderId));
+          
           const positionDisplayId = await generateBusinessId(db, dbUser?.email, 'POS');
-          
-          const marginRequired = totalValue.div(100); // hardcoded leverage 100 for now
-          
-          await tx.insert(orders).values({ ...newOrderRecord, status: 'FILLED', filledAmount: parsedAmount.toString(), remainingAmount: '0' });
-          
           await tx.insert(positions).values({
-            id: positionId,
+            id: positionId as any, // Use real MT5 position ID!
             displayId: positionDisplayId,
             userId: user.id,
             marketSymbol: market,
@@ -499,22 +568,54 @@ tradingRoutes.post('/orders', async (c) => {
             leverage: '100',
             marginType: 'ISOLATED',
             marginAmount: marginRequired.toString(),
-            entryPrice: orderPrice.toString(),
+            entryPrice: finalPrice,
             stopLoss: stopLoss ? stopLoss.toString() : null,
             takeProfit: takeProfit ? takeProfit.toString() : null,
-            liquidationPrice: side === 'BUY' ? orderPrice.times(0.99).toString() : orderPrice.times(1.01).toString(),
+            liquidationPrice: side === 'BUY' ? new Decimal(finalPrice).times(0.99).toString() : new Decimal(finalPrice).times(1.01).toString(),
             amount: parsedAmount.toString(),
-            createdAt: now,
-            updatedAt: now,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           });
-          return;
-        }
-      }
+        });
+        
+        // Return early to prevent Spot matching engine from running
+        return c.json({ success: true, message: 'MT5 Order Executed', orderId: orderDisplayId });
 
-      await tx.insert(orders).values(newOrderRecord);
+      } catch (mt5Error: any) {
+        console.error('MT5 Execution Failed:', mt5Error);
+        
+        // SAGA COMPENSATING TRANSACTION: Unlock margin & Fail Order
+        await runTx(db, async (tx: any) => {
+          await tx.update(orders).set({ status: 'REJECTED', updatedAt: new Date() }).where(eq(orders.id, orderId));
+          
+          let spendWallet = await tx.select().from(wallets)
+            .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)))
+            .get();
+            
+          if (spendWallet) {
+            const returnedBalance = new Decimal(spendWallet?.balance || '0').plus(spendAmount).toString();
+            const returnedLocked = Decimal.max(0, new Decimal(spendWallet?.lockedBalance || '0').minus(spendAmount)).toString();
+            await tx.update(wallets).set({
+              balance: returnedBalance,
+              lockedBalance: returnedLocked,
+              updatedAt: new Date()
+            }).where(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset));
+          }
+        });
+
+        return c.json({ success: false, error: 'Trade rejected by MT5 liquidity provider' }, 400);
+      }
+    }
+
+    // ============================================
+    // SPOT MARKET MATCHING ENGINE (No MT5)
+    // ============================================
+    // Re-fetch the order inside a new tx to match it
+    await runTx(db, async (tx: any) => {
+      const pendingOrder = await tx.select().from(orders).where(eq(orders.id, orderId)).get();
+      if (!pendingOrder) return;
       
-      // --- Run Matching Engine (within same transaction) ---
-      const matchResult = await processOrderMatching(tx, newOrderRecord, marketInfo, user.id);
+      const matchResult = await processOrderMatching(tx, pendingOrder, marketInfo, user.id);
       
       const filledAmount = new Decimal(matchResult.totalFilledAmount);
       const remainingAmount = new Decimal(matchResult.remainingToFill);
@@ -554,14 +655,14 @@ tradingRoutes.post('/orders', async (c) => {
         if (excessLocked.gt(0) && finalStatus === 'FILLED') {
           // Refund the excess to available balance
           const freshWallet = await tx.select().from(wallets)
-            .where(eq(wallets.id, spendWallet.id)).get();
+            .where(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)).get();
           
           if (freshWallet) {
             await tx.update(wallets).set({
               balance: new Decimal(freshWallet.balance).plus(excessLocked).toString(),
               lockedBalance: Decimal.max(0, new Decimal(freshWallet.lockedBalance).minus(excessLocked)).toString(),
               updatedAt: now
-            }).where(eq(wallets.id, spendWallet.id));
+            }).where(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset));
           }
         }
       }
@@ -734,61 +835,122 @@ tradingRoutes.get('/positions', async (c) => {
 });
 
 
-// POST /positions/:id/close — Close an open position
+// POST /positions/:id/close — Close an open position (Supports Partial Close)
 tradingRoutes.post('/positions/:id/close', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const positionId = c.req.param('id');
   const body = await c.req.json().catch(() => ({}));
-  const closeAmount = body.amount; // for partial close, not implemented fully in this snippet
+  let requestedCloseAmount = body.amount ? new Decimal(body.amount) : null;
   
   try {
+    // 1. Pre-fetch position outside of D1 transaction
+    const position = await db.select().from(positions)
+      .where(and(eq(positions.id, positionId), eq(positions.userId, user.id)))
+      .get();
+      
+    if (!position) throw new Error('Position not found');
+    if (position.status !== 'OPEN') throw new Error('Position is already closed');
+    
+    const marketInfo = await db.select().from(markets).where(eq(markets.symbol, position.marketSymbol)).get();
+    if (!marketInfo) throw new Error('Market info missing');
+
+    const totalAmount = new Decimal(position.amount);
+    const totalMargin = new Decimal(position.marginAmount);
+    const closeAmount = (requestedCloseAmount && requestedCloseAmount.gt(0) && requestedCloseAmount.lt(totalAmount)) 
+      ? requestedCloseAmount 
+      : totalAmount;
+    const closeRatio = closeAmount.div(totalAmount);
+    const releasedMargin = totalMargin.times(closeRatio);
+
+    let pnl = new Decimal(0);
+
+    // ============================================
+    // MT5 INTEGRATION (MARGIN / CFD)
+    // ============================================
+    if (marketInfo.type !== 'SPOT') {
+      const mt5User = await db.select().from(mt5Accounts).where(eq(mt5Accounts.userId, user.id)).get();
+      if (!mt5User) throw new Error('MT5 Account not found for user');
+
+      const mt5Service = new MT5Service({
+        metaApiToken: c.env.MT5_API_KEY || 'mock_token',
+        metaApiAccountId: c.env.MT5_SERVER_ID || 'mock_account'
+      });
+
+      // 1. Close Position on MT5
+      const closeRes = await mt5Service.closePosition(mt5User.mt5Login, position.id, parseFloat(closeAmount.toString()));
+      pnl = new Decimal(closeRes.profit);
+
+      // 2. Withdraw released margin + PnL from MT5 to sync
+      const withdrawalAmount = releasedMargin.plus(pnl);
+      if (withdrawalAmount.gt(0)) {
+        await mt5Service.syncBalance(mt5User.mt5Login, withdrawalAmount.toString(), 'WITHDRAWAL', 'Position Close');
+      }
+    } else {
+      // SPOT mock PnL (for internal margin, if any exists in spot)
+      const currentPriceRaw = await getRealPrice(position.marketSymbol);
+      if (!currentPriceRaw) throw new Error('Could not fetch market price for closing');
+      const currentPrice = new Decimal(currentPriceRaw);
+      const entry = new Decimal(position.entryPrice);
+      if (position.side === 'LONG') {
+        pnl = currentPrice.minus(entry).times(closeAmount);
+      } else {
+        pnl = entry.minus(currentPrice).times(closeAmount);
+      }
+    }
+
+    const totalReturn = releasedMargin.plus(pnl); // Margin + Profit (or - Loss)
+    const now = new Date();
+
+    // 3. Finalize Wallet and Position DB updates
     await runTx(db, async (tx: any) => {
-      const position = await tx.select().from(positions)
-        .where(and(eq(positions.id, positionId), eq(positions.userId, user.id)))
+      // Update position
+      if (closeAmount.eq(totalAmount)) {
+        // Full close
+        await tx.update(positions).set({
+          status: 'CLOSED',
+          realizedPnl: new Decimal(position.realizedPnl).plus(pnl).toString(),
+          updatedAt: now
+        }).where(eq(positions.id, position.id));
+      } else {
+        // Partial close
+        await tx.update(positions).set({
+          amount: totalAmount.minus(closeAmount).toString(),
+          marginAmount: totalMargin.minus(releasedMargin).toString(),
+          realizedPnl: new Decimal(position.realizedPnl).plus(pnl).toString(),
+          updatedAt: now
+        }).where(eq(positions.id, position.id));
+      }
+      
+      // Update Wallet & Ledger
+      let quoteWallet = await tx.select().from(wallets)
+        .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset)))
         .get();
         
-      if (!position) throw new Error('Position not found');
-      if (position.status !== 'OPEN') throw new Error('Position is already closed');
-      
-      const currentPrice = await getRealPrice(position.marketSymbol);
-      if (!currentPrice) throw new Error('Could not fetch market price for closing');
-      
-      const entry = parseFloat(position.entryPrice);
-      const amount = parseFloat(position.amount);
-      const margin = parseFloat(position.marginAmount);
-      
-      const pnl = position.side === 'LONG' 
-        ? (currentPrice - entry) * amount 
-        : (entry - currentPrice) * amount;
-        
-      const totalReturn = margin + pnl; // Principal + Profit
-      
-      // Update position
-      const now = new Date();
-      await tx.update(positions).set({
-        status: 'CLOSED',
-        realizedPnl: pnl.toString(),
-        updatedAt: now
-      }).where(eq(positions.id, position.id));
-      
-      // Update Wallet (Quote asset)
-      const marketInfo = await tx.select().from(markets).where(eq(markets.symbol, position.marketSymbol)).get();
-      if (marketInfo) {
-        let quoteWallet = await tx.select().from(wallets)
-          .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset)))
-          .get();
-          
-        if (quoteWallet) {
-           const newLocked = Math.max(0, parseFloat(quoteWallet.lockedBalance) - margin);
-           const newBalance = parseFloat(quoteWallet.balance) + totalReturn;
-           
-           await tx.update(wallets).set({
-             lockedBalance: newLocked.toString(),
-             balance: newBalance.toString(),
-             updatedAt: now
-           }).where(eq(wallets.id, quoteWallet.id));
-        }
+      if (quoteWallet) {
+         const newLocked = Decimal.max(0, new Decimal(quoteWallet.lockedBalance).minus(releasedMargin));
+         const newBalance = new Decimal(quoteWallet.balance).plus(totalReturn);
+         
+         await tx.update(wallets).set({
+           lockedBalance: newLocked.toString(),
+           balance: newBalance.toString(),
+           updatedAt: now
+         }).where(eq(wallets.id, quoteWallet.id));
+         
+         if (!pnl.isZero()) {
+           await tx.insert(walletTransactions).values({
+             id: crypto.randomUUID(),
+             userId: user.id,
+             type: pnl.gt(0) ? 'TRADING_CREDIT' : 'TRADING_DEBIT',
+             assetSymbol: marketInfo.quoteAsset,
+             amount: pnl.abs().toString(),
+             fee: '0',
+             status: 'COMPLETED',
+             reference: `close_${position.id}`,
+             createdAt: now,
+             updatedAt: now,
+           });
+         }
       }
     });
     return c.json({ success: true, message: 'Position closed successfully' });

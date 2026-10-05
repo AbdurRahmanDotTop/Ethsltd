@@ -420,12 +420,7 @@ export default function AdminSettingsPage() {
                       checked={formData.EMAIL_NOTIFY_WITHDRAWAL} 
                       onChange={(c) => handleInputChange('EMAIL_NOTIFY_WITHDRAWAL', c)} 
                     />
-                    <CustomSwitch 
-                      label="New P2P Orders" 
-                      description="Send an email to the Admin when a new P2P order is created or updated."
-                      checked={formData.EMAIL_NOTIFY_P2P} 
-                      onChange={(c) => handleInputChange('EMAIL_NOTIFY_P2P', c)} 
-                    />
+
                     <CustomSwitch 
                       label="New Spot Trades" 
                       description="Send an email to the Admin when a spot trade is executed."

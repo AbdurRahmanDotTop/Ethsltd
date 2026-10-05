@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 
 export default function AdminTicketDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
   const router = useRouter();
   
   const [ticket, setTicket] = useState<SupportTicket | null>(null);

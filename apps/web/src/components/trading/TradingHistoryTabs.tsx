@@ -3,9 +3,10 @@ import { useState, useEffect } from "react"
 import { formatPrice } from "@/lib/trading/calculations"
 import { Button } from "@/components/ui/button"
 import { apiClient } from "@ethsltd/api-client"
+import { EconomicCalendar } from "./EconomicCalendar"
 
 export function TradingHistoryTabs() {
-  const [activeTab, setActiveTab] = useState<'positions'|'open'|'history'|'trades'>('positions')
+  const [activeTab, setActiveTab] = useState<'positions'|'open'|'history'|'trades'|'calendar'>('positions')
   const [positions, setPositions] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([])
   const [trades, setTrades] = useState<any[]>([])
@@ -39,9 +40,18 @@ export function TradingHistoryTabs() {
   }
 
   
-  const handleClosePosition = async (id: string) => {
+  const handleClosePosition = async (id: string, currentAmount: string) => {
+    const amountToCloseStr = window.prompt(`Enter volume to close (Max: ${currentAmount}):`, currentAmount);
+    if (amountToCloseStr === null) return; // Cancelled
+    
+    const amountToClose = parseFloat(amountToCloseStr);
+    if (isNaN(amountToClose) || amountToClose <= 0 || amountToClose > parseFloat(currentAmount)) {
+      alert("Invalid volume.");
+      return;
+    }
+    
     try {
-      await apiClient.closePosition(id);
+      await apiClient.closePosition(id, { amount: amountToClose });
       loadData();
     } catch(e) { console.error(e) }
   }
@@ -80,6 +90,12 @@ export function TradingHistoryTabs() {
         >
           Trade History
         </button>
+        <button 
+          className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'calendar' ? 'border-brand-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          onClick={() => setActiveTab('calendar')}
+        >
+          Economic Calendar
+        </button>
       </div>
 
       <div className="flex-1 overflow-auto max-h-[400px]">
@@ -112,11 +128,11 @@ export function TradingHistoryTabs() {
                   <td className="py-3 font-mono text-xs text-muted-foreground">{pos.stopLoss ? formatPrice(pos.stopLoss) : '0.00'}</td>
                   <td className="py-3 font-mono text-xs text-muted-foreground">{pos.takeProfit ? formatPrice(pos.takeProfit) : '0.00'}</td>
                   <td className="py-3 font-mono text-xs">{formatPrice(pos.currentPrice)}</td>
-                  <td className={`py-3 pr-4 text-right font-mono text-xs font-semibold ${pos.unrealizedPnl >= 0 ? 'text-success' : 'text-danger'}`}>
+                  <td className={`py-3 pr-4 text-right font-mono text-xs font-semibold ${pos.unrealizedPnl >= 0 ? 'text-info' : 'text-danger'}`}>
                     {pos.unrealizedPnl >= 0 ? '+' : ''}{pos.unrealizedPnl.toFixed(2)}
                   </td>
                   <td className="py-3 pr-4 text-right">
-                    <Button variant="outline" size="sm" className="h-7 text-xs bg-danger/10 text-danger hover:bg-danger hover:text-white" onClick={() => handleClosePosition(pos.id)}>Close</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-xs bg-muted/10 hover:bg-danger hover:text-white" onClick={() => handleClosePosition(pos.id, pos.amount)}>Close</Button>
                   </td>
                 </tr>
               ))}
@@ -231,6 +247,10 @@ export function TradingHistoryTabs() {
               ))}
             </tbody>
           </table>
+        )}
+
+        {activeTab === 'calendar' && (
+           <EconomicCalendar />
         )}
       </div>
     </div>

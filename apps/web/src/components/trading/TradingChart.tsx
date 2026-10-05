@@ -1,23 +1,22 @@
 "use client"
-import { useEffect, useRef, useCallback } from "react"
-import { createChart, ColorType, CandlestickSeries } from "lightweight-charts"
+import { useEffect, useRef, useCallback, useState } from "react"
+import { init, dispose, Chart, OverlayMode } from "klinecharts"
 import { Candle } from "@/lib/trading/types"
 import { useTheme } from "next-themes"
 
 export function TradingChart({ data }: { data: Candle[] }) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const { theme } = useTheme()
-  const chartRef = useRef<any>(null)
-  const seriesRef = useRef<any>(null)
+  const chartRef = useRef<Chart | null>(null)
+  const [activeIndicator, setActiveIndicator] = useState<string>('VOL')
 
-  // Apply candle data to series — extracted so both effects can call it
   const applyData = useCallback((candles: Candle[]) => {
-    if (!seriesRef.current || !candles || candles.length === 0) return;
+    if (!chartRef.current || !candles || candles.length === 0) return;
 
     // Deduplicate and sort by time ascending
     const seen = new Set<number>();
     const sortedData = [...candles]
-      .map(d => ({ ...d, time: Math.floor(Number(d.time)) }))
+      .map(d => ({ ...d, time: Math.floor(Number(d.time)) * 1000 }))
       .sort((a, b) => a.time - b.time)
       .filter(d => {
         if (seen.has(d.time)) return false;
@@ -26,24 +25,21 @@ export function TradingChart({ data }: { data: Candle[] }) {
       });
 
     const formattedData = sortedData.map(d => ({
-      time: d.time as any,
+      timestamp: d.time,
       open: d.open,
       high: d.high,
       low: d.low,
       close: d.close,
+      volume: d.volume,
     }));
 
     try {
-      seriesRef.current.setData(formattedData);
-      if (chartRef.current) {
-        chartRef.current.timeScale().fitContent();
-      }
+      (chartRef.current as any).applyNewData(formattedData);
     } catch (e) {
       console.warn("TradingChart setData error:", e);
     }
   }, []);
 
-  // Create / recreate chart on theme change
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -52,69 +48,76 @@ export function TradingChart({ data }: { data: Candle[] }) {
       (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches) ||
       document.documentElement.classList.contains("dark");
 
-    const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor: isDark ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)",
-      },
-      grid: {
-        vertLines: { color: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)" },
-        horzLines: { color: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)" },
-      },
-      rightPriceScale: {
-        borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-        autoScale: true,
-        scaleMargins: { top: 0.1, bottom: 0.1 },
-      },
-      timeScale: {
-        borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-        timeVisible: true,
-        fixLeftEdge: true,
-        fixRightEdge: true,
-      },
-      crosshair: {
-        mode: 0,
-      },
+    const chart = init(chartContainerRef.current, {
+      styles: {
+        grid: {
+          horizontal: { color: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)" },
+          vertical: { color: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)" }
+        },
+        candle: {
+          bar: {
+            upColor: '#16c784',
+            downColor: '#ea3943',
+            noChangeColor: '#888888',
+            upBorderColor: '#16c784',
+            downBorderColor: '#ea3943',
+            upWickColor: '#16c784',
+            downWickColor: '#ea3943'
+          }
+        },
+        yAxis: {
+          tickText: { color: isDark ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)" },
+          axisLine: { color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)" }
+        },
+        xAxis: {
+          tickText: { color: isDark ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)" },
+          axisLine: { color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)" }
+        }
+      }
     });
 
-    const upColor = "#16c784";
-    const downColor = "#ea3943";
-
-    const series = chart.addSeries(CandlestickSeries, {
-      upColor,
-      downColor,
-      borderVisible: false,
-      wickUpColor: upColor,
-      wickDownColor: downColor,
-    });
-
-    chartRef.current = chart;
-    seriesRef.current = series;
-
-    // Apply any data that arrived before chart was ready
-    applyData(data);
+    if (chart) {
+      chartRef.current = chart;
+      (chart as any).createIndicator('VOL', true, { id: 'candle_pane' });
+      applyData(data);
+    }
 
     const resizeObserver = new ResizeObserver((entries) => {
       if (entries.length === 0 || entries[0].target !== chartContainerRef.current) return;
-      const newRect = entries[0].contentRect;
-      chart.applyOptions({ height: newRect.height, width: newRect.width });
+      chart?.resize();
     });
 
     resizeObserver.observe(chartContainerRef.current);
 
     return () => {
       resizeObserver.disconnect();
-      try { chart.remove(); } catch (_) {}
+      if (chartRef.current && chartContainerRef.current) dispose(chartContainerRef.current as HTMLElement);
       chartRef.current = null;
-      seriesRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theme]); // Only recreate on theme change (applyData is stable via useCallback)
+  }, [theme]);
 
-  // Update data without recreating the chart
   useEffect(() => {
     applyData(data);
   }, [data, applyData]);
+
+  // Toolbar Handlers
+  const addIndicator = (name: string) => {
+    if (!chartRef.current) return;
+    if (activeIndicator && activeIndicator !== 'VOL') {
+      (chartRef.current as any).removeIndicator('pane_1', activeIndicator);
+    }
+    (chartRef.current as any).createIndicator(name, false, { id: 'pane_1' });
+    setActiveIndicator(name);
+  };
+
+  const drawOverlay = (name: string) => {
+    if (!chartRef.current) return;
+    chartRef.current.createOverlay({ 
+      name, 
+      extendData: 'Draw',
+      mode: 'normal' as OverlayMode
+    });
+  };
 
   if (!data || data.length === 0) {
     return (
@@ -123,7 +126,6 @@ export function TradingChart({ data }: { data: Candle[] }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
         </svg>
         <span>Chart data unavailable</span>
-        <span className="text-xs opacity-60">Market data is loading or temporarily unavailable</span>
       </div>
     );
   }
@@ -133,8 +135,27 @@ export function TradingChart({ data }: { data: Candle[] }) {
   const isUp = (currentPrice ?? 0) >= (prevPrice ?? 0);
 
   return (
-    <div className="relative w-full h-full min-h-[400px]">
-      <div ref={chartContainerRef} className="absolute inset-0" />
+    <div className="relative w-full h-full min-h-[400px] flex flex-col">
+      {/* MT5-Style Toolbar */}
+      <div className="h-10 border-b border-border bg-muted/30 flex items-center px-2 gap-2 overflow-x-auto no-scrollbar shrink-0">
+        <div className="flex items-center gap-1 border-r border-border pr-2">
+          <button onClick={() => drawOverlay('trendLine')} className="p-1.5 hover:bg-muted rounded text-xs" title="Trend Line">📈</button>
+          <button onClick={() => drawOverlay('horizontalLine')} className="p-1.5 hover:bg-muted rounded text-xs" title="Horizontal Line">➖</button>
+          <button onClick={() => drawOverlay('fibonacciLine')} className="p-1.5 hover:bg-muted rounded text-xs" title="Fibonacci">📏</button>
+          <button onClick={() => { if(chartRef.current) chartRef.current.removeOverlay() }} className="p-1.5 hover:bg-muted rounded text-xs text-danger" title="Clear Drawings">🗑️</button>
+        </div>
+        
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground mx-1">Indicators:</span>
+          <button onClick={() => addIndicator('MACD')} className={`px-2 py-1 hover:bg-muted rounded text-xs ${activeIndicator === 'MACD' ? 'bg-muted' : ''}`}>MACD</button>
+          <button onClick={() => addIndicator('RSI')} className={`px-2 py-1 hover:bg-muted rounded text-xs ${activeIndicator === 'RSI' ? 'bg-muted' : ''}`}>RSI</button>
+          <button onClick={() => addIndicator('BOLL')} className={`px-2 py-1 hover:bg-muted rounded text-xs ${activeIndicator === 'BOLL' ? 'bg-muted' : ''}`}>BOLL</button>
+          <button onClick={() => addIndicator('KDJ')} className={`px-2 py-1 hover:bg-muted rounded text-xs ${activeIndicator === 'KDJ' ? 'bg-muted' : ''}`}>KDJ</button>
+        </div>
+      </div>
+
+      <div ref={chartContainerRef} className="flex-1 w-full" />
+      
       <div className="absolute bottom-6 left-4 z-10 pointer-events-none bg-background/60 backdrop-blur-sm px-3 py-1.5 rounded-md border border-border">
         <span className="text-xs text-muted-foreground mr-2">Live Price:</span>
         <span className={`font-mono font-bold ${isUp ? "text-success" : "text-danger"}`}>

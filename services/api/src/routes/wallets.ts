@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc, and, or } from 'drizzle-orm';
+// @ts-ignore
+import { authenticator } from 'otplib';
 import { Bindings, Variables } from '../db';
 import { wallets, walletTransactions, bankTransfers, real_manual_deposits, bank_accounts, payment_methods, assetConversions, users, currencyRates, expertBookings, expertProfiles, orders as tradingOrders } from 'database';
 import { jwtMiddleware } from '../middleware/jwt';
@@ -510,7 +512,18 @@ walletRoutes.post('/withdraw', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   const body = await c.req.json();
-  const { assetSymbol, amount, destination, network } = body;
+  const { assetSymbol, amount, destination, network, twoFaCode } = body;
+
+  // Check 2FA
+  if (user.mfaEnabled) {
+    if (!twoFaCode) {
+      return c.json({ success: false, error: '2FA code is required for withdrawals' }, 400);
+    }
+    const isValid = authenticator.verify({ token: twoFaCode, secret: user.mfaSecret });
+    if (!isValid) {
+      return c.json({ success: false, error: 'Invalid 2FA code' }, 400);
+    }
+  }
   
   const parsedAmount = parseFloat(amount);
 
@@ -655,4 +668,103 @@ walletRoutes.post('/withdraw', async (c) => {
       console.error("Real Withdrawal Error:", error);
       return c.json({ success: false, error: error.message || 'Failed to process withdrawal.' }, 400);
     }
+});
+
+// Atomic Internal Conversions
+walletRoutes.post('/convert', async (c) => {
+  const db = c.get('db');
+  const user = c.get('user');
+  const body = await c.req.json();
+  const { fromAsset, toAsset, amount } = body;
+
+  const parsedAmount = parseFloat(amount);
+  if (parsedAmount <= 0) return c.json({ success: false, error: 'Invalid amount' }, 400);
+  if (fromAsset === toAsset) return c.json({ success: false, error: 'Cannot convert to same asset' }, 400);
+
+  try {
+    const result = await db.transaction(async (tx: any) => {
+      // 1. Check & Lock From Wallet
+      const fromWallet = await tx.select().from(wallets)
+        .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, fromAsset)))
+        .get();
+
+      if (!fromWallet || parseFloat(fromWallet.balance) < parsedAmount) {
+        throw new Error(`Insufficient ${fromAsset} balance`);
+      }
+
+      // 2. Determine Rates
+      let fromRateUsd = 1;
+      if (fromAsset !== 'USDT') {
+        const fromRateObj = await tx.select().from(currencyRates).where(eq(currencyRates.code, fromAsset)).get();
+        if (fromRateObj && parseFloat(fromRateObj.ratePerUsdt) > 0) {
+          fromRateUsd = 1 / parseFloat(fromRateObj.ratePerUsdt);
+        } else {
+           throw new Error(`Pricing not available for ${fromAsset}`);
+        }
+      }
+
+      let toRateUsd = 1;
+      if (toAsset !== 'USDT') {
+        const toRateObj = await tx.select().from(currencyRates).where(eq(currencyRates.code, toAsset)).get();
+        if (toRateObj && parseFloat(toRateObj.ratePerUsdt) > 0) {
+          toRateUsd = 1 / parseFloat(toRateObj.ratePerUsdt);
+        } else {
+           throw new Error(`Pricing not available for ${toAsset}`);
+        }
+      }
+
+      const usdValue = parsedAmount * fromRateUsd;
+      const expectedToAmount = usdValue / toRateUsd;
+
+      // 3. Deduct from fromWallet
+      const newFromBalance = (parseFloat(fromWallet.balance) - parsedAmount).toString();
+      await tx.update(wallets).set({ balance: newFromBalance, updatedAt: new Date() }).where(eq(wallets.id, fromWallet.id));
+
+      // 4. Add to toWallet
+      let toWallet = await tx.select().from(wallets)
+        .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, toAsset)))
+        .get();
+
+      if (!toWallet) {
+        const toWalletId = crypto.randomUUID();
+        const displayId = await generateBusinessId(tx, user.email, 'WALL');
+        await tx.insert(wallets).values({
+          id: toWalletId,
+          displayId,
+          userId: user.id,
+          assetSymbol: toAsset,
+          balance: expectedToAmount.toString(),
+          lockedBalance: '0',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      } else {
+        const newToBalance = (parseFloat(toWallet.balance) + expectedToAmount).toString();
+        await tx.update(wallets).set({ balance: newToBalance, updatedAt: new Date() }).where(eq(wallets.id, toWallet.id));
+      }
+
+      // 5. Log Conversion
+      const conversionId = crypto.randomUUID();
+      await tx.insert(assetConversions).values({
+        id: conversionId,
+        userId: user.id,
+        originalAsset: fromAsset,
+        originalAmount: parsedAmount.toString(),
+        conversionRate: (fromRateUsd / toRateUsd).toString(),
+        grossUsdt: usdValue.toString(),
+        depositFee: '0',
+        netUsdt: usdValue.toString(),
+        status: 'COMPLETED',
+        referenceId: `CONVERT-${Date.now()}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      return { expectedToAmount, conversionId };
+    });
+
+    return c.json({ success: true, data: result, message: `Successfully converted ${parsedAmount} ${fromAsset} to ${toAsset}` });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 400);
+  }
 });

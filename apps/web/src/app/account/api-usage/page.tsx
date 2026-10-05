@@ -16,7 +16,7 @@ export default function ApiUsagePage() {
   }, [user, fetchUsage]);
 
   // Use real data when available, falling back to 0
-  const chartData = usage?.hourlyData || Array(24).fill(0);
+  const chartData = (usage as any)?.hourlyData || Array(24).fill(0);
   const maxVal = Math.max(...chartData, 1);
 
   return (

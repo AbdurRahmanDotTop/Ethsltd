@@ -30,7 +30,8 @@ export const adminNavGroups = [
     items: [
       { name: "Trading", href: "/admin/trading", icon: Activity },
       { name: "Orders", href: "/admin/orders", icon: ListOrdered },
-      { name: "Trades", href: "/admin/trades", icon: ArrowRightLeft }
+      { name: "Trades", href: "/admin/trades", icon: ArrowRightLeft },
+      { name: "Positions", href: "/admin/positions", icon: ArrowRightLeft }
     ]
   },
   {
@@ -73,7 +74,7 @@ export const adminNavGroups = [
 ];
 
 export function AdminSidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
   const activeItemRef = useRef<HTMLAnchorElement>(null);
 
   const allHrefs = adminNavGroups.flatMap(g => g.items.map(i => i.href));

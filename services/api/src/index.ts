@@ -17,6 +17,8 @@ import { webhookRoutes } from './routes/webhooks';
 import { expertRoutes } from './routes/experts';
 import { adminCurrencyRateRoutes } from './routes/admin/currency-rates';
 import { publicCurrencyRateRoutes } from './routes/currency-rates';
+import { wsRoutes } from './routes/ws';
+import { twoFaRoutes } from './routes/2fa';
 
 // New Admin Routes
 import adminApiKeysRouter from './routes/admin-api-keys';
@@ -27,6 +29,8 @@ import adminSystemRouter from './routes/admin-system';
 import adminNotificationsRouter from './routes/admin-notifications';
 import adminExportRouter from './routes/admin-export';
 import adminBackupRouter from './routes/admin-backup';
+import adminKycRouter from './routes/admin-kyc';
+import adminWithdrawalsRouter from './routes/admin-withdrawals';
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 // Triggering deployment to apply CORS fix
@@ -58,6 +62,7 @@ app.get('/', (c) => c.json({ status: 'ok', service: 'Ethsltd API', version: '1.0
 
 // Mount routes
 app.route('/api/v1/auth', authRoutes);
+app.route('/api/v1/2fa', twoFaRoutes);
 app.route('/api/v1/wallets', walletRoutes);
 app.route('/api/v1/settings', settingsRoutes);
 app.route('/api/v1/support', supportRoutes);
@@ -78,6 +83,16 @@ app.route('/api/v1/admin/system', adminSystemRouter);
 app.route('/api/v1/admin/notifications', adminNotificationsRouter);
 app.route('/api/v1/admin/export', adminExportRouter);
 app.route('/api/v1/admin/backup', adminBackupRouter);
+app.route('/api/v1/admin/kyc', adminKycRouter);
+app.route('/api/v1/admin/withdrawals', adminWithdrawalsRouter);
 app.route('/webhooks', webhookRoutes);
+app.route('/ws', wsRoutes);
 
-export default app;
+import { runRiskEngine } from './services/risk-engine';
+
+export default {
+  fetch: app.fetch,
+  async scheduled(event: any, env: Bindings, ctx: any) {
+    ctx.waitUntil(runRiskEngine(env, ctx));
+  }
+};

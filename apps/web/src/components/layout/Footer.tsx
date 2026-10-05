@@ -20,7 +20,7 @@ export function Footer() {
             <ul className="flex flex-col gap-3 text-sm text-muted-foreground">
               <li><Link href="/markets" className="hover:text-foreground transition-colors">Markets</Link></li>
               <li><Link href="/trade" className="hover:text-foreground transition-colors">Spot Trading</Link></li>
-              <li><Link href="https://p2p.ethsltd.com/p2p" className="hover:text-foreground transition-colors">P2P Trading</Link></li>
+              <li><Link href="https://p2p.ethsltd.com/" className="hover:text-foreground transition-colors">P2P Trading</Link></li>
               <li><Link href="/fees" className="hover:text-foreground transition-colors">Fees</Link></li>
             </ul>
           </div>

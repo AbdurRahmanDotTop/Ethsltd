@@ -290,3 +290,99 @@ adminTradingRoutes.get('/trades', async (c) => {
     return c.json({ success: false, error: error.message }, 500);
   }
 });
+
+adminTradingRoutes.get('/positions', async (c) => {
+  const db = c.get('db');
+  const page = parseInt(c.req.query('page') || '1');
+  const limit = parseInt(c.req.query('limit') || '50');
+  const offset = (page - 1) * limit;
+  const market = c.req.query('market');
+  
+  try {
+    const { positions } = require('database/schema/trading');
+    const { users } = require('database/schema/auth');
+    
+    const conditions: any[] = [];
+    if (market && market !== 'ALL') {
+      conditions.push(eq(positions.marketSymbol, market));
+    }
+    
+    const results = await db.select({
+      position: positions,
+      user: {
+        id: users.id,
+        email: users.email
+      }
+    }).from(positions)
+      .innerJoin(users, eq(positions.userId, users.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(positions.createdAt)).all();
+      
+    const paginated = results.slice(offset, offset + limit);
+    
+    const mapped = paginated.map((r: any) => ({
+      ...r.position,
+      userEmail: r.user.email
+    }));
+    
+    return c.json({
+      success: true,
+      data: mapped,
+      total: results.length
+    });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+adminTradingRoutes.post('/positions/:id/close', async (c) => {
+  const db = c.get('db');
+  const positionId = c.req.param('id');
+  const env = c.env as any; // Bindings
+  
+  try {
+    const { positions, markets } = require('database/schema/trading');
+    const { users } = require('database/schema/auth');
+    const { wallets, walletTransactions } = require('database/schema/wallets');
+    const { MT5Client } = require('../../utils/mt5-client');
+    const mt5Service = new MT5Client(env.MT5_API_URL, env.MT5_SERVER_IP, env.MT5_SERVER_PORT);
+    
+    let positionClosed = false;
+    
+    await db.transaction(async (tx: any) => {
+      const pos = await tx.select().from(positions).where(eq(positions.id, positionId)).get();
+      if (!pos || pos.status !== 'OPEN') {
+        throw new Error('Position not found or already closed');
+      }
+      
+      const user = await tx.select().from(users).where(eq(users.id, pos.userId)).get();
+      if (!user) throw new Error('User not found');
+      
+      // Attempt to close on MT5 first
+      try {
+        await mt5Service.closePosition(user.mt5Login as string, pos.id);
+        positionClosed = true;
+      } catch (err: any) {
+        console.warn(`Failed to close MT5 position ${pos.id}:`, err);
+        // We will proceed to force close locally anyway for emergency closures
+      }
+      
+      // Update local position
+      await tx.update(positions).set({ status: 'CLOSED', closedAt: new Date() }).where(eq(positions.id, pos.id));
+      
+      // Unlock margin
+      const marketInfo = await tx.select().from(markets).where(eq(markets.symbol, pos.marketSymbol)).get();
+      if (marketInfo) {
+        const wallet = await tx.select().from(wallets).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset))).get();
+        if (wallet) {
+           const newLocked = Decimal.max(0, new Decimal(wallet.lockedBalance).minus(pos.marginAmount)).toString();
+           await tx.update(wallets).set({ lockedBalance: newLocked }).where(eq(wallets.id, wallet.id));
+        }
+      }
+    });
+    
+    return c.json({ success: true, message: positionClosed ? 'Position closed on MT5 and local DB' : 'Force closed locally (MT5 failed)' });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});

@@ -91,10 +91,10 @@ export class EthsltdClient {
     return this.request<User>('/api/v1/auth/me', { skipGlobal401: true });
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string, mfaToken?: string) {
     const res = await this.request<{ token: string; user: User }>('/api/v1/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, mfaToken }),
       skipGlobal401: true,
     });
     
@@ -384,6 +384,26 @@ export class EthsltdClient {
     });
   }
 
+  // 2FA Methods
+  async generateMfa() {
+    return this.request<any>('/api/v1/2fa/generate', { method: 'POST' });
+  }
+
+  async enableMfa(code: string, secret?: string) {
+    // Note: The frontend page only passes `mfaToken`, so we must check signature
+    return this.request<any>('/api/v1/2fa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ secret, code }),
+    });
+  }
+
+  async disableMfa(code: string) {
+    return this.request<any>('/api/v1/2fa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  }
+
   // Admin API Methods
   async getAdminStats() {
     return this.request<any>('/api/v1/admin/stats');
@@ -395,6 +415,50 @@ export class EthsltdClient {
     if (params?.endDate) searchParams.append('endDate', params.endDate);
     const qs = searchParams.toString() ? `?${searchParams.toString()}` : '';
     return this.request<any>(`/api/v1/admin/stats/p2p${qs}`);
+  }
+
+  // Admin Withdrawal Methods
+  async adminGetWithdrawals(status?: string) {
+    const qs = status && status !== 'ALL' ? `?status=${status}` : '';
+    return this.request<any[]>(`/api/v1/admin/withdrawals${qs}`);
+  }
+
+  async adminApproveWithdrawal(id: string) {
+    return this.request<any>(`/api/v1/admin/withdrawals/${id}/approve`, { method: 'POST' });
+  }
+
+  async adminRejectWithdrawal(id: string, notes?: string) {
+    return this.request<any>(`/api/v1/admin/withdrawals/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  async adminDeleteWithdrawal(id: string) {
+    return this.request<any>(`/api/v1/admin/withdrawals/${id}`, { method: 'DELETE' });
+  }
+
+  async adminUpdateWithdrawalNotes(id: string, notes: string) {
+    return this.request<any>(`/api/v1/admin/withdrawals/${id}/notes`, {
+      method: 'PUT',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  // Admin KYC Methods
+  async getAdminPendingKYC() {
+    return this.request<any[]>('/api/v1/admin/kyc');
+  }
+
+  async updateAdminKYCStatus(id: string, status: 'APPROVED' | 'REJECTED', reason?: string) {
+    if (status === 'APPROVED') {
+      return this.request<any>(`/api/v1/admin/kyc/${id}/approve`, { method: 'POST' });
+    } else {
+      return this.request<any>(`/api/v1/admin/kyc/${id}/reject`, { 
+        method: 'POST',
+        body: JSON.stringify({ reason })
+      });
+    }
   }
 
   // Admin Expert Methods
@@ -464,16 +528,7 @@ export class EthsltdClient {
     });
   }
 
-  async getAdminPendingKYC() {
-    return this.request<any[]>('/api/v1/admin/kyc');
-  }
 
-  async updateAdminKYCStatus(kycId: string, status: string, rejectionReason?: string) {
-    return this.request<any>(`/api/v1/admin/kyc/${kycId}/status`, {
-      method: 'POST',
-      body: JSON.stringify({ status, rejectionReason }),
-    });
-  }
 
   async getAdminTransactions() {
     return this.request<any[]>('/api/v1/admin/transactions');
@@ -562,35 +617,10 @@ export class EthsltdClient {
   }
 
   // Admin Withdrawals Methods
-  async adminGetWithdrawals(status: string = 'ALL') {
-    return this.request<any[]>(`/api/v1/admin/withdrawals?status=${status}`);
-  }
 
-  async adminApproveWithdrawal(id: string) {
-    return this.request<any>(`/api/v1/admin/withdrawals/${id}/approve`, {
-      method: 'POST'
-    });
-  }
 
-  async adminRejectWithdrawal(id: string, notes?: string) {
-    return this.request<any>(`/api/v1/admin/withdrawals/${id}/reject`, {
-      method: 'POST',
-      body: JSON.stringify({ notes }),
-    });
-  }
 
-  async adminUpdateWithdrawalNotes(id: string, notes: string) {
-    return this.request<any>(`/api/v1/admin/withdrawals/${id}/notes`, {
-      method: 'PUT',
-      body: JSON.stringify({ notes }),
-    });
-  }
 
-  async adminDeleteWithdrawal(id: string) {
-    return this.request<any>(`/api/v1/admin/withdrawals/${id}`, {
-      method: 'DELETE'
-    });
-  }
 
   // Notifications API Methods
   async getNotifications() {
@@ -673,25 +703,8 @@ export class EthsltdClient {
   }
 
   // MFA
-  async generateMfa() {
-    return this.request<{ secret: string; qrCodeUrl: string }>('/api/v1/settings/mfa/generate', {
-      method: 'POST',
-    });
-  }
 
-  async enableMfa(token: string) {
-    return this.request<any>('/api/v1/settings/mfa/enable', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
-    });
-  }
 
-  async disableMfa(token: string) {
-    return this.request<any>('/api/v1/settings/mfa/disable', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
-    });
-  }
 
   // Sessions
   async getSessions() {
@@ -1010,6 +1023,23 @@ export class EthsltdClient {
   async adminGetTrades(params: { page?: number, limit?: number, market?: string } = {}) {
     const query = new URLSearchParams(params as any).toString();
     return this.request<{data: any[], total: number}>(`/api/v1/admin/trading/trades?${query}`);
+  }
+
+  async adminCancelOrder(orderId: string) {
+    return this.request<any>(`/api/v1/admin/trading/orders/${orderId}/cancel`, {
+      method: 'POST'
+    });
+  }
+
+  async adminGetPositions(params: { page?: number, limit?: number, market?: string } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<{data: any[], total: number}>(`/api/v1/admin/trading/positions?${query}`);
+  }
+
+  async adminClosePosition(positionId: string) {
+    return this.request<any>(`/api/v1/admin/trading/positions/${positionId}/close`, {
+      method: 'POST'
+    });
   }
 
   async adminClearSystemCache() {

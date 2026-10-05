@@ -121,7 +121,6 @@ export default function AdminWalletsPage() {
               <div className="text-xs text-muted-foreground font-medium mt-1 flex flex-col gap-0.5">
                 <span>Avail: {data.balance.toLocaleString(undefined, {maximumFractionDigits: 4})}</span>
                 <span>Lock: {data.locked.toLocaleString(undefined, {maximumFractionDigits: 4})}</span>
-                <span>P2P: {data.escrow.toLocaleString(undefined, {maximumFractionDigits: 4})}</span>
               </div>
             </div>
           </div>
@@ -245,7 +244,6 @@ export default function AdminWalletsPage() {
                   <select value={targetField} onChange={e => setTargetField(e.target.value as any)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm">
                     <option value="balance">Available Balance</option>
                     <option value="lockedBalance">Locked (Spot)</option>
-                    <option value="escrowBalance">Escrow (P2P)</option>
                   </select>
                 </div>
                 <div>

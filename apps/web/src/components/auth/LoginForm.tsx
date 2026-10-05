@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const searchRedirect = searchParams.get("redirect");
+  const searchRedirect = searchParams?.get("redirect");
   const setUser = useAuthStore((state) => state.setUser);
   const user = useAuthStore((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
@@ -32,6 +32,10 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
     }
   }, [user, router, searchRedirect, pathname]);
 
+  const [requiresMfa, setRequiresMfa] = useState(false);
+  const [mfaToken, setMfaToken] = useState("");
+  const [loginData, setLoginData] = useState<LoginInput | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -40,11 +44,42 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
     resolver: zodResolver(loginSchema),
   });
 
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginData || !mfaToken) return;
+    
+    try {
+      setGlobalError("");
+      const response = await apiClient.login(loginData.email, loginData.password, mfaToken);
+      
+      if (!response.success) {
+        setGlobalError(response.error || "Invalid 2FA code.");
+        return;
+      }
+      
+      setUser(response.data?.user || null);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        const defaultRedirect = response.data?.user?.role === 'SUPER_ADMIN' || response.data?.user?.role === 'ADMIN' ? '/admin' : '/account';
+        const finalRedirect = searchRedirect || defaultRedirect;
+        window.location.href = finalRedirect;
+      }
+    } catch (err: any) {
+      setGlobalError(err.message || "An error occurred during verification.");
+    }
+  };
+
   const onSubmit = async (data: LoginInput) => {
     try {
       setGlobalError("");
       const response = await apiClient.login(data.email, data.password);
       if (!response.success) {
+        if ((response as any).mfaRequired || response.error === 'MFA_REQUIRED') {
+          setRequiresMfa(true);
+          setLoginData(data);
+          return;
+        }
         setGlobalError(response.error || "Invalid credentials.");
         return;
       }
@@ -62,6 +97,44 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
       setGlobalError(err.message || "An error occurred during login.");
     }
   };
+
+  if (requiresMfa) {
+    return (
+      <form onSubmit={handleMfaSubmit} className="space-y-6">
+        {globalError && (
+          <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm font-medium">
+            {globalError}
+          </div>
+        )}
+        <div className="space-y-2 text-center mb-4">
+          <h3 className="font-semibold text-lg">Two-Factor Authentication</h3>
+          <p className="text-sm text-muted-foreground">Enter the 6-digit code from your authenticator app.</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="mfaToken">Authentication Code</Label>
+          <Input
+            id="mfaToken"
+            type="text"
+            placeholder="000000"
+            maxLength={6}
+            value={mfaToken}
+            onChange={(e) => setMfaToken(e.target.value)}
+            className="text-center tracking-[0.5em] text-lg"
+            required
+            autoFocus
+          />
+        </div>
+        <div className="pt-2 flex gap-3 flex-col sm:flex-row">
+          <Button type="button" variant="outline" className="w-full" onClick={() => setRequiresMfa(false)}>
+            Back
+          </Button>
+          <Button type="submit" className="w-full" disabled={mfaToken.length < 6}>
+            Verify
+          </Button>
+        </div>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
