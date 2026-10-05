@@ -472,7 +472,7 @@ tradingRoutes.post('/orders', async (c) => {
         amount: parsedAmount.toString(),
         filledAmount: '0',
         remainingAmount: parsedAmount.toString(),
-        status: 'OPEN' as const,
+        status: 'ACCEPTED' as const,
         timeInForce: timeInForce || 'GTC',
         createdAt: now,
         updatedAt: now,

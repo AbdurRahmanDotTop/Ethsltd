@@ -30,9 +30,7 @@ export function TradingHistoryTabs() {
     const interval = setInterval(loadData, 5000)
     return () => clearInterval(interval)
   }, [])
-  
-  const openOrders = orders.filter(o => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED')
-  
+  const openOrders = orders.filter(o => ['ACCEPTED', 'CREATED', 'ROUTING', 'PARTIALLY_FILLED'].includes(o.status))
   const fmtDate = (d: string) => {
     try {
       const date = new Date(d);

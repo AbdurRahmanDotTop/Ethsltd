@@ -49,9 +49,9 @@ export async function processOrderMatching(
     )
     .all();
 
-  // Filter to only OPEN or PARTIALLY_FILLED
+  // Filter to only ACCEPTED or PARTIALLY_FILLED
   matchingOrders = matchingOrders.filter(
-    (o: any) => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
+    (o: any) => o.status === 'ACCEPTED' || o.status === 'PARTIALLY_FILLED'
   );
 
   // Sort by price priority, then time priority
