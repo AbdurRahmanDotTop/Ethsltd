@@ -50,9 +50,9 @@ export function AppNavigation() {
     },
     {
       name: "Charts",
-      href: "/trade", // Could be same as trade
+      href: "/chart/btc-usdt", // Default symbol, could be dynamic
       icon: CandlestickChart,
-      isActive: false,
+      isActive: pathname?.startsWith("/chart"),
     },
     {
       name: "Positions",

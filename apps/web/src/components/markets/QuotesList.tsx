@@ -49,7 +49,7 @@ export function QuotesList() {
         router.push(`/order/${selectedSymbol.symbol}`)
         break
       case "chart":
-        router.push(`/trade/${selectedSymbol.symbol}`)
+        router.push(`/chart/${selectedSymbol.symbol}`)
         break
       case "properties":
         // Could open a properties modal. For now, redirect to trade or show alert
