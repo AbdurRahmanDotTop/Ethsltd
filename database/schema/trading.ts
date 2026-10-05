@@ -3,18 +3,23 @@ import { users } from './auth';
 
 export const markets = sqliteTable('markets', {
   id: text('id').primaryKey(),
-  symbol: text('symbol').notNull().unique(), // e.g. BTC-USDT
-  type: text('type', { enum: ['SPOT'] }).notNull().default('SPOT'),
-  baseAsset: text('base_asset').notNull(), // BTC
-  quoteAsset: text('quote_asset').notNull(), // USDT
+  symbol: text('symbol').notNull().unique(), // e.g. BTC-USDT, EURUSD
+  type: text('type', { enum: ['SPOT', 'MARGIN', 'CFD'] }).notNull().default('SPOT'),
+  baseAsset: text('base_asset').notNull(), // BTC, EUR
+  quoteAsset: text('quote_asset').notNull(), // USDT, USD
   status: text('status', { enum: ['ACTIVE', 'PAUSED', 'DELISTED'] }).notNull().default('ACTIVE'),
   minPrice: text('min_price').notNull(),
   maxPrice: text('max_price').notNull(),
   tickSize: text('tick_size').notNull(),
+  tickValue: text('tick_value').notNull().default('1'),
+  contractSize: text('contract_size').notNull().default('1'),
   minAmount: text('min_amount').notNull(),
+  maxAmount: text('max_amount').notNull().default('1000000'),
   stepSize: text('step_size').notNull(),
-  makerFee: text('maker_fee').notNull().default('0.001'), // 0.1%
-  takerFee: text('taker_fee').notNull().default('0.001'), // 0.1%
+  makerFee: text('maker_fee').notNull().default('0.001'), 
+  takerFee: text('taker_fee').notNull().default('0.001'),
+  swapLong: text('swap_long').notNull().default('0'), // MT5 swap for holding long
+  swapShort: text('swap_short').notNull().default('0'), // MT5 swap for holding short
   pricePrecision: integer('price_precision').notNull().default(2),
   quantityPrecision: integer('quantity_precision').notNull().default(6),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
@@ -26,12 +31,38 @@ export const orders = sqliteTable('orders', {
   userId: text('user_id').notNull().references(() => users.id),
   marketSymbol: text('market_symbol').notNull().references(() => markets.symbol),
   side: text('side', { enum: ['BUY', 'SELL'] }).notNull(),
-  type: text('type', { enum: ['MARKET', 'LIMIT'] }).notNull(),
-  status: text('status', { enum: ['OPEN', 'PARTIALLY_FILLED', 'FILLED', 'CANCELED', 'REJECTED', 'EXPIRED', 'FAILED'] }).notNull().default('OPEN'),
-  price: text('price'), // null for market orders initially
-  amount: text('amount').notNull(), // total amount placed
-  filledAmount: text('filled_amount').notNull().default('0'), // amount executed so far
-  remainingAmount: text('remaining_amount').notNull(), // amount - filledAmount
+  type: text('type', { enum: ['MARKET', 'LIMIT', 'STOP', 'STOP_LIMIT'] }).notNull(),
+  status: text('status', { enum: ['CREATED', 'VALIDATING', 'ACCEPTED', 'ROUTING', 'PARTIALLY_FILLED', 'FILLED', 'REJECTED', 'CANCELED', 'EXPIRED', 'MODIFIED'] }).notNull().default('CREATED'),
+  timeInForce: text('time_in_force', { enum: ['GTC', 'IOC', 'FOK', 'DAY', 'GTD'] }).notNull().default('GTC'),
+  price: text('price'), // null for market orders
+  stopPrice: text('stop_price'), // for stop orders
+  stopLoss: text('stop_loss'), // MT5 SL
+  takeProfit: text('take_profit'), // MT5 TP
+  amount: text('amount').notNull(), // requested volume
+  filledAmount: text('filled_amount').notNull().default('0'),
+  remainingAmount: text('remaining_amount').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
+export const positions = sqliteTable('positions', {
+  id: text('id').primaryKey(),
+  displayId: text('display_id').unique(),
+  userId: text('user_id').notNull().references(() => users.id),
+  marketSymbol: text('market_symbol').notNull().references(() => markets.symbol),
+  side: text('side', { enum: ['LONG', 'SHORT'] }).notNull(),
+  status: text('status', { enum: ['OPEN', 'CLOSED', 'LIQUIDATED'] }).notNull().default('OPEN'),
+  leverage: text('leverage').notNull().default('1'),
+  marginType: text('margin_type', { enum: ['ISOLATED', 'CROSS'] }).notNull().default('ISOLATED'),
+  marginAmount: text('margin_amount').notNull(),
+  entryPrice: text('entry_price').notNull(),
+  stopLoss: text('stop_loss'), // MT5 SL
+  takeProfit: text('take_profit'), // MT5 TP
+  liquidationPrice: text('liquidation_price').notNull(),
+  amount: text('amount').notNull(), // volume
+  swap: text('swap').notNull().default('0'), // accumulated swap
+  commission: text('commission').notNull().default('0'),
+  realizedPnl: text('realized_pnl').notNull().default('0'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
@@ -50,26 +81,6 @@ export const trades = sqliteTable('trades', {
   buyFee: text('buy_fee').notNull(),
   sellFee: text('sell_fee').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-});
-
-// Keep positions & binaryOptions exports as empty references so existing imports don't break at compile time
-// These tables still exist in the DB but are no longer actively used
-export const positions = sqliteTable('positions', {
-  id: text('id').primaryKey(),
-  displayId: text('display_id').unique(),
-  userId: text('user_id').notNull().references(() => users.id),
-  marketSymbol: text('market_symbol').notNull().references(() => markets.symbol),
-  side: text('side', { enum: ['LONG', 'SHORT'] }).notNull(),
-  status: text('status', { enum: ['OPEN', 'CLOSED', 'LIQUIDATED'] }).notNull().default('OPEN'),
-  leverage: text('leverage').notNull().default('1'),
-  marginType: text('margin_type', { enum: ['ISOLATED', 'CROSS'] }).notNull().default('ISOLATED'),
-  marginAmount: text('margin_amount').notNull(),
-  entryPrice: text('entry_price').notNull(),
-  liquidationPrice: text('liquidation_price').notNull(),
-  amount: text('amount').notNull(),
-  realizedPnl: text('realized_pnl').notNull().default('0'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
 
 export const binaryOptions = sqliteTable('binary_options', {

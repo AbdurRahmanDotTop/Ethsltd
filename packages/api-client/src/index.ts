@@ -293,6 +293,19 @@ export class EthsltdClient {
     });
   }
   
+  
+  // Positions API Methods
+  async getPositions() {
+    return this.request<any[]>('/api/v1/trading/positions');
+  }
+
+  async closePosition(positionId: string, data?: { amount: number }) {
+    return this.request<any>(`/api/v1/trading/positions/${positionId}/close`, {
+      method: 'POST',
+      body: JSON.stringify(data || {})
+    });
+  }
+
   // P2P API Methods
   async getP2pAds(params?: Record<string, any>) {
     const searchParams = new URLSearchParams();

@@ -55,7 +55,7 @@ export async function calculateDepositPreview(
 
   let depositFee = new Decimal(0);
   try {
-    const feeConfig = await getFeeConfig(db, 'DEPOSIT_FEE', { type: 'FIXED', amount: 0, percentage: 0 });
+    const feeConfig = await getFeeConfig(db, 'DEPOSIT_FEE', { type: 'FIXED', amount: "0", percentage: "0" });
     depositFee = new Decimal(calculateFee(grossUsdt.toNumber(), feeConfig));
   } catch(e) {
     console.error("Failed to calculate global deposit fee", e);
@@ -84,7 +84,7 @@ export async function calculateWithdrawalPreview(
 ) {
   let withdrawalFee = new Decimal(0);
   try {
-    const feeConfig = await getFeeConfig(db, 'WITHDRAWAL_FEE', { type: 'FIXED', amount: 0, percentage: 0 });
+    const feeConfig = await getFeeConfig(db, 'WITHDRAWAL_FEE', { type: 'FIXED', amount: "0", percentage: "0" });
     withdrawalFee = new Decimal(calculateFee(usdtAmount, feeConfig));
   } catch(e) {
     console.error("Failed to calculate global withdrawal fee", e);

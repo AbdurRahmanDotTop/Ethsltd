@@ -21,6 +21,8 @@ const getOrderSchema = (type: OrderType) => z.object({
     ? z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valid price required") 
     : z.string().optional(),
   quantity: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valid quantity required"),
+  stopLoss: z.string().optional(),
+  takeProfit: z.string().optional(),
 });
 
 export function OrderEntry({ market }: { market: Market }) {
@@ -39,7 +41,7 @@ export function OrderEntry({ market }: { market: Market }) {
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm({
     resolver: zodResolver(getOrderSchema(selectedOrderType)),
-    defaultValues: { price: orderFormPrice, quantity: orderFormQuantity }
+    defaultValues: { price: orderFormPrice, quantity: orderFormQuantity, stopLoss: "", takeProfit: "" }
   })
 
   // Sync external state changes (like clicking orderbook) to local form
@@ -124,6 +126,8 @@ export function OrderEntry({ market }: { market: Market }) {
           market: market.id,
           side: selectedSide === 'buy' ? 'BUY' : 'SELL',
           type: selectedOrderType === 'market' ? 'MARKET' : 'LIMIT',
+          stopLoss: data.stopLoss ? parseFloat(data.stopLoss) : undefined,
+          takeProfit: data.takeProfit ? parseFloat(data.takeProfit) : undefined,
           price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
           amount: parseFloat(data.quantity)
         });
@@ -228,6 +232,31 @@ export function OrderEntry({ market }: { market: Market }) {
           {errors.quantity && <span className="text-xs text-danger mt-1 absolute -bottom-5 left-0">{errors.quantity.message?.toString()}</span>}
         </div>
 
+        
+        {/* MT5 Style SL/TP Fields */}
+        <div className="flex gap-4">
+          <div className="flex-1 relative">
+            <label className="text-xs text-danger mb-1 block font-semibold">Stop Loss (SL)</label>
+            <input 
+              {...register("stopLoss")}
+              type="text" 
+              inputMode="decimal"
+              placeholder="0.00"
+              className="w-full bg-muted border border-border rounded h-10 px-3 font-mono text-sm focus:outline-none focus:border-danger"
+            />
+          </div>
+          <div className="flex-1 relative">
+            <label className="text-xs text-success mb-1 block font-semibold">Take Profit (TP)</label>
+            <input 
+              {...register("takeProfit")}
+              type="text" 
+              inputMode="decimal"
+              placeholder="0.00"
+              className="w-full bg-muted border border-border rounded h-10 px-3 font-mono text-sm focus:outline-none focus:border-success"
+            />
+          </div>
+        </div>
+
         {/* Percentages */}
         <div className="flex gap-2 mt-3">
           {[0.25, 0.50, 0.75, 1].map(pct => (
@@ -261,14 +290,28 @@ export function OrderEntry({ market }: { market: Market }) {
           </div>
         )}
 
-        <Button 
-          type="submit" 
-          isLoading={isSubmitting}
-          loadingText="Placing..."
-          className={cn("w-full mt-2 font-bold", selectedSide === 'buy' ? "bg-success hover:bg-success/90 text-white" : "bg-danger hover:bg-danger/90 text-white")}
-        >
-          {`${selectedSide === 'buy' ? 'Buy' : 'Sell'} ${base}`}
-        </Button>
+        
+        <div className="flex gap-2 mt-4">
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            onClick={() => setSide('sell')}
+            className="flex-1 h-14 font-bold text-lg bg-danger hover:bg-danger/90 text-white uppercase rounded shadow-lg flex flex-col items-center justify-center"
+          >
+            <span className="leading-tight">SELL</span>
+            <span className="text-[10px] font-normal leading-tight opacity-80">BY MARKET</span>
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            onClick={() => setSide('buy')}
+            className="flex-1 h-14 font-bold text-lg bg-info hover:bg-info/90 text-white uppercase rounded shadow-lg flex flex-col items-center justify-center"
+          >
+            <span className="leading-tight">BUY</span>
+            <span className="text-[10px] font-normal leading-tight opacity-80">BY MARKET</span>
+          </Button>
+        </div>
+
 
       </form>
     </div>
