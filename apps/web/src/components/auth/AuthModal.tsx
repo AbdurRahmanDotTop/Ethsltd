@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { LoginForm } from "./LoginForm";
@@ -16,6 +17,13 @@ export function AuthModal() {
       setView("login");
     }
   }, [isAuthModalOpen]);
+
+  const pathname = usePathname();
+  useEffect(() => {
+    if ((pathname === '/login' || pathname === '/register') && isAuthModalOpen) {
+      closeAuthModal();
+    }
+  }, [pathname, isAuthModalOpen, closeAuthModal]);
 
   useEffect(() => {
     const handleAuthRequired = (e: Event) => {
