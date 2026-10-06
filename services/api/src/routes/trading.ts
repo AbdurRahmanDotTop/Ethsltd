@@ -927,7 +927,6 @@ tradingRoutes.post('/positions/:id/close', async (c) => {
            });
          }
       }
-      }
     });
     return c.json({ success: true, message: 'Position closed successfully' });
   } catch (e: any) {
