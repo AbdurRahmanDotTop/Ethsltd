@@ -446,6 +446,8 @@ tradingRoutes.post('/orders', async (c) => {
     }
   }
 
+  const contractSize = new Decimal(marketInfo.contractSize || '1');
+  const totalValue = parsedAmount.times(contractSize).times(orderPrice);
   // For MT5 behaviour, spend amount is always calculated from quote asset (e.g., USDT)
   // regardless of BUY/SELL and market type, since margin is held in quote currency.
   let spendAsset = marketInfo.quoteAsset;
@@ -563,94 +565,6 @@ tradingRoutes.post('/orders', async (c) => {
         });
       });
       
-      // Return early to prevent Spot matching engine from running
-      const finalOrder = await db.select().from(orders).where(eq(orders.id, orderId)).get();
-      return c.json({ success: true, message: 'MT5 Order Executed Successfully', orderId: orderDisplayId, order: finalOrder });
-
-    // ============================================
-    // SPOT MARKET MATCHING ENGINE (No MT5)
-    // ============================================
-    // Re-fetch the order inside a new tx to match it
-    await runTx(db, async (tx: any) => {
-      const pendingOrder = await tx.select().from(orders).where(eq(orders.id, orderId)).get();
-      if (!pendingOrder) return;
-      
-      const matchResult = await processOrderMatching(tx, pendingOrder, marketInfo, user.id);
-      
-      const filledAmount = new Decimal(matchResult.totalFilledAmount);
-      const remainingAmount = new Decimal(matchResult.remainingToFill);
-      
-      // --- Determine final order status ---
-      let finalStatus: string;
-      if (remainingAmount.lte(0)) {
-        finalStatus = 'FILLED';
-      } else if (filledAmount.gt(0)) {
-        finalStatus = 'PARTIALLY_FILLED';
-      } else {
-        finalStatus = 'OPEN';
-      }
-
-      // For MARKET orders that couldn't be fully filled: 
-      // The unfilled portion remains as OPEN (not FAILED), user can cancel it.
-      // This is standard exchange behavior.
-      
-      // --- Update order with final state ---
-      await tx.update(orders).set({
-        filledAmount: filledAmount.toString(),
-        remainingAmount: remainingAmount.toString(),
-        status: finalStatus,
-        updatedAt: now
-      }).where(eq(orders.id, orderId));
-
-      // --- MT5 BEHAVIOR: Create a Position for SPOT trades too ---
-      if (filledAmount.gt(0)) {
-        const positionDisplayId = await generateBusinessId(db, dbUser?.email, 'POS');
-        const posId = crypto.randomUUID();
-        await tx.insert(positions).values({
-          id: posId,
-          displayId: positionDisplayId,
-          userId: user.id,
-          marketSymbol: market,
-          side: side === 'BUY' ? 'LONG' : 'SHORT',
-          status: 'OPEN',
-          leverage: '1',
-          marginType: 'ISOLATED',
-          marginAmount: spendAmount.toString(),
-          entryPrice: orderPrice.toString(),
-          stopLoss: stopLoss ? stopLoss.toString() : null,
-          takeProfit: takeProfit ? takeProfit.toString() : null,
-          liquidationPrice: null,
-          amount: filledAmount.toString(),
-          createdAt: now,
-          updatedAt: now,
-        });
-      }
-
-      // --- Handle unfilled remainder for market orders ---
-      // If market order has remaining unfilled, and there are no matching limit orders,
-      // we keep it OPEN for future matching. This is NOT fake execution.
-      // The user can see the partially filled status and cancel the remainder.
-      
-      // --- Refund excess locked balance if fully filled at better price ---
-      if (filledAmount.gt(0) && side === 'BUY') {
-        const actualQuoteSpent = new Decimal(matchResult.totalQuoteSpent);
-        const excessLocked = spendAmount.minus(actualQuoteSpent);
-        
-        if (excessLocked.gt(0) && finalStatus === 'FILLED') {
-          // Refund the excess to available balance
-          const freshWallet = await tx.select().from(wallets)
-            .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset))).get();
-          
-          if (freshWallet) {
-            await tx.update(wallets).set({
-              balance: new Decimal(freshWallet.balance).plus(excessLocked).toString(),
-              lockedBalance: Decimal.max(0, new Decimal(freshWallet.lockedBalance).minus(excessLocked)).toString(),
-              updatedAt: now
-            }).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)));
-          }
-        }
-      }
-    }); // End Transaction
   } catch (error: any) {
     console.error('Order placement error:', error);
     return c.json({ success: false, error: error.message || 'Failed to place order' }, 400);
@@ -667,13 +581,13 @@ tradingRoutes.post('/orders', async (c) => {
         await emailService.sendUserTransactionAlert(
           user.email,
           'Trade Order Created',
-          `Your ${side} order for ${amount} ${marketInfo.baseAsset} has been placed.`,
+          `Your ${side} order for ${amount} ${marketInfo!.baseAsset} has been placed.`,
           [
             { key: 'Order ID', value: orderData.displayId },
             { key: 'Market', value: market },
             { key: 'Side', value: side },
-            { key: 'Amount', value: `${amount} ${marketInfo.baseAsset}` },
-            { key: 'Price', value: type === 'MARKET' ? 'Market Price' : `${price} ${marketInfo.quoteAsset}` },
+            { key: 'Amount', value: `${amount} ${marketInfo!.baseAsset}` },
+            { key: 'Price', value: type === 'MARKET' ? 'Market Price' : `${price} ${marketInfo!.quoteAsset}` },
             { key: 'Status', value: orderData.status }
           ],
           `${appUrl}/trade/${market.replace('-', '_')}`,
