@@ -203,7 +203,7 @@ export function Header() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 w-full h-[calc(100vh-4rem)] overflow-y-auto bg-background border-t border-border p-4 pb-50 shadow-xl">
+        <div className="lg:hidden absolute top-full left-0 w-full h-[calc(100vh-4rem)] overflow-y-auto bg-background border-t border-border p-4 pb-32 shadow-xl">
           <nav className="flex flex-col gap-4">
             <Link href="/" className={`text-lg font-medium py-2 border-b border-border ${pathname === '/' ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Home</Link>
             <Link href="/trade" className={`text-lg font-medium py-2 border-b border-border ${pathname?.startsWith('/trade') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Trade</Link>

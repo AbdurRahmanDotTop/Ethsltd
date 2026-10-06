@@ -348,26 +348,40 @@ tradingRoutes.get('/orders', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
   
-  const userOrders = await db.select().from(orders)
-    .where(eq(orders.userId, user.id))
-    .orderBy(desc(orders.createdAt))
-    .all();
-    
-  const formattedOrders = userOrders.map((o: any) => ({
-    id: o.id,
-    market: o.marketSymbol,
-    side: o.side,
-    type: o.type,
-    price: o.price ? parseFloat(o.price) : undefined,
-    amount: parseFloat(o.amount),
-    filled: parseFloat(o.filledAmount),
-    remaining: parseFloat(o.remainingAmount),
-    total: o.price ? parseFloat(o.amount) * parseFloat(o.price) : undefined,
-    status: o.status,
-    createdAt: o.createdAt instanceof Date ? o.createdAt.toISOString() : o.createdAt,
-  }));
-    
-  return c.json({ success: true, data: formattedOrders });
+  try {
+    const userOrders = await db.select().from(orders)
+      .where(eq(orders.userId, user.id))
+      .orderBy(desc(orders.createdAt))
+      .all();
+      
+    const formattedOrders = userOrders.map((o: any) => {
+      let createdStr = "";
+      try {
+        if (o.createdAt instanceof Date) createdStr = o.createdAt.toISOString();
+        else if (typeof o.createdAt === 'number') createdStr = new Date(o.createdAt).toISOString();
+        else if (o.createdAt) createdStr = new Date(o.createdAt).toISOString();
+      } catch (e) { createdStr = new Date().toISOString(); }
+
+      return {
+        id: o.id,
+        market: o.marketSymbol || 'UNKNOWN',
+        side: o.side || 'BUY',
+        type: o.type || 'MARKET',
+        price: o.price ? parseFloat(o.price) : undefined,
+        amount: o.amount ? parseFloat(o.amount) : 0,
+        filled: o.filledAmount ? parseFloat(o.filledAmount) : 0,
+        remaining: o.remainingAmount ? parseFloat(o.remainingAmount) : 0,
+        total: o.price && o.amount ? parseFloat(o.amount) * parseFloat(o.price) : undefined,
+        status: o.status || 'CREATED',
+        createdAt: createdStr || new Date().toISOString(),
+      };
+    });
+      
+    return c.json({ success: true, data: formattedOrders });
+  } catch (error: any) {
+    console.error("GET /orders error:", error);
+    return c.json({ success: false, error: error.message, stack: error.stack }, 500);
+  }
 });
 
 // GET /trades — Fetch user's trade history
