@@ -161,18 +161,18 @@ export function OrderEntry({ market }: { market: Market }) {
       </div>
 
       {/* Volume Selector */}
-      <div className="flex flex-wrap justify-center items-center gap-2 mb-6 text-brand-foreground font-mono font-medium">
-        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.5).toFixed(2))} className="text-xs hover:text-foreground p-1">-0.5</button>
-        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.1).toFixed(2))} className="text-xs hover:text-foreground p-1">-0.1</button>
-        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.01).toFixed(2))} className="text-xs hover:text-foreground p-1">-0.01</button>
+      <div className="flex flex-wrap justify-center items-center gap-1 md:gap-2 mb-6 text-brand-foreground font-mono font-medium">
+        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.5).toFixed(2))} className="text-xs hover:text-foreground p-1 md:px-2">-0.5</button>
+        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.1).toFixed(2))} className="text-xs hover:text-foreground p-1 md:px-2">-0.1</button>
+        <button type="button" onClick={() => setValue("quantity", Math.max(0, parsedQty - 0.01).toFixed(2))} className="text-xs hover:text-foreground p-1 md:px-2">-0.01</button>
         <input 
           {...register("quantity")}
           className="w-16 md:w-20 text-center bg-transparent text-lg md:text-xl font-bold border-b border-foreground focus:outline-none focus:border-brand-foreground mx-1"
           inputMode="decimal"
         />
-        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.01).toFixed(2))} className="text-xs hover:text-foreground p-1">+0.01</button>
-        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.1).toFixed(2))} className="text-xs hover:text-foreground p-1">+0.1</button>
-        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.5).toFixed(2))} className="text-xs hover:text-foreground p-1">+0.5</button>
+        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.01).toFixed(2))} className="text-xs hover:text-foreground p-1 md:px-2">+0.01</button>
+        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.1).toFixed(2))} className="text-xs hover:text-foreground p-1 md:px-2">+0.1</button>
+        <button type="button" onClick={() => setValue("quantity", (parsedQty + 0.5).toFixed(2))} className="text-xs hover:text-foreground p-1 md:px-2">+0.5</button>
       </div>
 
       {/* Big Bid/Ask Display */}

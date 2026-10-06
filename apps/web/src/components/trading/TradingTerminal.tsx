@@ -144,18 +144,18 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-2 p-2 flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 p-2 flex-1">
         
         {/* Center: Chart */}
-        <div className="order-1 xl:order-2 xl:col-span-6 2xl:col-span-7 flex flex-col gap-2 min-w-0">
-          <div className="bg-muted/10 border border-border rounded-lg min-h-[400px] xl:min-h-[500px] relative z-10 overflow-hidden flex-1">
+        <div className="order-1 lg:order-2 lg:col-span-6 xl:col-span-7 flex flex-col gap-2 min-w-0">
+          <div className="bg-muted/10 border border-border rounded-lg min-h-[400px] lg:min-h-[500px] relative z-10 overflow-hidden flex-1">
             <TradingChart data={candles} />
             {market && <OneClickTrading market={market} currentPrice={market.price} />}
           </div>
         </div>
 
         {/* Right: Order Entry & Book */}
-        <div className="order-2 xl:order-3 xl:col-span-3 2xl:col-span-3 flex flex-col gap-2">
+        <div className="order-2 lg:order-3 lg:col-span-3 xl:col-span-3 flex flex-col gap-2 min-w-0">
           <div className="shrink-0 z-10 relative">
             <OrderEntry market={market} />
           </div>
@@ -165,7 +165,7 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
         </div>
 
         {/* Left: Market Watch & Recent Trades */}
-        <div className="order-3 xl:order-1 xl:col-span-3 2xl:col-span-2 flex flex-col gap-2">
+        <div className="order-3 lg:order-1 lg:col-span-3 xl:col-span-2 flex flex-col gap-2 min-w-0">
           <div className="flex-1 min-h-[400px]">
             <MarketWatch currentSymbol={market.symbol} />
           </div>
@@ -175,7 +175,7 @@ export function TradingTerminal({ symbol }: { symbol: string }) {
         </div>
 
         {/* Bottom: History Tabs */}
-        <div className="order-4 xl:order-4 xl:col-span-12 flex flex-col gap-2">
+        <div className="order-4 lg:order-4 lg:col-span-12 flex flex-col gap-2 min-w-0 overflow-hidden">
           <div className="bg-muted/10 border border-border rounded-lg min-h-[280px]">
             <TradingHistoryTabs />
           </div>

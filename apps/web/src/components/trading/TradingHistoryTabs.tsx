@@ -100,7 +100,7 @@ export function TradingHistoryTabs() {
 
       <div className="flex-1 overflow-auto max-h-[400px]">
         {activeTab === 'positions' && (
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="text-muted-foreground border-b border-border text-xs sticky top-0 bg-background z-10">
               <tr>
                 <th className="py-3 pl-4 font-medium">Ticket</th>
@@ -141,7 +141,7 @@ export function TradingHistoryTabs() {
         )}
   
         {activeTab === 'open' && (
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[800px] text-left text-sm">
             <thead className="text-muted-foreground border-b border-border text-xs sticky top-0 bg-background z-10">
               <tr>
                 <th className="py-3 pl-4 font-medium hidden md:table-cell">Time</th>
@@ -179,7 +179,7 @@ export function TradingHistoryTabs() {
         )}
 
         {activeTab === 'history' && (
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[800px] text-left text-sm">
             <thead className="text-muted-foreground border-b border-border text-xs sticky top-0 bg-background z-10">
               <tr>
                 <th className="py-3 pl-4 font-medium hidden md:table-cell">Time</th>
@@ -219,7 +219,7 @@ export function TradingHistoryTabs() {
         )}
 
         {activeTab === 'trades' && (
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[800px] text-left text-sm">
             <thead className="text-muted-foreground border-b border-border text-xs sticky top-0 bg-background z-10">
               <tr>
                 <th className="py-3 pl-4 font-medium hidden md:table-cell">Time</th>
