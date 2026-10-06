@@ -20,6 +20,8 @@ export function Header() {
   const [announcementVisible, setAnnouncementVisible] = useState(true)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false)
+  const [assetsDropdownOpen, setAssetsDropdownOpen] = useState(false)
+  const [mobileAssetsOpen, setMobileAssetsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const { user, status, logout } = useAuthStore()
@@ -72,11 +74,32 @@ export function Header() {
             </Link>
 
             <nav className="hidden lg:flex items-center gap-6">
-              <Link href="/markets" className={`text-sm font-medium transition-colors ${pathname === '/markets' ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground'}`}>Markets</Link>
+              <Link href="/" className={`text-sm font-medium transition-colors ${pathname === '/' ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Home</Link>
               <Link href="/trade" className={`text-sm font-medium transition-colors ${pathname?.startsWith('/trade') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Trade</Link>
               <Link href="https://p2p.ethsltd.com/" className="text-sm font-medium transition-colors text-muted-foreground hover:text-foreground pb-1">P2P</Link>
-              <Link href="/wallet" className={`text-sm font-medium transition-colors ${pathname?.startsWith('/wallet') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Wallet</Link>
-              <Link href="/markets" className={`text-sm font-medium transition-colors ${pathname === '/markets' ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Assets</Link>
+              
+              <div
+                className="relative"
+                onMouseEnter={() => setAssetsDropdownOpen(true)}
+                onMouseLeave={() => setAssetsDropdownOpen(false)}
+              >
+                <button
+                  className={`text-sm font-medium transition-colors flex items-center gap-1 ${pathname?.startsWith('/wallet') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground' : 'text-muted-foreground hover:text-foreground'} pb-1`}
+                  onClick={() => setAssetsDropdownOpen(!assetsDropdownOpen)}
+                >
+                  Assets <ChevronDown className={`w-3 h-3 transition-transform ${assetsDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {assetsDropdownOpen && (
+                  <div className="absolute top-full left-0 pt-2 w-40 z-50">
+                    <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden py-1">
+                      <Link href="/wallet?tab=asset" className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors" onClick={() => setAssetsDropdownOpen(false)}>Assets</Link>
+                      <Link href="/wallet?tab=currency" className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors" onClick={() => setAssetsDropdownOpen(false)}>Wallet</Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <Link href="/learn" className={`text-sm font-medium transition-colors ${pathname?.startsWith('/learn') ? 'text-brand-foreground font-semibold border-b-2 border-brand-foreground pb-1' : 'text-muted-foreground hover:text-foreground pb-1'}`}>Learn</Link>
 
               {/* More Dropdown */}
@@ -182,11 +205,27 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full h-[calc(100vh-4rem)] overflow-y-auto bg-background border-t border-border p-4 pb-50 shadow-xl">
           <nav className="flex flex-col gap-4">
-            <Link href="/markets" className={`text-lg font-medium py-2 border-b border-border ${pathname === '/markets' ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Markets</Link>
+            <Link href="/" className={`text-lg font-medium py-2 border-b border-border ${pathname === '/' ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Home</Link>
             <Link href="/trade" className={`text-lg font-medium py-2 border-b border-border ${pathname?.startsWith('/trade') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Trade</Link>
             <Link href="https://p2p.ethsltd.com/" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>P2P</Link>
-            <Link href="/wallet" className={`text-lg font-medium py-2 border-b border-border ${pathname?.startsWith('/wallet') ? 'text-brand-foreground font-semibold' : 'text-foreground'}`} onClick={() => setMobileMenuOpen(false)}>Wallet</Link>
-            <Link href="/markets" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Assets</Link>
+            
+            <div className="py-2 border-b border-border">
+              <button
+                onClick={() => setMobileAssetsOpen(!mobileAssetsOpen)}
+                className="w-full flex items-center justify-between text-lg font-medium text-foreground flex-wrap gap-y-4"
+              >
+                Assets
+                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${mobileAssetsOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <div className={`overflow-hidden transition-all duration-300 ${mobileAssetsOpen ? 'max-h-[200px] mt-4 opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="flex flex-col gap-4 pl-4 pb-2 border-l-2 border-border/50 ml-2">
+                  <Link href="/wallet?tab=asset" className="text-base text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>Assets</Link>
+                  <Link href="/wallet?tab=currency" className="text-base text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>Wallet</Link>
+                </div>
+              </div>
+            </div>
+
             <Link href="/learn" className="text-lg font-medium text-foreground py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Learn</Link>
 
             <div className="py-2 border-b border-border">
