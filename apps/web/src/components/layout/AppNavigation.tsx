@@ -58,9 +58,9 @@ export function AppNavigation() {
     },
     {
       name: "History",
-      href: "/wallet/history",
+      href: "/history",
       icon: Clock,
-      isActive: pathname?.startsWith("/account/history") || pathname?.startsWith("/wallet/history"),
+      isActive: pathname?.startsWith("/history"),
     },
     {
       name: "Messages",

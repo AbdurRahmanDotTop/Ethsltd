@@ -294,7 +294,7 @@ export class EthsltdClient {
   }
   
   
-  // Positions API Methods
+  // Positions & Orders API Methods
   async getPositions() {
     return this.request<any[]>('/api/v1/trading/positions');
   }
