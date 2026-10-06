@@ -398,6 +398,13 @@ tradingRoutes.get('/trades', async (c) => {
   
   const formattedTrades = userTrades.map((t: any) => {
     const isBuyer = t.buyUserId === user.id;
+    let createdStr = "";
+    try {
+      if (t.createdAt instanceof Date) createdStr = t.createdAt.toISOString();
+      else if (typeof t.createdAt === 'number') createdStr = new Date(t.createdAt).toISOString();
+      else if (t.createdAt) createdStr = new Date(t.createdAt).toISOString();
+    } catch (e) { createdStr = new Date().toISOString(); }
+
     return {
       id: t.id,
       market: t.marketSymbol,
@@ -407,7 +414,7 @@ tradingRoutes.get('/trades', async (c) => {
       total: parseFloat(t.quoteAmount || '0') || parseFloat(t.price) * parseFloat(t.amount),
       fee: isBuyer ? parseFloat(t.buyFee || '0') : parseFloat(t.sellFee || '0'),
       feeAsset: isBuyer ? t.marketSymbol.split('-')[0] : t.marketSymbol.split('-')[1],
-      createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt,
+      createdAt: createdStr || new Date().toISOString(),
     };
   });
   
@@ -473,18 +480,23 @@ tradingRoutes.post('/orders', async (c) => {
   const orderDisplayId = await generateBusinessId(db, dbUser?.email, 'ORDE');
 
   try {
+    const quoteAmount = parsedAmount.times(orderPrice);
+    const takerFeeRate = new Decimal(marketInfo.takerFee || '0');
+    const commissionFee = type === 'MARKET' ? quoteAmount.times(takerFeeRate) : new Decimal(0);
+    const requiredBalance = spendAmount.plus(commissionFee);
+
     await runTx(db, async (tx: any) => {
       // --- Balance Check (Inside Transaction) ---
       let spendWallet = await tx.select().from(wallets)
         .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)))
         .get();
       
-      if (!spendWallet || new Decimal(spendWallet.balance).lt(spendAmount)) {
-        throw new Error(`Insufficient ${spendAsset} balance`);
+      if (!spendWallet || new Decimal(spendWallet.balance).lt(requiredBalance)) {
+        throw new Error(`Insufficient ${spendAsset} balance. Requires ${requiredBalance.toFixed(4)}`);
       }
       
-      // --- Reserve balance: move from available to locked ---
-      const newSpendBalance = new Decimal(spendWallet.balance).minus(spendAmount).toString();
+      // --- Reserve balance: move margin to locked, subtract commission permanently ---
+      const newSpendBalance = new Decimal(spendWallet.balance).minus(requiredBalance).toString();
       const newLockedBalance = new Decimal(spendWallet.lockedBalance).plus(spendAmount).toString();
       await tx.update(wallets).set({
         balance: newSpendBalance,
@@ -492,7 +504,7 @@ tradingRoutes.post('/orders', async (c) => {
         updatedAt: now
       }).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)));
       
-      // --- Create Order Record (PENDING for MT5) ---
+      // --- Create Order Record (PENDING for MT5 limits) ---
       const newOrderRecord = {
         id: orderId,
         displayId: orderDisplayId,
@@ -507,7 +519,7 @@ tradingRoutes.post('/orders', async (c) => {
         amount: parsedAmount.toString(),
         filledAmount: '0',
         remainingAmount: parsedAmount.toString(),
-        status: 'ROUTING' as const, // Always routing for MT5 (creates position)
+        status: type === 'MARKET' ? ('ROUTING' as const) : ('ACCEPTED' as const),
         timeInForce: timeInForce || 'GTC',
         createdAt: now,
         updatedAt: now,
@@ -519,10 +531,10 @@ tradingRoutes.post('/orders', async (c) => {
     // ============================================
     // MT5 INTEGRATION (MARGIN / CFD) - FORCED FOR ALL
     // ============================================
+    if (type === 'MARKET') {
       let positionId = crypto.randomUUID();
       let finalPrice = orderPrice.toString();
       
-      // Native MT5-style CFD Execution (Without external API calls)
       const marginRequired = totalValue.div(100); // hardcoded leverage 100 for now
       
       // Update Order to FILLED and Create Position in our DB
@@ -535,7 +547,7 @@ tradingRoutes.post('/orders', async (c) => {
           updatedAt: new Date()
         }).where(eq(orders.id, orderId));
         
-        const positionDisplayId = await generateBusinessId(db, dbUser?.email, 'POS');
+        const positionDisplayId = await generateBusinessId(tx, dbUser?.email, 'POS');
         await tx.insert(positions).values({
           id: positionId,
           displayId: positionDisplayId,
@@ -551,6 +563,7 @@ tradingRoutes.post('/orders', async (c) => {
           takeProfit: takeProfit ? takeProfit.toString() : null,
           liquidationPrice: side === 'BUY' ? new Decimal(finalPrice).times(0.99).toString() : new Decimal(finalPrice).times(1.01).toString(),
           amount: parsedAmount.toString(),
+          commission: commissionFee.toString(),
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -558,9 +571,6 @@ tradingRoutes.post('/orders', async (c) => {
         // Create Trade History Record for CFDs (Acting as Dealer)
         const tradeId = crypto.randomUUID();
         const tradeDisplayId = await generateBusinessId(tx, 'system', 'TRAD');
-        const quoteAmount = parsedAmount.times(new Decimal(finalPrice));
-        const takerFeeRate = new Decimal(marketInfo.takerFee);
-        const fee = (side === 'BUY' ? parsedAmount : quoteAmount).times(takerFeeRate);
         
         await tx.insert(trades).values({
           id: tradeId,
@@ -573,11 +583,12 @@ tradingRoutes.post('/orders', async (c) => {
           price: finalPrice,
           amount: parsedAmount.toString(),
           quoteAmount: quoteAmount.toString(),
-          buyFee: side === 'BUY' ? fee.toString() : '0',
-          sellFee: side === 'SELL' ? fee.toString() : '0',
+          buyFee: side === 'BUY' ? commissionFee.toString() : '0',
+          sellFee: side === 'SELL' ? commissionFee.toString() : '0',
           createdAt: new Date(),
         });
       });
+    }
       
   } catch (error: any) {
     console.error('Order placement error:', error);
@@ -731,6 +742,13 @@ tradingRoutes.get('/positions', async (c) => {
         : (entry - currentPrice) * amount * contractSize;
     }
     
+    let createdStr = "";
+    try {
+      if (p.createdAt instanceof Date) createdStr = p.createdAt.toISOString();
+      else if (typeof p.createdAt === 'number') createdStr = new Date(p.createdAt).toISOString();
+      else if (p.createdAt) createdStr = new Date(p.createdAt).toISOString();
+    } catch (e) { createdStr = new Date().toISOString(); }
+
     return {
       id: p.id,
       ticket: p.displayId,
@@ -747,7 +765,7 @@ tradingRoutes.get('/positions', async (c) => {
       swap: parseFloat(p.swap),
       commission: parseFloat(p.commission),
       status: p.status,
-      createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
+      createdAt: createdStr || new Date().toISOString(),
     };
   });
     

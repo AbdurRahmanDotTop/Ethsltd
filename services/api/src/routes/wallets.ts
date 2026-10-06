@@ -58,11 +58,34 @@ walletRoutes.get('/portfolio', async (c) => {
     let totalMargin = 0;
     let totalPnl = 0;
 
+    // We need to fetch real prices to calculate Unrealized PNL accurately for MT5 Equity
+    const { getRealPrice } = require('../utils/price');
+    const { markets } = require('database');
+    let marketsData: Record<string, any> = {};
+
     for (const pos of userPositions) {
       totalMargin += parseFloat(pos.marginAmount || '0');
-      // Mock unrealized PnL based on entry/current price if it's Spot, or fetch from MT5
-      // For simplicity here, we assume it's calculated on UI or just 0 if prices aren't fetched
-      totalPnl += 0; // We can let UI calculate PNL or fetch it here.
+      
+      // Calculate real Unrealized PNL
+      if (!marketsData[pos.marketSymbol]) {
+        const mInfo = await db.select().from(markets).where(eq(markets.symbol, pos.marketSymbol)).get();
+        marketsData[pos.marketSymbol] = mInfo || { contractSize: '1' };
+      }
+      
+      const currentPriceRaw = await getRealPrice(pos.marketSymbol);
+      const currentPrice = parseFloat(currentPriceRaw) || parseFloat(pos.entryPrice);
+      const entry = parseFloat(pos.entryPrice);
+      const amount = parseFloat(pos.amount);
+      const contractSize = parseFloat(marketsData[pos.marketSymbol]?.contractSize || '1');
+      
+      let pnl = 0;
+      if (pos.side === 'LONG') {
+        pnl = (currentPrice - entry) * amount * contractSize;
+      } else if (pos.side === 'SHORT') {
+        pnl = (entry - currentPrice) * amount * contractSize;
+      }
+      
+      totalPnl += pnl;
     }
 
     const equity = totalBalance + totalPnl;
