@@ -423,209 +423,216 @@ tradingRoutes.get('/trades', async (c) => {
 
 // POST /orders — Place a new spot order
 tradingRoutes.post('/orders', async (c) => {
-  const db = c.get('db');
-  const user = c.get('user');
-  const body = await c.req.json();
-  const { market, side, type, amount, price, stopLoss, takeProfit, stopPrice, timeInForce } = body;
-  
-  // --- Validate market ---
-  const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
-  if (!marketInfo) {
-    return c.json({ success: false, error: 'Market not found' }, 400);
-  }
-  if (marketInfo.status !== 'ACTIVE') {
-    return c.json({ success: false, error: 'Market is currently not active' }, 400);
-  }
-
-  // --- Validate & set price ---
-  const fetchedPrice = await getRealPrice(market);
-  const orderPriceRaw = type === 'MARKET' ? fetchedPrice : parseFloat(price);
-  
-  if (!orderPriceRaw || orderPriceRaw <= 0) {
-    return c.json({ success: false, error: 'Invalid price or price unavailable' }, 400);
-  }
-
-  const orderPrice = new Decimal(orderPriceRaw);
-  const parsedAmount = new Decimal(amount);
-  
-  // --- Validate amount ---
-  if (parsedAmount.lte(0)) {
-    return c.json({ success: false, error: 'Amount must be greater than zero' }, 400);
-  }
-  
-  const minAmount = new Decimal(marketInfo.minAmount);
-  if (parsedAmount.lt(minAmount)) {
-    return c.json({ success: false, error: `Minimum order amount is ${marketInfo.minAmount}` }, 400);
-  }
-
-  // --- Validate price bounds for limit orders ---
-  if (type === 'LIMIT') {
-    const minPrice = new Decimal(marketInfo.minPrice);
-    const maxPrice = new Decimal(marketInfo.maxPrice);
-    if (orderPrice.lt(minPrice) || orderPrice.gt(maxPrice)) {
-      return c.json({ success: false, error: `Price must be between ${marketInfo.minPrice} and ${marketInfo.maxPrice}` }, 400);
-    }
-  }
-
-  const contractSize = new Decimal(marketInfo.contractSize || '1');
-  const totalValue = parsedAmount.times(contractSize).times(orderPrice);
-  // For MT5 behaviour, spend amount is always calculated from quote asset (e.g., USDT)
-  // regardless of BUY/SELL and market type, since margin is held in quote currency.
-  let spendAsset = marketInfo.quoteAsset;
-  let spendAmount = totalValue.div(100); // hardcoded leverage 100
-  
-  const now = new Date();
-  const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-  const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
-  const orderDisplayId = await generateBusinessId(db, dbUser?.email, 'ORDE');
-
   try {
-    const quoteAmount = parsedAmount.times(orderPrice);
-    const takerFeeRate = new Decimal(marketInfo.takerFee || '0');
-    const commissionFee = type === 'MARKET' ? quoteAmount.times(takerFeeRate) : new Decimal(0);
-    const requiredBalance = spendAmount.plus(commissionFee);
+    const db = c.get('db');
+    const user = c.get('user');
+    const body = await c.req.json();
+    const { market, side, type, amount, price, stopLoss, takeProfit, stopPrice, timeInForce } = body;
+    
+    // --- Validate market ---
+    const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
+    if (!marketInfo) {
+      return c.json({ success: false, error: 'Market not found' }, 400);
+    }
+    if (marketInfo.status !== 'ACTIVE') {
+      return c.json({ success: false, error: 'Market is currently not active' }, 400);
+    }
 
-    await runTx(db, async (tx: any) => {
-      // --- Balance Check (Inside Transaction) ---
-      let spendWallet = await tx.select().from(wallets)
-        .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)))
-        .get();
-      
-      if (!spendWallet || new Decimal(spendWallet.balance).lt(requiredBalance)) {
-        throw new Error(`Insufficient ${spendAsset} balance. Requires ${requiredBalance.toFixed(4)}`);
+    // --- Validate & set price ---
+    const fetchedPrice = await getRealPrice(market);
+    const orderPriceRaw = type === 'MARKET' ? fetchedPrice : parseFloat(price);
+    
+    if (!orderPriceRaw || orderPriceRaw <= 0) {
+      return c.json({ success: false, error: 'Invalid price or price unavailable' }, 400);
+    }
+
+    const orderPrice = new Decimal(orderPriceRaw);
+    const parsedAmount = new Decimal(amount);
+    
+    // --- Validate amount ---
+    if (parsedAmount.lte(0)) {
+      return c.json({ success: false, error: 'Amount must be greater than zero' }, 400);
+    }
+    
+    const minAmount = new Decimal(marketInfo.minAmount === 'min_amount' ? '0' : (marketInfo.minAmount || '0'));
+    if (parsedAmount.lt(minAmount)) {
+      return c.json({ success: false, error: `Minimum order amount is ${marketInfo.minAmount}` }, 400);
+    }
+
+    // --- Validate price bounds for limit orders ---
+    if (type === 'LIMIT') {
+      const minPrice = new Decimal(marketInfo.minPrice === 'min_price' ? '0' : (marketInfo.minPrice || '0'));
+      const maxPrice = new Decimal(marketInfo.maxPrice === 'max_price' ? '9999999' : (marketInfo.maxPrice || '9999999'));
+      if (orderPrice.lt(minPrice) || orderPrice.gt(maxPrice)) {
+        return c.json({ success: false, error: `Price must be between ${marketInfo.minPrice} and ${marketInfo.maxPrice}` }, 400);
       }
-      
-      // --- Reserve balance: move margin to locked, subtract commission permanently ---
-      const newSpendBalance = new Decimal(spendWallet.balance).minus(requiredBalance).toString();
-      const newLockedBalance = new Decimal(spendWallet.lockedBalance).plus(spendAmount).toString();
-      await tx.update(wallets).set({
-        balance: newSpendBalance,
-        lockedBalance: newLockedBalance,
-        updatedAt: now
-      }).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)));
-      
-      // --- Create Order Record (PENDING for MT5 limits) ---
-      const newOrderRecord = {
-        id: orderId,
-        displayId: orderDisplayId,
-        userId: user.id,
-        marketSymbol: market,
-        side,
-        type,
-        price: orderPrice.toString(),
-        stopPrice: stopPrice ? stopPrice.toString() : null,
-        stopLoss: stopLoss ? stopLoss.toString() : null,
-        takeProfit: takeProfit ? takeProfit.toString() : null,
-        amount: parsedAmount.toString(),
-        filledAmount: '0',
-        remainingAmount: parsedAmount.toString(),
-        status: type === 'MARKET' ? ('ROUTING' as const) : ('ACCEPTED' as const),
-        timeInForce: timeInForce || 'GTC',
-        createdAt: now,
-        updatedAt: now,
-      };
+    }
 
-      await tx.insert(orders).values(newOrderRecord);
-    }); // End of DB lock transaction
+    const rawContractSize = marketInfo.contractSize === 'contract_size' ? '1' : (marketInfo.contractSize || '1');
+    const contractSize = new Decimal(rawContractSize);
+    const totalValue = parsedAmount.times(contractSize).times(orderPrice);
+    // For MT5 behaviour, spend amount is always calculated from quote asset (e.g., USDT)
+    // regardless of BUY/SELL and market type, since margin is held in quote currency.
+    let spendAsset = marketInfo.quoteAsset;
+    let spendAmount = totalValue.div(100); // hardcoded leverage 100
+    
+    const now = new Date();
+    const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
+    const orderDisplayId = await generateBusinessId(db, dbUser?.email, 'ORDE');
 
-    // ============================================
-    // MT5 INTEGRATION (MARGIN / CFD) - FORCED FOR ALL
-    // ============================================
-    if (type === 'MARKET') {
-      let positionId = crypto.randomUUID();
-      let finalPrice = orderPrice.toString();
-      
-      const marginRequired = totalValue.div(100); // hardcoded leverage 100 for now
-      
-      // Update Order to FILLED and Create Position in our DB
+    try {
+      const quoteAmount = parsedAmount.times(orderPrice);
+      const rawTakerFee = marketInfo.takerFee === 'taker_fee' ? '0' : (marketInfo.takerFee || '0');
+      const takerFeeRate = new Decimal(rawTakerFee);
+      const commissionFee = type === 'MARKET' ? quoteAmount.times(takerFeeRate) : new Decimal(0);
+      const requiredBalance = spendAmount.plus(commissionFee);
+
       await runTx(db, async (tx: any) => {
-        await tx.update(orders).set({ 
-          status: 'FILLED', 
-          filledAmount: parsedAmount.toString(), 
-          remainingAmount: '0',
-          price: finalPrice,
-          updatedAt: new Date()
-        }).where(eq(orders.id, orderId));
+        // --- Balance Check (Inside Transaction) ---
+        let spendWallet = await tx.select().from(wallets)
+          .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)))
+          .get();
         
-        const positionDisplayId = await generateBusinessId(tx, dbUser?.email, 'POS');
-        await tx.insert(positions).values({
-          id: positionId,
-          displayId: positionDisplayId,
+        if (!spendWallet || new Decimal(spendWallet.balance).lt(requiredBalance)) {
+          throw new Error(`Insufficient ${spendAsset} balance. Requires ${requiredBalance.toFixed(4)}`);
+        }
+        
+        // --- Reserve balance: move margin to locked, subtract commission permanently ---
+        const newSpendBalance = new Decimal(spendWallet.balance).minus(requiredBalance).toString();
+        const newLockedBalance = new Decimal(spendWallet.lockedBalance).plus(spendAmount).toString();
+        await tx.update(wallets).set({
+          balance: newSpendBalance,
+          lockedBalance: newLockedBalance,
+          updatedAt: now
+        }).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)));
+        
+        // --- Create Order Record (PENDING for MT5 limits) ---
+        const newOrderRecord = {
+          id: orderId,
+          displayId: orderDisplayId,
           userId: user.id,
           marketSymbol: market,
-          side: side === 'BUY' ? 'LONG' : 'SHORT',
-          status: 'OPEN',
-          leverage: '100',
-          marginType: 'ISOLATED',
-          marginAmount: marginRequired.toString(),
-          entryPrice: finalPrice,
+          side,
+          type,
+          price: orderPrice.toString(),
+          stopPrice: stopPrice ? stopPrice.toString() : null,
           stopLoss: stopLoss ? stopLoss.toString() : null,
           takeProfit: takeProfit ? takeProfit.toString() : null,
-          liquidationPrice: side === 'BUY' ? new Decimal(finalPrice).times(0.99).toString() : new Decimal(finalPrice).times(1.01).toString(),
           amount: parsedAmount.toString(),
-          commission: commissionFee.toString(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-        
-        // Create Trade History Record for CFDs (Acting as Dealer)
-        const tradeId = crypto.randomUUID();
-        const tradeDisplayId = await generateBusinessId(tx, 'system', 'TRAD');
-        
-        await tx.insert(trades).values({
-          id: tradeId,
-          displayId: tradeDisplayId,
-          marketSymbol: market,
-          buyOrderId: side === 'BUY' ? orderId : null,
-          sellOrderId: side === 'SELL' ? orderId : null,
-          buyUserId: side === 'BUY' ? user.id : null,
-          sellUserId: side === 'SELL' ? user.id : null,
-          price: finalPrice,
-          amount: parsedAmount.toString(),
-          quoteAmount: quoteAmount.toString(),
-          buyFee: side === 'BUY' ? commissionFee.toString() : '0',
-          sellFee: side === 'SELL' ? commissionFee.toString() : '0',
-          createdAt: new Date(),
-        });
-      });
-    }
-      
-  } catch (error: any) {
-    console.error('Order placement error:', error);
-    return c.json({ success: false, error: error.message || 'Failed to place order' }, 400);
-  }
+          filledAmount: '0',
+          remainingAmount: parsedAmount.toString(),
+          status: type === 'MARKET' ? ('ROUTING' as const) : ('ACCEPTED' as const),
+          timeInForce: timeInForce || 'GTC',
+          createdAt: now,
+          updatedAt: now,
+        };
 
-  // Send email notification (fire-and-forget)
-  const emailService = new EmailService(c.env, db);
-  c.executionCtx.waitUntil((async () => {
-    try {
-      const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
-      const orderData = await db.select().from(orders).where(eq(orders.id, orderId)).get();
-      if (orderData) {
-          await emailService.sendAdminTradeAlert(orderData, appUrl);
-        await emailService.sendUserTransactionAlert(
-          user.email,
-          'Trade Order Created',
-          `Your ${side} order for ${amount} ${marketInfo!.baseAsset} has been placed.`,
-          [
-            { key: 'Order ID', value: orderData.displayId },
-            { key: 'Market', value: market },
-            { key: 'Side', value: side },
-            { key: 'Amount', value: `${amount} ${marketInfo!.baseAsset}` },
-            { key: 'Price', value: type === 'MARKET' ? 'Market Price' : `${price} ${marketInfo!.quoteAsset}` },
-            { key: 'Status', value: orderData.status }
-          ],
-          `${appUrl}/trade/${market.replace('-', '_')}`,
-          'View Trade'
-        );
+        await tx.insert(orders).values(newOrderRecord);
+      }); // End of DB lock transaction
+
+      // ============================================
+      // MT5 INTEGRATION (MARGIN / CFD) - FORCED FOR ALL
+      // ============================================
+      if (type === 'MARKET') {
+        let positionId = crypto.randomUUID();
+        let finalPrice = orderPrice.toString();
+        
+        const marginRequired = totalValue.div(100); // hardcoded leverage 100 for now
+        
+        // Update Order to FILLED and Create Position in our DB
+        await runTx(db, async (tx: any) => {
+          await tx.update(orders).set({ 
+            status: 'FILLED', 
+            filledAmount: parsedAmount.toString(), 
+            remainingAmount: '0',
+            price: finalPrice,
+            updatedAt: new Date()
+          }).where(eq(orders.id, orderId));
+          
+          const positionDisplayId = await generateBusinessId(tx, dbUser?.email, 'POS');
+          await tx.insert(positions).values({
+            id: positionId,
+            displayId: positionDisplayId,
+            userId: user.id,
+            marketSymbol: market,
+            side: side === 'BUY' ? 'LONG' : 'SHORT',
+            status: 'OPEN',
+            leverage: '100',
+            marginType: 'ISOLATED',
+            marginAmount: marginRequired.toString(),
+            entryPrice: finalPrice,
+            stopLoss: stopLoss ? stopLoss.toString() : null,
+            takeProfit: takeProfit ? takeProfit.toString() : null,
+            liquidationPrice: side === 'BUY' ? new Decimal(finalPrice).times(0.99).toString() : new Decimal(finalPrice).times(1.01).toString(),
+            amount: parsedAmount.toString(),
+            commission: commissionFee.toString(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          
+          // Create Trade History Record for CFDs (Acting as Dealer)
+          const tradeId = crypto.randomUUID();
+          const tradeDisplayId = await generateBusinessId(tx, 'system', 'TRAD');
+          
+          await tx.insert(trades).values({
+            id: tradeId,
+            displayId: tradeDisplayId,
+            marketSymbol: market,
+            buyOrderId: side === 'BUY' ? orderId : null,
+            sellOrderId: side === 'SELL' ? orderId : null,
+            buyUserId: side === 'BUY' ? user.id : null,
+            sellUserId: side === 'SELL' ? user.id : null,
+            price: finalPrice,
+            amount: parsedAmount.toString(),
+            quoteAmount: quoteAmount.toString(),
+            buyFee: side === 'BUY' ? commissionFee.toString() : '0',
+            sellFee: side === 'SELL' ? commissionFee.toString() : '0',
+            createdAt: new Date(),
+          });
+        });
       }
-    } catch (e) {
-      console.error("Failed to send trade email", e);
+        
+    } catch (error: any) {
+      console.error('Order placement error:', error);
+      return c.json({ success: false, error: error.message || 'Failed to place order' }, 400);
     }
-  })());
 
-  const finalOrder = await db.select().from(orders).where(eq(orders.id, orderId)).get();
-  return c.json({ success: true, orderId, order: finalOrder });
+    // Send email notification (fire-and-forget)
+    const emailService = new EmailService(c.env, db);
+    c.executionCtx.waitUntil((async () => {
+      try {
+        const appUrl = c.req.header('origin') || `https://${c.req.header('host')}`;
+        const orderData = await db.select().from(orders).where(eq(orders.id, orderId)).get();
+        if (orderData) {
+            await emailService.sendAdminTradeAlert(orderData, appUrl);
+          await emailService.sendUserTransactionAlert(
+            user.email,
+            'Trade Order Created',
+            `Your ${side} order for ${amount} ${marketInfo!.baseAsset} has been placed.`,
+            [
+              { key: 'Order ID', value: orderData.displayId },
+              { key: 'Market', value: market },
+              { key: 'Side', value: side },
+              { key: 'Amount', value: `${amount} ${marketInfo!.baseAsset}` },
+              { key: 'Price', value: type === 'MARKET' ? 'Market Price' : `${price} ${marketInfo!.quoteAsset}` },
+              { key: 'Status', value: orderData.status }
+            ],
+            `${appUrl}/trade/${market.replace('-', '_')}`,
+            'View Trade'
+          );
+        }
+      } catch (e) {
+        console.error("Failed to send trade email", e);
+      }
+    })());
+
+    const finalOrder = await db.select().from(orders).where(eq(orders.id, orderId)).get();
+    return c.json({ success: true, orderId, order: finalOrder });
+  } catch (outerError: any) {
+    console.error('Unhandled order placement error:', outerError);
+    return c.json({ success: false, error: 'An unexpected error occurred while processing your order.' }, 500);
+  }
 });
 
 // DELETE /orders/:id — Cancel an open order
