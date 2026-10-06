@@ -72,7 +72,29 @@ export function AppNavigation() {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 z-40 w-full bg-[#181A20] border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
+      {assetsMenuOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setAssetsMenuOpen(false)} />
+          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-[#2B3139] border border-white/10 rounded-lg shadow-xl py-1 min-w-[140px] z-50 flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <Link 
+              href="/wallet?tab=asset" 
+              className="block px-6 py-3.5 text-sm font-medium text-white text-center hover:bg-white/5 transition-colors border-b border-white/5"
+              onClick={() => setAssetsMenuOpen(false)}
+            >
+              Assets
+            </Link>
+            <Link 
+              href="/wallet?tab=currency" 
+              className="block px-6 py-3.5 text-sm font-medium text-white text-center hover:bg-white/5 transition-colors"
+              onClick={() => setAssetsMenuOpen(false)}
+            >
+              Wallet
+            </Link>
+          </div>
+        </>
+      )}
+
+      <div className="fixed bottom-0 left-0 z-30 w-full bg-[#181A20] border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
         <div className="flex h-16 w-full max-w-5xl mx-auto px-2 overflow-x-auto no-scrollbar justify-start md:justify-center items-center">
           {navItems.map((item, index) => {
             const Icon = item.icon;
@@ -91,27 +113,6 @@ export function AppNavigation() {
                     />
                     <span className="text-[10px] font-medium leading-none whitespace-nowrap">{item.name}</span>
                   </button>
-                  {assetsMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setAssetsMenuOpen(false)} />
-                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#2B3139] border border-white/10 rounded-lg shadow-xl py-1 min-w-[120px] z-50">
-                        <Link 
-                          href="/wallet?tab=asset" 
-                          className="block px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors border-b border-white/5"
-                          onClick={() => setAssetsMenuOpen(false)}
-                        >
-                          Assets
-                        </Link>
-                        <Link 
-                          href="/wallet?tab=currency" 
-                          className="block px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors"
-                          onClick={() => setAssetsMenuOpen(false)}
-                        >
-                          Wallet
-                        </Link>
-                      </div>
-                    </>
-                  )}
                 </div>
               );
             }
