@@ -10,7 +10,7 @@ const runTx = async (db: any, cb: any) => {
     throw e;
   }
 };
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc, inArray, sql } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { EmailService } from '../services/email';
 import { markets, orders, trades, wallets, walletTransactions, currencyRates, positions } from 'database';
@@ -340,6 +340,25 @@ tradingRoutes.get('/exchange-rate', async (c) => {
 });
 
 
+// TEMPORARY MIGRATION ENDPOINT to add missing columns to D1
+tradingRoutes.get('/migrate-d1', async (c) => {
+  const db = c.get('db');
+  let results = [];
+  try {
+    await db.run(sql.raw(`ALTER TABLE wallet_transactions ADD COLUMN before_balance text`));
+    results.push('before_balance added');
+  } catch(e: any) {
+    results.push(`before_balance error: ${e.message}`);
+  }
+  try {
+    await db.run(sql.raw(`ALTER TABLE wallet_transactions ADD COLUMN after_balance text`));
+    results.push('after_balance added');
+  } catch(e: any) {
+    results.push(`after_balance error: ${e.message}`);
+  }
+  return c.json({ success: true, results });
+});
+
 // ========== AUTHENTICATED ENDPOINTS ==========
 tradingRoutes.use('*', jwtMiddleware);
 
@@ -544,13 +563,11 @@ tradingRoutes.post('/orders', async (c) => {
           network: null,
           reference: orderId,
           originalCurrency: null,
-          originalAmount: null,
+          originalAmount: spendWallet.balance,
           conversionRate: null,
           grossAmount: null,
           totalFees: null,
-          netAmount: null,
-          beforeBalance: spendWallet.balance,
-          afterBalance: newSpendBalance,
+          netAmount: newSpendBalance,
           createdAt: now,
           updatedAt: now,
         });
@@ -927,13 +944,11 @@ tradingRoutes.post('/positions/:id/close', async (c) => {
            network: null,
            reference: `close_pos_${position.id}`,
            originalCurrency: null,
-           originalAmount: null,
+           originalAmount: quoteWallet.balance,
            conversionRate: null,
            grossAmount: null,
            totalFees: null,
-           netAmount: null,
-           beforeBalance: quoteWallet.balance,
-           afterBalance: newBalance.toString(),
+           netAmount: newBalance.toString(),
            createdAt: now,
            updatedAt: now,
          });
