@@ -10,7 +10,7 @@ const runTx = async (db: any, cb: any) => {
     throw e;
   }
 };
-import { eq, and, desc, inArray, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { EmailService } from '../services/email';
 import { markets, orders, trades, wallets, walletTransactions, currencyRates, positions } from 'database';
@@ -340,24 +340,6 @@ tradingRoutes.get('/exchange-rate', async (c) => {
 });
 
 
-// TEMPORARY MIGRATION ENDPOINT to add missing columns to D1
-tradingRoutes.get('/migrate-d1', async (c) => {
-  const db = c.get('db');
-  let results = [];
-  try {
-    await db.run(sql.raw(`ALTER TABLE wallet_transactions ADD COLUMN before_balance text`));
-    results.push('before_balance added');
-  } catch(e: any) {
-    results.push(`before_balance error: ${e.message}`);
-  }
-  try {
-    await db.run(sql.raw(`ALTER TABLE wallet_transactions ADD COLUMN after_balance text`));
-    results.push('after_balance added');
-  } catch(e: any) {
-    results.push(`after_balance error: ${e.message}`);
-  }
-  return c.json({ success: true, results });
-});
 
 // ========== AUTHENTICATED ENDPOINTS ==========
 tradingRoutes.use('*', jwtMiddleware);
@@ -716,9 +698,9 @@ tradingRoutes.delete('/orders/:id', async (c) => {
         throw new Error('Order not found');
       }
       
-      // Only OPEN or PARTIALLY_FILLED orders can be cancelled
-      if (order.status !== 'OPEN' && order.status !== 'PARTIALLY_FILLED') {
-        throw new Error('Only open or partially filled orders can be canceled');
+      // Only pending/unfilled orders can be cancelled
+      if (!['OPEN', 'ACCEPTED', 'ROUTING', 'PARTIALLY_FILLED'].includes(order.status)) {
+        throw new Error('Only open or pending orders can be canceled');
       }
       
       const marketInfo = await tx.select().from(markets)
@@ -752,16 +734,25 @@ tradingRoutes.delete('/orders/:id', async (c) => {
             updatedAt: now
           }).where(eq(wallets.id, refundWallet.id));
 
-          // Create wallet transaction for the refund
+          // Create wallet transaction for the refund (all columns explicit for D1 safety)
           await tx.insert(walletTransactions).values({
             id: crypto.randomUUID(),
+            displayId: null,
             userId: user.id,
-            type: 'TRADE',
+            type: 'TRADING_CREDIT',
             assetSymbol: refundAsset,
             amount: refundAmount.toString(),
             fee: '0',
             status: 'COMPLETED',
+            destination: null,
+            network: null,
             reference: order.id,
+            originalCurrency: null,
+            originalAmount: refundWallet.balance,
+            conversionRate: null,
+            grossAmount: null,
+            totalFees: null,
+            netAmount: newBalance,
             createdAt: now,
             updatedAt: now,
           });
