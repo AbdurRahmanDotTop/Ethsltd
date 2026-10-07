@@ -10,19 +10,23 @@ export default function HistoryPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [deals, setDeals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [summaryStats, setSummaryStats] = useState({ profit: 0, deposit: 0, swap: 0, commission: 0, balance: 0 })
 
   const loadData = async () => {
     try {
       setLoading(true)
-      const [posRes, ordRes, dealsRes] = await Promise.all([
+      const [posRes, ordRes, dealsRes, txRes, portRes] = await Promise.all([
         apiClient.getPositions().catch(() => ({ success: false, data: [] })),
         apiClient.getOrders().catch(() => ({ success: false, data: [] })),
-        apiClient.getTrades().catch(() => ({ success: false, data: [] }))
+        apiClient.getTrades().catch(() => ({ success: false, data: [] })),
+        apiClient.getWalletTransactions().catch(() => ({ success: false, data: [] })),
+        apiClient.getWalletPortfolio().catch(() => ({ success: false, data: null }))
       ])
 
+      let closedPositions: any[] = [];
       if (posRes.success && posRes.data) {
-        // Only show closed/liquidated positions in history
-        setPositions(posRes.data.filter((p: any) => p.status !== 'OPEN'))
+        closedPositions = posRes.data.filter((p: any) => p.status !== 'OPEN');
+        setPositions(closedPositions);
       }
       
       if (ordRes.success && ordRes.data) {
@@ -32,6 +36,32 @@ export default function HistoryPage() {
       if (dealsRes.success && dealsRes.data) {
         setDeals(dealsRes.data)
       }
+
+      // Calculate Summary Stats
+      let profit = 0;
+      let swap = 0;
+      let commission = 0;
+      closedPositions.forEach((p: any) => {
+        profit += (p.realizedPnl || 0);
+        swap += (p.swap || 0);
+        commission += (p.commission || 0);
+      });
+
+      let deposit = 0;
+      if (txRes.success && txRes.data) {
+        txRes.data.forEach((tx: any) => {
+          if (tx.type === 'DEPOSIT' && tx.status === 'COMPLETED') {
+            deposit += parseFloat(tx.amount || '0');
+          }
+        });
+      }
+
+      let balance = 0;
+      if (portRes.success && portRes.data?.summary) {
+        balance = portRes.data.summary.totalValueUsd || 0;
+      }
+
+      setSummaryStats({ profit, deposit, swap, commission, balance });
     } catch (e) {
       console.error("Failed to load history data", e)
     } finally {
@@ -76,6 +106,43 @@ export default function HistoryPage() {
 
       <main className="flex-1 flex flex-col w-full max-w-2xl mx-auto overflow-y-auto">
         
+        {/* MT5 Summary Header */}
+        {!loading && (
+          <div className="flex flex-col px-4 py-3 bg-black border-b border-white/5 font-mono text-[13px] text-white/60">
+            <div className="flex justify-between items-center mb-1">
+              <span>Profit:</span>
+              <span className="flex-1 border-b border-dotted border-white/20 mx-2 mb-1"></span>
+              <span className={summaryStats.profit >= 0 ? "text-[#3b82f6]" : "text-[#ef4444]"}>
+                {summaryStats.profit.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mb-1">
+              <span>Deposit:</span>
+              <span className="flex-1 border-b border-dotted border-white/20 mx-2 mb-1"></span>
+              <span className="text-white">{summaryStats.deposit.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center mb-1">
+              <span>Swap:</span>
+              <span className="flex-1 border-b border-dotted border-white/20 mx-2 mb-1"></span>
+              <span className={summaryStats.swap < 0 ? "text-[#ef4444]" : "text-white"}>
+                {summaryStats.swap.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mb-1">
+              <span>Commission:</span>
+              <span className="flex-1 border-b border-dotted border-white/20 mx-2 mb-1"></span>
+              <span className={summaryStats.commission < 0 ? "text-[#ef4444]" : "text-white"}>
+                {summaryStats.commission.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mt-2 pt-2 border-t border-white/10 text-white font-bold text-[14px]">
+              <span>Balance:</span>
+              <span className="flex-1 border-b border-dotted border-white/20 mx-2 mb-1"></span>
+              <span>{summaryStats.balance.toFixed(2)}</span>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex w-full border-b border-white/10 mt-2">
           {['POSITIONS', 'ORDERS', 'DEALS'].map(tab => (
@@ -197,7 +264,7 @@ export default function HistoryPage() {
                       </div>
                       <div className="flex justify-between text-white/70 font-mono text-[13px]">
                         <div>{deal.amount} at {deal.price}</div>
-                        <div>Fee: {deal.fee} {deal.feeAsset}</div>
+                        <div>Fee: {deal.fee || '0'} {deal.feeAsset || 'USDT'}</div>
                       </div>
                     </div>
                   )

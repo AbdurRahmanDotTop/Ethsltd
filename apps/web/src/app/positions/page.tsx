@@ -187,7 +187,7 @@ export default function PositionsPage() {
                       </div>
                       <div className="flex gap-4">
                         <span className="w-10 text-right">Swap:</span>
-                        <span className="text-white">0.00</span>
+                        <span className="text-white">{pos.swap ? parseFloat(pos.swap).toFixed(2) : '0.00'}</span>
                       </div>
                     </div>
                     <div className="flex justify-between">
@@ -213,8 +213,16 @@ export default function PositionsPage() {
                         onClick={async (e) => { 
                           e.stopPropagation();
                           if (confirm("Are you sure you want to close this position?")) {
-                            await apiClient.closePosition(pos.id, { amount: pos.amount });
-                            loadData();
+                            try {
+                              const res = await apiClient.closePosition(pos.id, { amount: pos.amount });
+                              if (!res.success) {
+                                alert(res.error || "Failed to close position");
+                              }
+                            } catch (err: any) {
+                              alert(err.message || "Failed to close position");
+                            } finally {
+                              loadData();
+                            }
                           }
                         }}
                       >

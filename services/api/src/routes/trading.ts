@@ -429,6 +429,29 @@ tradingRoutes.post('/orders', async (c) => {
     const body = await c.req.json();
     const { market, side, type, amount, price, stopLoss, takeProfit, stopPrice, timeInForce } = body;
     
+    // --- Idempotency: Prevent rapid duplicate submissions (3s window) ---
+    {
+      const recentDuplicates = await db.select().from(orders)
+        .where(and(
+          eq(orders.userId, user.id),
+          eq(orders.marketSymbol, market),
+          eq(orders.side, side)
+        ))
+        .orderBy(desc(orders.createdAt))
+        .limit(1)
+        .all();
+      if (recentDuplicates.length > 0) {
+        const last = recentDuplicates[0];
+        const lastTime = last.createdAt instanceof Date ? last.createdAt.getTime() : new Date(last.createdAt as any).getTime();
+        const lastAmt = parseFloat(last.amount);
+        const reqAmt = parseFloat(amount);
+        if (Math.abs(lastAmt - reqAmt) < 0.000001 && Date.now() - lastTime < 3000) {
+          console.warn(`Idempotency: Duplicate order blocked for user ${user.id}, returning existing order ${last.id}`);
+          return c.json({ success: true, orderId: last.id, order: last, message: 'Order already processed' });
+        }
+      }
+    }
+
     // --- Validate market ---
     const marketInfo = await db.select().from(markets).where(eq(markets.symbol, market)).get();
     if (!marketInfo) {
@@ -507,6 +530,22 @@ tradingRoutes.post('/orders', async (c) => {
           updatedAt: now
         }).where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, spendAsset)));
         
+        // --- Record wallet transaction for margin lock + commission (MT5 deal-in) ---
+        await tx.insert(walletTransactions).values({
+          id: crypto.randomUUID(),
+          userId: user.id,
+          type: 'TRADING_DEBIT',
+          assetSymbol: spendAsset,
+          amount: requiredBalance.toString(),
+          fee: commissionFee.toString(),
+          status: 'COMPLETED',
+          reference: orderId,
+          beforeBalance: spendWallet.balance,
+          afterBalance: newSpendBalance,
+          createdAt: now,
+          updatedAt: now,
+        });
+
         // --- Create Order Record (PENDING for MT5 limits) ---
         const newOrderRecord = {
           id: orderId,
@@ -579,10 +618,10 @@ tradingRoutes.post('/orders', async (c) => {
             id: tradeId,
             displayId: tradeDisplayId,
             marketSymbol: market,
-            buyOrderId: side === 'BUY' ? orderId : null,
-            sellOrderId: side === 'SELL' ? orderId : null,
-            buyUserId: side === 'BUY' ? user.id : null,
-            sellUserId: side === 'SELL' ? user.id : null,
+            buyOrderId: orderId,
+            sellOrderId: orderId,
+            buyUserId: user.id,
+            sellUserId: user.id,
             price: finalPrice,
             amount: parsedAmount.toString(),
             quoteAmount: quoteAmount.toString(),
@@ -865,20 +904,21 @@ tradingRoutes.post('/positions/:id/close', async (c) => {
            updatedAt: now
          }).where(eq(wallets.id, quoteWallet.id));
          
-         if (!pnl.isZero()) {
-           await tx.insert(walletTransactions).values({
-             id: crypto.randomUUID(),
-             userId: user.id,
-             type: pnl.gt(0) ? 'TRADING_CREDIT' : 'TRADING_DEBIT',
-             assetSymbol: marketInfo.quoteAsset,
-             amount: pnl.abs().toString(),
-             fee: '0',
-             status: 'COMPLETED',
-             reference: `close_pos_${position.id}`,
-             createdAt: now,
-             updatedAt: now,
-           });
-         }
+         // Always record wallet transaction for position close (margin release + PnL)
+         await tx.insert(walletTransactions).values({
+           id: crypto.randomUUID(),
+           userId: user.id,
+           type: totalReturn.gte(0) ? 'TRADING_CREDIT' : 'TRADING_DEBIT',
+           assetSymbol: marketInfo.quoteAsset,
+           amount: totalReturn.abs().toString(),
+           fee: '0',
+           status: 'COMPLETED',
+           reference: `close_pos_${position.id}`,
+           beforeBalance: quoteWallet.balance,
+           afterBalance: newBalance.toString(),
+           createdAt: now,
+           updatedAt: now,
+         });
       }
     });
     return c.json({ success: true, message: 'Position closed successfully' });

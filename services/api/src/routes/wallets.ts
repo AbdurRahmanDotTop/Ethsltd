@@ -46,11 +46,9 @@ walletRoutes.get('/portfolio', async (c) => {
       totalBalance += parseFloat(w.lockedBalance) * price;
     }
 
-    // 2. Fetch MT5 account if it exists to add MT5 balance
-    const mt5User = await db.select().from(mt5Accounts).where(eq(mt5Accounts.userId, user.id)).get();
-    if (mt5User) {
-      totalBalance += parseFloat(mt5User.balance || '0');
-    }
+
+    // Wallet balance is the single source of truth for trading
+    // (MT5 account balance is NOT mixed in to avoid double-counting)
 
     // 3. Fetch active positions for Equity/Margin calculation
     const userPositions = await db.select().from(positions).where(and(eq(positions.userId, user.id), eq(positions.status, 'OPEN'))).all();
@@ -242,53 +240,7 @@ walletRoutes.get('/balances', async (c) => {
   
   return c.json({ success: true, data: formattedBalances });
 });
-walletRoutes.get('/portfolio', async (c) => {
-  const db = c.get('db');
-  const user = c.get('user');
-  
-  const userWallets = await db.select().from(wallets).where(eq(wallets.userId, user.id)).all();
-  const activeRates = await db.select().from(currencyRates).where(eq(currencyRates.status, 'ACTIVE')).all();
-  const ratesMap = new Map(activeRates.map(r => [r.code, r]));
-  
-  let totalValueUsd = 0;
-  let availableBalanceUsd = 0;
-  let lockedBalanceUsd = 0;
-  
-  const allocations = userWallets.map(w => {
-    const rateInfo = ratesMap.get(w.assetSymbol);
-    const usdPrice = rateInfo && parseFloat(rateInfo.ratePerUsdt) > 0 ? (1 / parseFloat(rateInfo.ratePerUsdt)) : getAssetPrice(w.assetSymbol);
 
-    const lockedAmt = parseFloat(w.lockedBalance);
-    const total = parseFloat(w.balance) + lockedAmt;
-    const usdValue = total * usdPrice;
-    
-    totalValueUsd += usdValue;
-    availableBalanceUsd += parseFloat(w.balance) * usdPrice;
-    lockedBalanceUsd += lockedAmt * usdPrice;
-    
-    return {
-      asset: w.assetSymbol,
-      usdValue,
-      percentage: 0 // Will calculate below
-    };
-  });
-  
-  // Calculate percentages
-  const finalAllocations = allocations.map(a => ({
-    ...a,
-    percentage: totalValueUsd > 0 ? (a.usdValue / totalValueUsd) * 100 : 0
-  })).filter(a => a.percentage > 0).sort((a, b) => b.usdValue - a.usdValue);
-  
-  const summary = {
-    totalValueUsd,
-    change24hUsd: 0,
-    change24hPercent: 0,
-    availableBalanceUsd,
-    lockedBalanceUsd,
-  };
-  
-  return c.json({ success: true, data: { summary, allocations: finalAllocations } });
-});
 walletRoutes.get('/transactions', async (c) => {
   const db = c.get('db');
   const user = c.get('user');
