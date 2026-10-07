@@ -427,9 +427,9 @@ tradingRoutes.post('/orders', async (c) => {
     const db = c.get('db');
     const user = c.get('user');
     const body = await c.req.json();
-    const { market, side, type, amount, price, stopLoss, takeProfit, stopPrice, timeInForce } = body;
+    const { market, side, type, amount, price, stopLoss, takeProfit, stopPrice, timeInForce, idempotencyKey } = body;
     
-    // --- Idempotency: Prevent rapid duplicate submissions (3s window) ---
+    // --- Validate market ---
     {
       const recentDuplicates = await db.select().from(orders)
         .where(and(

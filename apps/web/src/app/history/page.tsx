@@ -33,10 +33,6 @@ export default function HistoryPage() {
         setOrders(ordRes.data)
       }
 
-      if (dealsRes.success && dealsRes.data) {
-        setDeals(dealsRes.data)
-      }
-
       // Calculate Summary Stats
       let profit = 0;
       let swap = 0;
@@ -48,12 +44,35 @@ export default function HistoryPage() {
       });
 
       let deposit = 0;
+      let fundingDeals: any[] = [];
       if (txRes.success && txRes.data) {
         txRes.data.forEach((tx: any) => {
-          if (tx.type === 'DEPOSIT' && tx.status === 'COMPLETED') {
-            deposit += parseFloat(tx.amount || '0');
+          if (tx.type === 'DEPOSIT' || tx.type === 'WITHDRAWAL') {
+            fundingDeals.push({
+              id: tx.id,
+              isFunding: true,
+              type: tx.type,
+              amount: tx.amount,
+              asset: tx.assetSymbol,
+              createdAt: tx.createdAt,
+              status: tx.status
+            });
+            if (tx.type === 'DEPOSIT' && tx.status === 'COMPLETED') {
+              deposit += parseFloat(tx.amount || '0');
+            }
           }
         });
+      }
+
+      if (dealsRes.success && dealsRes.data) {
+        const mergedDeals = [...dealsRes.data, ...fundingDeals].sort((a, b) => {
+          const tA = new Date(a.createdAt).getTime();
+          const tB = new Date(b.createdAt).getTime();
+          return tB - tA;
+        });
+        setDeals(mergedDeals);
+      } else {
+        setDeals(fundingDeals);
       }
 
       let balance = 0;
@@ -246,7 +265,32 @@ export default function HistoryPage() {
               )}
               <div className="flex flex-col text-[14px]">
                 {deals.map((deal) => {
-                  const isBuy = deal.side === 'BUY';
+                  if (deal.isFunding) {
+                    const isDep = deal.type === 'DEPOSIT';
+                    const sideColor = isDep ? 'text-[#3b82f6]' : 'text-[#ef4444]';
+                    return (
+                      <div key={deal.id} className="flex flex-col border-b border-white/10 px-4 py-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="flex items-center gap-1 font-bold">
+                            <span>Balance</span>
+                            <span className="font-normal text-white/50">,</span>
+                            <span className={`${sideColor} font-normal lowercase`}>
+                              {isDep ? 'deposit' : 'withdrawal'}
+                            </span>
+                          </div>
+                          <div className="text-white/60 font-mono text-[13px]">
+                            {formatTime(deal.createdAt)}
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-white/70 font-mono text-[13px]">
+                          <div>{deal.amount} {deal.asset}</div>
+                          <div>Status: {deal.status}</div>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  const isBuy = deal.side === 'BUY' || deal.buyUserId; // Handle proper trade format
                   const sideColor = isBuy ? 'text-[#3b82f6]' : 'text-[#ef4444]';
                   return (
                     <div key={deal.id} className="flex flex-col border-b border-white/10 px-4 py-3">

@@ -122,6 +122,8 @@ export function OrderEntry({ market }: { market: Market }) {
       }
       
       try {
+        const idempotencyKey = `order_${market.id}_${selectedSide}_${reqAmount}_${Date.now()}`;
+        
         let res = await apiClient.createOrder({
           market: market.id,
           side: selectedSide === 'buy' ? 'BUY' : 'SELL',
@@ -129,7 +131,8 @@ export function OrderEntry({ market }: { market: Market }) {
           stopLoss: data.stopLoss ? parseFloat(data.stopLoss) : undefined,
           takeProfit: data.takeProfit ? parseFloat(data.takeProfit) : undefined,
           price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
-          amount: parseFloat(data.quantity)
+          amount: parseFloat(data.quantity),
+          idempotencyKey
         });
         
         if (!res || !res.success) {
