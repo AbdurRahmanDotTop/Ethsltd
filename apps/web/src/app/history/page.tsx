@@ -76,8 +76,8 @@ export default function HistoryPage() {
       }
 
       let balance = 0;
-      if (portRes.success && portRes.data?.summary) {
-        balance = portRes.data.summary.totalValueUsd || 0;
+      if (portRes.success && portRes.data) {
+        balance = portRes.data.balance || 0;
       }
 
       setSummaryStats({ profit, deposit, swap, commission, balance });
