@@ -463,11 +463,31 @@ tradingRoutes.post('/orders', async (c) => {
     }
 
     // --- Validate & set price ---
-    const fetchedPrice = await getRealPrice(market);
+    let fetchedPrice = await getRealPrice(market);
+    console.log(`[ORDER] getRealPrice(${market}) returned: ${fetchedPrice}`);
+    
+    // Fallback: if getRealPrice fails, try MEXC 24hr ticker directly (known to work on CF Workers)
+    if (!fetchedPrice || fetchedPrice <= 0 || isNaN(fetchedPrice)) {
+      try {
+        const mexcSymbol = market.replace('-', '').toUpperCase();
+        const res = await fetch(`https://api.mexc.com/api/v3/ticker/24hr?symbol=${mexcSymbol}`);
+        if (res.ok) {
+          const data = await res.json() as any;
+          if (data && data.lastPrice) {
+            fetchedPrice = parseFloat(data.lastPrice);
+            console.log(`[ORDER] Fallback MEXC 24hr price for ${market}: ${fetchedPrice}`);
+          }
+        }
+      } catch (e) {
+        console.error(`[ORDER] MEXC 24hr fallback also failed for ${market}:`, e);
+      }
+    }
+    
     const orderPriceRaw = type === 'MARKET' ? fetchedPrice : parseFloat(price);
     
-    if (!orderPriceRaw || orderPriceRaw <= 0) {
-      return c.json({ success: false, error: 'Invalid price or price unavailable' }, 400);
+    if (!orderPriceRaw || orderPriceRaw <= 0 || isNaN(orderPriceRaw)) {
+      console.error(`[ORDER] Price validation failed: fetchedPrice=${fetchedPrice}, orderPriceRaw=${orderPriceRaw}`);
+      return c.json({ success: false, error: `Price unavailable for ${market}. Please try again in a moment.` }, 400);
     }
 
     const orderPrice = new Decimal(orderPriceRaw);
@@ -500,6 +520,8 @@ tradingRoutes.post('/orders', async (c) => {
     let spendAsset = marketInfo.quoteAsset;
     let spendAmount = totalValue.div(100); // hardcoded leverage 100
     
+    console.log(`[ORDER] ${side} ${parsedAmount} ${market} @ ${orderPrice} | totalValue=${totalValue} margin=${spendAmount} asset=${spendAsset}`);
+    
     const now = new Date();
     const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get();
@@ -512,6 +534,10 @@ tradingRoutes.post('/orders', async (c) => {
       const commissionFee = type === 'MARKET' ? quoteAmount.times(takerFeeRate) : new Decimal(0);
       const requiredBalance = spendAmount.plus(commissionFee);
 
+      // ============================================
+      // SINGLE ATOMIC TRANSACTION: wallet debit + order + position + trade
+      // This ensures if ANY step fails, nothing is committed (no partial state)
+      // ============================================
       await runTx(db, async (tx: any) => {
         // --- Balance Check (Inside Transaction) ---
         let spendWallet = await tx.select().from(wallets)
@@ -554,7 +580,7 @@ tradingRoutes.post('/orders', async (c) => {
           updatedAt: now,
         });
 
-        // --- Create Order Record (PENDING for MT5 limits) ---
+        // --- Create Order Record ---
         const newOrderRecord = {
           id: orderId,
           displayId: orderDisplayId,
@@ -576,19 +602,16 @@ tradingRoutes.post('/orders', async (c) => {
         };
 
         await tx.insert(orders).values(newOrderRecord);
-      }); // End of DB lock transaction
 
-      // ============================================
-      // MT5 INTEGRATION (MARGIN / CFD) - FORCED FOR ALL
-      // ============================================
-      if (type === 'MARKET') {
-        let positionId = crypto.randomUUID();
-        let finalPrice = orderPrice.toString();
-        
-        const marginRequired = totalValue.div(100); // hardcoded leverage 100 for now
-        
-        // Update Order to FILLED and Create Position in our DB
-        await runTx(db, async (tx: any) => {
+        // ============================================
+        // MT5: If MARKET order, fill + create position in SAME transaction
+        // ============================================
+        if (type === 'MARKET') {
+          const positionId = crypto.randomUUID();
+          const finalPrice = orderPrice.toString();
+          const marginRequired = totalValue.div(100); // leverage 100
+
+          // Update order to FILLED
           await tx.update(orders).set({ 
             status: 'FILLED', 
             filledAmount: parsedAmount.toString(), 
@@ -597,6 +620,7 @@ tradingRoutes.post('/orders', async (c) => {
             updatedAt: new Date()
           }).where(eq(orders.id, orderId));
           
+          // Create Position
           const positionDisplayId = await generateBusinessId(tx, dbUser?.email, 'POS');
           await tx.insert(positions).values({
             id: positionId,
@@ -637,8 +661,10 @@ tradingRoutes.post('/orders', async (c) => {
             sellFee: side === 'SELL' ? commissionFee.toString() : '0',
             createdAt: new Date(),
           });
-        });
-      }
+          
+          console.log(`[ORDER] Position ${positionId} created for ${side} ${parsedAmount} ${market} @ ${finalPrice}`);
+        }
+      }); // End of SINGLE atomic transaction
         
     } catch (error: any) {
       console.error('Order placement error:', error);

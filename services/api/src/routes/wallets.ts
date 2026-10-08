@@ -256,9 +256,10 @@ walletRoutes.get('/transactions', async (c) => {
     asset: tx.assetSymbol,
     assetSymbol: tx.assetSymbol,
     // CONVERSION amounts are already stored with the correct sign (negative for Step 2).
-    // WITHDRAWAL amounts are stored as positive but represent a debit — negate them.
+    // WITHDRAWAL and TRADING_DEBIT amounts are stored as positive but represent a debit — negate them.
+    // TRADING_CREDIT amounts are credits (margin release + PnL) — keep positive.
     // All other types (DEPOSIT, ADJUSTMENT, etc.) are stored as signed correctly.
-    amount: tx.type === 'WITHDRAWAL'
+    amount: (tx.type === 'WITHDRAWAL' || tx.type === 'TRADING_DEBIT')
       ? -Math.abs(parseFloat(tx.amount))
       : parseFloat(tx.amount),
     fee: parseFloat(tx.fee || '0'),
