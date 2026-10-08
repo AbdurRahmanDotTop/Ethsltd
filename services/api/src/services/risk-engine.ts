@@ -1,13 +1,11 @@
 import { Bindings, createDb } from '../db';
-import { eq } from 'drizzle-orm';
-import { positions } from 'database/schema/trading';
+import { eq, and } from 'drizzle-orm';
+import { positions, markets } from 'database/schema/trading';
 import { getRealPrice } from '../utils/price';
 import Decimal from 'decimal.js';
-import { and } from 'drizzle-orm';
-import { markets } from 'database/schema/trading';
-import { wallets, walletTransactions } from 'database/schema/wallets';
 import { users } from 'database/schema/auth';
 import { EmailService } from './email';
+import { closePositionAtomic } from './position-service';
 
 export async function runRiskEngine(env: Bindings, ctx?: any) {
   const db = createDb(env.DB);
@@ -37,11 +35,15 @@ export async function runRiskEngine(env: Bindings, ctx?: any) {
       const amount = new Decimal(pos.amount);
       const margin = new Decimal(pos.marginAmount);
 
+      // Fetch market info to get contractSize for consistent PnL calculation
+      const marketInfo = await db.select().from(markets).where(eq(markets.symbol, pos.marketSymbol)).get();
+      const contractSize = new Decimal(marketInfo?.contractSize || '1');
+
       let pnl = new Decimal(0);
       if (pos.side === 'LONG') {
-        pnl = currentPrice.minus(entry).times(amount);
+        pnl = currentPrice.minus(entry).times(amount).times(contractSize);
       } else {
-        pnl = entry.minus(currentPrice).times(amount);
+        pnl = entry.minus(currentPrice).times(amount).times(contractSize);
       }
 
       let shouldClose = false;
@@ -109,70 +111,19 @@ export async function runRiskEngine(env: Bindings, ctx?: any) {
          }
       }
 
-      // Execute Close (Mocking internal close call for now)
+      // Execute Close using shared atomic close service (ensures consistent PnL calculation)
       if (shouldClose) {
         console.log(`[RiskEngine] Closing position ${pos.id} due to ${closeReason}. PnL: ${pnl.toString()}`);
         
-        // In a real environment, we'd invoke the same atomic close logic 
-        // as POST /positions/:id/close to ensure ledger updates happen safely.
-        // For cron triggers, we call it internally:
-        await internalClosePosition(db, pos, currentPrice, pnl, closeReason);
+        const userRec = await db.select().from(users).where(eq(users.id, pos.userId)).get();
+        const userEmail = userRec?.email || null;
+
+        await db.transaction(async (tx: any) => {
+          await closePositionAtomic(tx, pos.id, pos.userId, null, userEmail);
+        });
       }
     }
   } catch (err) {
     console.error('[RiskEngine] Error:', err);
   }
-}
-
-async function internalClosePosition(db: any, pos: any, currentPrice: Decimal, pnl: Decimal, reason: string) {
-  const now = new Date();
-  
-  await db.transaction(async (tx: any) => {
-    // 1. Mark position as closed
-    await tx.update(positions).set({
-      status: 'CLOSED',
-      realizedPnl: new Decimal(pos.realizedPnl).plus(pnl).toString(),
-      updatedAt: now
-    }).where(eq(positions.id, pos.id));
-
-    // 2. Fetch market info to know the quote asset
-    const marketInfo = await tx.select().from(markets).where(eq(markets.symbol, pos.marketSymbol)).get();
-    if (!marketInfo) return;
-
-    // 3. Fetch user's quote wallet
-    const quoteWallet = await tx.select().from(wallets)
-      .where(and(eq(wallets.userId, pos.userId), eq(wallets.assetSymbol, marketInfo.quoteAsset)))
-      .get();
-      
-    if (quoteWallet) {
-      const margin = new Decimal(pos.marginAmount);
-      // Determine what to return: original margin + pnl
-      const totalReturn = margin.plus(pnl);
-      
-      const newLocked = Decimal.max(0, new Decimal(quoteWallet.lockedBalance).minus(margin));
-      const newBalance = new Decimal(quoteWallet.balance).plus(totalReturn);
-      
-      await tx.update(wallets).set({
-        lockedBalance: newLocked.toString(),
-        balance: newBalance.toString(),
-        updatedAt: now
-      }).where(eq(wallets.id, quoteWallet.id));
-      
-      // 4. Create Ledger Entry for PnL
-      if (!pnl.isZero()) {
-        await tx.insert(walletTransactions).values({
-          id: crypto.randomUUID(),
-          userId: pos.userId,
-          type: pnl.gt(0) ? 'TRADING_CREDIT' : 'TRADING_DEBIT',
-          assetSymbol: marketInfo.quoteAsset,
-          amount: pnl.abs().toString(),
-          fee: '0',
-          status: 'COMPLETED',
-          reference: `risk_close_${pos.id}_${reason}`,
-          createdAt: now,
-          updatedAt: now,
-        });
-      }
-    }
-  });
 }

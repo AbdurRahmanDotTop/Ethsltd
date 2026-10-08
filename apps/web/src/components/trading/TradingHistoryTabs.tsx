@@ -104,6 +104,7 @@ export function TradingHistoryTabs() {
             <thead className="text-muted-foreground border-b border-border text-xs sticky top-0 bg-background z-10">
               <tr>
                 <th className="py-3 pl-4 font-medium">Ticket</th>
+                <th className="py-3 font-medium">Order ID</th>
                 <th className="py-3 font-medium">Symbol</th>
                 <th className="py-3 font-medium">Side</th>
                 <th className="py-3 font-medium">Volume</th>
@@ -111,31 +112,41 @@ export function TradingHistoryTabs() {
                 <th className="py-3 font-medium">S/L</th>
                 <th className="py-3 font-medium">T/P</th>
                 <th className="py-3 font-medium">Price</th>
-                <th className="py-3 font-medium text-right pr-4">Profit</th>
-                <th className="py-3 font-medium text-right pr-4">Action</th>
+                <th className="py-3 font-medium">Close</th>
+                <th className="py-3 pr-4 text-right font-medium">Profit</th>
+                <th className="py-3 pr-4 text-right font-medium">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {positions.filter((p:any)=>p.status==='OPEN').length === 0 ? (
-                <tr><td colSpan={10} className="py-12 text-center text-muted-foreground">No open positions.</td></tr>
-              ) : positions.filter((p:any)=>p.status==='OPEN').map((pos: any) => (
-                <tr key={pos.id} className="hover:bg-muted/30">
-                  <td className="py-3 pl-4 font-mono text-xs">{pos.ticket}</td>
-                  <td className="py-3 font-semibold text-xs">{pos.market}</td>
-                  <td className={`py-3 capitalize text-xs font-semibold ${pos.side === 'LONG' ? 'text-success' : 'text-danger'}`}>{pos.side === 'LONG' ? 'Buy' : 'Sell'}</td>
-                  <td className="py-3 font-mono text-xs">{pos.amount}</td>
-                  <td className="py-3 font-mono text-xs">{formatPrice(pos.entryPrice)}</td>
-                  <td className="py-3 font-mono text-xs text-muted-foreground">{pos.stopLoss ? formatPrice(pos.stopLoss) : '0.00'}</td>
-                  <td className="py-3 font-mono text-xs text-muted-foreground">{pos.takeProfit ? formatPrice(pos.takeProfit) : '0.00'}</td>
-                  <td className="py-3 font-mono text-xs">{formatPrice(pos.currentPrice)}</td>
-                  <td className={`py-3 pr-4 text-right font-mono text-xs font-semibold ${pos.unrealizedPnl >= 0 ? 'text-info' : 'text-danger'}`}>
-                    {pos.unrealizedPnl >= 0 ? '+' : ''}{pos.unrealizedPnl.toFixed(2)}
-                  </td>
-                  <td className="py-3 pr-4 text-right">
-                    <Button variant="outline" size="sm" className="h-7 text-xs bg-muted/10 hover:bg-danger hover:text-white" onClick={() => handleClosePosition(pos.id, pos.amount)}>Close</Button>
-                  </td>
-                </tr>
-              ))}
+              {positions.length === 0 ? (
+                <tr><td colSpan={12} className="py-12 text-center text-muted-foreground">No positions.</td></tr>
+              ) : positions.map((pos: any) => {
+                const isOpen = pos.status === 'OPEN';
+                return (
+                  <tr key={pos.id} className="hover:bg-muted/30">
+                    <td className="py-3 pl-4 font-mono text-xs">{pos.ticket}</td>
+                    <td className="py-3 font-mono text-xs text-muted-foreground">{pos.orderId?.substring(0, 8) || '—'}</td>
+                    <td className="py-3 font-semibold text-xs">{pos.market}</td>
+                    <td className={`py-3 capitalize text-xs font-semibold ${pos.side === 'LONG' ? 'text-success' : 'text-danger'}`}>{pos.side === 'LONG' ? 'Buy' : 'Sell'}</td>
+                    <td className="py-3 font-mono text-xs">{pos.amount}</td>
+                    <td className="py-3 font-mono text-xs">{formatPrice(pos.entryPrice)}</td>
+                    <td className="py-3 font-mono text-xs text-muted-foreground">{pos.stopLoss ? formatPrice(pos.stopLoss) : '0.00'}</td>
+                    <td className="py-3 font-mono text-xs text-muted-foreground">{pos.takeProfit ? formatPrice(pos.takeProfit) : '0.00'}</td>
+                    <td className="py-3 font-mono text-xs">{formatPrice(pos.currentPrice)}</td>
+                    <td className="py-3 font-mono text-xs">{!isOpen && pos.closePrice ? formatPrice(pos.closePrice) : '—'}</td>
+                    <td className={`py-3 pr-4 text-right font-mono text-xs font-semibold ${pos.unrealizedPnl >= 0 ? 'text-info' : 'text-danger'}`}>
+                      {isOpen ? (pos.unrealizedPnl >= 0 ? '+' : '' ) + pos.unrealizedPnl.toFixed(2) : (pos.realizedPnl >= 0 ? '+' : '') + pos.realizedPnl.toFixed(2)}
+                    </td>
+                    <td className="py-3 pr-4 text-right">
+                      {isOpen ? (
+                        <Button variant="outline" size="sm" className="h-7 text-xs bg-muted/10 hover:bg-danger hover:text-white" onClick={() => handleClosePosition(pos.id, pos.amount)}>Close</Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Closed</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

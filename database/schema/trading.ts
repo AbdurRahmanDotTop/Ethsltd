@@ -22,6 +22,7 @@ export const markets = sqliteTable('markets', {
   swapShort: text('swap_short').notNull().default('0'), // MT5 swap for holding short
   pricePrecision: integer('price_precision').notNull().default(2),
   quantityPrecision: integer('quantity_precision').notNull().default(6),
+  maxLeverage: text('max_leverage').notNull().default('100'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
@@ -41,6 +42,8 @@ export const orders = sqliteTable('orders', {
   amount: text('amount').notNull(), // requested volume
   filledAmount: text('filled_amount').notNull().default('0'),
   remainingAmount: text('remaining_amount').notNull(),
+  idempotencyKey: text('idempotency_key'),
+  positionId: text('position_id'), // FK to positions.id (defined via migration, not schema to avoid circular type)
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
@@ -63,6 +66,9 @@ export const positions = sqliteTable('positions', {
   swap: text('swap').notNull().default('0'), // accumulated swap
   commission: text('commission').notNull().default('0'),
   realizedPnl: text('realized_pnl').notNull().default('0'),
+  orderId: text('order_id'), // FK to orders.id (defined via migration, not schema to avoid circular type)
+  closedAt: integer('closed_at', { mode: 'timestamp' }),
+  closePrice: text('close_price'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });

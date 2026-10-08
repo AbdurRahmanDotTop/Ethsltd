@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useTradingUIStore } from "@/stores/trading-ui-store"
+import { apiClient } from "@ethsltd/api-client"
 import { toast } from "sonner"
 
 export function OneClickTrading({ market, currentPrice }: { market: any, currentPrice: number }) {
@@ -19,24 +20,19 @@ export function OneClickTrading({ market, currentPrice }: { market: any, current
     const toastId = toast.loading(`${side} ${amount} ${market.baseAsset}...`)
     
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trading/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          market: market.symbol,
-          type: 'MARKET',
-          side,
-          amount,
-        })
+      const data: any = await apiClient.createOrder({
+        market: market.symbol,
+        type: 'MARKET',
+        side,
+        amount,
       })
 
-      const data = await res.json()
       if (data.success && data.order) {
         toast.dismiss(toastId)
         useTradingUIStore.getState().setSuccessOrder(data.order)
+        if (data.position) {
+          useTradingUIStore.getState().setSuccessPosition(data.position)
+        }
       } else if (data.success) {
         toast.success(`Position Opened: ${side} ${amount} ${market.baseAsset}`, { id: toastId })
       } else {

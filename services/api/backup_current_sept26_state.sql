@@ -3611,7 +3611,6 @@ CREATE TABLE `positions` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`market_symbol`) REFERENCES `markets`(`symbol`) ON UPDATE no action ON DELETE no action
 );
-INSERT INTO "positions" ("id","user_id","market_symbol","mode","side","status","leverage","margin_type","margin_amount","entry_price","liquidation_price","amount","realized_pnl","created_at","updated_at","display_id") VALUES('POS-1786896509616','4c3b7525-accc-42cc-b218-8d877542f9ad','BTC-USDT','DEMO','LONG','OPEN','10','ISOLATED','52125','104250','94867.5','5','0',1786896509,1786896509,NULL);
 CREATE TABLE IF NOT EXISTS "trades" (
 	`id` text PRIMARY KEY NOT NULL,
 	`market_symbol` text NOT NULL,
@@ -3625,8 +3624,6 @@ CREATE TABLE IF NOT EXISTS "trades" (
 	`created_at` integer NOT NULL, `display_id` text,
 	FOREIGN KEY (`market_symbol`) REFERENCES `markets`(`symbol`) ON UPDATE no action ON DELETE no action
 );
-INSERT INTO "trades" ("id","market_symbol","mode","maker_order_id","taker_order_id","price","amount","maker_fee","taker_fee","created_at","display_id") VALUES('TRD-1786985779711-wvyif','ETH-USDT','DEMO','ORD-1786985682961','mock-taker-order','2000','6.25','0.00625','0',1786985778,NULL);
-INSERT INTO "trades" ("id","market_symbol","mode","maker_order_id","taker_order_id","price","amount","maker_fee","taker_fee","created_at","display_id") VALUES('TRD-1786985779711-jwclw','ETH-USDT','DEMO','ORD-1786985682961','mock-taker-order','2000','6.25','0.00625','0',1786985778,NULL);
 CREATE TABLE `p2p_disputes` (
 	`id` text PRIMARY KEY NOT NULL,
 	`order_id` text NOT NULL,

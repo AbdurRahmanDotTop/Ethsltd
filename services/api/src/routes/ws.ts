@@ -1,5 +1,23 @@
 import { Hono } from 'hono';
 
+// Track WebSocket connections per user for position update broadcasts
+const userConnections: Map<string, Set<any>> = new Map();
+
+export function broadcastPositionUpdate(userId: string, update: any) {
+  const connections = userConnections.get(userId);
+  if (!connections || connections.size === 0) return;
+  
+  const message = JSON.stringify({ type: 'position_update', ...update });
+  connections.forEach(socket => {
+    try {
+      socket.send(message);
+    } catch (e) {
+      // Socket may be closed; clean up
+      connections.delete(socket);
+    }
+  });
+}
+
 export const wsRoutes = new Hono();
 
 // WebSocket connections need to be upgraded by Cloudflare Workers.
@@ -16,6 +34,7 @@ wsRoutes.get('/stream', async (c) => {
   server.accept();
 
   let binanceWs: any = null;
+  let subscribedUserId: string | null = null;
 
   server.addEventListener('message', (event: any) => {
     try {
@@ -80,6 +99,16 @@ wsRoutes.get('/stream', async (c) => {
              } catch(e) {}
            });
         }
+      } else if (data.type === 'subscribePositions') {
+        // User subscribes to position updates
+        // Expects a JWT token in the message for auth
+        if (data.userId) {
+          subscribedUserId = data.userId;
+          if (!userConnections.has(data.userId)) {
+            userConnections.set(data.userId, new Set());
+          }
+          userConnections.get(data.userId)!.add(server);
+        }
       }
     } catch (e) {
       console.error('WS Error:', e);
@@ -89,6 +118,16 @@ wsRoutes.get('/stream', async (c) => {
   server.addEventListener('close', () => {
     if (binanceWs) {
        try { binanceWs.close(); } catch(e){}
+    }
+    // Clean up position subscription
+    if (subscribedUserId) {
+      const connections = userConnections.get(subscribedUserId);
+      if (connections) {
+        connections.delete(server);
+        if (connections.size === 0) {
+          userConnections.delete(subscribedUserId);
+        }
+      }
     }
   });
 

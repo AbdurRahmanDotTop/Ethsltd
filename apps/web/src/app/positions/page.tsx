@@ -23,16 +23,8 @@ export default function PositionsPage() {
       
       if (portRes.success && portRes.data) {
         setPortfolio(portRes.data)
-      } else {
-        // Fallback to zero if portfolio endpoint fails
-        setPortfolio({
-          balance: 0,
-          equity: 0,
-          margin: 0,
-          freeMargin: 0,
-          marginLevel: 0,
-          totalPnl: 0
-        })
+      } else if (portRes.success === false && !portRes.data) {
+        console.warn("Portfolio data unavailable, showing without portfolio")
       }
     } catch (e) {
       console.error("Failed to load positions data", e)
@@ -179,6 +171,10 @@ export default function PositionsPage() {
                         <span className="w-10 text-right">Open:</span>
                         <span>{formatTime(pos.createdAt || new Date().toISOString())}</span>
                       </div>
+                    </div>
+                     <div className="flex justify-between mb-1.5">
+                      <span className="w-10 text-right">Order:</span>
+                      <span>{pos.orderId || '—'}</span>
                     </div>
                     <div className="flex justify-between mb-1.5">
                       <div className="flex gap-4">

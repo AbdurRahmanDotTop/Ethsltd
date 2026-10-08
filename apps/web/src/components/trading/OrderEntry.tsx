@@ -26,7 +26,7 @@ const getOrderSchema = (type: OrderType) => z.object({
 });
 
 export function OrderEntry({ market }: { market: Market }) {
-  const { selectedSide, setSide, selectedOrderType, setOrderType, orderFormPrice, orderFormQuantity, setOrderFormPrice, setOrderFormQuantity, marketType } = useTradingUIStore()
+  const { selectedSide, setSide, selectedOrderType, setOrderType, orderFormPrice, orderFormQuantity, setOrderFormPrice, setOrderFormQuantity, marketType, selectedLeverage, setSuccessOrder, setSuccessPosition } = useTradingUIStore()
   const { balances, fetchBalances } = useWalletStore()
 
   const requireAuth = useRequireAuth()
@@ -132,6 +132,7 @@ export function OrderEntry({ market }: { market: Market }) {
           takeProfit: data.takeProfit ? parseFloat(data.takeProfit) : undefined,
           price: selectedOrderType === 'limit' ? parseFloat(data.price) : undefined,
           amount: parseFloat(data.quantity),
+          leverage: parseFloat(selectedLeverage),
           idempotencyKey
         });
         
@@ -140,7 +141,12 @@ export function OrderEntry({ market }: { market: Market }) {
         }
         
         if ((res as any).order) {
-          useTradingUIStore.getState().setSuccessOrder((res as any).order);
+          setSuccessOrder((res as any).order);
+          if ((res as any).position) {
+            setSuccessPosition((res as any).position);
+          } else if ((res as any).positionId && (res as any).order?.positionId) {
+            setSuccessPosition(null);
+          }
         } else {
           setMessage({ type: 'success', text: 'Order placed successfully' })
           setTimeout(() => setMessage(null), 3000)

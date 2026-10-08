@@ -10,18 +10,18 @@ const runTx = async (db: any, cb: any) => {
     throw e;
   }
 };
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { Bindings, Variables } from '../db';
 import { EmailService } from '../services/email';
 import { markets, orders, trades, wallets, walletTransactions, currencyRates, positions } from 'database';
-import { mt5Accounts } from 'database/schema/mt5';
 import { jwtMiddleware } from '../middleware/jwt';
 import { generateBusinessId } from '../services/id-generator';
 import { processOrderMatching } from '../services/matching-engine';
+import { closePositionAtomic } from '../services/position-service';
+import { broadcastPositionUpdate } from './ws';
 import { users } from 'database';
 import { getRealPrice } from '../utils/price';
 import Decimal from 'decimal.js';
-import { MT5Service } from '../services/mt5-client';
 
 export const tradingRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -206,7 +206,7 @@ tradingRoutes.get('/markets/:symbol/orderbook', async (c) => {
       .all();
 
     const openOrders = activeOrders.filter((o: any) => 
-      o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
+      o.status === 'OPEN' || o.status === 'ACCEPTED' || o.status === 'PARTIALLY_FILLED'
     );
 
     const askMap = new Map<number, number>();
@@ -428,8 +428,24 @@ tradingRoutes.post('/orders', async (c) => {
     const db = c.get('db');
     const user = c.get('user');
     const body = await c.req.json();
-    const { market, side, type, amount, price, stopLoss, takeProfit, stopPrice, timeInForce, idempotencyKey } = body;
+    const { market, side, type, amount, price, stopLoss, takeProfit, stopPrice, timeInForce, idempotencyKey, leverage: requestedLeverage } = body;
     
+    // --- Idempotency check ---
+    if (idempotencyKey) {
+      const existing = await db.select().from(orders)
+        .where(and(
+          eq(orders.userId, user.id),
+          eq(orders.idempotencyKey, idempotencyKey)
+        ))
+        .limit(1)
+        .get();
+      if (existing) {
+        console.log(`[ORDER] Idempotent replay for key ${idempotencyKey}, returning existing order ${existing.id}`);
+        const existingPosition = existing.positionId ? await db.select().from(positions).where(eq(positions.id, existing.positionId)).get() : null;
+        return c.json({ success: true, orderId: existing.id, positionId: existing.positionId, order: existing, position: existingPosition, message: 'Order already processed' });
+      }
+    }
+
     // --- Validate market ---
     {
       const recentDuplicates = await db.select().from(orders)
@@ -518,7 +534,9 @@ tradingRoutes.post('/orders', async (c) => {
     // For MT5 behaviour, spend amount is always calculated from quote asset (e.g., USDT)
     // regardless of BUY/SELL and market type, since margin is held in quote currency.
     let spendAsset = marketInfo.quoteAsset;
-    let spendAmount = totalValue.div(100); // hardcoded leverage 100
+    const marketMaxLeverage = new Decimal(marketInfo.maxLeverage || '100');
+    const leverage = Decimal.min(new Decimal(requestedLeverage || '100'), marketMaxLeverage);
+    let spendAmount = totalValue.div(leverage); // leverage from market config
     
     console.log(`[ORDER] ${side} ${parsedAmount} ${market} @ ${orderPrice} | totalValue=${totalValue} margin=${spendAmount} asset=${spendAsset}`);
     
@@ -581,7 +599,7 @@ tradingRoutes.post('/orders', async (c) => {
         });
 
         // --- Create Order Record ---
-        const newOrderRecord = {
+        const newOrderRecord: any = {
           id: orderId,
           displayId: orderDisplayId,
           userId: user.id,
@@ -597,6 +615,7 @@ tradingRoutes.post('/orders', async (c) => {
           remainingAmount: parsedAmount.toString(),
           status: type === 'MARKET' ? ('ROUTING' as const) : ('ACCEPTED' as const),
           timeInForce: timeInForce || 'GTC',
+          idempotencyKey: idempotencyKey || null,
           createdAt: now,
           updatedAt: now,
         };
@@ -604,45 +623,62 @@ tradingRoutes.post('/orders', async (c) => {
         await tx.insert(orders).values(newOrderRecord);
 
         // ============================================
-        // MT5: If MARKET order, fill + create position in SAME transaction
+        // MT5 Order Matching Flow
         // ============================================
-        if (type === 'MARKET') {
-          const positionId = crypto.randomUUID();
-          const finalPrice = orderPrice.toString();
-          const marginRequired = totalValue.div(100); // leverage 100
+        // For LIMIT orders: call matching engine to match against existing book
+        // For MARKET orders: B-Book auto-fill (instant execution against system)
+        let orderStatus = newOrderRecord.status;
+        let positionId: string | null = null;
+        let filledAmount = new Decimal(0);
+        let avgFillPrice = orderPrice;
 
-          // Update order to FILLED
-          await tx.update(orders).set({ 
-            status: 'FILLED', 
-            filledAmount: parsedAmount.toString(), 
-            remainingAmount: '0',
-            price: finalPrice,
-            updatedAt: new Date()
-          }).where(eq(orders.id, orderId));
-          
-          // Create Position
-          const positionDisplayId = await generateBusinessId(tx, dbUser?.email, 'POS');
-          await tx.insert(positions).values({
-            id: positionId,
-            displayId: positionDisplayId,
-            userId: user.id,
-            marketSymbol: market,
-            side: side === 'BUY' ? 'LONG' : 'SHORT',
-            status: 'OPEN',
-            leverage: '100',
-            marginType: 'ISOLATED',
-            marginAmount: marginRequired.toString(),
-            entryPrice: finalPrice,
-            stopLoss: stopLoss ? stopLoss.toString() : null,
-            takeProfit: takeProfit ? takeProfit.toString() : null,
-            liquidationPrice: side === 'BUY' ? new Decimal(finalPrice).times(0.99).toString() : new Decimal(finalPrice).times(1.01).toString(),
-            amount: parsedAmount.toString(),
-            commission: commissionFee.toString(),
-            createdAt: new Date(),
+        if (type === 'LIMIT') {
+          // Try to match against existing limit orders in the book
+          const matchResult = await processOrderMatching(
+            tx,
+            { ...newOrderRecord },
+            { 
+              ...marketInfo,
+              contractSize: rawContractSize,
+            },
+            user.id
+          );
+
+          // Update taker order status based on match result
+          if (new Decimal(matchResult.remainingToFill).lte(0)) {
+            orderStatus = 'FILLED';
+          } else if (new Decimal(matchResult.totalFilledAmount).gt(0)) {
+            orderStatus = 'PARTIALLY_FILLED';
+          }
+
+          // Update the order with match results
+          await tx.update(orders).set({
+            filledAmount: matchResult.totalFilledAmount,
+            remainingAmount: matchResult.remainingToFill,
+            status: orderStatus,
             updatedAt: new Date(),
-          });
-          
-          // Create Trade History Record for CFDs (Acting as Dealer)
+          }).where(eq(orders.id, orderId));
+
+          filledAmount = new Decimal(matchResult.totalFilledAmount);
+          if (filledAmount.gt(0)) {
+            avgFillPrice = new Decimal(matchResult.averagePrice);
+          }
+        } else if (type === 'MARKET') {
+          // B-Book: MARKET orders auto-fill at current market price
+          // (matching engine's B-Book logic handles this, but for CFD margin model
+          // we use the simpler inline approach to ensure correct margin/PnL)
+          filledAmount = parsedAmount;
+          avgFillPrice = orderPrice;
+          orderStatus = 'FILLED';
+
+          await tx.update(orders).set({
+            status: 'FILLED',
+            filledAmount: parsedAmount.toString(),
+            remainingAmount: '0',
+            updatedAt: new Date(),
+          }).where(eq(orders.id, orderId));
+
+          // Create Trade History Record for B-Book (acting as counterparty)
           const tradeId = crypto.randomUUID();
           const tradeDisplayId = await generateBusinessId(tx, 'system', 'TRAD');
           
@@ -654,15 +690,56 @@ tradingRoutes.post('/orders', async (c) => {
             sellOrderId: orderId,
             buyUserId: user.id,
             sellUserId: user.id,
-            price: finalPrice,
+            price: orderPrice.toString(),
             amount: parsedAmount.toString(),
             quoteAmount: quoteAmount.toString(),
             buyFee: side === 'BUY' ? commissionFee.toString() : '0',
             sellFee: side === 'SELL' ? commissionFee.toString() : '0',
             createdAt: new Date(),
           });
-          
-          console.log(`[ORDER] Position ${positionId} created for ${side} ${parsedAmount} ${market} @ ${finalPrice}`);
+        }
+
+        // ============================================
+        // If the order has fills, create a position.
+        // MARKET orders always fill (via B-Book).
+        // LIMIT orders fill when matching engine finds liquidity.
+        // ============================================
+        if (filledAmount.gt(0)) {
+          positionId = crypto.randomUUID();
+          const marginRequired = avgFillPrice.times(filledAmount).div(leverage);
+
+          // Link positionId on the order
+          await tx.update(orders).set({ positionId }).where(eq(orders.id, orderId));
+
+          // Create Position
+          const positionDisplayId = await generateBusinessId(tx, dbUser?.email, 'POS');
+          await tx.insert(positions).values({
+            id: positionId,
+            displayId: positionDisplayId,
+            orderId,
+            userId: user.id,
+            marketSymbol: market,
+            side: side === 'BUY' ? 'LONG' : 'SHORT',
+            status: 'OPEN',
+            leverage: leverage.toString(),
+            marginType: 'ISOLATED',
+            marginAmount: marginRequired.toString(),
+            entryPrice: avgFillPrice.toString(),
+            stopLoss: stopLoss ? stopLoss.toString() : null,
+            takeProfit: takeProfit ? takeProfit.toString() : null,
+            liquidationPrice: side === 'BUY' 
+              ? avgFillPrice.times(0.99).toString() 
+              : avgFillPrice.times(1.01).toString(),
+            amount: filledAmount.toString(),
+            commission: type === 'MARKET' ? commissionFee.toString() : '0',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+
+          console.log(`[ORDER] Position ${positionId} created for ${side} ${filledAmount} ${market} @ ${avgFillPrice}`);
+        } else if (type === 'LIMIT') {
+          // LIMIT order not filled yet — funds stay locked until filled or canceled.
+          // The cancel handler refunds the remaining locked balance.
         }
       }); // End of SINGLE atomic transaction
         
@@ -701,7 +778,22 @@ tradingRoutes.post('/orders', async (c) => {
     })());
 
     const finalOrder = await db.select().from(orders).where(eq(orders.id, orderId)).get();
-    return c.json({ success: true, orderId, order: finalOrder });
+    const finalPosition = finalOrder?.positionId 
+      ? await db.select().from(positions).where(eq(positions.id, finalOrder.positionId)).get()
+      : null;
+    
+    // Broadcast position update over WebSocket
+    if (finalPosition) {
+      c.executionCtx.waitUntil(
+        Promise.resolve(broadcastPositionUpdate(user.id, {
+          action: 'CREATED',
+          positionId: finalPosition.id,
+          status: finalPosition.status,
+        }))
+      );
+    }
+    
+    return c.json({ success: true, orderId, positionId: finalOrder?.positionId || null, order: finalOrder, position: finalPosition });
   } catch (outerError: any) {
     console.error('Unhandled order placement error:', outerError);
     return c.json({ success: false, error: 'An unexpected error occurred while processing your order.' }, 500);
@@ -838,9 +930,10 @@ tradingRoutes.get('/positions', async (c) => {
       else if (p.createdAt) createdStr = new Date(p.createdAt).toISOString();
     } catch (e) { createdStr = new Date().toISOString(); }
 
-    return {
+      return {
       id: p.id,
       ticket: p.displayId,
+      orderId: p.orderId || null,
       market: p.marketSymbol,
       side: p.side,
       amount: amount,
@@ -849,11 +942,14 @@ tradingRoutes.get('/positions', async (c) => {
       stopLoss: p.stopLoss ? parseFloat(p.stopLoss) : null,
       takeProfit: p.takeProfit ? parseFloat(p.takeProfit) : null,
       margin: parseFloat(p.marginAmount),
+      leverage: p.leverage ? parseFloat(p.leverage) : 100,
       unrealizedPnl: unrealizedPnl,
       realizedPnl: parseFloat(p.realizedPnl),
       swap: parseFloat(p.swap),
       commission: parseFloat(p.commission),
       status: p.status,
+      closePrice: p.closePrice ? parseFloat(p.closePrice) : null,
+      closedAt: p.closedAt ? (p.closedAt instanceof Date ? p.closedAt.toISOString() : new Date(p.closedAt).toISOString()) : null,
       createdAt: createdStr || new Date().toISOString(),
     };
   });
@@ -868,109 +964,27 @@ tradingRoutes.post('/positions/:id/close', async (c) => {
   const user = c.get('user');
   const positionId = c.req.param('id');
   const body = await c.req.json().catch(() => ({}));
-  let requestedCloseAmount = body.amount ? new Decimal(body.amount) : null;
-  
+  const requestedCloseAmount = body.amount ? new Decimal(body.amount) : null;
+
   try {
-    // 1. Pre-fetch position outside of D1 transaction
-    const position = await db.select().from(positions)
-      .where(and(eq(positions.id, positionId), eq(positions.userId, user.id)))
-      .get();
-      
-    if (!position) throw new Error('Position not found');
-    if (position.status !== 'OPEN') throw new Error('Position is already closed');
-    
-    const marketInfo = await db.select().from(markets).where(eq(markets.symbol, position.marketSymbol)).get();
-    if (!marketInfo) throw new Error('Market info missing');
-
-    const totalAmount = new Decimal(position.amount);
-    const totalMargin = new Decimal(position.marginAmount);
-    const closeAmount = (requestedCloseAmount && requestedCloseAmount.gt(0) && requestedCloseAmount.lt(totalAmount)) 
-      ? requestedCloseAmount 
-      : totalAmount;
-    const closeRatio = closeAmount.div(totalAmount);
-    const releasedMargin = totalMargin.times(closeRatio);
-
-    let pnl = new Decimal(0);
-
-    // Calculate PnL natively using current market price
-    const currentPriceRaw = await getRealPrice(position.marketSymbol);
-    if (!currentPriceRaw) throw new Error('Could not fetch market price for closing');
-    const currentPrice = new Decimal(currentPriceRaw);
-    const entry = new Decimal(position.entryPrice);
-    const contractSize = new Decimal(marketInfo.contractSize || '1');
-    
-    // Profit = (Current - Entry) * Amount * ContractSize for LONG
-    // Profit = (Entry - Current) * Amount * ContractSize for SHORT
-    if (position.side === 'LONG') {
-      pnl = currentPrice.minus(entry).times(closeAmount).times(contractSize);
-    } else {
-      pnl = entry.minus(currentPrice).times(closeAmount).times(contractSize);
-    }
-
-    const totalReturn = releasedMargin.plus(pnl); // Margin + Profit (or - Loss)
-    const now = new Date();
-
-    // 3. Finalize Wallet and Position DB updates
     await runTx(db, async (tx: any) => {
-      // Update position
-      if (closeAmount.eq(totalAmount)) {
-        // Full close
-        await tx.update(positions).set({
-          status: 'CLOSED',
-          realizedPnl: new Decimal(position.realizedPnl).plus(pnl).toString(),
-          updatedAt: now
-        }).where(eq(positions.id, position.id));
-      } else {
-        // Partial close
-        await tx.update(positions).set({
-          amount: totalAmount.minus(closeAmount).toString(),
-          marginAmount: totalMargin.minus(releasedMargin).toString(),
-          realizedPnl: new Decimal(position.realizedPnl).plus(pnl).toString(),
-          updatedAt: now
-        }).where(eq(positions.id, position.id));
-      }
-      
-      // Update Wallet & Ledger based on Market Type (Forced MT5 for all)
-      // CFD / MARGIN Logic
-      let quoteWallet = await tx.select().from(wallets)
-        .where(and(eq(wallets.userId, user.id), eq(wallets.assetSymbol, marketInfo.quoteAsset)))
-        .get();
-        
-      if (quoteWallet) {
-         // For CFD, margin is locked in quote wallet. We unlock it and add/subtract PnL to balance.
-         const newLocked = Decimal.max(0, new Decimal(quoteWallet.lockedBalance).minus(releasedMargin));
-         const newBalance = new Decimal(quoteWallet.balance).plus(totalReturn); // releasedMargin + pnl
-         
-         await tx.update(wallets).set({
-           lockedBalance: newLocked.toString(),
-           balance: newBalance.toString(),
-           updatedAt: now
-         }).where(eq(wallets.id, quoteWallet.id));
-         
-         // Always record wallet transaction for position close (margin release + PnL)
-         await tx.insert(walletTransactions).values({
-           id: crypto.randomUUID(),
-           displayId: null,
-           userId: user.id,
-           type: totalReturn.gte(0) ? 'TRADING_CREDIT' : 'TRADING_DEBIT',
-           assetSymbol: marketInfo.quoteAsset,
-           amount: totalReturn.abs().toString(),
-           fee: '0',
-           status: 'COMPLETED',
-           destination: null,
-           network: null,
-           reference: `close_pos_${position.id}`,
-           originalCurrency: null,
-           originalAmount: quoteWallet.balance,
-           conversionRate: null,
-           grossAmount: null,
-           totalFees: null,
-           netAmount: newBalance.toString(),
-           createdAt: now,
-           updatedAt: now,
-         });
-      }
+      await closePositionAtomic(
+        tx,
+        positionId,
+        user.id,
+        requestedCloseAmount,
+        user.email || null
+      );
     });
+    
+    // Broadcast position update over WebSocket
+    c.executionCtx.waitUntil(
+      Promise.resolve(broadcastPositionUpdate(user.id, {
+        action: 'CLOSED',
+        positionId,
+      }))
+    );
+    
     return c.json({ success: true, message: 'Position closed successfully' });
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 400);
